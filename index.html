@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Oskar Udvikling</title>
+<style>
+  :root { --nat:#101B26; --grus:#B0502E; --gruslys:#C97B54; --is:#9FD8E8; --kridt:#F2EDE4;
+          --vundet:#3F9C5C; --tabt:#C24E4E; --daempet:#5E7386; --guld:#E3B341; --kort:#18293A; --kant:#223243; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin:0; font-family:'Helvetica Neue', Arial, sans-serif; background:var(--nat); color:var(--kridt); }
+  .wrap { max-width:700px; margin:0 auto; padding:16px 10px 40px; }
+  .hero { border-left:4px solid var(--grus); padding-left:12px; margin-bottom:14px; }
+  .eyebrow { font-size:10px; letter-spacing:4px; color:var(--is); text-transform:uppercase; font-weight:700; }
+  h1 { font-size:25px; margin:2px 0 0; font-weight:800; text-transform:uppercase; letter-spacing:1px; }
+  .sub { font-size:12px; color:var(--daempet); }
+  .tabs { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:14px; }
+  .tabs button { flex:1 1 15%; padding:9px 2px; border-radius:7px; cursor:pointer; font-size:11.5px; font-weight:700;
+    border:1.5px solid var(--kant); background:transparent; color:var(--daempet); }
+  .tabs button.aktiv { border-color:var(--is); background:var(--kort); color:var(--is); }
+  .kort { background:var(--kort); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+  .kort h3 { margin:0 0 3px; font-size:13.5px; }
+  .kort p { margin:0; font-size:12.5px; color:#B9C6D2; line-height:1.65; }
+  input { width:100%; padding:12px; border-radius:8px; border:1.5px solid var(--kant); background:var(--kort);
+    color:var(--kridt); font-size:14px; margin-bottom:8px; }
+  .raekke { display:flex; gap:6px; margin-bottom:8px; }
+  .knap { flex:1; padding:12px 8px; border-radius:10px; border:none; cursor:pointer; background:var(--kant);
+    color:var(--kridt); font-weight:800; font-size:13px; }
+  .knap.stor { padding:24px 8px; font-size:19px; letter-spacing:1.2px; text-transform:uppercase; }
+  .knap.valg { background:transparent; border:1.5px solid var(--kant); color:var(--daempet); }
+  .knap.valg.til { background:var(--kort); border-color:var(--is); color:var(--kridt); }
+  .knap.valg.gul { background:#3A2A18; border-color:var(--guld); color:var(--kridt); }
+  .scoreboard { border:1.5px solid var(--kant); }
+  .score { font-size:24px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .banner { border-radius:8px; padding:8px 12px; margin-bottom:10px; font-size:12.5px; font-weight:700; }
+  .banner.guld { background:#2B2413; border:1.5px solid var(--guld); color:var(--guld); }
+  .banner.is { background:#1D3A4D; border:1.5px solid var(--is); font-weight:400; line-height:1.5; }
+  .kridtstreg { background:var(--grus); border-radius:8px; padding:10px 12px 6px; margin-bottom:10px; position:relative; }
+  .kridtstreg .linje { position:absolute; left:12px; right:12px; top:50%; height:2px; background:var(--kridt); opacity:.75; }
+  .kridtstreg .prikker { display:flex; gap:6px; justify-content:flex-end; position:relative; min-height:23px; }
+  .prik { width:13px; height:13px; border-radius:50%; border:2px solid var(--kridt); }
+  textarea { width:100%; height:140px; background:#0B141D; color:var(--is); border:1.5px solid var(--kant);
+    border-radius:8px; padding:10px; font-size:11px; font-family:monospace; line-height:1.5; }
+  .fod { font-size:10.5px; color:#3E5164; margin-top:22px; border-top:1px dashed var(--kant); padding-top:9px; }
+  .lille { font-size:11.5px; color:var(--daempet); margin:0 0 6px; }
+  .statlinje { font-size:12px; line-height:1.7; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+window.onerror = function (msg, kilde, linje) {
+  var el = document.getElementById("app");
+  if (el) el.innerHTML = '<div style="padding:20px;color:#F2EDE4;font-family:sans-serif"><h2 style="color:#C24E4E">Teknisk fejl</h2><p style="font-size:13px;line-height:1.6">' + msg + ' (linje ' + linje + ')</p><p style="font-size:12px;color:#5E7386">Tag et screenshot af denne besked og send til Claude — så bliver den rettet.</p></div>';
+};
+// ============ ENGINE-START ============
+// Beregner hele tennis-stillingen ud fra point-sekvensen.
+// pts: [{r:"V"|"T", å, f}] · oskarFirst: Oskar server først · mtb: 3. sæt = match-tiebreak til 10
+function beregnStilling(pts, oskarFirst, mtb) {
+  if (!Array.isArray(pts)) pts = [];
+  if (typeof oskarFirst !== "boolean") oskarFirst = true;
+  let setsO = 0, setsM = 0, gO = 0, gM = 0, pO = 0, pM = 0;
+  const hist = [];
+  let tb = false, tbTo = 7, tbFirst = null, server = oskarFirst;
+  let done = false, vinderOskar = null;
+  const flags = [];
+
+  const tbServer = (first, idx) => (Math.floor((idx + 1) / 2) % 2 === 0 ? first : !first);
+
+  for (const p of pts) {
+    if (done) { flags.push({ server, ekstra: true }); continue; }
+    const srvNu = tb ? tbServer(tbFirst, pO + pM) : server;
+
+    // Stort-point-analyse FØR bolden spilles
+    let stor = null;
+    if (tb) {
+      const sætEllerMatch = tbTo === 10 || (setsO === 1 && tbTo === 7) || (setsM === 1 && tbTo === 7);
+      if (pO >= tbTo - 1 && pO >= pM + 1) stor = (tbTo === 10 || setsO === 1) ? "MATCHBOLD Oskar" : "SÆTBOLD Oskar";
+      else if (pM >= tbTo - 1 && pM >= pO + 1) stor = (tbTo === 10 || setsM === 1) ? "MATCHBOLD mod Oskar" : "SÆTBOLD mod Oskar";
+      else if (pO === pM && pO >= tbTo - 2) stor = "STORT POINT";
+      void sætEllerMatch;
+    } else {
+      const gpO = pO >= 3 && pO >= pM + 1, gpM = pM >= 3 && pM >= pO + 1;
+      if (gpO) {
+        const vinderSæt = gO + 1 >= 6 && gO + 1 - gM >= 2;
+        stor = vinderSæt && setsO === 1 ? "MATCHBOLD Oskar" : vinderSæt ? "SÆTBOLD Oskar" : srvNu ? "PARTIBOLD Oskar" : "BREAKBOLD Oskar";
+      } else if (gpM) {
+        const vinderSæt = gM + 1 >= 6 && gM + 1 - gO >= 2;
+        stor = vinderSæt && setsM === 1 ? "MATCHBOLD mod Oskar" : vinderSæt ? "SÆTBOLD mod Oskar" : !srvNu ? "PARTIBOLD modst." : "BREAKBOLD mod Oskar";
+      } else if (pO === pM && pO >= 2) stor = "STORT POINT (deuce/30-30)";
+    }
+    flags.push({ server: srvNu, stor, tb });
+
+    // Spil bolden
+    if (p.r === "V") pO++; else pM++;
+
+    if (tb) {
+      if ((pO >= tbTo || pM >= tbTo) && Math.abs(pO - pM) >= 2) {
+        const oVandtTB = pO > pM;
+        if (tbTo === 10) { // match-tiebreak = hele 3. sæt
+          hist.push([oVandtTB ? 1 : 0, oVandtTB ? 0 : 1, `MTB ${pO}-${pM}`]);
+          if (oVandtTB) setsO++; else setsM++;
+        } else {
+          if (oVandtTB) gO++; else gM++;
+          hist.push([gO, gM, `TB ${pO}-${pM}`]);
+          if (oVandtTB) setsO++; else setsM++;
+        }
+        gO = 0; gM = 0; pO = 0; pM = 0;
+        server = !tbFirst; // modtageren i tiebreaken server først i næste sæt
+        tb = false; tbFirst = null; tbTo = 7;
+        if (setsO === 2 || setsM === 2) { done = true; vinderOskar = setsO === 2; }
+        else if (setsO === 1 && setsM === 1 && mtb) { tb = true; tbTo = 10; tbFirst = server; }
+      }
+    } else {
+      const partiVundet = (pO >= 4 || pM >= 4) && Math.abs(pO - pM) >= 2;
+      if (partiVundet) {
+        if (pO > pM) gO++; else gM++;
+        pO = 0; pM = 0; server = !server;
+        if (gO >= 6 && gO - gM >= 2 || gM >= 6 && gM - gO >= 2) {
+          hist.push([gO, gM, null]);
+          if (gO > gM) setsO++; else setsM++;
+          gO = 0; gM = 0;
+          if (setsO === 2 || setsM === 2) { done = true; vinderOskar = setsO === 2; }
+          else if (setsO === 1 && setsM === 1 && mtb) { tb = true; tbTo = 10; tbFirst = server; }
+        } else if (gO === 6 && gM === 6) { tb = true; tbTo = 7; tbFirst = server; }
+      }
+    }
+  }
+  const nextServer = tb ? tbServer(tbFirst, pO + pM) : server;
+  return { setsO, setsM, hist, gO, gM, pO, pM, tb, tbTo, server: nextServer, done, vinderOskar, flags };
+}
+// ============ ENGINE-SLUT ============
+
+// ---------- Data og tilstand ----------
+const PVIS = ["0","15","30","40"];
+const visPoint = (a,b) => (a>=3&&b>=3) ? (a===b?"Deuce":(a>b?"Fordel Oskar":"Fordel modst.")) : PVIS[Math.min(a,3)]+"-"+PVIS[Math.min(b,3)];
+
+const BUD = [
+  ["I","Tag bolden på vej op","Stå på eller inde i baglinjen. Tempoet kommer fra TIMING — at tage bolden tidligt — ikke fra at slå hårdere. Modstanderen skal føle, at tiden forsvinder."],
+  ["II","Dybde, ikke linjer","Sigt efter den bageste tredjedel med god luft over nettet. Sinners margin ligger i højden og rotationen — ikke i centimeter fra linjen. En dyb bold midt i banen er bedre end en flot bold i nettet."],
+  ["III","Cross er standard","Crossbolden er længere, går over nettets laveste punkt og lukker banen. Skift kun ned ad linjen, når den KORTE bold inviterer — aldrig fra defensiv."],
+  ["IV","De to første bolde skal IND","Hver duel starter med to bolde uden risiko: dyb serv/retur + dyb cross. Presset bygges op — det forceres ikke. Gratis fejl er modstanderens bedste ven."],
+  ["V","Samme ansigt ved 40-0 og 0-40","Ingen må kunne se, om han fører eller er bagud. Ryggen rank, blikket på strengene, samme tempo mellem boldene. Følelser vises efter kampen."],
+];
+const RUTINER = [
+  ["🧊","Mellembolds-rutinen (8 sek.)","1) Vend ryggen til nettet · 2) Blikket på strengene · 3) Én dyb vejrtrækning · 4) Nøgleordet: 'DYBT' eller 'TIDLIGT' · 5) Ind til baglinjen med beslutning truffet. Samme rutine efter vinderslag og dobbeltfejl — DET er pointen."],
+  ["🎯","Scoreboard-reglerne","30-30, deuce og breakbolde spilles ALTID med det højest procentuelle mønster: førsteserv på kroppen, dyb cross, vent på den korte. Appen viser selv, når et stort point er i gang."],
+  ["🔟","Tiebreak-protokollen","Match-tiebreaks er Oskars våben (10-5 og 10-8 ved UM!). Første to serve-point = bud IV. Ved sideskift: strenge + vejrtrækning, aldrig scoren. Tænk 'næste to point'."],
+  ["🔁","Efter-fejl-reglen","Én fejl = data, ikke drama. To ens fejl i træk = skift ét parameter. Tre i træk = nulstilling: næste duel 100 % procentuel."],
+  ["🗣","Før kampen","U14 = ingen coaching under kamp. Kampplanen laves dagen før, koges ned til TRE sætninger, og Oskar siger dem selv højt i opvarmningen."],
+];
+const GUIDE = [
+  ["1 · Start kampen","Skriv modstander og turnering, vælg hvem der server først, og om 3. sæt er match-tiebreak til 10 (DTF-standard). Tryk START KAMP."],
+  ["2 · Registrér serven","Appen viser selv, hvem der server. Fejles førsteserven: tryk '2. serv', inden bolden registreres."],
+  ["3 · Registrér bolden — to tryk","OSKAR VANDT eller TABT → vælg hvordan bolden endte. Scoreboardet regner selv partier, sæt, deuce, tiebreak og serveskift."],
+  ["4 · Fortryd og alarmer","FORTRYD ruller seneste registrering tilbage. Appen advarer ved store point og efter tre gratis fejl i træk."],
+  ["5 · Afslut og analysér","'Afslut & gem' → kampen lander i Historik. '📤 Eksportér til Claude' → kopiér teksten og send den til Nicolai/Claude for analyse."],
+  ["📲 Føj til hjemmeskærm","iPhone: Åbn filen i Safari → del-knappen → 'Føj til hjemmeskærm' — så ligger appen som ikon. Data gemmes lokalt på DENNE enhed; eksport-teksten i familiegruppen er jeres fælles database."],
+];
+const MODSTANDERE = [
+  ["Kevin Le Li [2]","412 ranglistepoint · slog Oskar 6-0, 6-0 ved UM","Ingen gratis point (bud IV), servér på kroppen, gør hver duel til minimum 4 bolde. Målet første gang: 3+ partier og dueller på egne præmisser."],
+  ["Emil Hays Thøgersen","To match-tiebreaks på én uge: 11-9 (EHT, double) og 10-8 (OSKAR, UM-finalen)","Jævnbyrdigt til stregen. Varier returpositionen og brug bud III — han knækker på lange cross-dueller."],
+  ["Zhenyu Leo Yuan","Nr. 12 på ranglisten","Udfyldes efter næste møde — send observationer til Claude."],
+];
+
+let S = {
+  tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null,
+  nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
+};
+const MEM = {};
+const lager = {
+  hent: (k) => { try { return window.localStorage.getItem(k); } catch (e) { return MEM[k] || null; } },
+  gem: (k, v) => { try { window.localStorage.setItem(k, v); } catch (e) { MEM[k] = v; } },
+  slet: (k) => { try { window.localStorage.removeItem(k); } catch (e) { delete MEM[k]; } },
+};
+const rensKamp = (g) => {
+  if (g && g.kamp) g = g.kamp; // v1-format
+  if (!g || !Array.isArray(g.point)) return null;
+  return { modstander: g.modstander || "Ukendt modstander", turnering: g.turnering || "",
+    dato: g.dato || new Date().toISOString().slice(0,10),
+    oskarFirst: typeof g.oskarFirst === "boolean" ? g.oskarFirst : true,
+    mtb: typeof g.mtb === "boolean" ? g.mtb : true, resultat: g.resultat || "",
+    point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1 })) };
+};
+try { const rå = JSON.parse(lager.hent("oskar-kampe") || "[]"); S.gemte = (Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean); } catch(e) {}
+try { const a = lager.hent("oskar-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.parse(a)); } catch(e) {}
+
+const gemAlle = () => lager.gem("oskar-kampe", JSON.stringify(S.gemte));
+const gemAktiv = () => { S.aktiv ? lager.gem("oskar-kamp-aktiv", JSON.stringify(S.aktiv)) : lager.slet("oskar-kamp-aktiv"); };
+
+// ---------- Statistik ----------
+function statistik(k) {
+  const st = beregnStilling(k.point, k.oskarFirst, k.mtb);
+  const F = st.flags;
+  const v = k.point.filter(p => p.r === "V").length;
+  const t = k.point.length - v;
+  const uf = k.point.filter(p => p.r === "T" && (p.å === "uf" || p.å === "dobbelt")).length;
+  const vindere = k.point.filter(p => p.r === "V" && (p.å === "vinder" || p.å === "es")).length;
+  const idxServe = k.point.map((p,i)=>i).filter(i => F[i] && F[i].server === true);
+  const oServe = idxServe.map(i => k.point[i]);
+  const retur = k.point.filter((p,i) => F[i] && F[i].server === false);
+  const oServe1 = oServe.filter(p => p.f === 1);
+  const oServe2 = oServe.filter(p => p.f === 2);
+  const bpFor = k.point.filter((p,i) => F[i] && F[i].stor && F[i].stor.indexOf("BREAKBOLD Oskar") === 0);
+  const bpMod = k.point.filter((p,i) => F[i] && F[i].stor && F[i].stor.indexOf("BREAKBOLD mod") === 0);
+  return { st, v, t, uf, vindere,
+    serve: [oServe.filter(p=>p.r==="V").length, oServe.length],
+    retur: [retur.filter(p=>p.r==="V").length, retur.length],
+    s1pct: oServe.length ? Math.round(oServe1.length / oServe.length * 100) : 0,
+    s1: [oServe1.filter(p=>p.r==="V").length, oServe1.length],
+    s2: [oServe2.filter(p=>p.r==="V").length, oServe2.length],
+    df: k.point.filter(p => p.r === "T" && p.å === "dobbelt").length,
+    bpFor: [bpFor.filter(p=>p.r==="V").length, bpFor.length],
+    bpMod: [bpMod.filter(p=>p.r==="V").length, bpMod.length] };
+}
+
+function lavEksport(k) {
+  const s = statistik(k);
+  return [
+    "KAMP: Oskar vs " + k.modstander + " · " + k.turnering + " · " + k.dato + " · resultat: " + (k.resultat || "?"),
+    "Point: " + s.v + "-" + s.t + " (" + k.point.length + " bolde) · Sæt: " + s.st.hist.map(h => h[2] ? h[0]+"-"+h[1]+" ("+h[2]+")" : h[0]+"-"+h[1]).join(", "),
+    "Oskars serv: " + s.serve[0] + "/" + s.serve[1] + " · 1. serv i spil: " + s.s1pct + " % · vundet på 1. serv: " + s.s1[0] + "/" + s.s1[1] + " · på 2. serv: " + s.s2[0] + "/" + s.s2[1] + " · dobbeltfejl: " + s.df,
+    "Retur: " + s.retur[0] + "/" + s.retur[1] + " · Breakbolde udnyttet: " + s.bpFor[0] + "/" + s.bpFor[1] + " · afværget: " + s.bpMod[0] + "/" + s.bpMod[1],
+    "Vindere+es: " + s.vindere + " · Gratis fejl (inkl. df): " + s.uf,
+    "Rå sekvens (V/T:årsag:serv): " + k.point.map(p => p.r + ":" + p.å + ":" + p.f).join(" "),
+    "(Oskar servede først: " + (k.oskarFirst ? "ja" : "nej") + " · 3. sæt = MTB: " + (k.mtb ? "ja" : "nej") + ")",
+  ].join("\n");
+}
+
+// ---------- Handlinger ----------
+const A = {
+  tab: (id) => { S.tab = id; render(); },
+  felt: (navn, v) => { S[navn] = v; },
+  first: (v) => { S.nyFirst = v === "1"; render(); },
+  mtb: (v) => { S.nyMtb = v === "1"; render(); },
+  start: () => {
+    S.aktiv = { modstander: S.nyMod || "Ukendt modstander", turnering: S.nyTur || "",
+      dato: new Date().toISOString().slice(0,10), oskarFirst: S.nyFirst, mtb: S.nyMtb, point: [] };
+    S.afventer = null; S.serv = 1; gemAktiv(); render();
+  },
+  serv: (v) => { S.serv = +v; render(); },
+  udfald: (v) => { S.afventer = v; render(); },
+  aarsag: (id) => {
+    if (!S.aktiv || !S.afventer) return;
+    S.aktiv.point.push({ r: S.afventer === "vundet" ? "V" : "T", å: id, f: S.serv });
+    S.afventer = null; S.serv = 1; gemAktiv(); render();
+  },
+  fortryd: () => {
+    if (!S.aktiv) return;
+    if (S.afventer) { S.afventer = null; render(); return; }
+    if (S.aktiv.point.length) { S.aktiv.point.pop(); S.serv = 1; gemAktiv(); }
+    render();
+  },
+  afslut: () => {
+    if (!S.aktiv) return;
+    const st = beregnStilling(S.aktiv.point, S.aktiv.oskarFirst, S.aktiv.mtb);
+    const auto = st.hist.map(h => h[2] && h[2].indexOf("MTB") === 0 ? h[2].replace("MTB ","") : h[0]+"-"+h[1]).join(", ");
+    S.aktiv.resultat = S.resInput || auto; S.aktiv.afsluttet = true;
+    S.gemte.unshift(S.aktiv); gemAlle();
+    S.aktiv = null; S.afventer = null; S.resInput = ""; gemAktiv();
+    S.tab = "historik"; render();
+  },
+  eksport: (i) => { S.eksport = lavEksport(S.gemte[+i]); render(); },
+};
+
+// ---------- Rendering ----------
+const esc = (t) => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function render() {
+  const el = document.getElementById("app");
+  let h = '<div class="hero"><div class="eyebrow">Grus &amp; Is</div><h1>Oskar Udvikling</h1><div class="sub">Højt tempo · bolden ind · hovedet koldt</div></div>';
+  h += '<div class="tabs">' + [["kamp","🎾 Kamp"],["guide","ℹ️ Guide"],["stil","🎯 Stil"],["rutiner","🧊 Rutiner"],["planer","🗒 Planer"],["historik","📓 Historik"]]
+    .map(([id,l]) => '<button class="' + (S.tab===id?"aktiv":"") + '" data-a="tab" data-v="'+id+'">'+l+'</button>').join("") + '</div>';
+
+  if (S.tab === "kamp") {
+    if (!S.aktiv) {
+      h += '<p style="font-size:13px;color:var(--daempet);line-height:1.6;margin-top:0">To tryk pr. bold — appen regner selv stillingen ud. Første gang? Læs <b style="color:var(--is)">ℹ️ Guide</b>.</p>';
+      h += '<input placeholder="Modstander (fx Le Li)" value="'+esc(S.nyMod)+'" data-felt="nyMod">';
+      h += '<input placeholder="Turnering (fx HRT Sommer Cup, kat. G)" value="'+esc(S.nyTur)+'" data-felt="nyTur">';
+      h += '<div class="raekke"><button class="knap valg '+(S.nyFirst?"til":"")+'" data-a="first" data-v="1">Oskar server først</button><button class="knap valg '+(!S.nyFirst?"til":"")+'" data-a="first" data-v="0">Modstander server først</button></div>';
+      h += '<div class="raekke"><button class="knap valg '+(S.nyMtb?"til":"")+'" data-a="mtb" data-v="1">3. sæt = match-tiebreak (10)</button><button class="knap valg '+(!S.nyMtb?"til":"")+'" data-a="mtb" data-v="0">Fuldt 3. sæt</button></div>';
+      h += '<div class="raekke"><button class="knap stor" style="background:var(--grus)" data-a="start">Start kamp</button></div>';
+    } else {
+      const s = statistik(S.aktiv), st = s.st;
+      const saetVis = st.hist.map(x => x[0]+"-"+x[1]).join("  ");
+      h += '<div class="kort scoreboard"><div style="display:flex;justify-content:space-between"><b style="font-size:14px">vs '+esc(S.aktiv.modstander)+'</b><span style="font-size:11px;color:var(--daempet)">'+esc(S.aktiv.turnering)+'</span></div>';
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><div><div style="font-size:11px;color:var(--daempet)">Sæt '+st.setsO+'-'+st.setsM+(saetVis?' · '+saetVis:'')+'</div>';
+      h += '<div class="score">' + (st.tb ? (st.tbTo===10?"Match-TB":"Tiebreak")+' <span style="color:var(--is)">'+st.pO+'-'+st.pM+'</span>'
+        : st.gO+'-'+st.gM+' <span style="color:var(--is);font-size:19px">· '+visPoint(st.pO,st.pM)+'</span>') + '</div></div>';
+      h += '<div style="text-align:right;font-size:12.5px;font-weight:700;color:'+(st.server?"var(--is)":"var(--daempet)")+'">'+(st.done?(st.vinderOskar?"🏆 KAMP VUNDET":"Kamp slut"):(st.server?"🎾 Oskar server":"↩️ Modstander server"))+'</div></div></div>';
+
+      if (!st.done) {
+        const naeste = beregnStilling(S.aktiv.point.concat([{r:"V",å:"x",f:1}]), S.aktiv.oskarFirst, S.aktiv.mtb).flags[S.aktiv.point.length];
+        if (naeste && naeste.stor) h += '<div class="banner guld">🎯 '+esc(naeste.stor)+' — procenttennis nu (bud IV: to bolde ind)</div>';
+      }
+
+      h += '<div class="kridtstreg"><div class="linje"></div><div class="prikker">' +
+        (S.aktiv.point.length ? S.aktiv.point.slice(-14).map(p => '<span class="prik" style="background:'+(p.r==="V"?"var(--vundet)":"var(--tabt)")+';margin-top:'+(p.r==="V"?0:10)+'px"></span>').join("")
+        : '<span style="font-size:11px;color:var(--kridt);opacity:.85">Kampens fodspor — vundne over stregen, tabte under</span>') + '</div></div>';
+
+      const sidste3 = S.aktiv.point.slice(-3);
+      if (sidste3.length === 3 && sidste3.every(p => p.r==="T" && (p.å==="uf"||p.å==="dobbelt")))
+        h += '<div class="banner is">🧊 <b>Tre gratis fejl i træk — nulstilling:</b> strenge → vejrtrækning → \'DYBT\'. Næste duel 100 % procentuel.</div>';
+
+      if (!st.done) {
+        h += '<div class="raekke"><button class="knap valg '+(S.serv===1?"til":"")+'" data-a="serv" data-v="1">1. serv</button><button class="knap valg '+(S.serv===2?"gul":"")+'" data-a="serv" data-v="2">2. serv (førsteserv fejlet)</button></div>';
+        if (!S.afventer) {
+          h += '<div class="raekke"><button class="knap stor" style="background:var(--vundet)" data-a="udfald" data-v="vundet">Oskar vandt</button><button class="knap stor" style="background:var(--tabt)" data-a="udfald" data-v="tabt">Tabt</button></div>';
+        } else {
+          const vundet = S.afventer === "vundet";
+          const liste = vundet
+            ? [["vinder","Vinderslag"],["es","Serve-es"],["mod_uf","Modst. gratis fejl"], st.server ? ["mod_tvunget","Modst. presset til fejl"] : ["mod_dobbelt","Modst. dobbeltfejl"]]
+            : [["uf","Oskar gratis fejl"],["tvunget","Oskar presset til fejl"],["mod_vinder","Modst. vinderslag"]].concat(st.server ? [["dobbelt","Dobbeltfejl"]] : []);
+          h += '<p class="lille">Hvordan endte bolden?</p><div class="raekke" style="flex-wrap:wrap">' +
+            liste.map(([id,l]) => '<button class="knap" style="flex:1 1 45%;padding:15px 6px;background:'+(vundet?"#2C5E3F":"#6E3535")+'" data-a="aarsag" data-v="'+id+'">'+l+'</button>').join("") + '</div>';
+        }
+      }
+      h += '<div class="raekke"><button class="knap" data-a="fortryd">↶ Fortryd seneste</button></div>';
+      h += '<div class="kort statlinje">Serve vundet: <b>'+s.serve[0]+'/'+s.serve[1]+'</b> · 1. serv i spil: <b>'+s.s1pct+' %</b> · Retur: <b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>Vindere: <b style="color:var(--vundet)">'+s.vindere+'</b> · Gratis fejl: <b style="color:'+(s.uf>s.vindere?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b> · Breakbolde: <b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b> udnyttet, <b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b> afværget</div>';
+      h += '<input placeholder="Resultat (udfyldes automatisk hvis tomt)" value="'+esc(S.resInput)+'" data-felt="resInput">';
+      h += '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="afslut">✔ Afslut &amp; gem kampen</button></div>';
+    }
+  }
+
+  if (S.tab === "guide") h += '<p class="lille">Sådan bruges appen fra sidelinjen — bygget til én tommelfinger og skarp sol.</p>' + GUIDE.map(g => '<div class="kort"><h3 style="color:var(--is)">'+esc(g[0])+'</h3><p>'+esc(g[1])+'</p></div>').join("");
+  if (S.tab === "stil") h += '<p class="lille">Sinner-modellen oversat til Oskar: Tempo fra timing og disciplin — ikke risiko.</p>' + BUD.map(b => '<div class="kort" style="display:flex;gap:12px"><div style="font-size:22px;font-weight:800;color:var(--gruslys);width:30px;text-align:center;flex-shrink:0">'+b[0]+'</div><div><h3 style="text-transform:uppercase;letter-spacing:.5px">'+esc(b[1])+'</h3><p>'+esc(b[2])+'</p></div></div>').join("");
+  if (S.tab === "rutiner") h += '<p class="lille">Coaching er forbudt i U14-kampe — det kolde hoved installeres FØR første serv.</p>' + RUTINER.map(r => '<div class="kort"><h3>'+r[0]+' '+esc(r[1])+'</h3><p>'+esc(r[2])+'</p></div>').join("");
+  if (S.tab === "planer") h += '<p class="lille">Kampplaner laves med Claude dagen før og koges ned til tre sætninger, Oskar selv siger højt.</p>' + MODSTANDERE.map(m => '<div class="kort" style="border-left:3px solid var(--grus)"><h3>'+esc(m[0])+'</h3><div style="font-size:11px;color:var(--is);margin:2px 0 5px">'+esc(m[1])+'</div><p>'+esc(m[2])+'</p></div>').join("");
+
+  if (S.tab === "historik") {
+    if (!S.gemte.length) h += '<p style="font-size:13px;color:var(--daempet)">Ingen gemte kampe endnu — den første registreres under 🎾 Kamp.</p>';
+    h += S.gemte.map((k,i) => {
+      const s = statistik(k);
+      return '<div class="kort"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><b style="font-size:13.5px">vs '+esc(k.modstander)+(k.resultat?' <span style="color:var(--is)">· '+esc(k.resultat)+'</span>':'')+'</b><span style="font-size:11px;color:var(--daempet)">'+esc(k.dato)+'</span></div>' +
+        '<p style="margin:4px 0 8px">'+(k.turnering?esc(k.turnering)+' · ':'')+'Point '+s.v+'-'+s.t+' · Serve '+s.serve[0]+'/'+s.serve[1]+' (1. serv '+s.s1pct+' %) · BP '+s.bpFor[0]+'/'+s.bpFor[1]+' · Vindere '+s.vindere+' · Gratis fejl '+s.uf+'</p>' +
+        '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px" data-a="eksport" data-v="'+i+'">📤 Eksportér til Claude</button></div>';
+    }).join("");
+    if (S.eksport) h += '<p class="lille" style="margin-top:10px">Markér, kopiér og send til Nicolai/Claude:</p><textarea readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>';
+  }
+
+  h += '<p class="fod">Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Version 2 · 11. jul 2026. Virker den ikke: åbn filen i Safari/Chrome (ikke i forhåndsvisning).</p>';
+  el.innerHTML = h;
+}
+
+document.getElementById("app").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-a]");
+  if (b) A[b.dataset.a](b.dataset.v);
+});
+document.getElementById("app").addEventListener("input", (e) => {
+  const f = e.target.dataset.felt;
+  if (f) S[f] = e.target.value;
+});
+render();
+</script>
+</body>
+</html>

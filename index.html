@@ -169,6 +169,56 @@ const MODSTANDERE = [
   ["Zhenyu Leo Yuan","Nr. 12 på ranglisten","Udfyldes efter næste møde — send observationer til Claude."],
 ];
 
+const BASELINE = {
+  grupper: [
+    ["Kat. G (Grand Prix)","5 turneringer: 4× kvartfinale (5/8), 1× 9/16","Bundsolid QF-maskine mod de bedste felter — men muren står ved kvartfinalen. Næste niveau: ÉN G-semifinale. Det er dét, Sinner-tempoet og de store point-rutiner skal knække."],
+    ["Kat. 1","10 turneringer: 🥇 1 SEJR (Sjællandsmesterskaberne ude!), 1 finale, 1× semi, 2× 5/8, 5× 9/16","Stor spredning — fra guld til tidlige exits. SM-guldet beviser toppen; de fem 9/16 viser, at dårlige dage koster dyrt. Rutinerne skal løfte bunden, ikke toppen."],
+    ["UM / kat. A","UM Inde 2026: 9/16 · UM Ude 2026: 9/16 i single + 🥇 MIXGULD","Solid A-niveau i single (10 pt begge gange) — og mixguldet viser, at det STORE kan vindes, når hovedet er koldt i afgørelserne."],
+  ],
+  kendteKampe: [
+    ["V","O. W. Lomholt [Q] · UM Ude, 1. runde","7-5, 6-2"],
+    ["T","Kevin Le Li [2] · UM Ude, 1/8","0-6, 0-6"],
+    ["T","Thøgersen/Yuan [4] (double) · UM, 1. rd.","5-7, 6-2, 9-11"],
+    ["V","Shave/Moadeli (mix) · UM, 1. runde","vundet"],
+    ["V","Midtgaard/Bogdanova [1] (mix) · UM, KF","7-5, 6-4"],
+    ["V","Tiedemann/Lynge Olsen [3] (mix) · UM, SF","2-6, 6-3, 10-5"],
+    ["V","Thøgersen/Kastoft (mix) · UM, FINALE 🥇","1-6, 6-2, 10-8"],
+  ],
+  noegletal: [
+    "Match-tiebreaks 2026 (kendte): 2-1 — begge sejre i UM-slutspillet, nederlaget med mindste margin (9-11)",
+    "Comeback-mønster: TRE UM-kampe vendt efter tabt 1. sæt — mentaliteten er et våben; nu skal 1. sæt-starterne med (bud IV fra første bold)",
+    "Mønster: 9/16-exits kommer i uge-turneringer, topresultater ved mesterskaber — Oskar spiller bedst, når det betyder mest",
+  ],
+};
+
+const SINGLE26 = [
+  ["UM Ude (kat. A)",28,"9/16 — slog Lomholt 7-5, 6-2; tabte 0-6, 0-6 til Le Li [2]","~10,0"],
+  ["AL Sydbank Furesø Open (kat. G)",27,"5/8","7,5"],
+  ["Head & Joma Cup (kat. 1)",26,"9/16","0"],
+  ["HVT Cup (kat. 1)",24,"9/16","0"],
+  ["SJÆLLANDSMESTERSKABERNE (kat. 1)",22,"🏆 VANDT — sæsonens titel!","10,0"],
+  ["Kystmesterskaberne (kat. 1)",20,"5/8","3,0"],
+  ["ØBG Silkeborg Cup (kat. G)",18,"5/8","7,5"],
+  ["Holte Open (kat. 1)",17,"3/4 (semifinale)","5,0"],
+  ["Tennis Øst HEAD Cup Slagelse (kat. 1)",15,"FINALE","7,0"],
+  ["UM Inde (kat. A)",14,"9/16","10,0"],
+  ["Tennis Øst HRT 7 (kat. G)",7,"5/8","7,5"],
+];
+const DOUBLE26 = [["UM Ude (m. Jepsen)",28,"1. runde: 5-7, 6-2, 9-11 mod Thøgersen/Yuan [4] — to bolde fra sejr","—"]];
+const MIX26 = [
+  ["UM Ude — FINALE (m. Jakobsen)",28,"🥇 GULD! 1-6, 6-2, 10-8 over Thøgersen/Kastoft","—"],
+  ["UM Ude — semifinale",28,"2-6, 6-3, 10-5 over Tiedemann/Lynge Olsen [3]","—"],
+  ["UM Ude — kvartfinale",28,"7-5, 6-4 over topseedede Midtgaard/Bogdanova [1]","—"],
+  ["UM Ude — 1. runde",28,"Sejr over Shave/Moadeli","—"],
+];
+const STAT26 = [
+  "🎯 Kat. G-mønsteret: 5/8 i ALLE tre G-turneringer — bundsolid mod de bedste felter. Næste niveau: G-kvartfinalen.",
+  "🏆 Kat. 1: SM-titlen + Slagelse-finalen + Holte-semifinalen — men også tre 9/16-exits: tidligt-i-turnering-niveauet er forbedringspunktet.",
+  "🔟 Match-tiebreaks 2026: 2-1 — de store point er allerede en styrke.",
+  "🥇 Mix: 4 kampe, 4 sejre, GULD — sejre over både 1.- og 3.-seedede og to matchvendinger. Comeback-DNA.",
+  "📊 UM-single: 9/16 både inde og ude — stabilt, men begge exits mod topseedede. Vejen forbi kræver våbnene fra Stil-fanen.",
+];
+
 let S = {
   tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
@@ -278,7 +328,7 @@ const esc = (t) => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">
 function render() {
   const el = document.getElementById("app");
   let h = '<div class="hero"><div class="eyebrow">Grus &amp; Is</div><h1>Oskar Udvikling</h1><div class="sub">Højt tempo · bolden ind · hovedet koldt</div></div>';
-  h += '<div class="tabs">' + [["kamp","🎾 Kamp"],["guide","ℹ️ Guide"],["stil","🎯 Stil"],["rutiner","🧊 Rutiner"],["planer","🗒 Planer"],["historik","📓 Historik"]]
+  h += '<div class="tabs">' + [["kamp","🎾 Kamp"],["guide","ℹ️ Guide"],["stil","🎯 Stil"],["rutiner","🧊 Rutiner"],["planer","🗒 Planer"],["historik","📓 Historik"],["s2026","📈 2026"]]
     .map(([id,l]) => '<button class="' + (S.tab===id?"aktiv":"") + '" data-a="tab" data-v="'+id+'">'+l+'</button>').join("") + '</div>';
 
   if (S.tab === "kamp") {
@@ -336,8 +386,22 @@ function render() {
   if (S.tab === "rutiner") h += '<p class="lille">Coaching er forbudt i U14-kampe — det kolde hoved installeres FØR første serv.</p>' + RUTINER.map(r => '<div class="kort"><h3>'+r[0]+' '+esc(r[1])+'</h3><p>'+esc(r[2])+'</p></div>').join("");
   if (S.tab === "planer") h += '<p class="lille">Kampplaner laves med Claude dagen før og koges ned til tre sætninger, Oskar selv siger højt.</p>' + MODSTANDERE.map(m => '<div class="kort" style="border-left:3px solid var(--grus)"><h3>'+esc(m[0])+'</h3><div style="font-size:11px;color:var(--is);margin:2px 0 5px">'+esc(m[1])+'</div><p>'+esc(m[2])+'</p></div>').join("");
 
+  if (S.tab === "s2026") {
+    h += '<p class="lille">Baseline før point-registreringen: 2026-resultater i kat. G/1, SM og UM (DTF-ranglisten uge 28 + UM-lodtrækningen). Delvist datagrundlag.</p>';
+    [["🎾 Single",SINGLE26],["👥 Double",DOUBLE26],["🤝 Mix",MIX26]].forEach(function(par){
+      h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">'+par[0]+'</h2>';
+      h += par[1].map(function(r){ return '<div class="kort" style="display:flex;gap:10px;align-items:baseline;padding:10px 13px"><span style="font-size:10.5px;color:var(--daempet);width:46px;flex-shrink:0">uge '+r[1]+'</span><div style="flex:1"><div style="font-weight:700;font-size:12.5px">'+esc(r[0])+'</div><p style="font-size:12px">'+esc(r[2])+'</p></div><span style="font-weight:800;font-size:12.5px;white-space:nowrap;color:'+(r[3]!=="0"&&r[3]!=="—"?"var(--guld)":"var(--daempet)")+'">'+r[3]+(r[3]!=="—"?" pt":"")+'</span></div>'; }).join("");
+    });
+    h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">Hvad tallene siger</h2>' + STAT26.map(function(x){ return '<div class="kort"><p>'+esc(x)+'</p></div>'; }).join("");
+  }
+
   if (S.tab === "historik") {
-    if (!S.gemte.length) h += '<p style="font-size:13px;color:var(--daempet)">Ingen gemte kampe endnu — den første registreres under 🎾 Kamp.</p>';
+    h += '<div class="kort" style="background:#121F2E;border:1.5px solid var(--kant)"><div style="font-weight:800;font-size:13.5px;color:var(--is);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📊 Baseline — før appen (rangliste uge 28 + UM)</div>' +
+      BASELINE.grupper.map(g => '<div style="margin-bottom:9px"><div style="font-weight:800;font-size:12.5px">'+esc(g[0])+' · <span style="color:var(--guld);font-weight:700">'+esc(g[1])+'</span></div><div style="font-size:12px;color:#B9C6D2;line-height:1.55">'+esc(g[2])+'</div></div>').join("") +
+      '<div style="font-weight:800;font-size:12px;color:var(--daempet);margin:10px 0 4px;text-transform:uppercase">Kendte kampe med score (UM-ugen)</div>' +
+      BASELINE.kendteKampe.map(k => '<div style="display:flex;gap:8px;font-size:11.5px;padding:3px 0;border-bottom:1px dashed #1E2E3F;align-items:baseline"><span style="color:'+(k[0]==="V"?"var(--vundet)":"var(--tabt)")+';font-weight:800;width:12px">'+k[0]+'</span><span style="flex:1">'+esc(k[1])+'</span><span style="font-weight:700;white-space:nowrap">'+esc(k[2])+'</span></div>').join("") +
+      '<div style="margin-top:8px">' + BASELINE.noegletal.map(n => '<div style="font-size:11.5px;color:#B9C6D2;line-height:1.55;margin-bottom:4px">• '+esc(n)+'</div>').join("") + '</div></div>';
+    if (!S.gemte.length) h += '<p style="font-size:13px;color:var(--daempet)">Nye kampe med point-for-point data registreres under 🎾 Kamp og lander her under baselinen.</p>';
     h += S.gemte.map((k,i) => {
       const s = statistik(k);
       return '<div class="kort"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><b style="font-size:13.5px">vs '+esc(k.modstander)+(k.resultat?' <span style="color:var(--is)">· '+esc(k.resultat)+'</span>':'')+'</b><span style="font-size:11px;color:var(--daempet)">'+esc(k.dato)+'</span></div>' +

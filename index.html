@@ -170,7 +170,7 @@ const MODSTANDERE = [
 ];
 
 let S = {
-  tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null,
+  tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -267,6 +267,9 @@ const A = {
     S.tab = "historik"; render();
   },
   eksport: (i) => { S.eksport = lavEksport(S.gemte[+i]); render(); },
+  sletSpoerg: (i) => { S.sletBekraeft = +i; render(); },
+  sletFortryd: () => { S.sletBekraeft = null; render(); },
+  slet: (i) => { S.gemte.splice(+i, 1); S.sletBekraeft = null; S.eksport = null; gemAlle(); render(); },
 };
 
 // ---------- Rendering ----------
@@ -339,7 +342,11 @@ function render() {
       const s = statistik(k);
       return '<div class="kort"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><b style="font-size:13.5px">vs '+esc(k.modstander)+(k.resultat?' <span style="color:var(--is)">· '+esc(k.resultat)+'</span>':'')+'</b><span style="font-size:11px;color:var(--daempet)">'+esc(k.dato)+'</span></div>' +
         '<p style="margin:4px 0 8px">'+(k.turnering?esc(k.turnering)+' · ':'')+'Point '+s.v+'-'+s.t+' · Serve '+s.serve[0]+'/'+s.serve[1]+' (1. serv '+s.s1pct+' %) · BP '+s.bpFor[0]+'/'+s.bpFor[1]+' · Vindere '+s.vindere+' · Gratis fejl '+s.uf+'</p>' +
-        '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px" data-a="eksport" data-v="'+i+'">📤 Eksportér til Claude</button></div>';
+        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px" data-a="eksport" data-v="'+i+'">📤 Eksportér til Claude</button>' +
+        (S.sletBekraeft === i
+          ? '<button class="knap" style="flex:none;padding:8px 14px;background:var(--tabt);font-size:12px" data-a="slet" data-v="'+i+'">Slet PERMANENT</button><button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet);font-size:12px" data-a="sletFortryd">Fortryd</button>'
+          : '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--tabt);color:var(--tabt);font-size:12px" data-a="sletSpoerg" data-v="'+i+'">🗑 Slet</button>') +
+        '</div></div>';
     }).join("");
     if (S.eksport) h += '<p class="lille" style="margin-top:10px">Markér, kopiér og send til Nicolai/Claude:</p><textarea readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>';
   }

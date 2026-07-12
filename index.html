@@ -403,8 +403,13 @@ const REGLER_EN = [
 ];
 const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved: "Aaric Tajhya (16th) with 74.4", foran: "Reinholdt E. B. Schultz (14th) with 123.3" };
 
+// ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
+const KODEHASH = 1187643301;
+const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
+const LAASTE_FANER = ["stil","rutiner","planer","historik","s2026","status","strategi","plan","regler"];
+
 let S = {
-  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da",
+  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -423,6 +428,7 @@ const rensKamp = (g) => {
     point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1 })) };
 };
 try { const sp = lager.hent("oskar-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
+try { if (lager.hent("oskar-laas") === "op") S.laast = false; } catch(e) {}
 try { const rå = JSON.parse(lager.hent("oskar-kampe") || "[]"); S.gemte = (Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean); } catch(e) {}
 try { const a = lager.hent("oskar-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.parse(a)); } catch(e) {}
 
@@ -473,6 +479,11 @@ const A = {
   tab: (id) => { S.tab = id; render(); },
   verden: (v) => { S.verden = v; S.tab = v === "udv" ? "kamp" : "status"; render(); },
   sprog: () => { S.sprog = S.sprog === "da" ? "en" : "da"; lager.gem("oskar-sprog", S.sprog); render(); },
+  laasOp: () => {
+    if (hashKode(S.kodeInput) === KODEHASH) { S.laast = false; S.kodeFejl = false; S.kodeInput = ""; lager.gem("oskar-laas", "op"); }
+    else { S.kodeFejl = true; }
+    render();
+  },
   felt: (navn, v) => { S[navn] = v; },
   first: (v) => { S.nyFirst = v === "1"; render(); },
   mtb: (v) => { S.nyMtb = v === "1"; render(); },
@@ -526,7 +537,17 @@ function render() {
           : [["kamp","🎾 Kamp"],["guide","ℹ️ Guide"],["stil","🎯 Stil"],["rutiner","🧊 Rutiner"],["planer","🗒 Planer"],["historik","📓 Historik"],["s2026","📈 2026"]])
     : (EN ? [["status","📊 Status"],["strategi","🎯 Strategy"],["plan","📅 Schedule"],["regler","§ Rules"]]
           : [["status","📊 Status"],["strategi","🎯 Strategi"],["plan","📅 Plan"],["regler","§ Regler"]]);
-  h += '<div class="tabs">' + FANER.map(([id,l]) => '<button class="' + (S.tab===id?"aktiv":"") + '" data-a="tab" data-v="'+id+'">'+l+'</button>').join("") + '</div>';
+  h += '<div class="tabs">' + FANER.map(([id,l]) => '<button class="' + (S.tab===id?"aktiv":"") + '" data-a="tab" data-v="'+id+'">'+(S.laast && LAASTE_FANER.indexOf(id)>=0 ? "🔒 " : "")+l+'</button>').join("") + '</div>';
+  const LAAST = S.laast && (LAASTE_FANER.indexOf(S.tab) >= 0);
+  if (LAAST) {
+    h += '<div class="kort" style="border:1.5px solid var(--guld);text-align:center;padding:22px 16px">' +
+      '<div style="font-size:30px">🔒</div>' +
+      '<h3 style="margin:8px 0 4px">'+(EN?"Team-only section":"Kun for Team Oskar")+'</h3>' +
+      '<p style="margin-bottom:12px">'+(EN?"Match recording and the guide are open to everyone. Plans, statistics and the season live behind the team password — enter it once on this device.":"Kampregistrering og guiden er åbne for alle. Planer, statistik og sæsonen ligger bag holdets kodeord — indtast det én gang på denne enhed.")+'</p>' +
+      '<input type="password" data-felt="kodeInput" placeholder="'+(EN?"Team password":"Holdets kodeord")+'" value="'+esc(S.kodeInput)+'" style="max-width:260px;margin:0 auto 8px;display:block;text-align:center">' +
+      (S.kodeFejl ? '<p style="color:var(--tabt);font-weight:700;font-size:12px;margin:0 0 8px">'+(EN?"Wrong password — try again":"Forkert kodeord — prøv igen")+'</p>' : '') +
+      '<button class="knap" style="background:var(--grus);max-width:260px;margin:0 auto;display:block" data-a="laasOp">'+(EN?"🔓 Unlock":"🔓 Lås op")+'</button></div>';
+  }
 
   if (S.tab === "kamp") {
     if (!S.aktiv) {
@@ -581,11 +602,11 @@ function render() {
   }
 
   if (S.tab === "guide") h += '<p class="lille">'+(EN?'How to use the app courtside — built for one thumb and bright sun.':'Sådan bruges appen fra sidelinjen — bygget til én tommelfinger og skarp sol.')+'</p>' + (EN?GUIDE_EN:GUIDE).map(g => '<div class="kort"><h3 style="color:var(--is)">'+esc(g[0])+'</h3><p>'+esc(g[1])+'</p></div>').join("");
-  if (S.tab === "stil") h += '<p class="lille">'+(EN?'The Sinner model translated for Oskar: pace from timing and discipline — not risk. Below: the left-handed weapon with two Nadal patterns.':'Sinner-modellen oversat til Oskar: Tempo fra timing og disciplin — ikke risiko. Nedenunder: venstrehåndsvåbnet med to Nadal-mønstre.')+'</p>' + (EN?BUD_EN:BUD).map(b => '<div class="kort" style="display:flex;gap:12px"><div style="font-size:22px;font-weight:800;color:var(--gruslys);width:30px;text-align:center;flex-shrink:0">'+b[0]+'</div><div><h3 style="text-transform:uppercase;letter-spacing:.5px">'+esc(b[1])+'</h3><p>'+esc(b[2])+'</p></div></div>').join("") + '<h2 style="font-size:15px;color:var(--is);margin:18px 0 8px;text-transform:uppercase;letter-spacing:1px">🤚 '+(EN?'The left-handed weapon — two Nadal patterns':'Venstrehåndsvåbnet — to Nadal-mønstre')+'</h2>' + (EN?NADAL_EN:NADAL).map(n => '<div class="kort" style="display:flex;gap:12px;border-left:3px solid var(--is)"><div style="font-size:20px;width:30px;text-align:center;flex-shrink:0">'+n[0]+'</div><div><h3 style="text-transform:uppercase;letter-spacing:.5px">'+esc(n[1])+'</h3><p>'+esc(n[2])+'</p></div></div>').join("");
-  if (S.tab === "rutiner") h += '<p class="lille">'+(EN?'Coaching is forbidden in U14 matches — the cool head is installed BEFORE the first serve.':'Coaching er forbudt i U14-kampe — det kolde hoved installeres FØR første serv.')+'</p>' + (EN?RUTINER_EN:RUTINER).map(r => '<div class="kort"><h3>'+r[0]+' '+esc(r[1])+'</h3><p>'+esc(r[2])+'</p></div>').join("");
-  if (S.tab === "planer") h += '<p class="lille">'+(EN?'Match plans are made with Claude the day before and boiled down to three sentences Oskar says out loud himself.':'Kampplaner laves med Claude dagen før og koges ned til tre sætninger, Oskar selv siger højt.')+'</p>' + (EN?MODSTANDERE_EN:MODSTANDERE).map(m => '<div class="kort" style="border-left:3px solid var(--grus)"><h3>'+esc(m[0])+'</h3><div style="font-size:11px;color:var(--is);margin:2px 0 5px">'+esc(m[1])+'</div><p>'+esc(m[2])+'</p></div>').join("");
+  if (!LAAST && S.tab === "stil") h += '<p class="lille">'+(EN?'The Sinner model translated for Oskar: pace from timing and discipline — not risk. Below: the left-handed weapon with two Nadal patterns.':'Sinner-modellen oversat til Oskar: Tempo fra timing og disciplin — ikke risiko. Nedenunder: venstrehåndsvåbnet med to Nadal-mønstre.')+'</p>' + (EN?BUD_EN:BUD).map(b => '<div class="kort" style="display:flex;gap:12px"><div style="font-size:22px;font-weight:800;color:var(--gruslys);width:30px;text-align:center;flex-shrink:0">'+b[0]+'</div><div><h3 style="text-transform:uppercase;letter-spacing:.5px">'+esc(b[1])+'</h3><p>'+esc(b[2])+'</p></div></div>').join("") + '<h2 style="font-size:15px;color:var(--is);margin:18px 0 8px;text-transform:uppercase;letter-spacing:1px">🤚 '+(EN?'The left-handed weapon — two Nadal patterns':'Venstrehåndsvåbnet — to Nadal-mønstre')+'</h2>' + (EN?NADAL_EN:NADAL).map(n => '<div class="kort" style="display:flex;gap:12px;border-left:3px solid var(--is)"><div style="font-size:20px;width:30px;text-align:center;flex-shrink:0">'+n[0]+'</div><div><h3 style="text-transform:uppercase;letter-spacing:.5px">'+esc(n[1])+'</h3><p>'+esc(n[2])+'</p></div></div>').join("");
+  if (!LAAST && S.tab === "rutiner") h += '<p class="lille">'+(EN?'Coaching is forbidden in U14 matches — the cool head is installed BEFORE the first serve.':'Coaching er forbudt i U14-kampe — det kolde hoved installeres FØR første serv.')+'</p>' + (EN?RUTINER_EN:RUTINER).map(r => '<div class="kort"><h3>'+r[0]+' '+esc(r[1])+'</h3><p>'+esc(r[2])+'</p></div>').join("");
+  if (!LAAST && S.tab === "planer") h += '<p class="lille">'+(EN?'Match plans are made with Claude the day before and boiled down to three sentences Oskar says out loud himself.':'Kampplaner laves med Claude dagen før og koges ned til tre sætninger, Oskar selv siger højt.')+'</p>' + (EN?MODSTANDERE_EN:MODSTANDERE).map(m => '<div class="kort" style="border-left:3px solid var(--grus)"><h3>'+esc(m[0])+'</h3><div style="font-size:11px;color:var(--is);margin:2px 0 5px">'+esc(m[1])+'</div><p>'+esc(m[2])+'</p></div>').join("");
 
-  if (S.tab === "s2026") {
+  if (!LAAST && S.tab === "s2026") {
     h += '<p class="lille">'+(EN?'Baseline before point tracking: 2026 results in Cat. G/1, regionals and Nationals (partial data).':'Baseline før point-registreringen: 2026-resultater i kat. G/1, SM og UM (DTF-ranglisten uge 28 + UM-lodtrækningen). Delvist datagrundlag.')+'</p>';
     (EN?[["🎾 Singles",SINGLE26_EN],["👥 Doubles",DOUBLE26_EN],["🤝 Mixed",MIX26_EN]]:[["🎾 Single",SINGLE26],["👥 Double",DOUBLE26],["🤝 Mix",MIX26]]).forEach(function(par){
       h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">'+par[0]+'</h2>';
@@ -594,7 +615,7 @@ function render() {
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">'+(EN?'What the numbers say':'Hvad tallene siger')+'</h2>' + (EN?STAT26_EN:STAT26).map(function(x){ return '<div class="kort"><p>'+esc(x)+'</p></div>'; }).join("");
   }
 
-  if (S.tab === "historik") {
+  if (!LAAST && S.tab === "historik") {
     h += '<div class="kort" style="background:#121F2E;border:1.5px solid var(--kant)"><div style="font-weight:800;font-size:13.5px;color:var(--is);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📊 Baseline — før appen (rangliste uge 28 + UM)</div>' +
       BASELINE.grupper.map(g => '<div style="margin-bottom:9px"><div style="font-weight:800;font-size:12.5px">'+esc(g[0])+' · <span style="color:var(--guld);font-weight:700">'+esc(g[1])+'</span></div><div style="font-size:12px;color:#B9C6D2;line-height:1.55">'+esc(g[2])+'</div></div>').join("") +
       '<div style="font-weight:800;font-size:12px;color:var(--daempet);margin:10px 0 4px;text-transform:uppercase">Kendte kampe med score (UM-ugen)</div>' +
@@ -620,7 +641,7 @@ function render() {
     if (S.eksport) h += '<p class="lille" style="margin-top:10px">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>';
   }
 
-  if (S.tab === "status") {
+  if (!LAAST && S.tab === "status") {
     h += '<div class="raekke"><div class="kort" style="flex:1;text-align:center;margin-bottom:0"><div style="font-size:26px;font-weight:800;color:var(--guld)">'+PROFIL.u14rang+'.</div><div style="font-size:11px;color:var(--daempet)">'+(EN?"U14 Boys (of ":"U14 Drenge (af ")+PROFIL.u14af+')</div><div style="font-weight:700;margin-top:2px">'+PROFIL.u14pt+' pt</div></div>' +
          '<div class="kort" style="flex:1;text-align:center;margin-bottom:0"><div style="font-size:26px;font-weight:800">'+PROFIL.seniorrang+'.</div><div style="font-size:11px;color:var(--daempet)">'+(EN?"Senior ranking":"Seniorranglisten")+'</div><div style="font-weight:700;margin-top:2px">WTN '+PROFIL.wtn+'</div></div></div>';
     h += '<p class="lille" style="margin:8px 0 12px">'+(EN?PROFIL_EN.fordeling:PROFIL.fordeling)+(EN?". Behind: ":". Bagved: ")+(EN?PROFIL_EN.bagved:PROFIL.bagved)+(EN?" pts. Ahead: ":" pt. Foran: ")+(EN?PROFIL_EN.foran:PROFIL.foran)+(EN?" pts.":" pt.")+'</p>';
@@ -628,16 +649,16 @@ function render() {
     h += (EN?TAELLENDE_EN:TAELLENDE).map(function(t,i){ return '<div class="kort" style="display:flex;gap:10px;align-items:center;padding:8px 12px;border-left:3px solid '+(t[3]?"var(--tabt)":"transparent")+'"><span style="font-weight:800;color:var(--daempet);width:22px;font-size:12px">'+(i+1)+'.</span><div style="flex:1"><div style="font-size:12.5px;font-weight:600">'+esc(t[0])+'</div><div style="font-size:10.5px;color:'+(t[3]?"var(--tabt)":"var(--daempet)")+'">'+(t[3]?(EN?"⏳ expires ":"⏳ udløber "):(EN?"Expires ":"Udløber "))+esc(t[2])+'</div></div><span style="font-weight:800;font-size:13.5px;color:var(--guld)">'+t[1]+'</span></div>'; }).join("");
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">'+(EN?"Insights":"Indsigter")+'</h2>' + (EN?INDSIGTER_EN:INDSIGTER).map(function(x){ return '<div class="kort"><p>'+esc(x)+'</p></div>'; }).join("");
   }
-  if (S.tab === "strategi") {
+  if (!LAAST && S.tab === "strategi") {
     h += '<p class="lille">'+(EN?"Six principles from the Danish federation\'s points rules — the foundation of the season plan.":"Seks principper fra DTF\'s pointregler — fundamentet under sæsonplanen.")+'</p>' + (EN?STRATEGI_EN:STRATEGI).map(function(r){ return '<div class="kort"><h3>'+r[0]+' '+esc(r[1])+'</h3><p>'+esc(r[2])+'</p></div>'; }).join("") +
          '<p class="lille">'+(EN?'Point scenarios ("what does a Cat. G quarterfinal move?") are computed in the chat with Claude.':'Point-scenarier ("hvad flytter en G-kvartfinale?") regnes i chatten med Claude.')+'</p>';
   }
-  if (S.tab === "plan") {
+  if (!LAAST && S.tab === "plan") {
     h += '<p class="lille">'+(EN?"✅ ENTERED = confirmed · ★ = top priority · 🚨 = cliff cover, must play.":"✅ TILMELDT = bekræftet · ★ = hovedprioritet · 🚨 = klippe-dækning, skal spilles.")+'</p>' + (EN?PLAN_EN:PLAN).map(function(u){
       var farve = (u[2].indexOf("TILMELDT")>=0||u[2].indexOf("ENTERED")>=0) ? "var(--vundet)" : (u[2].indexOf("SKAL")>=0||u[2].indexOf("MUST")>=0) ? "var(--tabt)" : u[2].indexOf("★")>=0 ? "var(--guld)" : "var(--kant)";
       return '<div class="kort" style="border-left:3px solid '+farve+'"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b style="font-size:12.5px">'+esc(u[0])+'</b><span style="font-size:11px;font-weight:700;color:'+farve+'">'+esc(u[2])+'</span></div><div style="font-size:12.5px;font-weight:600;margin:2px 0">'+esc(u[1])+'</div><p style="font-size:11.5px">'+esc(u[3])+'</p></div>'; }).join("");
   }
-  if (S.tab === "regler") {
+  if (!LAAST && S.tab === "regler") {
     h += (EN?REGLER_EN:REGLER).map(function(r){ return '<div style="display:flex;gap:8px;margin-bottom:9px;font-size:12.5px;line-height:1.6;color:#B9C6D2"><span style="color:var(--gruslys);font-weight:800">§</span><span>'+esc(r)+'</span></div>'; }).join("") +
          '<a href="https://tennis.dk/spiller/ranglister/" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 '+(EN?"Oskar\'s current DTF ranking":"Oskars aktuelle rangliste hos DTF")+'</a>';
   }

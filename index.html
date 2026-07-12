@@ -219,8 +219,71 @@ const STAT26 = [
   "📊 UM-single: 9/16 både inde og ude — stabilt, men begge exits mod topseedede. Vejen forbi kræver våbnene fra Stil-fanen.",
 ];
 
+const PROFIL = { u14rang: 15, u14af: 191, u14pt: "81,5", seniorrang: 368, wtn: "29,6",
+  fordeling: "73,50 individuelt + 6,00 hold + 2,00 TE", bagved: "Aaric Tajhya (16.) med 74,4", foran: "Reinholdt E. B. Schultz (14.) med 123,3" };
+const TAELLENDE = [
+  ["Sjællandsmesterskaberne ude 2026 — VANDT kat. 1!","10,0","2027-22",false],
+  ["UM Inde 2026 (9/16)","10,0","2027-14",false],
+  ["UM Ude 2026 — 9/16 (afventer bogføring)","~10,0","2027-28",false],
+  ["AL Sydbank Furesø Open (kat. G, 5/8)","7,5","2027-27",false],
+  ["ØBG Silkeborg Cup (kat. G, 5/8)","7,5","2027-18",false],
+  ["Tennis Øst HRT 7 (kat. G, 5/8)","7,5","2027-7",false],
+  ["Kolding Grand Prix (kat. G, 5/8)","7,5","uge 42 · 2026",true],
+  ["Tennis Øst HEAD Cup Slagelse (kat. 1, finale)","7,0","2027-15",false],
+  ["Holte Open (kat. 1, 3/4)","5,0","2027-17",false],
+  ["Hillerød Cup 43 (kat. 2, VUNDET)","4,0","uge 43 · 2026",true],
+];
+const INDSIGTER = [
+  "✅ Klippe nr. 1 er DÆKKET: UM Ude 2026 gav 9/16 — de udløbne 7,5 fra UM 2025 erstattes med gevinst. Tilbage: Kolding GP (uge 42) og Hillerød (uge 43) — uge 39-42 SKAL have stærke turneringer.",
+  "📊 Kat. 2 er LUKKET: 2026-reglerne udelukker top 15, og Oskar ER nr. 15. Fremadrettet: kat. G, A og 1 (plus U16/senior).",
+  "🌍 TE-sporet er gratis bonuspoint oveni de 10 tællende. TE Copenhagen (19.-27. sep) spilles hos B.93: hjemmebane!",
+  "💎 Kat. G er pointmaskinen: fire tællende G-5/8 (7,5 pt stykket). Næste niveau: ÉN runde mere.",
+  "🧗 Terrænet: Tajhya (16.) 7 pt bagved — top 15 forsvares. 14.-pladsen kræver ~123 pt. Sæsonmål: 95-110 pt.",
+  "🎾 Senior: kat. 3 LUKKET for Oskar, kat. 2 ÅBEN — sejrspoint fra pointtunge voksne venter dér.",
+  "2️⃣ Senior GP-tricket: GP-terminer tillader TO rækker (senior + junior) — systemets eneste dobbelttermin.",
+  "✂️ 26 turneringer på 52 uger — 16 gav 0-4 pt. Færre, bedre valgte starter.",
+];
+const STRATEGI = [
+  ["🎯","1. Kun dine 10 bedste turneringer tæller","Ranglistesummen = de 10 individuelle turneringer med flest point inden for 52 uger (+ hold oveni). Hver ny turnering skal sigte efter at SLÅ det svageste tællende resultat — ellers flytter den intet. Kvalitet over kvantitet."],
+  ["⬆️","2. Spil den højeste kategori, du kan komme ind i","Rundepoint skalerer: G og A giver mest, derefter 1 > 2 > 3. En KF i kat. 1 kan slå en SEJR i kat. 3. Grundstamme: kat. 1 + alle A-turneringer."],
+  ["💪","3. Seniorturneringer = sejrspoint-maskinen","Ved sejr får man en %-del af TABERENS point — og seniorer har mange. Én sejr over en etableret senior kan slå en hel juniorturnering. Bonus: kamptræning mod mænds tempo."],
+  ["🪜","4. U16-rækken er en gratis mellemvej","Ældre rækker giver rundepoint som EGEN aldersgruppe i samme kategori — mod stærkere felter med flere sejrspoint. Og fra U16: coaching tilladt udendørs!"],
+  ["⏳","5. Dæk dine point-klipper (52-ugers-reglen)","Alle point udløber efter 52 uger. Læg turneringer 2-3 uger FØR hver klippe. Aktuelt: Kolding GP (uge 42) og Hillerød (uge 43)."],
+  ["🗓","6. Én turnering pr. termin — planlæg terminerne","Kun ÉN turnering pr. termin. U14 kat. 1 i terminerne, hvor de findes; tomme terminer til senior/U16. Indendørs udtages efter rangliste — sensommerens point er billetten."],
+];
+const PLAN = [
+  ["Uge 29-30","Hvile + træningsblok (Sinner-budene + wide-serven)","Planlagt pause","Restitution og våbentræning. Ingen udløb truer — der tabes intet ved at hvile.","-"],
+  ["Uge 31 · 30/7-2/8","HRT Sommer Cup — U14 HS Kat. G (Rungsted)","✅ TILMELDT","EV ~7-8 pt ved vanligt 5/8-niveau — en KF løfter direkte. Kun kat. G for U14-drenge: skarpt felt.","1"],
+  ["Uge 32 · 3-8/8","🌍 HRT TE U14 (TE kat. 3, grus)","✅ TILMELDT","TE-point = ren bonus. Acceptliste 13/7 kl. 17. OBS: op til 10 kampdage i træk — belastningsstyring!","TE"],
+  ["9/8 + 16/8","DTF Juniorhold 4.-5. runde (B.93)","Holdkampe","Holdpoint oveni, koster ingen termin. Seniorholdrunder 8/8, 15/8, 22/8 giver også.","H"],
+  ["Uge 33","U14 kat. G eller 1 (øst)","GRUNDSTAMME","EV ~7-8 pt. Navn vælges, når kalenderens augustsider bekræftes.","1"],
+  ["Uge 34","Senior kat. 2 ELLER U16 kat. 1","Sejrspoint-uge","Voksne (sejrspoint) eller ældre juniorer (stærkere felt).","S2"],
+  ["Uge 35 · 29-30/8","⚠️ KONFLIKT: Holdmedaljespil vs TE Birkerød-start","Beslutning kræves","Kvalificerer B.93 sig, vinder holdet. Direkte TE-hovedfelt (start 31/8) = begge kan nås.","H"],
+  ["Uge 35-36","🌍 TE 14 Birkerød","ANBEFALET","TE nr. 2 på august-formen.","TE"],
+  ["Uge 37","U14 kat. G eller 1 (øst)","GRUNDSTAMME","Sidste G/1 før TE Copenhagen.","1"],
+  ["🏠 Uge 38-39 · 19-27/9","🌍 TE 14 COPENHAGEN — HOS B.93!","★ HOVEDPRIORITET","Hjemmebane-TE: point præcis før klipperne. Årets bedste risk/reward uden for UM.","TE"],
+  ["Uge 40","U14 kat. G/1 — KLIPPE-DÆKNING 1","🚨 SKAL spilles","Kolding GP (7,5) udløber uge 42. Et G-5/8 neutraliserer tabet.","1"],
+  ["Uge 41-42","U16 kat. 1 / senior kat. 2 — KLIPPE-DÆKNING 2","🚨 SKAL spilles","Hillerød (4,0) ryger uge 43. Barren er lav.","S2"],
+  ["Uge 43+","Vinter Tour indendørs kat. 1 + holdrunder","Planlægges","Udtagelse efter rangliste — sensommerens point ER billetten.","1"],
+  ["Uge 47-48 · 16-29/11","🏆 UNIONSMESTERSKABERNE INDE","★ STOR CHANCE","SM ude blev vundet — inde er samme pointklasse.","A"],
+  ["Vinter","UM Inde 2027 (kat. A)","Sæsonens andet A-anker","10,0 pt fra UM Inde 2026 forsvares (udløber uge 14-2027).","A"],
+];
+const REGLER = [
+  "Point = RUNDEPOINT (skalerer med kategori) + SEJRSPOINT (%-del af taberens point).",
+  "Ranglistesummen = de 10 bedste individuelle turneringer på 52 uger + hold + TE/ITF oveni.",
+  "Alle point bortfalder efter 52 uger.",
+  "Rundepoint kræver mindst én vundet, påbegyndt kamp (walkover tæller ikke).",
+  "U14-spillere står automatisk på seniorranglisten — sejrspoint fra voksne er værdifulde.",
+  "Ældre juniorrækker giver rundepoint som egen aldersgruppe (undtagen senior A/G).",
+  "Kat. 2 junior: top 15 udelukket (Oskar ER 15). Senior kat. 3: lukket for øverste 1/3 juniorer; senior kat. 2 åben.",
+  "Sommer Tour-doubler tæller IKKE til ranglisten (kun WTN) — UM/DM er undtagelsen.",
+  "Coaching 2026: tilladt udendørs U16+/senior — stadig FORBUDT i U14.",
+  "Kun ÉN turnering pr. termin. Afbud senest 3 dage før, ellers pointfradrag.",
+  "Indendørs udtages efter rangliste — sensommerens point er adgangsbilletten.",
+];
+
 let S = {
-  tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "",
+  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "",
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -286,6 +349,7 @@ function lavEksport(k) {
 // ---------- Handlinger ----------
 const A = {
   tab: (id) => { S.tab = id; render(); },
+  verden: (v) => { S.verden = v; S.tab = v === "udv" ? "kamp" : "status"; render(); },
   felt: (navn, v) => { S[navn] = v; },
   first: (v) => { S.nyFirst = v === "1"; render(); },
   mtb: (v) => { S.nyMtb = v === "1"; render(); },
@@ -330,9 +394,12 @@ const esc = (t) => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">
 
 function render() {
   const el = document.getElementById("app");
-  let h = '<div class="hero"><div class="eyebrow">Grus &amp; Is</div><h1>Oskar Udvikling</h1><div class="sub">Højt tempo · bolden ind · hovedet koldt</div></div>';
-  h += '<div class="tabs">' + [["kamp","🎾 Kamp"],["guide","ℹ️ Guide"],["stil","🎯 Stil"],["rutiner","🧊 Rutiner"],["planer","🗒 Planer"],["historik","📓 Historik"],["s2026","📈 2026"]]
-    .map(([id,l]) => '<button class="' + (S.tab===id?"aktiv":"") + '" data-a="tab" data-v="'+id+'">'+l+'</button>').join("") + '</div>';
+  let h = '<div class="hero"><div class="eyebrow">Grus &amp; Is</div><h1>Team Oskar</h1><div class="sub">Højt tempo · bolden ind · hovedet koldt</div></div>';
+  h += '<div class="raekke"><button class="knap" style="background:'+(S.verden==="udv"?"var(--grus)":"var(--kort)")+';color:'+(S.verden==="udv"?"var(--kridt)":"var(--daempet)")+'" data-a="verden" data-v="udv">🎾 UDVIKLING</button><button class="knap" style="background:'+(S.verden==="saeson"?"var(--grus)":"var(--kort)")+';color:'+(S.verden==="saeson"?"var(--kridt)":"var(--daempet)")+'" data-a="verden" data-v="saeson">📅 SÆSON</button></div>';
+  const FANER = S.verden === "udv"
+    ? [["kamp","🎾 Kamp"],["guide","ℹ️ Guide"],["stil","🎯 Stil"],["rutiner","🧊 Rutiner"],["planer","🗒 Planer"],["historik","📓 Historik"],["s2026","📈 2026"]]
+    : [["status","📊 Status"],["strategi","🎯 Strategi"],["plan","📅 Plan"],["regler","§ Regler"]];
+  h += '<div class="tabs">' + FANER.map(([id,l]) => '<button class="' + (S.tab===id?"aktiv":"") + '" data-a="tab" data-v="'+id+'">'+l+'</button>').join("") + '</div>';
 
   if (S.tab === "kamp") {
     if (!S.aktiv) {
@@ -422,6 +489,28 @@ function render() {
       h += '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="analyseGem" data-v="'+S.redigerA+'">💾 Gem analysen på kampen</button><button class="knap" data-a="analyseAnnuller">Annullér</button></div>';
     }
     if (S.eksport) h += '<p class="lille" style="margin-top:10px">Markér, kopiér og send til Nicolai/Claude:</p><textarea readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>';
+  }
+
+  if (S.tab === "status") {
+    h += '<div class="raekke"><div class="kort" style="flex:1;text-align:center;margin-bottom:0"><div style="font-size:26px;font-weight:800;color:var(--guld)">'+PROFIL.u14rang+'.</div><div style="font-size:11px;color:var(--daempet)">U14 Drenge (af '+PROFIL.u14af+')</div><div style="font-weight:700;margin-top:2px">'+PROFIL.u14pt+' pt</div></div>' +
+         '<div class="kort" style="flex:1;text-align:center;margin-bottom:0"><div style="font-size:26px;font-weight:800">'+PROFIL.seniorrang+'.</div><div style="font-size:11px;color:var(--daempet)">Seniorranglisten</div><div style="font-weight:700;margin-top:2px">WTN '+PROFIL.wtn+'</div></div></div>';
+    h += '<p class="lille" style="margin:8px 0 12px">'+PROFIL.fordeling+'. Bagved: '+PROFIL.bagved+' pt. Foran: '+PROFIL.foran+' pt.</p>';
+    h += '<h2 style="font-size:15px;color:var(--is);margin:0 0 8px;text-transform:uppercase;letter-spacing:1px">De 10 tællende resultater</h2>';
+    h += TAELLENDE.map(function(t,i){ return '<div class="kort" style="display:flex;gap:10px;align-items:center;padding:8px 12px;border-left:3px solid '+(t[3]?"var(--tabt)":"transparent")+'"><span style="font-weight:800;color:var(--daempet);width:22px;font-size:12px">'+(i+1)+'.</span><div style="flex:1"><div style="font-size:12.5px;font-weight:600">'+esc(t[0])+'</div><div style="font-size:10.5px;color:'+(t[3]?"var(--tabt)":"var(--daempet)")+'">'+(t[3]?"⏳ udløber ":"Udløber ")+esc(t[2])+'</div></div><span style="font-weight:800;font-size:13.5px;color:var(--guld)">'+t[1]+'</span></div>'; }).join("");
+    h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">Indsigter</h2>' + INDSIGTER.map(function(x){ return '<div class="kort"><p>'+esc(x)+'</p></div>'; }).join("");
+  }
+  if (S.tab === "strategi") {
+    h += '<p class="lille">Seks principper fra DTF\'s pointregler — fundamentet under sæsonplanen.</p>' + STRATEGI.map(function(r){ return '<div class="kort"><h3>'+r[0]+' '+esc(r[1])+'</h3><p>'+esc(r[2])+'</p></div>'; }).join("") +
+         '<p class="lille">Point-scenarier ("hvad flytter en G-kvartfinale?") regnes i chatten med Claude.</p>';
+  }
+  if (S.tab === "plan") {
+    h += '<p class="lille">✅ TILMELDT = bekræftet · ★ = hovedprioritet · 🚨 = klippe-dækning, skal spilles.</p>' + PLAN.map(function(u){
+      var farve = u[2].indexOf("TILMELDT")>=0 ? "var(--vundet)" : u[2].indexOf("SKAL")>=0 ? "var(--tabt)" : u[2].indexOf("★")>=0 ? "var(--guld)" : "var(--kant)";
+      return '<div class="kort" style="border-left:3px solid '+farve+'"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b style="font-size:12.5px">'+esc(u[0])+'</b><span style="font-size:11px;font-weight:700;color:'+farve+'">'+esc(u[2])+'</span></div><div style="font-size:12.5px;font-weight:600;margin:2px 0">'+esc(u[1])+'</div><p style="font-size:11.5px">'+esc(u[3])+'</p></div>'; }).join("");
+  }
+  if (S.tab === "regler") {
+    h += REGLER.map(function(r){ return '<div style="display:flex;gap:8px;margin-bottom:9px;font-size:12.5px;line-height:1.6;color:#B9C6D2"><span style="color:var(--gruslys);font-weight:800">§</span><span>'+esc(r)+'</span></div>'; }).join("") +
+         '<a href="https://tennis.dk/spiller/ranglister/" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 Oskars aktuelle rangliste hos DTF</a>';
   }
 
   h += '<p class="fod">Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Version 2 · 11. jul 2026. Virker den ikke: åbn filen i Safari/Chrome (ikke i forhåndsvisning).</p>';

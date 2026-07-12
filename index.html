@@ -427,7 +427,7 @@ const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h =
 const LAASTE_FANER = ["stil","rutiner","planer","historik","s2026","status","strategi","plan","regler"];
 
 let S = {
-  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null,
+  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -447,6 +447,7 @@ const rensKamp = (g) => {
 };
 try { const sp = lager.hent("oskar-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
 try { if (lager.hent("oskar-laas") === "op") S.laast = false; } catch(e) {}
+try { if (lager.hent("oskar-tryk") === "2") S.tryk3 = false; } catch(e) {}
 try { const rå = JSON.parse(lager.hent("oskar-kampe") || "[]"); S.gemte = (Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean); } catch(e) {}
 try { const a = lager.hent("oskar-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.parse(a)); } catch(e) {}
 
@@ -513,6 +514,7 @@ const A = {
     S.j[felt] = Math.max(0, Math.min(loft, (S.j[felt] | 0) + op)); render();
   },
   jServer: (v) => { S.j.server = v === "1"; render(); },
+  trykToggle: () => { S.tryk3 = !S.tryk3; S.aarsagValgt = null; lager.gem("oskar-tryk", S.tryk3 ? "3" : "2"); render(); },
   jAnvend: () => {
     if (!S.aktiv || !S.j) return;
     S.aktiv.justeringer = (S.aktiv.justeringer || []).concat([{ i: S.aktiv.point.length, sO: S.j.sO, sM: S.j.sM, gO: S.j.gO, gM: S.j.gM, server: S.j.server }]);
@@ -535,6 +537,10 @@ const A = {
   udfald: (v) => { S.afventer = v; render(); },
   aarsag: (id) => {
     if (!S.aktiv || !S.afventer) return;
+    if (!S.tryk3) {
+      S.aktiv.point.push({ r: S.afventer === "vundet" ? "V" : "T", å: id, f: S.serv, l: 0 });
+      S.afventer = null; S.serv = 1; gemAktiv(); render(); return;
+    }
     S.aarsagValgt = id; render();
   },
   laengde: (v) => {
@@ -624,6 +630,7 @@ function render() {
         h += '<div class="banner is">🧊 <b>'+(EN?'Three free errors in a row — reset:':'Tre gratis fejl i træk — nulstilling:')+'</b> '+(EN?'strings → breathing → keyword. Next rally 100 % percentage tennis.':'strenge → vejrtrækning → nøgleord. Næste duel 100 % procentuel.')+'</div>';
 
       if (!st.done) {
+        h += '<div class="raekke" style="margin-bottom:6px"><button class="knap valg" style="font-size:11.5px;padding:8px 6px" data-a="trykToggle">'+(S.tryk3?(EN?"🎯 3 taps — with rally length":"🎯 3 tryk — med duel-længde"):(EN?"⚡ 2 taps — fast mode":"⚡ 2 tryk — hurtig tilstand"))+' · '+(EN?"tap to switch":"tryk for at skifte")+'</button></div>';
         h += '<div class="raekke"><button class="knap valg '+(S.serv===1?"til":"")+'" data-a="serv" data-v="1">'+(EN?"1st serve":"1. serv")+'</button><button class="knap valg '+(S.serv===2?"gul":"")+'" data-a="serv" data-v="2">'+(EN?"2nd serve (first serve missed)":"2. serv (førsteserv fejlet)")+'</button></div>';
         if (!S.afventer) {
           h += '<div class="raekke"><button class="knap stor" style="background:var(--vundet)" data-a="udfald" data-v="vundet">'+(EN?"Oskar won":"Oskar vandt")+'</button><button class="knap stor" style="background:var(--tabt)" data-a="udfald" data-v="tabt">'+(EN?"Lost":"Tabt")+'</button></div>';

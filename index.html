@@ -172,7 +172,7 @@ const RUTINER = [
 const GUIDE = [
   ["1 · Start kampen","Skriv modstander og turnering, vælg hvem der server først, og om 3. sæt er match-tiebreak til 10 (DTF-standard). Tryk START KAMP."],
   ["2 · Registrér serven","Appen viser selv, hvem der server. Fejles førsteserven: tryk '2. serv', inden bolden registreres."],
-  ["3 · Registrér bolden — to tryk","OSKAR VANDT eller TABT → vælg hvordan bolden endte. Scoreboardet regner selv partier, sæt, deuce, tiebreak og serveskift."],
+  ["3 · Registrér bolden — tre tryk","OSKAR VANDT eller TABT → hvordan endte bolden → duellens længde (kort 1-4 / mellem 5-8 / lang 9+). Scoreboardet regner selv stillingen — og duel-tallene afslører, om bud IV holder."],
   ["4 · Fortryd og alarmer","FORTRYD ruller seneste registrering tilbage. Appen advarer ved store point og efter tre gratis fejl i træk."],
   ["5 · Afslut og analysér","'Afslut & gem' → kampen lander i Historik. '📤 Eksportér til Claude' → kopiér teksten og send den til Nicolai/Claude for analyse."],
   ["📲 Føj til hjemmeskærm","iPhone: Åbn filen i Safari → del-knappen → 'Føj til hjemmeskærm' — så ligger appen som ikon. Data gemmes lokalt på DENNE enhed; eksport-teksten i familiegruppen er jeres fælles database."],
@@ -320,7 +320,7 @@ const RUTINER_EN = [
 const GUIDE_EN = [
   ["1 · Start the match","Enter opponent and tournament, choose who serves first, and whether the 3rd set is a match tiebreak to 10 (Danish U14 standard). Tap START MATCH."],
   ["2 · Register the serve","The app shows who is serving. If the first serve misses: tap '2nd serve' before registering the ball."],
-  ["3 · Register the ball — two taps","OSKAR WON or LOST → choose how the ball ended. The scoreboard computes games, sets, deuce, tiebreaks and service changes by itself."],
+  ["3 · Register the ball — three taps","OSKAR WON or LOST → how the ball ended → rally length (short 1-4 / medium 5-8 / long 9+). The scoreboard computes the score by itself — and the rally numbers reveal whether rule IV holds."],
   ["4 · Undo and alerts","UNDO rolls back the last entry. The app warns on big points and after three free errors in a row."],
   ["5 · Finish and analyse","'Finish & save' → the match lands in History. '📤 Export to Claude' → copy the text and send it to Nicolai/Claude for analysis."],
   ["📲 Add to home screen","iPhone: open this link in Safari → share button → 'Add to Home Screen'. Data is stored locally on THIS device; the export text in the family chat is the shared database."],
@@ -427,7 +427,7 @@ const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h =
 const LAASTE_FANER = ["stil","rutiner","planer","historik","s2026","status","strategi","plan","regler"];
 
 let S = {
-  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null,
+  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -443,7 +443,7 @@ const rensKamp = (g) => {
     dato: g.dato || new Date().toISOString().slice(0,10),
     oskarFirst: typeof g.oskarFirst === "boolean" ? g.oskarFirst : true,
     mtb: typeof g.mtb === "boolean" ? g.mtb : true, resultat: g.resultat || "", analyse: g.analyse || "", justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
-    point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1 })) };
+    point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1, l: [1,2,3].indexOf(q.l) >= 0 ? q.l : 0 })) };
 };
 try { const sp = lager.hent("oskar-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
 try { if (lager.hent("oskar-laas") === "op") S.laast = false; } catch(e) {}
@@ -468,7 +468,9 @@ function statistik(k) {
   const oServe2 = oServe.filter(p => p.f === 2);
   const bpFor = k.point.filter((p,i) => F[i] && F[i].stor && F[i].stor.indexOf("BREAKBOLD Oskar") === 0);
   const bpMod = k.point.filter((p,i) => F[i] && F[i].stor && F[i].stor.indexOf("BREAKBOLD mod") === 0);
-  return { st, v, t, uf, vindere,
+  const dl = (n) => { const q = k.point.filter(p => p.l === n); return [q.filter(p => p.r === "V").length, q.length]; };
+  const budIVbrud = k.point.filter(p => p.l === 1 && p.r === "T" && (p.å === "uf" || p.å === "dobbelt")).length;
+  return { st, v, t, uf, vindere, dK: dl(1), dM: dl(2), dL: dl(3), budIVbrud,
     serve: [oServe.filter(p=>p.r==="V").length, oServe.length],
     retur: [retur.filter(p=>p.r==="V").length, retur.length],
     s1pct: oServe.length ? Math.round(oServe1.length / oServe.length * 100) : 0,
@@ -487,7 +489,8 @@ function lavEksport(k) {
     "Oskars serv: " + s.serve[0] + "/" + s.serve[1] + " · 1. serv i spil: " + s.s1pct + " % · vundet på 1. serv: " + s.s1[0] + "/" + s.s1[1] + " · på 2. serv: " + s.s2[0] + "/" + s.s2[1] + " · dobbeltfejl: " + s.df,
     "Retur: " + s.retur[0] + "/" + s.retur[1] + " · Breakbolde udnyttet: " + s.bpFor[0] + "/" + s.bpFor[1] + " · afværget: " + s.bpMod[0] + "/" + s.bpMod[1],
     "Vindere+es: " + s.vindere + " · Gratis fejl (inkl. df): " + s.uf,
-    "Rå sekvens (V/T:årsag:serv): " + k.point.map(p => p.r + ":" + p.å + ":" + p.f).join(" "),
+    "Dueller (vundet/spillet): korte(1-4) " + s.dK[0] + "/" + s.dK[1] + " · mellem(5-8) " + s.dM[0] + "/" + s.dM[1] + " · lange(9+) " + s.dL[0] + "/" + s.dL[1] + " · Oskars gratis fejl i KORTE dueller (bud IV-brud): " + s.budIVbrud,
+    "Rå sekvens (V/T:årsag:serv:duel K/M/L): " + k.point.map(p => p.r + ":" + p.å + ":" + p.f + ":" + (p.l === 1 ? "K" : p.l === 2 ? "M" : p.l === 3 ? "L" : "?")).join(" "),
     "(Oskar servede først: " + (k.oskarFirst ? "ja" : "nej") + " · 3. sæt = MTB: " + (k.mtb ? "ja" : "nej") + ")",
   ].join("\n");
 }
@@ -532,11 +535,16 @@ const A = {
   udfald: (v) => { S.afventer = v; render(); },
   aarsag: (id) => {
     if (!S.aktiv || !S.afventer) return;
-    S.aktiv.point.push({ r: S.afventer === "vundet" ? "V" : "T", å: id, f: S.serv });
-    S.afventer = null; S.serv = 1; gemAktiv(); render();
+    S.aarsagValgt = id; render();
+  },
+  laengde: (v) => {
+    if (!S.aktiv || !S.afventer || !S.aarsagValgt) return;
+    S.aktiv.point.push({ r: S.afventer === "vundet" ? "V" : "T", å: S.aarsagValgt, f: S.serv, l: [1,2,3].indexOf(+v) >= 0 ? +v : 0 });
+    S.afventer = null; S.aarsagValgt = null; S.serv = 1; gemAktiv(); render();
   },
   fortryd: () => {
     if (!S.aktiv) return;
+    if (S.aarsagValgt) { S.aarsagValgt = null; render(); return; }
     if (S.afventer) { S.afventer = null; render(); return; }
     if (S.aktiv.point.length) { S.aktiv.point.pop(); S.serv = 1; gemAktiv(); }
     render();
@@ -626,8 +634,16 @@ function render() {
                   : [["vinder","Vinderslag"],["es","Serve-es"],["mod_uf","Modst. gratis fejl"], st.server ? ["mod_tvunget","Modst. presset til fejl"] : ["mod_dobbelt","Modst. dobbeltfejl"]])
             : (EN ? [["uf","Oskar unforced error"],["tvunget","Oskar forced error"],["mod_vinder","Opp. winner"]].concat(st.server ? [["dobbelt","Double fault"]] : [])
                   : [["uf","Oskar gratis fejl"],["tvunget","Oskar presset til fejl"],["mod_vinder","Modst. vinderslag"]].concat(st.server ? [["dobbelt","Dobbeltfejl"]] : []));
-          h += '<p class="lille">'+(EN?'How did the ball end?':'Hvordan endte bolden?')+'</p><div class="raekke" style="flex-wrap:wrap">' +
-            liste.map(([id,l]) => '<button class="knap" style="flex:1 1 45%;padding:15px 6px;background:'+(vundet?"#2C5E3F":"#6E3535")+'" data-a="aarsag" data-v="'+id+'">'+l+'</button>').join("") + '</div>';
+          if (!S.aarsagValgt) {
+            h += '<p class="lille">'+(EN?'How did the ball end?':'Hvordan endte bolden?')+'</p><div class="raekke" style="flex-wrap:wrap">' +
+              liste.map(([id,l]) => '<button class="knap" style="flex:1 1 45%;padding:15px 6px;background:'+(vundet?"#2C5E3F":"#6E3535")+'" data-a="aarsag" data-v="'+id+'">'+l+'</button>').join("") + '</div>';
+          } else {
+            h += '<p class="lille">'+(EN?'How long was the rally?':'Hvor lang var duellen?')+'</p><div class="raekke">' +
+              '<button class="knap" style="padding:15px 6px;background:#223243" data-a="laengde" data-v="1">'+(EN?'Short<br>1-4 shots':'Kort<br>1-4 slag')+'</button>' +
+              '<button class="knap" style="padding:15px 6px;background:#223243" data-a="laengde" data-v="2">'+(EN?'Medium<br>5-8':'Mellem<br>5-8')+'</button>' +
+              '<button class="knap" style="padding:15px 6px;background:#223243" data-a="laengde" data-v="3">'+(EN?'Long<br>9+':'Lang<br>9+')+'</button></div>' +
+              '<div class="raekke"><button class="knap" style="padding:9px 6px;background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px" data-a="laengde" data-v="0">'+(EN?'Skip — just save the point':'Spring over — gem bare pointet')+'</button></div>';
+          }
         }
       }
       h += '<div class="raekke"><button class="knap" data-a="fortryd">'+(EN?"↶ Undo last":"↶ Fortryd seneste")+'</button><button class="knap valg" data-a="justToggle">⚙ '+(EN?"Adjust score":"Justér stillingen")+'</button></div>' +
@@ -638,7 +654,7 @@ function render() {
         '<p class="lille" style="margin:8px 0 4px">'+(EN?"Who serves the next ball?":"Hvem server næste bold?")+'</p>' +
         '<div class="raekke"><button class="knap valg '+(S.j.server?"til":"")+'" data-a="jServer" data-v="1">Oskar</button><button class="knap valg '+(!S.j.server?"til":"")+'" data-a="jServer" data-v="0">'+(EN?"Opponent":"Modstander")+'</button></div>' +
         '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="jAnvend">✔ '+(EN?"Apply adjustment":"Anvend justeringen")+'</button></div></div>' : '');
-      h += '<div class="kort statlinje">'+(EN?'Serve points won: ':'Serve vundet: ')+'<b>'+s.serve[0]+'/'+s.serve[1]+'</b> · '+(EN?'1st serve in: ':'1. serv i spil: ')+'<b>'+s.s1pct+' %</b> · '+(EN?'Return: ':'Retur: ')+'<b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>'+(EN?'Winners: ':'Vindere: ')+'<b style="color:var(--vundet)">'+s.vindere+'</b> · '+(EN?'Unforced errors: ':'Gratis fejl: ')+'<b style="color:'+(s.uf>s.vindere?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b> · '+(EN?'Break points: ':'Breakbolde: ')+'<b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b>'+(EN?' converted, ':' udnyttet, ')+'<b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b>'+(EN?' saved':' afværget')+'</div>';
+      h += '<div class="kort statlinje">'+(EN?'Serve points won: ':'Serve vundet: ')+'<b>'+s.serve[0]+'/'+s.serve[1]+'</b> · '+(EN?'1st serve in: ':'1. serv i spil: ')+'<b>'+s.s1pct+' %</b> · '+(EN?'Return: ':'Retur: ')+'<b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>'+(EN?'Winners: ':'Vindere: ')+'<b style="color:var(--vundet)">'+s.vindere+'</b> · '+(EN?'Unforced errors: ':'Gratis fejl: ')+'<b style="color:'+(s.uf>s.vindere?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b> · '+(EN?'Break points: ':'Breakbolde: ')+'<b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b>'+(EN?' converted, ':' udnyttet, ')+'<b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b>'+(EN?' saved':' afværget')+'<br>'+(EN?'Rallies (won/played) — short: ':'Dueller (vundet/spillet) — korte: ')+'<b>'+s.dK[0]+'/'+s.dK[1]+'</b>'+(EN?' · medium: ':' · mellem: ')+'<b>'+s.dM[0]+'/'+s.dM[1]+'</b>'+(EN?' · long: ':' · lange: ')+'<b>'+s.dL[0]+'/'+s.dL[1]+'</b>'+(s.budIVbrud>1?' <span style="color:var(--tabt)">'+(EN?'· free errors in short rallies: ':'· gratis fejl i korte dueller: ')+s.budIVbrud+' (rule IV!)</span>':'')+'</div>';
       h += '<input placeholder="'+(EN?'Result (auto-filled if empty)':'Resultat (udfyldes automatisk hvis tomt)')+'" value="'+esc(S.resInput)+'" data-felt="resInput">';
       h += '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="afslut">'+(EN?"✔ Finish &amp; save the match":"✔ Afslut &amp; gem kampen")+'</button></div>';
     }

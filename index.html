@@ -589,9 +589,16 @@ const A = {
   ttSletFortryd: () => { S.ttSletB = null; render(); },
   ttSlet: (i) => { S.ttLog.splice(+i, 1); S.ttSletB = null; lager.gem("oskar-tennis-log", JSON.stringify(S.ttLog)); render(); },
   ttEksport: () => {
-    const tot = S.ttLog.reduce((a, e) => a + e.m, 0), gk = S.ttLog.length ? (S.ttLog.reduce((a, e) => a + e.k, 0) / S.ttLog.length).toFixed(1) : "0";
-    S.ttEks = "TENNISTRÆNING — Oskar\nI alt: " + S.ttLog.length + " træninger · " + (tot / 60).toFixed(1) + " timer · Ø-kvalitet " + gk + "/5\n" +
-      S.ttLog.map((e) => e.d + " · " + e.m + " min · kvalitet " + e.k + "/5" + (e.n ? " · " + e.n : "")).join("\n");
+    const nye = S.ttLog.filter((e) => !e.x);
+    if (!nye.length) { S.ttEks = "(Ingen nye træninger siden sidste eksport — alt er allerede sendt.)"; render(); return; }
+    const dm = nye.reduce((a, e) => a + e.m, 0), dk = (nye.reduce((a, e) => a + e.k, 0) / nye.length).toFixed(1);
+    const tm = S.ttLog.reduce((a, e) => a + e.m, 0), tk = (S.ttLog.reduce((a, e) => a + e.k, 0) / S.ttLog.length).toFixed(1);
+    S.ttEks = "TENNISTRÆNING — Oskar (nyt siden sidste eksport)\n" +
+      nye.map((e) => e.d + " · " + e.m + " min · kvalitet " + e.k + "/5" + (e.n ? " · " + e.n : "")).join("\n") +
+      "\nDelta: " + nye.length + " træninger · " + (dm / 60).toFixed(1) + " timer · Ø " + dk + "/5" +
+      "\nSamlet i appen: " + S.ttLog.length + " træninger · " + (tm / 60).toFixed(1) + " timer · Ø " + tk + "/5";
+    S.ttLog.forEach((e) => { e.x = 1; });
+    lager.gem("oskar-tennis-log", JSON.stringify(S.ttLog));
     render();
   },
   trykToggle: () => { S.tryk3 = !S.tryk3; S.aarsagValgt = null; lager.gem("oskar-tryk", S.tryk3 ? "3" : "2"); render(); },
@@ -802,11 +809,11 @@ function render() {
       if (S.ttLog.length) {
         h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(ttTot/60).toFixed(1)+' '+(EN?"hours":"timer")+' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+ttGk+'/5</h3>' +
           S.ttLog.slice(0,8).map(function(e, i){
-            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+e.d+' · '+e.m+' min · '+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span>' +
+            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+e.m+' min · '+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span>' +
               (S.ttSletB === i
                 ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="ttSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="ttSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="ttSletSpoerg" data-v="'+i+'">🗑</button>') + '</div>'; }).join("") +
-          '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="ttEksport">📤 '+(EN?"Export to Claude":"Eksportér til Claude")+'</button></div>';
+          '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="ttEksport">📤 '+(EN?"Export new to Claude":"Eksportér nye til Claude")+' ('+S.ttLog.filter(function(e){return !e.x;}).length+')</button></div>';
         if (S.ttEks) h += '<p class="lille">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()" style="height:110px">'+esc(S.ttEks)+'</textarea>';
       }
       h += (EN?FYSISK_EN:FYSISK).map(function(f){ return '<div class="kort"'+(f[0]==="🗓"?' style="border-left:3px solid var(--is)"':'')+'><h3>'+f[0]+' '+esc(f[1])+'</h3><p>'+esc(f[2])+'</p></div>'; }).join("");

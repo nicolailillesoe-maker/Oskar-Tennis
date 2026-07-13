@@ -470,7 +470,7 @@ const fysByg = (EN) => {
 };
 
 let S = {
-  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null,
+  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -577,6 +577,19 @@ const A = {
   fysSletSpoerg: (i) => { S.fysSletB = +i; render(); },
   fysSletFortryd: () => { S.fysSletB = null; render(); },
   fysSlet: (i) => { S.fysLog.splice(+i, 1); S.fysSletB = null; lager.gem("oskar-fysisk-log", JSON.stringify(S.fysLog)); render(); },
+  fysEksport: () => {
+    const nye = S.fysLog.filter((e) => !e.x);
+    if (!nye.length) { S.fysEks = "(Ingen nye pas siden sidste eksport — alt er allerede sendt.)"; render(); return; }
+    const antal = [0, 0, 0]; nye.forEach((e) => { if (antal[e.p] !== undefined) antal[e.p] += 1; });
+    const alt = [0, 0, 0]; S.fysLog.forEach((e) => { if (alt[e.p] !== undefined) alt[e.p] += 1; });
+    S.fysEks = "FYSISK TRÆNING — Oskar (nyt siden sidste eksport)\n" +
+      nye.map((e) => e.d + " · Pas " + (e.p + 1)).join("\n") +
+      "\nDelta: " + nye.length + " pas (Pas 1: " + antal[0] + " · Pas 2: " + antal[1] + " · Pas 3: " + antal[2] + ")" +
+      "\nSamlet i appen: " + S.fysLog.length + " pas (Pas 1: " + alt[0] + " · Pas 2: " + alt[1] + " · Pas 3: " + alt[2] + ")";
+    S.fysLog.forEach((e) => { e.x = 1; });
+    lager.gem("oskar-fysisk-log", JSON.stringify(S.fysLog));
+    render();
+  },
   ttMinJust: (v) => { S.ttMin = Math.max(15, Math.min(300, S.ttMin + (+v))); render(); },
   ttKvalVaelg: (v) => { S.ttKval = +v; render(); },
   ttGem: () => {
@@ -790,11 +803,13 @@ function render() {
         h += '<div class="kort" style="border-left:3px solid var(--vundet)"><h3>📓 '+(EN?"Completed sessions":"Gennemførte pas")+' — '+S.fysLog.length+' '+(EN?"total":"i alt")+'</h3>' +
           '<p style="margin-bottom:6px">'+(EN?"Session 1":"Pas 1")+': '+antal[0]+' × · '+(EN?"Session 2":"Pas 2")+': '+antal[1]+' × · '+(EN?"Session 3":"Pas 3")+': '+antal[2]+' ×</p>' +
           S.fysLog.slice(0,8).map(function(e, i){
-            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+e.d+' · '+(EN?"Session ":"Pas ")+(e.p+1)+'</span>' +
+            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+(EN?"Session ":"Pas ")+(e.p+1)+'</span>' +
               (S.fysSletB === i
                 ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="fysSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="fysSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="fysSletSpoerg" data-v="'+i+'">🗑</button>') +
-              '</div>'; }).join("")+'</div>';
+              '</div>'; }).join("") +
+          '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="fysEksport">📤 '+(EN?"Export new to Claude":"Eksportér nye til Claude")+' ('+S.fysLog.filter(function(e){return !e.x;}).length+')</button></div>';
+        if (S.fysEks) h += '<p class="lille">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()" style="height:100px">'+esc(S.fysEks)+'</textarea>';
       }
       const ttTot = S.ttLog.reduce(function(a, e){ return a + e.m; }, 0);
       const ttGk = S.ttLog.length ? (S.ttLog.reduce(function(a, e){ return a + e.k; }, 0) / S.ttLog.length).toFixed(1) : null;

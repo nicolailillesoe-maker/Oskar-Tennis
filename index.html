@@ -469,6 +469,9 @@ const fysByg = (EN) => {
   ];
 };
 
+// Sinner-referencetal (ATP 2025/26-sæsonniveau, afrundede — kilde: ATP Tour/Infosys)
+const SINNER = { s1in: 64, s1won: 79, s2won: 58, bpSave: 74, bpConv: 46, df: 1.2 };
+
 let S = {
   verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
@@ -868,7 +871,39 @@ function render() {
         '<p style="margin-bottom:4px">'+(EN?"Winners: ":"Vindere: ")+'<b>'+rk(function(s){return s.vindere;})+'</b></p>' +
         '<p style="margin-bottom:4px">'+(EN?"1st serve in: ":"1. serv i spil: ")+'<b>'+rk(function(s){return s.s1pct+" %";})+'</b></p>' +
         '<p style="margin-bottom:0">'+(EN?"Break points converted: ":"Breakbolde udnyttet: ")+'<b>'+rk(function(s){return s.bpFor[0]+"/"+s.bpFor[1];})+'</b></p></div>';
+    } else {
+      h += '<div class="kort" style="border:1.5px dashed var(--kant);opacity:.85"><h3>📈 '+(EN?"Match by match":"Kamp for kamp")+' <span style="background:var(--guld);color:#101B26;font-size:10px;padding:2px 7px;border-radius:5px;vertical-align:middle">'+(EN?"EXAMPLE — DUMMY DATA":"EKSEMPEL — DUMMY-DATA")+'</span></h3>' +
+        '<p style="margin-bottom:4px">'+(EN?"Unforced errors: ":"Gratis fejl: ")+'<b>14 → 11 → 9</b> <span style="color:var(--vundet)">✓</span></p>' +
+        '<p style="margin-bottom:4px">'+(EN?"Winners: ":"Vindere: ")+'<b>8 → 12 → 11</b></p>' +
+        '<p style="margin-bottom:4px">'+(EN?"1st serve in: ":"1. serv i spil: ")+'<b>54 % → 61 % → 66 %</b></p>' +
+        '<p style="margin-bottom:6px">'+(EN?"Break points converted: ":"Breakbolde udnyttet: ")+'<b>1/5 → 3/6 → 4/6</b></p>' +
+        '<p style="font-size:11px;color:var(--guld)">'+(EN?"⚠ Not Oskar's numbers! Replaced automatically by real statistics when at least 3 matches are saved — currently ":"⚠ Ikke Oskars tal! Erstattes automatisk af rigtig statistik, når mindst 3 kampe er gemt — lige nu ")+S.gemte.length+'/3.</p></div>';
     }
+    // 🆚 Sinner-benchmark
+    (function(){
+      const harData = S.gemte.length > 0;
+      let o = { s1in: 62, s1won: 68, s2won: 44, bpSave: 55, bpConv: 40, df: 3.0 };
+      if (harData) {
+        let sv = 0, st_ = 0, s1v = 0, s1t = 0, s2v = 0, s2t = 0, bfV = 0, bfT = 0, bmV = 0, bmT = 0, dfSum = 0, s1i = 0;
+        S.gemte.forEach(function(k){ const x = statistik(k);
+          s1v += x.s1[0]; s1t += x.s1[1]; s2v += x.s2[0]; s2t += x.s2[1];
+          bfV += x.bpFor[0]; bfT += x.bpFor[1]; bmV += x.bpMod[0]; bmT += x.bpMod[1];
+          dfSum += x.df; s1i += x.s1pct; sv += x.serve[0]; st_ += x.serve[1]; });
+        const pct = function(a, b){ return b ? Math.round(a / b * 100) : 0; };
+        o = { s1in: Math.round(s1i / S.gemte.length), s1won: pct(s1v, s1t), s2won: pct(s2v, s2t),
+              bpSave: pct(bmV, bmT), bpConv: pct(bfV, bfT), df: (dfSum / S.gemte.length).toFixed(1) };
+      }
+      const rk2 = function(navn, ov, sv2, enhed){ return '<tr><td style="padding:3px 0;font-size:12px">'+navn+'</td><td style="text-align:center;font-weight:800;font-size:12.5px">'+ov+(enhed||' %')+'</td><td style="text-align:center;font-size:12.5px;color:var(--is)">'+sv2+(enhed||' %')+'</td></tr>'; };
+      h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>🆚 '+(EN?"Oskar vs Sinner":"Oskar mod Sinner")+(harData?'':' <span style="background:var(--guld);color:#101B26;font-size:10px;padding:2px 7px;border-radius:5px;vertical-align:middle">'+(EN?"EXAMPLE — DUMMY DATA":"EKSEMPEL — DUMMY-DATA")+'</span>')+'</h3>' +
+        '<table style="width:100%;border-collapse:collapse"><tr><td></td><td style="text-align:center;font-size:10.5px;color:var(--daempet)">OSKAR'+(harData?'':' (dummy)')+'</td><td style="text-align:center;font-size:10.5px;color:var(--daempet)">SINNER</td></tr>' +
+        rk2(EN?"1st serve in":"1. serv i spil", o.s1in, SINNER.s1in) +
+        rk2(EN?"Points won, 1st serve":"Point vundet på 1. serv", o.s1won, SINNER.s1won) +
+        rk2(EN?"Points won, 2nd serve":"Point vundet på 2. serv", o.s2won, SINNER.s2won) +
+        rk2(EN?"Break points saved":"Breakbolde afværget", o.bpSave, SINNER.bpSave) +
+        rk2(EN?"Break points converted":"Breakbolde udnyttet", o.bpConv, SINNER.bpConv) +
+        rk2(EN?"Double faults per match":"Dobbeltfejl pr. kamp", o.df, SINNER.df, "") + '</table>' +
+        '<p style="font-size:11px;color:var(--daempet);margin-top:6px">'+(harData?(EN?"Oskar = average of all "+S.gemte.length+" registered matches. ":"Oskar = gennemsnit af alle "+S.gemte.length+" registrerede kampe. "):(EN?"⚠ Oskar's column is dummy data until the first match is registered. ":"⚠ Oskars kolonne er dummy-tal, indtil første kamp er registreret. "))+(EN?"Sinner = ATP 2025/26 season level (rounded). Benchmarks, not verdicts — world No. 1 vs U14. The DIRECTION is what counts: fewer double faults, more 2nd-serve points, cash the break points.":"Sinner = ATP-sæsonniveau 2025/26 (afrundet). Pejlemærker, ikke facit — verdens nr. 1 mod U14. Det er RETNINGEN, der tæller: færre dobbeltfejl, flere point på 2. serven, og breakboldene skal veksles.")+'</p></div>';
+    })();
     h += '<div class="kort" style="background:#121F2E;border:1.5px solid var(--kant)"><div style="font-weight:800;font-size:13.5px;color:var(--is);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📊 Baseline — før appen (rangliste uge 28 + UM)</div>' +
       BASELINE.grupper.map(g => '<div style="margin-bottom:9px"><div style="font-weight:800;font-size:12.5px">'+esc(g[0])+' · <span style="color:var(--guld);font-weight:700">'+esc(g[1])+'</span></div><div style="font-size:12px;color:#B9C6D2;line-height:1.55">'+esc(g[2])+'</div></div>').join("") +
       '<div style="font-weight:800;font-size:12px;color:var(--daempet);margin:10px 0 4px;text-transform:uppercase">Kendte kampe med score (UM-ugen)</div>' +

@@ -472,6 +472,27 @@ const fysByg = (EN) => {
 // Sinner-referencetal (ATP 2025/26-sæsonniveau, afrundede — kilde: ATP Tour/Infosys)
 const SINNER = { s1in: 64, s1won: 79, s2won: 58, bpSave: 74, bpConv: 46, df: 1.2 };
 
+// ---------- Eksempel-kamp (dummy til visuel test — ægte motor, fiktive point) ----------
+const DEMOKAMP = (function(){
+  const p = [];
+  const V = (å, f, l) => p.push({ r: "V", å, f, l });
+  const T = (å, f, l) => p.push({ r: "T", å, f, l });
+  // Sæt 1 (Oskar 6-2, serverne skifter pr. parti, Oskar server først)
+  V("es",1,1); V("vinder",1,2); T("dobbelt",2,1); V("vinder",1,3); V("mod_tvunget",1,2);      // 1-0
+  V("mod_dobbelt",2,1); T("mod_vinder",1,2); V("vinder",1,1); V("mod_uf",2,2); V("vinder",2,3); // 2-0
+  V("es",1,1); V("vinder",1,1); V("mod_uf",1,2); T("uf",1,1); V("vinder",2,3);                 // 3-0
+  T("mod_vinder",1,3); T("tvunget",2,2); V("vinder",1,1); T("uf",1,1); T("mod_vinder",2,2);    // 3-1 (break mod)
+  V("vinder",1,2); T("tvunget",1,3); V("es",1,1); V("vinder",1,1); V("mod_tvunget",2,2);       // 4-1
+  V("vinder",2,1); V("mod_uf",1,2); T("uf",1,1); T("mod_vinder",2,2); V("vinder",1,3); V("mod_tvunget",2,1); // 5-1
+  T("dobbelt",2,2); T("mod_vinder",1,2); V("vinder",1,1); T("uf",1,3); T("tvunget",1,2);       // 5-2 (break mod)
+  V("mod_dobbelt",2,1); V("vinder",1,3); T("mod_vinder",2,2); V("mod_uf",1,1); V("vinder",1,2); // 6-2 SÆT
+  // Sæt 2 (i gang, 2-1)
+  V("es",1,1); V("vinder",2,2); T("uf",1,1); V("vinder",1,3); V("mod_tvunget",1,1);            // 1-0
+  T("mod_vinder",1,2); T("tvunget",2,3); V("vinder",1,1); T("mod_vinder",2,2); T("uf",1,1);    // 1-1
+  V("vinder",1,1); V("es",1,1); T("tvunget",2,2); V("mod_uf",1,2); V("vinder",2,0);            // 2-1 (sidste: ukendt duel-længde)
+  return p;
+})();
+
 let S = {
   verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
@@ -883,6 +904,15 @@ function render() {
         '<p style="margin-bottom:4px">'+(EN?"1st serve in: ":"1. serv i spil: ")+'<b>'+rk(function(s){return s.s1pct+" %";})+'</b></p>' +
         '<p style="margin-bottom:0">'+(EN?"Break points converted: ":"Breakbolde udnyttet: ")+'<b>'+rk(function(s){return s.bpFor[0]+"/"+s.bpFor[1];})+'</b></p></div>';
     } else {
+      if (S.gemte.length === 0) {
+        const ds = statistik({ point: DEMOKAMP, oskarFirst: true, mtb: true, justeringer: [] });
+        h += '<div class="kort" style="border:1.5px dashed var(--kant);opacity:.9"><h3>🎾 '+(EN?"Example match card":"Eksempel på et kamp-kort")+' <span style="background:var(--guld);color:#101B26;font-size:10px;padding:2px 7px;border-radius:5px;vertical-align:middle">'+(EN?"EXAMPLE — DUMMY DATA":"EKSEMPEL — DUMMY-DATA")+'</span></h3>' +
+          '<p style="margin-bottom:4px">'+(EN?"vs Example Opponent · Score: sets ":"mod Eksempel-modstander · Stilling: sæt ")+'<b>'+ds.st.setsO+'-'+ds.st.setsM+'</b>'+(EN?" · games ":" · partier ")+'<b>'+ds.st.gO+'-'+ds.st.gM+'</b></p>' +
+          '<p style="margin-bottom:4px;font-size:12px">Point '+ds.v+'-'+ds.t+' · Serve '+ds.serve[0]+'/'+ds.serve[1]+' ('+(EN?"1st serve ":"1. serv ")+ds.s1pct+' %) · '+(EN?"Return ":"Retur ")+ds.retur[0]+'/'+ds.retur[1]+'<br>'+(EN?"Winners ":"Vindere ")+'<b style="color:var(--vundet)">'+ds.vindere+'</b> · '+(EN?"Unforced errors ":"Gratis fejl ")+'<b>'+ds.uf+'</b> · '+(EN?"Break points ":"Breakbolde ")+ds.bpFor[0]+'/'+ds.bpFor[1]+(EN?" converted, ":" udnyttet, ")+ds.bpMod[0]+'/'+ds.bpMod[1]+(EN?" saved":" afværget")+'</p>' +
+          '<p style="margin-bottom:4px;font-size:11.5px">'+(EN?"Rallies — short: ":"Dueller — korte: ")+'<b>'+ds.dK[0]+'/'+ds.dK[1]+'</b>'+(EN?" · medium: ":" · mellem: ")+'<b>'+ds.dM[0]+'/'+ds.dM[1]+'</b>'+(EN?" · long: ":" · lange: ")+'<b>'+ds.dL[0]+'/'+ds.dL[1]+'</b>'+(ds.budIVbrud>1?' <span style="color:var(--tabt)">· '+(EN?"free errors in short rallies: ":"gratis fejl i korte dueller: ")+ds.budIVbrud+' ('+(EN?"rule IV!":"bud IV!")+')</span>':'')+'</p>' +
+          '<p style="margin-bottom:4px;font-size:11px;opacity:.85">'+ds.perSaet.map(function(ps,si){ return (EN?'Set ':'Sæt ')+(si+1)+': '+ps.v+'-'+ps.t+' · '+(EN?'UE ':'fejl ')+ps.uf+' · '+(EN?'win ':'vin ')+ps.vin+(ps.sp?' · 1. serv '+Math.round(ps.s1/ps.sp*100)+' %':''); }).join('  ·  ')+'</p>' +
+          '<p style="font-size:11px;color:var(--guld)">'+(EN?"⚠ Fictional points run through the real engine — this card disappears when the first real match is saved. Everything above (plus the raw point sequence) is included in the 📤 export.":"⚠ Fiktive point kørt gennem den ægte motor — kortet forsvinder, når første rigtige kamp gemmes. Alt ovenstående (plus den rå point-sekvens) følger med i 📤 eksporten.")+'</p></div>';
+      }
       h += '<div class="kort" style="border:1.5px dashed var(--kant);opacity:.85"><h3>📈 '+(EN?"Match by match":"Kamp for kamp")+' <span style="background:var(--guld);color:#101B26;font-size:10px;padding:2px 7px;border-radius:5px;vertical-align:middle">'+(EN?"EXAMPLE — DUMMY DATA":"EKSEMPEL — DUMMY-DATA")+'</span></h3>' +
         '<p style="margin-bottom:4px">'+(EN?"Unforced errors: ":"Gratis fejl: ")+'<b>14 → 11 → 9</b> <span style="color:var(--vundet)">✓</span></p>' +
         '<p style="margin-bottom:4px">'+(EN?"Winners: ":"Vindere: ")+'<b>8 → 12 → 11</b></p>' +

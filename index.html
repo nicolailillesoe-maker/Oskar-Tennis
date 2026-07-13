@@ -595,12 +595,17 @@ function statistik(k) {
   const perSaet = [];
   k.point.forEach((p, i) => {
     const sn = (F[i] && F[i].saet) || 1;
-    while (perSaet.length < sn) perSaet.push({ v: 0, t: 0, uf: 0, vin: 0, s1: 0, sp: 0 });
+    while (perSaet.length < sn) perSaet.push({ v: 0, t: 0, uf: 0, vin: 0, s1: 0, sp: 0, s1v: 0, s2: 0, s2v: 0, df: 0 });
     const ps = perSaet[sn - 1];
     if (p.r === "V") ps.v += 1; else ps.t += 1;
     if (p.r === "T" && (p.å === "uf" || p.å === "dobbelt")) ps.uf += 1;
     if (p.r === "V" && (p.å === "vinder" || p.å === "es")) ps.vin += 1;
-    if (F[i] && F[i].server === true) { ps.sp += 1; if (p.f === 1) ps.s1 += 1; }
+    if (p.å === "dobbelt") ps.df += 1;
+    if (F[i] && F[i].server === true) {
+      ps.sp += 1;
+      if (p.f === 1) { ps.s1 += 1; if (p.r === "V") ps.s1v += 1; }
+      else { ps.s2 += 1; if (p.r === "V") ps.s2v += 1; }
+    }
   });
   const dl = (n) => { const q = k.point.filter(p => p.l === n); return [q.filter(p => p.r === "V").length, q.length]; };
   const budIVbrud = k.point.filter(p => p.l === 1 && p.r === "T" && (p.å === "uf" || p.å === "dobbelt")).length;
@@ -975,9 +980,12 @@ function render() {
         const retning = b > a ? 1 : b < a ? -1 : 0;
         const godt = retning === 0 ? 1 : ((retning === 1) === stigerGodt ? 2 : 0);
         const pil = retning === 1 ? "▲" : retning === -1 ? "▼" : "—";
-        return '<tr><td style="padding:4px 6px 4px 0;font-size:11.5px;color:var(--daempet)">' + label + '</td>' +
-          '<td style="padding:4px 6px;font-weight:700;font-size:12px">' + vals.join(" → ") + (enhed || "") + '</td>' +
-          '<td style="padding:4px 0;text-align:center;width:30px"><span style="color:' + nivFarve(godt) + ';font-weight:800">' + pil + ' ' + (godt === 2 ? "✓" : godt === 0 ? "⚠" : "") + '</span></td></tr>';
+        const mx = Math.max.apply(null, vals.concat([1]));
+        const soejler = '<span style="display:inline-flex;align-items:flex-end;gap:2px;height:24px;vertical-align:middle;margin-right:8px">' +
+          vals.map(function(v, i){ return '<span style="width:8px;border-radius:2px 2px 0 0;background:' + (i === vals.length - 1 ? nivFarve(godt) : "#223243") + ';height:' + Math.max(3, Math.round(v / mx * 24)) + 'px"></span>'; }).join("") + '</span>';
+        return '<tr><td style="padding:5px 6px 5px 0;font-size:11.5px;color:var(--daempet)">' + label + '</td>' +
+          '<td style="padding:5px 6px;font-size:11.5px">' + soejler + '<span style="color:var(--daempet)">' + vals.slice(0, -1).join(" · ") + (vals.length > 1 ? " · " : "") + '</span><b style="font-size:12.5px">' + b + (enhed || "") + '</b></td>' +
+          '<td style="padding:5px 0;text-align:center;width:34px"><span style="color:' + nivFarve(godt) + ';font-weight:800">' + pil + ' ' + (godt === 2 ? "✓" : godt === 0 ? "⚠" : "") + '</span></td></tr>';
       };
       h += '<div class="kort" style="border-left:3px solid var(--guld)"><h3>📈 '+(EN?"Match by match (oldest → newest)":"Kamp for kamp (ældste → nyeste)")+'</h3><table style="width:100%;border-collapse:collapse">' +
         trendRk(EN?"Free errors":"Gratis fejl", kron.map(function(s){return s.uf;}), "", false) +
@@ -1001,27 +1009,41 @@ function render() {
     // 🆚 Sinner-benchmark
     (function(){
       const harData = S.gemte.length > 0;
-      let o = { s1in: 62, s1won: 68, s2won: 44, bpSave: 55, bpConv: 40, df: 3.0 };
-      if (harData) {
-        let sv = 0, st_ = 0, s1v = 0, s1t = 0, s2v = 0, s2t = 0, bfV = 0, bfT = 0, bmV = 0, bmT = 0, dfSum = 0, s1i = 0;
-        S.gemte.forEach(function(k){ const x = statistik(k);
-          s1v += x.s1[0]; s1t += x.s1[1]; s2v += x.s2[0]; s2t += x.s2[1];
-          bfV += x.bpFor[0]; bfT += x.bpFor[1]; bmV += x.bpMod[0]; bmT += x.bpMod[1];
-          dfSum += x.df; s1i += x.s1pct; sv += x.serve[0]; st_ += x.serve[1]; });
-        const pct = function(a, b){ return b ? Math.round(a / b * 100) : 0; };
-        o = { s1in: Math.round(s1i / S.gemte.length), s1won: pct(s1v, s1t), s2won: pct(s2v, s2t),
-              bpSave: pct(bmV, bmT), bpConv: pct(bfV, bfT), df: (dfSum / S.gemte.length).toFixed(1) };
-      }
-      const rk2 = function(navn, ov, sv2, enhed){ return '<tr><td style="padding:3px 0;font-size:12px">'+navn+'</td><td style="text-align:center;font-weight:800;font-size:12.5px">'+ov+(enhed||' %')+'</td><td style="text-align:center;font-size:12.5px;color:var(--is)">'+sv2+(enhed||' %')+'</td></tr>'; };
+      const kilder = harData ? S.gemte.map(function(k){ return statistik(k); }) : [statistik({ point: DEMOKAMP, oskarFirst: true, mtb: true, justeringer: [] })];
+      // Kamp-totaler på tværs af kilder
+      let s1v = 0, s1t = 0, s2v = 0, s2t = 0, bfV = 0, bfT = 0, bmV = 0, bmT = 0, dfSum = 0, s1i = 0;
+      kilder.forEach(function(x){ s1v += x.s1[0]; s1t += x.s1[1]; s2v += x.s2[0]; s2t += x.s2[1];
+        bfV += x.bpFor[0]; bfT += x.bpFor[1]; bmV += x.bpMod[0]; bmT += x.bpMod[1]; dfSum += x.df; s1i += x.s1pct; });
+      const pc = function(a, b){ return b ? Math.round(a / b * 100) : null; };
+      const o = { s1in: Math.round(s1i / kilder.length), s1won: pc(s1v, s1t), s2won: pc(s2v, s2t),
+                  bpSave: pc(bmV, bmT), bpConv: pc(bfV, bfT), df: (dfSum / kilder.length).toFixed(1) };
+      // Sæt 1/2-aggregater på tværs af kilder
+      const sa = [{ s1: 0, sp: 0, s1v: 0, s2: 0, s2v: 0, df: 0 }, { s1: 0, sp: 0, s1v: 0, s2: 0, s2v: 0, df: 0 }];
+      kilder.forEach(function(x){ (x.perSaet || []).slice(0, 2).forEach(function(ps, si){
+        sa[si].s1 += ps.s1; sa[si].sp += ps.sp; sa[si].s1v += ps.s1v; sa[si].s2 += ps.s2; sa[si].s2v += ps.s2v; sa[si].df += ps.df; }); });
+      const c = function(v){ return v === null || v === undefined ? "–" : v; };
+      const rk4 = function(navn, v1, v2, kamp, sinner, enhed){
+        const e = enhed === undefined ? " %" : enhed;
+        return '<tr><td style="padding:3px 0;font-size:11.5px;color:var(--daempet)">'+navn+'</td>' +
+          '<td style="text-align:center;font-size:11.5px;color:var(--daempet)">'+c(v1)+'</td>' +
+          '<td style="text-align:center;font-size:11.5px;color:var(--daempet)">'+c(v2)+'</td>' +
+          '<td style="text-align:center;font-weight:800;font-size:12.5px">'+c(kamp)+(kamp===null||kamp===undefined?'':e)+'</td>' +
+          '<td style="text-align:center;font-size:12.5px;color:var(--is)">'+sinner+e+'</td></tr>';
+      };
+      const pcE = function(v){ return v === null ? null : v + " %"; };
       h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>🆚 '+(EN?"Oskar vs Sinner":"Oskar mod Sinner")+(harData?'':' <span style="background:var(--guld);color:#101B26;font-size:10px;padding:2px 7px;border-radius:5px;vertical-align:middle">'+(EN?"EXAMPLE — DUMMY DATA":"EKSEMPEL — DUMMY-DATA")+'</span>')+'</h3>' +
-        '<table style="width:100%;border-collapse:collapse"><tr><td></td><td style="text-align:center;font-size:10.5px;color:var(--daempet)">OSKAR'+(harData?'':' (dummy)')+'</td><td style="text-align:center;font-size:10.5px;color:var(--daempet)">SINNER</td></tr>' +
-        rk2(EN?"1st serve in":"1. serv i spil", o.s1in, SINNER.s1in) +
-        rk2(EN?"Points won, 1st serve":"Point vundet på 1. serv", o.s1won, SINNER.s1won) +
-        rk2(EN?"Points won, 2nd serve":"Point vundet på 2. serv", o.s2won, SINNER.s2won) +
-        rk2(EN?"Break points saved":"Breakbolde afværget", o.bpSave, SINNER.bpSave) +
-        rk2(EN?"Break points converted":"Breakbolde udnyttet", o.bpConv, SINNER.bpConv) +
-        rk2(EN?"Double faults per match":"Dobbeltfejl pr. kamp", o.df, SINNER.df, "") + '</table>' +
-        '<p style="font-size:11px;color:var(--daempet);margin-top:6px">'+(harData?(EN?"Oskar = average of all "+S.gemte.length+" registered matches. ":"Oskar = gennemsnit af alle "+S.gemte.length+" registrerede kampe. "):(EN?"⚠ Oskar's column is dummy data until the first match is registered. ":"⚠ Oskars kolonne er dummy-tal, indtil første kamp er registreret. "))+(EN?"Sinner = ATP 2025/26 season level (rounded). Benchmarks, not verdicts — world No. 1 vs U14. The DIRECTION is what counts: fewer double faults, more 2nd-serve points, cash the break points.":"Sinner = ATP-sæsonniveau 2025/26 (afrundet). Pejlemærker, ikke facit — verdens nr. 1 mod U14. Det er RETNINGEN, der tæller: færre dobbeltfejl, flere point på 2. serven, og breakboldene skal veksles.")+'</p></div>';
+        '<table style="width:100%;border-collapse:collapse"><tr><td></td>' +
+        '<td style="text-align:center;font-size:10px;color:var(--daempet)">'+(EN?"SET 1":"SÆT 1")+'</td>' +
+        '<td style="text-align:center;font-size:10px;color:var(--daempet)">'+(EN?"SET 2":"SÆT 2")+'</td>' +
+        '<td style="text-align:center;font-size:10px;font-weight:800;color:var(--kridt)">'+(EN?"MATCH":"KAMP")+(harData?'':' (dummy)')+'</td>' +
+        '<td style="text-align:center;font-size:10px;color:var(--is)">SINNER ▎</td></tr>' +
+        rk4(EN?"1st serve in":"1. serv i spil", pcE(pc(sa[0].s1, sa[0].sp)), pcE(pc(sa[1].s1, sa[1].sp)), o.s1in, SINNER.s1in) +
+        rk4(EN?"Won on 1st serve":"Vundet på 1. serv", pcE(pc(sa[0].s1v, sa[0].s1)), pcE(pc(sa[1].s1v, sa[1].s1)), o.s1won, SINNER.s1won) +
+        rk4(EN?"Won on 2nd serve":"Vundet på 2. serv", pcE(pc(sa[0].s2v, sa[0].s2)), pcE(pc(sa[1].s2v, sa[1].s2)), o.s2won, SINNER.s2won) +
+        rk4(EN?"Break points saved":"Breakbolde afværget", null, null, o.bpSave, SINNER.bpSave) +
+        rk4(EN?"Break points converted":"Breakbolde udnyttet", null, null, o.bpConv, SINNER.bpConv) +
+        rk4(EN?"Double faults":"Dobbeltfejl", sa[0].df, sa[1].df, o.df, SINNER.df, harData?(EN?" pr. match":" pr. kamp"):"") + '</table>' +
+        '<p style="font-size:11px;color:var(--daempet);margin-top:6px">'+(harData?(EN?"Oskar = all "+kilder.length+" registered matches (set columns = sums across matches). ":"Oskar = alle "+kilder.length+" registrerede kampe (sæt-kolonner = summeret på tværs). "):(EN?"⚠ The whole table is the example match until the first real match is saved. ":"⚠ Hele tabellen er eksempel-kampen, indtil første rigtige kamp gemmes. "))+(EN?"Sinner = ATP 2025/26 (rounded). Benchmarks, not verdicts — the DIRECTION counts. Set 1 vs set 2 reveals whether the level holds when the match gets long.":"Sinner = ATP 2025/26 (afrundet). Pejlemærker, ikke facit — det er RETNINGEN, der tæller. Sæt 1 mod sæt 2 afslører, om niveauet holder, når kampen bliver lang.")+'</p></div>';
     })();
     h += '<div class="kort" style="background:#121F2E;border:1.5px solid var(--kant)"><div style="font-weight:800;font-size:13.5px;color:var(--is);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📊 Baseline — før appen (rangliste uge 28 + UM)</div>' +
       BASELINE.grupper.map(g => '<div style="margin-bottom:9px"><div style="font-weight:800;font-size:12.5px">'+esc(g[0])+' · <span style="color:var(--guld);font-weight:700">'+esc(g[1])+'</span></div><div style="font-size:12px;color:#B9C6D2;line-height:1.55">'+esc(g[2])+'</div></div>').join("") +

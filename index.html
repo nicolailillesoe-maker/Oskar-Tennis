@@ -83,7 +83,7 @@ function beregnStilling(pts, oskarFirst, mtb, justeringer) {
   for (let _i = 0; _i < pts.length; _i++) {
     const p = pts[_i];
     if (jmap[_i]) anvendBasis(jmap[_i]);
-    if (done) { flags.push({ server, ekstra: true }); continue; }
+    if (done) { flags.push({ server, ekstra: true, saet: setsO + setsM + 1 }); continue; }
     const srvNu = tb ? tbServer(tbFirst, pO + pM) : server;
 
     // Stort-point-analyse FØR bolden spilles
@@ -104,7 +104,7 @@ function beregnStilling(pts, oskarFirst, mtb, justeringer) {
         stor = vinderSæt && setsM === 1 ? "MATCHBOLD mod Oskar" : vinderSæt ? "SÆTBOLD mod Oskar" : !srvNu ? "PARTIBOLD modst." : "BREAKBOLD mod Oskar";
       } else if (pO === pM && pO >= 2) stor = "STORT POINT (deuce/30-30)";
     }
-    flags.push({ server: srvNu, stor, tb });
+    flags.push({ server: srvNu, stor, tb, saet: setsO + setsM + 1 });
 
     // Spil bolden
     if (p.r === "V") pO++; else pM++;
@@ -518,9 +518,19 @@ function statistik(k) {
   const oServe2 = oServe.filter(p => p.f === 2);
   const bpFor = k.point.filter((p,i) => F[i] && F[i].stor && F[i].stor.indexOf("BREAKBOLD Oskar") === 0);
   const bpMod = k.point.filter((p,i) => F[i] && F[i].stor && F[i].stor.indexOf("BREAKBOLD mod") === 0);
+  const perSaet = [];
+  k.point.forEach((p, i) => {
+    const sn = (F[i] && F[i].saet) || 1;
+    while (perSaet.length < sn) perSaet.push({ v: 0, t: 0, uf: 0, vin: 0, s1: 0, sp: 0 });
+    const ps = perSaet[sn - 1];
+    if (p.r === "V") ps.v += 1; else ps.t += 1;
+    if (p.r === "T" && (p.å === "uf" || p.å === "dobbelt")) ps.uf += 1;
+    if (p.r === "V" && (p.å === "vinder" || p.å === "es")) ps.vin += 1;
+    if (F[i] && F[i].server === true) { ps.sp += 1; if (p.f === 1) ps.s1 += 1; }
+  });
   const dl = (n) => { const q = k.point.filter(p => p.l === n); return [q.filter(p => p.r === "V").length, q.length]; };
   const budIVbrud = k.point.filter(p => p.l === 1 && p.r === "T" && (p.å === "uf" || p.å === "dobbelt")).length;
-  return { st, v, t, uf, vindere, dK: dl(1), dM: dl(2), dL: dl(3), budIVbrud,
+  return { st, v, t, uf, vindere, perSaet, dK: dl(1), dM: dl(2), dL: dl(3), budIVbrud,
     serve: [oServe.filter(p=>p.r==="V").length, oServe.length],
     retur: [retur.filter(p=>p.r==="V").length, retur.length],
     s1pct: oServe.length ? Math.round(oServe1.length / oServe.length * 100) : 0,
@@ -539,6 +549,7 @@ function lavEksport(k) {
     "Oskars serv: " + s.serve[0] + "/" + s.serve[1] + " · 1. serv i spil: " + s.s1pct + " % · vundet på 1. serv: " + s.s1[0] + "/" + s.s1[1] + " · på 2. serv: " + s.s2[0] + "/" + s.s2[1] + " · dobbeltfejl: " + s.df,
     "Retur: " + s.retur[0] + "/" + s.retur[1] + " · Breakbolde udnyttet: " + s.bpFor[0] + "/" + s.bpFor[1] + " · afværget: " + s.bpMod[0] + "/" + s.bpMod[1],
     "Vindere+es: " + s.vindere + " · Gratis fejl (inkl. df): " + s.uf,
+    "Pr. sæt: " + s.perSaet.map((ps, si) => "S" + (si + 1) + " " + ps.v + "-" + ps.t + " (UE " + ps.uf + ", vindere " + ps.vin + (ps.sp ? ", 1.serv " + Math.round(ps.s1 / ps.sp * 100) + " %" : "") + ")").join(" · "),
     "Dueller (vundet/spillet): korte(1-4) " + s.dK[0] + "/" + s.dK[1] + " · mellem(5-8) " + s.dM[0] + "/" + s.dM[1] + " · lange(9+) " + s.dL[0] + "/" + s.dL[1] + " · Oskars gratis fejl i KORTE dueller (bud IV-brud): " + s.budIVbrud,
     "Rå sekvens (V/T:årsag:serv:duel K/M/L): " + k.point.map(p => p.r + ":" + p.å + ":" + p.f + ":" + (p.l === 1 ? "K" : p.l === 2 ? "M" : p.l === 3 ? "L" : "?")).join(" "),
     "(Oskar servede først: " + (k.oskarFirst ? "ja" : "nej") + " · 3. sæt = MTB: " + (k.mtb ? "ja" : "nej") + ")",
@@ -787,7 +798,7 @@ function render() {
         '<p class="lille" style="margin:8px 0 4px">'+(EN?"Who serves the next ball?":"Hvem server næste bold?")+'</p>' +
         '<div class="raekke"><button class="knap valg '+(S.j.server?"til":"")+'" data-a="jServer" data-v="1">Oskar</button><button class="knap valg '+(!S.j.server?"til":"")+'" data-a="jServer" data-v="0">'+(EN?"Opponent":"Modstander")+'</button></div>' +
         '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="jAnvend">✔ '+(EN?"Apply adjustment":"Anvend justeringen")+'</button></div></div>' : '');
-      h += '<div class="kort statlinje">'+(EN?'Serve points won: ':'Serve vundet: ')+'<b>'+s.serve[0]+'/'+s.serve[1]+'</b> · '+(EN?'1st serve in: ':'1. serv i spil: ')+'<b>'+s.s1pct+' %</b> · '+(EN?'Return: ':'Retur: ')+'<b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>'+(EN?'Winners: ':'Vindere: ')+'<b style="color:var(--vundet)">'+s.vindere+'</b> · '+(EN?'Unforced errors: ':'Gratis fejl: ')+'<b style="color:'+(s.uf>s.vindere?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b> · '+(EN?'Break points: ':'Breakbolde: ')+'<b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b>'+(EN?' converted, ':' udnyttet, ')+'<b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b>'+(EN?' saved':' afværget')+'<br>'+(EN?'Rallies (won/played) — short: ':'Dueller (vundet/spillet) — korte: ')+'<b>'+s.dK[0]+'/'+s.dK[1]+'</b>'+(EN?' · medium: ':' · mellem: ')+'<b>'+s.dM[0]+'/'+s.dM[1]+'</b>'+(EN?' · long: ':' · lange: ')+'<b>'+s.dL[0]+'/'+s.dL[1]+'</b>'+(s.budIVbrud>1?' <span style="color:var(--tabt)">'+(EN?'· free errors in short rallies: ':'· gratis fejl i korte dueller: ')+s.budIVbrud+' (rule IV!)</span>':'')+'</div>';
+      h += '<div class="kort statlinje">'+(EN?'Serve points won: ':'Serve vundet: ')+'<b>'+s.serve[0]+'/'+s.serve[1]+'</b> · '+(EN?'1st serve in: ':'1. serv i spil: ')+'<b>'+s.s1pct+' %</b> · '+(EN?'Return: ':'Retur: ')+'<b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>'+(EN?'Winners: ':'Vindere: ')+'<b style="color:var(--vundet)">'+s.vindere+'</b> · '+(EN?'Unforced errors: ':'Gratis fejl: ')+'<b style="color:'+(s.uf>s.vindere?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b> · '+(EN?'Break points: ':'Breakbolde: ')+'<b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b>'+(EN?' converted, ':' udnyttet, ')+'<b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b>'+(EN?' saved':' afværget')+'<br>'+(EN?'Rallies (won/played) — short: ':'Dueller (vundet/spillet) — korte: ')+'<b>'+s.dK[0]+'/'+s.dK[1]+'</b>'+(EN?' · medium: ':' · mellem: ')+'<b>'+s.dM[0]+'/'+s.dM[1]+'</b>'+(EN?' · long: ':' · lange: ')+'<b>'+s.dL[0]+'/'+s.dL[1]+'</b>'+(function(){ const sn = s.st.setsO + s.st.setsM + 1; const ps = s.perSaet[sn-1] || { v: 0, t: 0, uf: 0, vin: 0 }; return '<br>'+(EN?'This set: ':'Dette sæt: ')+'<b>'+ps.v+'-'+ps.t+'</b> · '+(EN?'UE ':'gratis fejl ')+'<b>'+ps.uf+'</b> · '+(EN?'winners ':'vindere ')+'<b>'+ps.vin+'</b>'; })()+(s.budIVbrud>1?' <span style="color:var(--tabt)">'+(EN?'· free errors in short rallies: ':'· gratis fejl i korte dueller: ')+s.budIVbrud+' (rule IV!)</span>':'')+'</div>';
       h += '<input placeholder="'+(EN?'Result (auto-filled if empty)':'Resultat (udfyldes automatisk hvis tomt)')+'" value="'+esc(S.resInput)+'" data-felt="resInput">';
       h += '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="afslut">'+(EN?"✔ Finish &amp; save the match":"✔ Afslut &amp; gem kampen")+'</button></div>';
     }
@@ -913,7 +924,8 @@ function render() {
     h += S.gemte.map((k,i) => {
       const s = statistik(k);
       return '<div class="kort"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><b style="font-size:13.5px">vs '+esc(k.modstander)+(k.resultat?' <span style="color:var(--is)">· '+esc(k.resultat)+'</span>':'')+'</b><span style="font-size:11px;color:var(--daempet)">'+esc(k.dato)+'</span></div>' +
-        '<p style="margin:4px 0 8px">'+(k.turnering?esc(k.turnering)+' · ':'')+'Point '+s.v+'-'+s.t+' · Serve '+s.serve[0]+'/'+s.serve[1]+' ('+(EN?"1st serve ":"1. serv ")+s.s1pct+' %) · BP '+s.bpFor[0]+'/'+s.bpFor[1]+' · '+(EN?"Winners ":"Vindere ")+s.vindere+' · '+(EN?"UE ":"Gratis fejl ")+s.uf+'</p>' +
+        '<p style="margin:4px 0 8px">'+(k.turnering?esc(k.turnering)+' · ':'')+'Point '+s.v+'-'+s.t+' · Serve '+s.serve[0]+'/'+s.serve[1]+' ('+(EN?"1st serve ":"1. serv ")+s.s1pct+' %) · BP '+s.bpFor[0]+'/'+s.bpFor[1]+' · '+(EN?"Winners ":"Vindere ")+s.vindere+' · '+(EN?"UE ":"Gratis fejl ")+s.uf+
+        (s.perSaet.length>1 ? '<br><span style="font-size:11px;opacity:.85">'+s.perSaet.map(function(ps,si){ return (EN?'Set ':'Sæt ')+(si+1)+': '+ps.v+'-'+ps.t+' · '+(EN?'UE ':'fejl ')+ps.uf+' · '+(EN?'win ':'vin ')+ps.vin+(ps.sp?' · 1. serv '+Math.round(ps.s1/ps.sp*100)+' %':''); }).join('  ·  ')+'</span>' : '')+'</p>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px" data-a="eksport" data-v="'+i+'">📤 '+(EN?"Export to Claude":"Eksportér til Claude")+'</button>' +
         '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--guld);color:var(--guld);font-size:12px" data-a="analyseAabn" data-v="'+i+'">📝 '+(k.analyse?(EN?"Analysis ✓":"Analyse ✓"):(EN?"Analysis":"Analyse"))+'</button>' +
         (S.sletBekraeft === i

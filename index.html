@@ -443,8 +443,34 @@ const FYSISK_EN = [
   ["🗓","The weekly rhythm (Claude's link to the season plan)","Weeks 29-30 are the season plan's training block — this programme's home: e.g. Session 1 Monday, Session 3 Wednesday, Session 2 Friday. Golden rule: speed work (Session 3) needs fresh legs — never the day after hard endurance. And on court alongside it: the wide serve from the ad side. Fitness builds the engine; the serve builds the weapon."],
 ];
 
+// ---------- Fysisk trænings-tracker ----------
+const fysByg = (EN) => {
+  const W = [
+    EN ? "Warm-up 1/3 · Skipping rope 4 min — min. 1,000 skips, count!" : "Opvarmning 1/3 · Sjipning 4 min. — min. 1.000 sjip, tæl!",
+    EN ? "Warm-up 2/3 · Easy jog 4 min" : "Opvarmning 2/3 · Roligt løb 4 min.",
+    EN ? "Warm-up 3/3 · Stretch 2 min — thighs + calves" : "Opvarmning 3/3 · Stræk 2 min. — lår + lægge",
+  ];
+  const rund = (n, ord, tekst) => Array.from({ length: n }, (_, i) => ord + " " + (i + 1) + "/" + n + " · " + tekst);
+  const R = EN ? "Round" : "Runde";
+  return [
+    { navn: EN ? "Session 1 · Endurance run (38 min)" : "Pas 1 · Konditionsløb (38 min.)",
+      trin: W.concat(rund(4, R, EN ? "2 min hard (80-85 %) + 2 min recovery (60-65 %)" : "2 min. hårdt (80-85 %) + 2 min. roligt (60-65 %)"),
+        [EN ? "Break · 4 min — shake the legs" : "Pause · 4 min. — ryst benene"],
+        rund(4, R, EN ? "2 min hard (80-85 %) + 2 min recovery (60-65 %)" : "2 min. hårdt (80-85 %) + 2 min. roligt (60-65 %)"),
+        [EN ? "Cool-down · 2 min very easy + stretch thighs, calves, glutes" : "Nedkøring · 2 min. meget roligt løb + stræk lår, lægge, baller"]) },
+    { navn: EN ? "Session 2 · Intervals (approx. 33 min)" : "Pas 2 · Intervaller (ca. 33 min.)",
+      trin: W.concat(rund(10, R, EN ? "30 sec hard + 30 sec easy" : "30 sek. hårdt + 30 sek. roligt"),
+        [EN ? "Break · 3 min" : "Pause · 3 min."],
+        rund(10, R, EN ? "30 sec hard + 30 sec easy" : "30 sek. hårdt + 30 sek. roligt"),
+        [EN ? "Finish · 10 min easy run (60 %)" : "Afslutning · 10 min. roligt løb (60 %)"]) },
+    { navn: EN ? "Session 3 · Speed (25-30 min)" : "Pas 3 · Hurtighed (25-30 min.)",
+      trin: W.concat(rund(10, EN ? "Set" : "Sæt", EN ? "Pendulum sprints 8-6-4-8-6 m + 60 sec rest" : "Pendulsprint 8-6-4-8-6 m + 60 sek. pause"),
+        rund(5, EN ? "Block" : "Blok", EN ? "10× (20 m sprint + 10 m walk), then 60 sec rest" : "10× (20 m spurt + 10 m gang), derefter 60 sek. pause")) },
+  ];
+};
+
 let S = {
-  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true,
+  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true, fysAktiv: null, fysLog: [], fysAfbryd: false,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -465,6 +491,8 @@ const rensKamp = (g) => {
 try { const sp = lager.hent("oskar-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
 try { if (lager.hent("oskar-laas") === "op") S.laast = false; } catch(e) {}
 try { if (lager.hent("oskar-tryk") === "2") S.tryk3 = false; } catch(e) {}
+try { const fa = lager.hent("oskar-fysisk-aktiv"); if (fa) S.fysAktiv = JSON.parse(fa); } catch(e) {}
+try { const fl = JSON.parse(lager.hent("oskar-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = fl; } catch(e) {}
 try { const rå = JSON.parse(lager.hent("oskar-kampe") || "[]"); S.gemte = (Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean); } catch(e) {}
 try { const a = lager.hent("oskar-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.parse(a)); } catch(e) {}
 
@@ -531,6 +559,20 @@ const A = {
     S.j[felt] = Math.max(0, Math.min(loft, (S.j[felt] | 0) + op)); render();
   },
   jServer: (v) => { S.j.server = v === "1"; render(); },
+  fysStart: (i) => { S.fysAktiv = { pas: +i, trin: 0 }; S.fysAfbryd = false; lager.gem("oskar-fysisk-aktiv", JSON.stringify(S.fysAktiv)); render(); },
+  fysNaeste: () => {
+    if (!S.fysAktiv) return;
+    const alle = fysByg(S.sprog === "en")[S.fysAktiv.pas].trin;
+    if (S.fysAktiv.trin + 1 >= alle.length) {
+      S.fysLog.unshift({ d: new Date().toISOString().slice(0, 10), p: S.fysAktiv.pas });
+      lager.gem("oskar-fysisk-log", JSON.stringify(S.fysLog));
+      S.fysAktiv = null; lager.slet("oskar-fysisk-aktiv");
+    } else { S.fysAktiv.trin += 1; lager.gem("oskar-fysisk-aktiv", JSON.stringify(S.fysAktiv)); }
+    render();
+  },
+  fysAfbrydSpoerg: () => { S.fysAfbryd = true; render(); },
+  fysAfbrydNej: () => { S.fysAfbryd = false; render(); },
+  fysAfbrydJa: () => { S.fysAktiv = null; S.fysAfbryd = false; lager.slet("oskar-fysisk-aktiv"); render(); },
   trykToggle: () => { S.tryk3 = !S.tryk3; S.aarsagValgt = null; lager.gem("oskar-tryk", S.tryk3 ? "3" : "2"); render(); },
   jAnvend: () => {
     if (!S.aktiv || !S.j) return;
@@ -699,8 +741,30 @@ function render() {
   }
 
   if (!LAAST && S.tab === "fysisk") {
-    h += '<p class="lille">'+(EN?"The club's physical summer programme for Oskar — three running sessions plus the mandatory warm-up.":"Klubbens fysiske sommerprogram til Oskar — tre løbepas plus den obligatoriske opvarmning.")+'</p>' +
-      (EN?FYSISK_EN:FYSISK).map(function(f){ return '<div class="kort"'+(f[0]==="🗓"?' style="border-left:3px solid var(--is)"':'')+'><h3>'+f[0]+' '+esc(f[1])+'</h3><p>'+esc(f[2])+'</p></div>'; }).join("");
+    if (S.fysAktiv) {
+      const pas = fysByg(EN)[S.fysAktiv.pas], alle = pas.trin, nr = S.fysAktiv.trin, pct = Math.round(nr / alle.length * 100);
+      h += '<div class="kort" style="border:1.5px solid var(--grus)"><h3 style="margin-bottom:6px">💪 '+esc(pas.navn)+'</h3>' +
+        '<div style="background:#0B141D;border-radius:6px;height:14px;overflow:hidden;margin-bottom:6px"><div style="background:var(--grus);height:100%;width:'+pct+'%"></div></div>' +
+        '<p class="lille">'+(EN?"Step":"Trin")+' '+(nr+1)+'/'+alle.length+' · '+pct+' % '+(EN?"done":"gennemført")+'</p>' +
+        '<div style="background:#0B141D;border-radius:10px;padding:16px 14px;margin:8px 0;font-size:16px;font-weight:800;line-height:1.4">'+esc(alle[nr])+'</div>' +
+        (nr+1 < alle.length ? '<p class="lille" style="opacity:.7">'+(EN?"Next: ":"Næste: ")+esc(alle[nr+1])+'</p>' : '<p class="lille" style="color:var(--guld)">'+(EN?"Last step — finish strong!":"Sidste trin — afslut stærkt!")+'</p>') +
+        '<div class="raekke" style="margin-top:8px"><button class="knap stor" style="background:var(--vundet)" data-a="fysNaeste">'+(nr+1 >= alle.length ? (EN?"🎉 Session DONE":"🎉 Pas GENNEMFØRT") : (EN?"✔ Step done":"✔ Trin færdigt"))+'</button></div>' +
+        (S.fysAfbryd
+          ? '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--tabt)" data-a="fysAfbrydJa">'+(EN?"Yes, abort — nothing is saved":"Ja, afbryd — intet gemmes")+'</button><button class="knap" data-a="fysAfbrydNej">'+(EN?"No, keep going":"Nej, videre")+'</button></div>'
+          : '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px;padding:8px" data-a="fysAfbrydSpoerg">'+(EN?"Abort session":"Afbryd passet")+'</button></div>') +
+        '</div>';
+    } else {
+      h += '<p class="lille">'+(EN?"The club's physical summer programme for Oskar — start a session below and the app tracks every step.":"Klubbens fysiske sommerprogram til Oskar — start et pas herunder, så holder appen styr på hvert trin.")+'</p>';
+      h += '<h2 style="font-size:15px;color:var(--is);margin:6px 0 8px;text-transform:uppercase;letter-spacing:1px">▶ '+(EN?"Start a session":"Start et pas")+'</h2><div class="raekke">' +
+        fysByg(EN).map(function(p, i){ return '<button class="knap" style="background:var(--grus);padding:16px 6px;line-height:1.3" data-a="fysStart" data-v="'+i+'">'+(EN?"Session ":"Pas ")+(i+1)+'<br><span style="font-size:10.5px;opacity:.85">'+p.trin.length+' '+(EN?"steps":"trin")+'</span></button>'; }).join("") + '</div>';
+      if (S.fysLog.length) {
+        const antal = [0,0,0]; S.fysLog.forEach(function(e){ if (antal[e.p] !== undefined) antal[e.p] += 1; });
+        h += '<div class="kort" style="border-left:3px solid var(--vundet)"><h3>📓 '+(EN?"Completed sessions":"Gennemførte pas")+' — '+S.fysLog.length+' '+(EN?"total":"i alt")+'</h3>' +
+          '<p style="margin-bottom:6px">'+(EN?"Session 1":"Pas 1")+': '+antal[0]+' × · '+(EN?"Session 2":"Pas 2")+': '+antal[1]+' × · '+(EN?"Session 3":"Pas 3")+': '+antal[2]+' ×</p>' +
+          '<p style="font-size:11px;color:var(--daempet)">'+S.fysLog.slice(0,8).map(function(e){ return e.d+' · '+(EN?"Session ":"Pas ")+(e.p+1); }).join("<br>")+'</p></div>';
+      }
+      h += (EN?FYSISK_EN:FYSISK).map(function(f){ return '<div class="kort"'+(f[0]==="🗓"?' style="border-left:3px solid var(--is)"':'')+'><h3>'+f[0]+' '+esc(f[1])+'</h3><p>'+esc(f[2])+'</p></div>'; }).join("");
+    }
   }
 
   if (!LAAST && S.tab === "historik") {

@@ -471,6 +471,59 @@ const fysByg = (EN) => {
 
 // Sinner-referencetal (ATP 2025/26-sæsonniveau, afrundede — kilde: ATP Tour/Infosys)
 const SINNER = { s1in: 64, s1won: 79, s2won: 58, bpSave: 74, bpConv: 46, df: 1.2 };
+// ---------- Visuel statistik: skemaer, Sinner-streg og niveau-ikoner ----------
+const pctAf = (a) => (a && a[1] ? Math.round(a[0] / a[1] * 100) : null);
+const nivFarve = (n) => n === 2 ? "var(--vundet)" : n === 1 ? "var(--guld)" : "var(--tabt)";
+const nivIkon = (n) => '<span style="color:' + nivFarve(n) + ';font-weight:800">' + (n === 2 ? "✓" : n === 1 ? "●" : "⚠") + '</span>';
+const niv = (p, godt, ok) => (p === null ? 1 : p >= godt ? 2 : p >= ok ? 1 : 0);
+function bjaelke(p, sinner, n) {
+  return '<div style="position:relative;background:#0B141D;border-radius:4px;height:9px">' +
+    '<div style="background:' + nivFarve(n) + ';height:100%;width:' + Math.min(100, p) + '%;border-radius:4px"></div>' +
+    (sinner ? '<div style="position:absolute;top:-2px;bottom:-2px;left:' + sinner + '%;width:2px;background:var(--guld)"></div>' : '') + '</div>';
+}
+function statRk(label, vaerdi, p, sinner, n, chip) {
+  return '<tr><td style="padding:4px 6px 4px 0;font-size:11.5px;color:var(--daempet)">' + label +
+    (chip ? ' <span style="font-size:9px;background:#223243;padding:1px 5px;border-radius:4px;color:var(--is);vertical-align:middle">' + chip + '</span>' : '') + '</td>' +
+    '<td style="padding:4px 8px 4px 2px;font-weight:800;font-size:12.5px;text-align:right;white-space:nowrap">' + vaerdi + '</td>' +
+    '<td style="width:34%;padding:4px 6px 4px 0">' + (p !== null ? bjaelke(p, sinner, n) : '') + '</td>' +
+    '<td style="padding:4px 0;text-align:center;width:18px">' + nivIkon(n) + '</td></tr>';
+}
+function statTabel(s, EN) {
+  const diff = s.vindere - s.uf, nD = diff >= 0 ? 2 : diff >= -4 ? 1 : 0;
+  const s1i = s.serve[1] ? s.s1pct : null, s1w = pctAf(s.s1), s2w = pctAf(s.s2), bpF = pctAf(s.bpFor), bpM = pctAf(s.bpMod), rt = pctAf(s.retur);
+  let r = statRk(EN ? "Winners / gifts" : "Vindere / gaver", s.vindere + " / " + s.uf, null, null, nD, "🧊");
+  r += statRk(EN ? "1st serve in" : "1. serv i spil", s1i === null ? "–" : s1i + " %", s1i, SINNER.s1in, niv(s1i, 60, 45));
+  r += statRk(EN ? "Won on 1st serve" : "Vundet på 1. serv", s1w === null ? "–" : s1w + " %", s1w, SINNER.s1won, niv(s1w, 65, 50));
+  r += statRk(EN ? "Won on 2nd serve" : "Vundet på 2. serv", s2w === null ? "–" : s2w + " %", s2w, SINNER.s2won, niv(s2w, 50, 40));
+  r += statRk(EN ? "Return points won" : "Returpoint vundet", rt === null ? "–" : rt + " %", rt, null, niv(rt, 45, 30));
+  if (s.bpFor[1]) r += statRk(EN ? "Break points converted" : "Breakbolde udnyttet", s.bpFor[0] + "/" + s.bpFor[1], bpF, SINNER.bpConv, niv(bpF, 40, 25));
+  if (s.bpMod[1]) r += statRk(EN ? "Break points saved" : "Breakbolde afværget", s.bpMod[0] + "/" + s.bpMod[1], bpM, SINNER.bpSave, niv(bpM, 60, 40));
+  [[s.dK, EN ? "Short rallies (1-4)" : "Korte dueller (1-4)"], [s.dM, EN ? "Medium (5-8)" : "Mellem (5-8)"], [s.dL, EN ? "Long (9+)" : "Lange (9+)"]].forEach(function(par){
+    const q = par[0]; if (!q[1]) return;
+    const pd = Math.round(q[0] / q[1] * 100);
+    r += statRk(par[1], q[0] + "/" + q[1], pd, null, niv(pd, 55, 40));
+  });
+  r += statRk(EN ? "Free errors, short rallies" : "Gratis fejl i korte dueller", String(s.budIVbrud), null, null, s.budIVbrud <= 1 ? 2 : s.budIVbrud <= 3 ? 1 : 0, "BUD IV");
+  return '<table style="width:100%;border-collapse:collapse;margin:6px 0 2px">' + r +
+    '<tr><td colspan="4" style="font-size:10px;color:var(--daempet);padding-top:4px">▎ ' + (EN ? "gold line = Sinner level (ATP 25/26) · ✓ strong · ● okay · ⚠ sharpen" : "guldstreg = Sinner-niveau (ATP 25/26) · ✓ stærkt · ● okay · ⚠ skal skærpes") + '</td></tr></table>';
+}
+function saetTabel(s, EN) {
+  if (s.perSaet.length < 2) return "";
+  let hoved = '<tr><td style="font-size:10px;color:var(--daempet)"></td>', pr = '<tr><td style="font-size:11px;color:var(--daempet);padding:3px 0">Point</td>',
+      fr = '<tr><td style="font-size:11px;color:var(--daempet);padding:3px 0">' + (EN ? "Errors" : "Fejl") + '</td>',
+      vr = '<tr><td style="font-size:11px;color:var(--daempet);padding:3px 0">' + (EN ? "Winners" : "Vindere") + '</td>',
+      sr = '<tr><td style="font-size:11px;color:var(--daempet);padding:3px 0">1. serv</td>';
+  s.perSaet.forEach(function(ps, si){
+    const c = ' style="text-align:center;padding:3px 6px;font-size:11.5px"';
+    hoved += '<td style="text-align:center;font-size:10px;font-weight:800;color:var(--is);padding:3px 6px">' + (EN ? "SET " : "SÆT ") + (si + 1) + '</td>';
+    pr += '<td' + c + '><b>' + ps.v + '-' + ps.t + '</b></td>';
+    fr += '<td' + c + '>' + ps.uf + '</td>';
+    vr += '<td' + c + '>' + ps.vin + '</td>';
+    sr += '<td' + c + '>' + (ps.sp ? Math.round(ps.s1 / ps.sp * 100) + ' %' : '–') + '</td>';
+  });
+  return '<table style="border-collapse:collapse;margin:2px 0 6px;background:#0B141D;border-radius:8px;padding:4px">' + hoved + '</tr>' + pr + '</tr>' + fr + '</tr>' + vr + '</tr>' + sr + '</tr></table>';
+}
+
 
 // ---------- Eksempel-kamp (dummy til visuel test — ægte motor, fiktive point) ----------
 const DEMOKAMP = (function(){
@@ -894,24 +947,49 @@ function render() {
   }
 
   if (!LAAST && S.tab === "historik") {
+    if (S.gemte.length >= 2) {
+      const sa = statistik(S.gemte[0]), sb = statistik(S.gemte[1]);
+      const frem = [], skaerp = [];
+      const dom = function(label, nu, foer, stigerGodt, enhed){
+        if (nu === null || foer === null || nu === foer) return;
+        const d = nu - foer, godt = (d > 0) === stigerGodt;
+        (godt ? frem : skaerp).push(label + " " + (d > 0 ? "+" : "−") + Math.abs(d) + (enhed || ""));
+      };
+      dom(EN?"Free errors":"Gratis fejl", sa.uf, sb.uf, false);
+      dom(EN?"Winners":"Vindere", sa.vindere, sb.vindere, true);
+      dom("1. serv", sa.s1pct, sb.s1pct, true, " pp");
+      dom(EN?"BP converted":"BP udnyttet", pctAf(sa.bpFor), pctAf(sb.bpFor), true, " pp");
+      dom(EN?"Rule IV breaches":"Bud IV-brud", sa.budIVbrud, sb.budIVbrud, false);
+      const pille = function(t, farve){ return '<span style="display:inline-block;background:transparent;border:1.5px solid '+farve+';color:'+farve+';font-size:11px;font-weight:700;padding:3px 8px;border-radius:12px;margin:2px 4px 2px 0">'+t+'</span>'; };
+      h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>🧭 '+(EN?"Latest match vs previous":"Seneste kamp mod forrige")+'</h3>' +
+        (frem.length ? '<p style="margin-bottom:2px;font-size:11px;color:var(--daempet)">'+(EN?"THE RIGHT WAY":"DEN RIGTIGE VEJ")+'</p><p style="margin-bottom:6px">'+frem.map(function(t){return pille("✓ "+t, "var(--vundet)");}).join("")+'</p>' : '') +
+        (skaerp.length ? '<p style="margin-bottom:2px;font-size:11px;color:var(--daempet)">'+(EN?"SHARPEN (Sinner rules)":"SKAL SKÆRPES (Sinner-budene)")+'</p><p style="margin-bottom:0">'+skaerp.map(function(t){return pille("⚠ "+t, "var(--tabt)");}).join("")+'</p>' : '') +
+        (!frem.length && !skaerp.length ? '<p style="margin-bottom:0;font-size:12px;color:var(--daempet)">'+(EN?"Level with the previous match — steady as ice. 🧊":"Status quo mod forrige kamp — stabilt som is. 🧊")+'</p>' : '') + '</div>';
+    }
     if (S.gemte.length >= 3) {
       const kron = S.gemte.slice().reverse().map(function(k){ return statistik(k); });
       const rk = function(f){ return kron.map(f).join(" → "); };
       const sidste = kron[kron.length-1], foerste = kron[0];
-      h += '<div class="kort" style="border-left:3px solid var(--guld)"><h3>📈 '+(EN?"Match by match (oldest → newest)":"Kamp for kamp (ældste → nyeste)")+'</h3>' +
-        '<p style="margin-bottom:4px">'+(EN?"Unforced errors: ":"Gratis fejl: ")+'<b>'+rk(function(s){return s.uf;})+'</b>'+(sidste.uf<foerste.uf?' <span style="color:var(--vundet)">✓</span>':'')+'</p>' +
-        '<p style="margin-bottom:4px">'+(EN?"Winners: ":"Vindere: ")+'<b>'+rk(function(s){return s.vindere;})+'</b></p>' +
-        '<p style="margin-bottom:4px">'+(EN?"1st serve in: ":"1. serv i spil: ")+'<b>'+rk(function(s){return s.s1pct+" %";})+'</b></p>' +
-        '<p style="margin-bottom:0">'+(EN?"Break points converted: ":"Breakbolde udnyttet: ")+'<b>'+rk(function(s){return s.bpFor[0]+"/"+s.bpFor[1];})+'</b></p></div>';
+      const trendRk = function(label, vals, enhed, stigerGodt){
+        const a = vals[0], b = vals[vals.length - 1];
+        const retning = b > a ? 1 : b < a ? -1 : 0;
+        const godt = retning === 0 ? 1 : ((retning === 1) === stigerGodt ? 2 : 0);
+        const pil = retning === 1 ? "▲" : retning === -1 ? "▼" : "—";
+        return '<tr><td style="padding:4px 6px 4px 0;font-size:11.5px;color:var(--daempet)">' + label + '</td>' +
+          '<td style="padding:4px 6px;font-weight:700;font-size:12px">' + vals.join(" → ") + (enhed || "") + '</td>' +
+          '<td style="padding:4px 0;text-align:center;width:30px"><span style="color:' + nivFarve(godt) + ';font-weight:800">' + pil + ' ' + (godt === 2 ? "✓" : godt === 0 ? "⚠" : "") + '</span></td></tr>';
+      };
+      h += '<div class="kort" style="border-left:3px solid var(--guld)"><h3>📈 '+(EN?"Match by match (oldest → newest)":"Kamp for kamp (ældste → nyeste)")+'</h3><table style="width:100%;border-collapse:collapse">' +
+        trendRk(EN?"Free errors":"Gratis fejl", kron.map(function(s){return s.uf;}), "", false) +
+        trendRk(EN?"Winners":"Vindere", kron.map(function(s){return s.vindere;}), "", true) +
+        trendRk(EN?"1st serve in":"1. serv i spil", kron.map(function(s){return s.s1pct;}), " %", true) +
+        trendRk(EN?"BP converted":"BP udnyttet", kron.map(function(s){return pctAf(s.bpFor)===null?0:pctAf(s.bpFor);}), " %", true) +
+        '</table><p style="font-size:10px;color:var(--daempet);margin:4px 0 0">'+(EN?"▲▼ = direction since first match · ✓ the right way, ⚠ the wrong way":"▲▼ = retning siden første kamp · ✓ rigtig vej, ⚠ forkert vej")+'</p></div>';
     } else {
       if (S.gemte.length === 0) {
         const ds = statistik({ point: DEMOKAMP, oskarFirst: true, mtb: true, justeringer: [] });
         h += '<div class="kort" style="border:1.5px dashed var(--kant);opacity:.9"><h3>🎾 '+(EN?"Example match card":"Eksempel på et kamp-kort")+' <span style="background:var(--guld);color:#101B26;font-size:10px;padding:2px 7px;border-radius:5px;vertical-align:middle">'+(EN?"EXAMPLE — DUMMY DATA":"EKSEMPEL — DUMMY-DATA")+'</span></h3>' +
-          '<p style="margin-bottom:4px">'+(EN?"vs Example Opponent · Score: sets ":"mod Eksempel-modstander · Stilling: sæt ")+'<b>'+ds.st.setsO+'-'+ds.st.setsM+'</b>'+(EN?" · games ":" · partier ")+'<b>'+ds.st.gO+'-'+ds.st.gM+'</b></p>' +
-          '<p style="margin-bottom:4px;font-size:12px">Point '+ds.v+'-'+ds.t+' · Serve '+ds.serve[0]+'/'+ds.serve[1]+' ('+(EN?"1st serve ":"1. serv ")+ds.s1pct+' %) · '+(EN?"Return ":"Retur ")+ds.retur[0]+'/'+ds.retur[1]+'<br>'+(EN?"Winners ":"Vindere ")+'<b style="color:var(--vundet)">'+ds.vindere+'</b> · '+(EN?"Unforced errors ":"Gratis fejl ")+'<b>'+ds.uf+'</b> · '+(EN?"Break points ":"Breakbolde ")+ds.bpFor[0]+'/'+ds.bpFor[1]+(EN?" converted, ":" udnyttet, ")+ds.bpMod[0]+'/'+ds.bpMod[1]+(EN?" saved":" afværget")+'</p>' +
-          '<p style="margin-bottom:4px;font-size:11.5px">'+(EN?"Rallies — short: ":"Dueller — korte: ")+'<b>'+ds.dK[0]+'/'+ds.dK[1]+'</b>'+(EN?" · medium: ":" · mellem: ")+'<b>'+ds.dM[0]+'/'+ds.dM[1]+'</b>'+(EN?" · long: ":" · lange: ")+'<b>'+ds.dL[0]+'/'+ds.dL[1]+'</b>'+(ds.budIVbrud>1?' <span style="color:var(--tabt)">· '+(EN?"free errors in short rallies: ":"gratis fejl i korte dueller: ")+ds.budIVbrud+' ('+(EN?"rule IV!":"bud IV!")+')</span>':'')+'</p>' +
-          '<p style="margin-bottom:4px;font-size:11px;opacity:.85">'+ds.perSaet.map(function(ps,si){ return (EN?'Set ':'Sæt ')+(si+1)+': '+ps.v+'-'+ps.t+' · '+(EN?'UE ':'fejl ')+ps.uf+' · '+(EN?'win ':'vin ')+ps.vin+(ps.sp?' · 1. serv '+Math.round(ps.s1/ps.sp*100)+' %':''); }).join('  ·  ')+'</p>' +
-          '<p style="font-size:11px;color:var(--guld)">'+(EN?"⚠ Fictional points run through the real engine — this card disappears when the first real match is saved. Everything above (plus the raw point sequence) is included in the 📤 export.":"⚠ Fiktive point kørt gennem den ægte motor — kortet forsvinder, når første rigtige kamp gemmes. Alt ovenstående (plus den rå point-sekvens) følger med i 📤 eksporten.")+'</p></div>';
+          '<p style="margin:2px 0 2px;font-size:11.5px">'+(EN?"vs Example Opponent · sets ":"mod Eksempel-modstander · sæt ")+'<b>'+ds.st.setsO+'-'+ds.st.setsM+'</b>'+(EN?" · games ":" · partier ")+'<b>'+ds.st.gO+'-'+ds.st.gM+'</b></p>'+statTabel(ds,EN)+saetTabel(ds,EN)+'<p style="font-size:11px;color:var(--guld)">'+(EN?"⚠ Fictional points run through the real engine — this card disappears when the first real match is saved. Everything above (plus the raw point sequence) is included in the 📤 export.":"⚠ Fiktive point kørt gennem den ægte motor — kortet forsvinder, når første rigtige kamp gemmes. Alt ovenstående (plus den rå point-sekvens) følger med i 📤 eksporten.")+'</p></div>';
       }
       h += '<div class="kort" style="border:1.5px dashed var(--kant);opacity:.85"><h3>📈 '+(EN?"Match by match":"Kamp for kamp")+' <span style="background:var(--guld);color:#101B26;font-size:10px;padding:2px 7px;border-radius:5px;vertical-align:middle">'+(EN?"EXAMPLE — DUMMY DATA":"EKSEMPEL — DUMMY-DATA")+'</span></h3>' +
         '<p style="margin-bottom:4px">'+(EN?"Unforced errors: ":"Gratis fejl: ")+'<b>14 → 11 → 9</b> <span style="color:var(--vundet)">✓</span></p>' +
@@ -954,8 +1032,7 @@ function render() {
     h += S.gemte.map((k,i) => {
       const s = statistik(k);
       return '<div class="kort"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><b style="font-size:13.5px">vs '+esc(k.modstander)+(k.resultat?' <span style="color:var(--is)">· '+esc(k.resultat)+'</span>':'')+'</b><span style="font-size:11px;color:var(--daempet)">'+esc(k.dato)+'</span></div>' +
-        '<p style="margin:4px 0 8px">'+(k.turnering?esc(k.turnering)+' · ':'')+'Point '+s.v+'-'+s.t+' · Serve '+s.serve[0]+'/'+s.serve[1]+' ('+(EN?"1st serve ":"1. serv ")+s.s1pct+' %) · BP '+s.bpFor[0]+'/'+s.bpFor[1]+' · '+(EN?"Winners ":"Vindere ")+s.vindere+' · '+(EN?"UE ":"Gratis fejl ")+s.uf+
-        (s.perSaet.length>1 ? '<br><span style="font-size:11px;opacity:.85">'+s.perSaet.map(function(ps,si){ return (EN?'Set ':'Sæt ')+(si+1)+': '+ps.v+'-'+ps.t+' · '+(EN?'UE ':'fejl ')+ps.uf+' · '+(EN?'win ':'vin ')+ps.vin+(ps.sp?' · 1. serv '+Math.round(ps.s1/ps.sp*100)+' %':''); }).join('  ·  ')+'</span>' : '')+'</p>' +
+        (k.turnering?'<p style="margin:2px 0 2px;font-size:11px;color:var(--daempet)">'+esc(k.turnering)+'</p>':'')+statTabel(s,EN)+saetTabel(s,EN)+
         '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px" data-a="eksport" data-v="'+i+'">📤 '+(EN?"Export to Claude":"Eksportér til Claude")+'</button>' +
         '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--guld);color:var(--guld);font-size:12px" data-a="analyseAabn" data-v="'+i+'">📝 '+(k.analyse?(EN?"Analysis ✓":"Analyse ✓"):(EN?"Analysis":"Analyse"))+'</button>' +
         (S.sletBekraeft === i

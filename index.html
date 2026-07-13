@@ -470,7 +470,7 @@ const fysByg = (EN) => {
 };
 
 let S = {
-  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null,
+  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -601,6 +601,27 @@ const A = {
   ttSletSpoerg: (i) => { S.ttSletB = +i; render(); },
   ttSletFortryd: () => { S.ttSletB = null; render(); },
   ttSlet: (i) => { S.ttLog.splice(+i, 1); S.ttSletB = null; lager.gem("oskar-tennis-log", JSON.stringify(S.ttLog)); render(); },
+  backupLav: () => {
+    S.backupTekst = "TEAMOSKAR-BACKUP-V1\n" + JSON.stringify({ kampe: S.gemte, fysLog: S.fysLog, ttLog: S.ttLog });
+    S.gendanAaben = false; render();
+  },
+  gendanToggle: () => { S.gendanAaben = !S.gendanAaben; S.backupTekst = null; S.gendanBesked = null; render(); },
+  gendanKoer: () => {
+    try {
+      const raa = S.gendanTekst.replace("TEAMOSKAR-BACKUP-V1", "").trim();
+      const d = JSON.parse(raa);
+      if (!d || !Array.isArray(d.kampe)) throw new Error("format");
+      S.gemte = d.kampe.map(rensKamp).filter(Boolean);
+      S.fysLog = Array.isArray(d.fysLog) ? d.fysLog : [];
+      S.ttLog = Array.isArray(d.ttLog) ? d.ttLog : [];
+      gemAlle();
+      lager.gem("oskar-fysisk-log", JSON.stringify(S.fysLog));
+      lager.gem("oskar-tennis-log", JSON.stringify(S.ttLog));
+      S.gendanBesked = "OK:" + S.gemte.length + ":" + S.fysLog.length + ":" + S.ttLog.length;
+      S.gendanAaben = false; S.gendanTekst = "";
+    } catch (e) { S.gendanBesked = "FEJL"; }
+    render();
+  },
   ttEksport: () => {
     const nye = S.ttLog.filter((e) => !e.x);
     if (!nye.length) { S.ttEks = "(Ingen nye træninger siden sidste eksport — alt er allerede sendt.)"; render(); return; }
@@ -706,6 +727,8 @@ function render() {
       h += '<input placeholder="'+(EN?'Tournament (e.g. HRT Sommer Cup)':'Turnering (fx HRT Sommer Cup, kat. G)')+'" value="'+esc(S.nyTur)+'" data-felt="nyTur">';
       h += '<div class="raekke"><button class="knap valg '+(S.nyFirst?"til":"")+'" data-a="first" data-v="1">'+(EN?"Oskar serves first":"Oskar server først")+'</button><button class="knap valg '+(!S.nyFirst?"til":"")+'" data-a="first" data-v="0">'+(EN?"Opponent serves first":"Modstander server først")+'</button></div>';
       h += '<div class="raekke"><button class="knap valg '+(S.nyMtb?"til":"")+'" data-a="mtb" data-v="1">'+(EN?"3rd set = match tiebreak (10)":"3. sæt = match-tiebreak (10)")+'</button><button class="knap valg '+(!S.nyMtb?"til":"")+'" data-a="mtb" data-v="0">'+(EN?"Full 3rd set":"Fuldt 3. sæt")+'</button></div>';
+      h += '<div class="raekke"><button class="knap valg '+(S.tryk3?"til":"")+'" data-a="trykToggle">'+(S.tryk3?(EN?"🎯 Advanced registration: ON":"🎯 Avanceret registrering: TIL"):(EN?"🎯 Advanced registration: OFF":"🎯 Avanceret registrering: FRA"))+'</button></div>';
+      h += '<p class="lille" style="margin:2px 0 10px;opacity:.8">'+(EN?"Advanced = a third tap per ball registers rally length (rule IV data). Can be switched mid-match.":"Avanceret = et tredje tryk pr. bold registrerer duel-længden (bud IV-data). Kan skiftes midt i kampen.")+'</p>';
       h += '<div class="raekke"><button class="knap stor" style="background:var(--grus)" data-a="start">'+(EN?"Start match":"Start kamp")+'</button></div>';
     } else {
       const s = statistik(S.aktiv), st = s.st;
@@ -730,7 +753,7 @@ function render() {
         h += '<div class="banner is">🧊 <b>'+(EN?'Three free errors in a row — reset:':'Tre gratis fejl i træk — nulstilling:')+'</b> '+(EN?'strings → breathing → keyword. Next rally 100 % percentage tennis.':'strenge → vejrtrækning → nøgleord. Næste duel 100 % procentuel.')+'</div>';
 
       if (!st.done) {
-        h += '<div class="raekke" style="margin-bottom:6px"><button class="knap valg" style="font-size:11.5px;padding:8px 6px" data-a="trykToggle">'+(S.tryk3?(EN?"🎯 3 taps — with rally length":"🎯 3 tryk — med duel-længde"):(EN?"⚡ 2 taps — fast mode":"⚡ 2 tryk — hurtig tilstand"))+' · '+(EN?"tap to switch":"tryk for at skifte")+'</button></div>';
+        h += '<div class="raekke" style="margin-bottom:6px"><button class="knap valg" style="font-size:11.5px;padding:8px 6px" data-a="trykToggle">'+(S.tryk3?(EN?"🎯 Advanced registration ON — rally length":"🎯 Avanceret registrering TIL — duel-længde"):(EN?"⚡ Standard — 2 taps per ball":"⚡ Standard — 2 tryk pr. bold"))+' · '+(EN?"tap to switch":"tryk for at skifte")+'</button></div>';
         h += '<div class="raekke"><button class="knap valg '+(S.serv===1?"til":"")+'" data-a="serv" data-v="1">'+(EN?"1st serve":"1. serv")+'</button><button class="knap valg '+(S.serv===2?"gul":"")+'" data-a="serv" data-v="2">'+(EN?"2nd serve (first serve missed)":"2. serv (førsteserv fejlet)")+'</button></div>';
         if (!S.afventer) {
           h += '<div class="raekke"><button class="knap stor" style="background:var(--vundet)" data-a="udfald" data-v="vundet">'+(EN?"Oskar won":"Oskar vandt")+'</button><button class="knap stor" style="background:var(--tabt)" data-a="udfald" data-v="tabt">'+(EN?"Lost":"Tabt")+'</button></div>';
@@ -836,6 +859,16 @@ function render() {
   }
 
   if (!LAAST && S.tab === "historik") {
+    if (S.gemte.length >= 3) {
+      const kron = S.gemte.slice().reverse().map(function(k){ return statistik(k); });
+      const rk = function(f){ return kron.map(f).join(" → "); };
+      const sidste = kron[kron.length-1], foerste = kron[0];
+      h += '<div class="kort" style="border-left:3px solid var(--guld)"><h3>📈 '+(EN?"Match by match (oldest → newest)":"Kamp for kamp (ældste → nyeste)")+'</h3>' +
+        '<p style="margin-bottom:4px">'+(EN?"Unforced errors: ":"Gratis fejl: ")+'<b>'+rk(function(s){return s.uf;})+'</b>'+(sidste.uf<foerste.uf?' <span style="color:var(--vundet)">✓</span>':'')+'</p>' +
+        '<p style="margin-bottom:4px">'+(EN?"Winners: ":"Vindere: ")+'<b>'+rk(function(s){return s.vindere;})+'</b></p>' +
+        '<p style="margin-bottom:4px">'+(EN?"1st serve in: ":"1. serv i spil: ")+'<b>'+rk(function(s){return s.s1pct+" %";})+'</b></p>' +
+        '<p style="margin-bottom:0">'+(EN?"Break points converted: ":"Breakbolde udnyttet: ")+'<b>'+rk(function(s){return s.bpFor[0]+"/"+s.bpFor[1];})+'</b></p></div>';
+    }
     h += '<div class="kort" style="background:#121F2E;border:1.5px solid var(--kant)"><div style="font-weight:800;font-size:13.5px;color:var(--is);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">📊 Baseline — før appen (rangliste uge 28 + UM)</div>' +
       BASELINE.grupper.map(g => '<div style="margin-bottom:9px"><div style="font-weight:800;font-size:12.5px">'+esc(g[0])+' · <span style="color:var(--guld);font-weight:700">'+esc(g[1])+'</span></div><div style="font-size:12px;color:#B9C6D2;line-height:1.55">'+esc(g[2])+'</div></div>').join("") +
       '<div style="font-weight:800;font-size:12px;color:var(--daempet);margin:10px 0 4px;text-transform:uppercase">Kendte kampe med score (UM-ugen)</div>' +
@@ -858,6 +891,16 @@ function render() {
       h += '<textarea data-felt="aTekst" placeholder="'+(EN?'Paste the analysis here…':'Indsæt analysen her…')+'" style="height:120px;border-color:var(--guld);color:var(--kridt)">'+esc(S.aTekst)+'</textarea>';
       h += '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="analyseGem" data-v="'+S.redigerA+'">💾 '+(EN?"Save analysis to match":"Gem analysen på kampen")+'</button><button class="knap" data-a="analyseAnnuller">'+(EN?"Cancel":"Annullér")+'</button></div>';
     }
+    h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">💾 '+(EN?"Backup":"Sikkerhedskopi")+'</h2>' +
+      '<div class="raekke"><button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="backupLav">💾 '+(EN?"Create full backup":"Lav fuld backup")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="gendanToggle">♻️ '+(EN?"Restore":"Gendan")+'</button></div>';
+    if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and save it in the family chat/notes — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den i familiegruppen/noter — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>';
+    if (S.gendanAaben) {
+      h += '<p class="lille">'+(EN?"Paste a backup text below. NOTE: restoring REPLACES all data on this device.":"Indsæt en backup-tekst herunder. OBS: Gendannelse ERSTATTER alle data på denne enhed.")+'</p>' +
+        '<textarea data-felt="gendanTekst" placeholder="TEAMOSKAR-BACKUP-V1 ..." style="height:80px;color:var(--kridt)">'+esc(S.gendanTekst)+'</textarea>' +
+        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--tabt)" data-a="gendanKoer">'+(EN?"Restore — REPLACES current data":"Gendan — ERSTATTER nuværende data")+'</button></div>';
+    }
+    if (S.gendanBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read the backup text — check that everything was copied.":"Kunne ikke læse backup-teksten — tjek at alt kom med.")+'</p>';
+    if (S.gendanBesked && S.gendanBesked.indexOf("OK:") === 0) { const t = S.gendanBesked.split(":"); h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Restored: ":"Gendannet: ")+t[1]+' '+(EN?"matches":"kampe")+' · '+t[2]+' '+(EN?"running sessions":"løbepas")+' · '+t[3]+' '+(EN?"tennis sessions":"tennistræninger")+'</p>'; }
     if (S.eksport) h += '<p class="lille" style="margin-top:10px">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>';
   }
 
@@ -896,6 +939,9 @@ document.getElementById("app").addEventListener("input", (e) => {
   if (f) S[f] = e.target.value;
 });
 render();
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("./sw.js").catch(function(){ /* offline-cache er valgfri */ });
+}
 </script>
 </body>
 </html>

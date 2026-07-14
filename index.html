@@ -608,7 +608,7 @@ function ugensFokus(EN) {
 }
 
 let S = {
-  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
+  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -628,7 +628,7 @@ const rensKamp = (g) => {
 };
 try { const sp = lager.hent("oskar-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
 try { if (lager.hent("oskar-laas") === "op") S.laast = false; } catch(e) {}
-try { if (lager.hent("oskar-tryk") === "2") S.tryk3 = false; } catch(e) {}
+try { if (lager.hent("oskar-tryk") === "3") S.tryk3 = true; } catch(e) {}
 try { const fa = lager.hent("oskar-fysisk-aktiv"); if (fa) S.fysAktiv = JSON.parse(fa); } catch(e) {}
 try { const fl = JSON.parse(lager.hent("oskar-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = fl; } catch(e) {}
 try { const tl = JSON.parse(lager.hent("oskar-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = tl; } catch(e) {}

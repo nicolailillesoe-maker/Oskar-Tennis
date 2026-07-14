@@ -271,7 +271,7 @@ const STRATEGI = [
   ["🗓","6. Én turnering pr. termin — planlæg terminerne","Kun ÉN turnering pr. termin. U14 kat. 1 i terminerne, hvor de findes; tomme terminer til senior/U16. Indendørs udtages efter rangliste — sensommerens point er billetten."],
 ];
 const PLAN = [
-  ["Uge 29-30","Hvile + træningsblok (Sinner-budene + wide-serven)","Planlagt pause","Restitution og våbentræning. Programmet ligger i 💪 Fysisk-fanen. OBS: Rom-turen deler blokken i to vinduer — fokus på BÅDE fysisk træning OG selvtræning på banen FØR afrejsen (til og med 22/7) og EFTER hjemkomsten (29-30/7). Ingen udløb truer — der tabes intet ved at hvile.","-"],
+  ["Uge 29-30","Hvile + træningsblok (Sinner-budene + wide-serven)","Planlagt pause","Restitution og våbentræning. Programmet ligger i 🎾💪 Tennis & fysisk-fanen. OBS: Rom-turen deler blokken i to vinduer — fokus på BÅDE fysisk træning OG selvtræning på banen FØR afrejsen (til og med 22/7) og EFTER hjemkomsten (29-30/7). Ingen udløb truer — der tabes intet ved at hvile.","-"],
   ["23-28/7","🏛 Rom med familien","Rejse","Træningspause — og det er helt fint: benene får gågade-kilometer, og hovedet får ro før den store august. Hjemme 28/7, Sommer Cup-premiere 30/7 — de to dage imellem bruges på ét let pas + serv, ikke på at indhente noget.","-"],
   ["Uge 31 · 30/7-2/8","HRT Sommer Cup — U14 HS Kat. G (Rungsted)","✅ TILMELDT","EV ~7-8 pt ved vanligt 5/8-niveau — en KF løfter direkte. Kun kat. G for U14-drenge: skarpt felt.","1"],
   ["Uge 32 · 3-8/8","🌍 HRT TE U14 (TE kat. 3, grus)","🎾 INDE · HOVEDRUNDEN","DIREKTE i hovedrunden (nr. 24 af 48, OA) — Oskars internationale gennembrud på hjemmebanens grus! 104 tilmeldte, felt fra 15+ nationer. Kendinge i feltet: Le Li (8), Midtgaard (9), Tiedemann og Thøgersen via OA. TE-point = ren bonus; op til 10 kampdage i træk med Sommer Cup ugen før — belastningsstyring!","TE"],
@@ -394,7 +394,7 @@ const STRATEGI_EN = [
   ["🗓","6. One tournament per window — plan the calendar","Only ONE tournament per window. Put U14 Cat. 1 where it exists; use empty windows for senior/U16. Indoor entry is ranking-based — late-summer points are the winter ticket."],
 ];
 const PLAN_EN = [
-  ["Wk 29-30","Rest + training block (the Sinner rules + the wide serve)","Planned break","Recovery and weapons training. The programme lives in the 💪 Fitness tab. NOTE: the Rome trip splits the block in two windows — focus on BOTH physical training AND self-practice on court BEFORE departure (through 22/7) and AFTER returning (29-30/7). No expiries threaten — nothing is lost by resting.","-"],
+  ["Wk 29-30","Rest + training block (the Sinner rules + the wide serve)","Planned break","Recovery and weapons training. The programme lives in the 🎾💪 Tennis & fitness tab. NOTE: the Rome trip splits the block in two windows — focus on BOTH physical training AND self-practice on court BEFORE departure (through 22/7) and AFTER returning (29-30/7). No expiries threaten — nothing is lost by resting.","-"],
   ["23-28/7","🏛 Rome with the family","Travel","Training break — and that is fine: the legs get sightseeing kilometres and the head gets rest before the big August. Home 28/7, Summer Cup premiere 30/7 — the two days in between are for one light session + serves, not for catching up.","-"],
   ["Wk 31 · 30/7-2/8","HRT Sommer Cup — U14 BS Cat. G (Rungsted)","✅ ENTERED","EV ~7-8 pts at his usual 5/8 level — a QF lifts directly. Only Cat. G is offered for U14 boys: sharp field.","1"],
   ["Wk 32 · 3-8/8","🌍 HRT TE U14 (TE Cat. 3, clay)","🎾 IN · MAIN DRAW","DIRECTLY into the main draw (no. 24 of 48, OA) — an international breakthrough for Oskar on home clay! 104 entries, field from 15+ nations. Familiar names: Le Li (8), Midtgaard (9), Tiedemann and Thogersen via OA. TE points = pure bonus; up to 10 match days in a row with the Summer Cup the week before — load management!","TE"],
@@ -871,8 +871,8 @@ function render() {
   h += '<div class="hero"><div class="eyebrow">Grus &amp; Is</div><h1>Team Oskar</h1><div class="sub">'+(EN?'High tempo · ball in · cool head':'Højt tempo · bolden ind · hovedet koldt')+'</div>'+naesteChip(EN)+'</div>';
   h += '<div class="raekke"><button class="knap" style="background:'+(S.verden==="udv"?"var(--grus)":"var(--kort)")+';color:'+(S.verden==="udv"?"var(--kridt)":"var(--daempet)")+'" data-a="verden" data-v="udv">'+(EN?"🎾 DEVELOPMENT":"🎾 UDVIKLING")+'</button><button class="knap" style="background:'+(S.verden==="saeson"?"var(--grus)":"var(--kort)")+';color:'+(S.verden==="saeson"?"var(--kridt)":"var(--daempet)")+'" data-a="verden" data-v="saeson">'+(EN?"📅 SEASON":"📅 SÆSON")+'</button></div>';
   const FANER = S.verden === "udv"
-    ? (EN ? [["kamp","🎾 Match"],["guide","ℹ️ Guide"],["stil","🎯 Style"],["rutiner","🧊 Routines"],["planer","🗒 Plans"],["historik","📓 History"],["s2026","📈 2026"],["fysisk","💪 Fitness"]]
-          : [["kamp","🎾 Kamp"],["guide","ℹ️ Guide"],["stil","🎯 Stil"],["rutiner","🧊 Rutiner"],["planer","🗒 Planer"],["historik","📓 Historik"],["s2026","📈 2026"],["fysisk","💪 Fysisk"]])
+    ? (EN ? [["kamp","🎾 Match"],["guide","ℹ️ Guide"],["stil","🎯 Style"],["rutiner","🧊 Routines"],["planer","🗒 Plans"],["historik","📓 History"],["s2026","📈 2026"],["fysisk","🎾💪 Tennis & fitness"]]
+          : [["kamp","🎾 Kamp"],["guide","ℹ️ Guide"],["stil","🎯 Stil"],["rutiner","🧊 Rutiner"],["planer","🗒 Planer"],["historik","📓 Historik"],["s2026","📈 2026"],["fysisk","🎾💪 Tennis & fysisk"]])
     : (EN ? [["status","📊 Status"],["strategi","🎯 Strategy"],["plan","📅 Schedule"],["regler","§ Rules"]]
           : [["status","📊 Status"],["strategi","🎯 Strategi"],["plan","📅 Plan"],["regler","§ Regler"]]);
   if (S.verden === "udv") {

@@ -559,8 +559,15 @@ const DEMOKAMP = (function(){
   return p;
 })();
 
+function eksportKnapper(felt, EN) {
+  const kanDele = (typeof navigator !== "undefined") && !!navigator.share;
+  return '<div class="raekke" style="margin-top:6px">' +
+    '<button class="knap" style="background:var(--is);color:#0B141D;font-weight:800" data-a="kopier" data-v="' + felt + '">' + (S.kopieret === felt ? "✓ " + (EN ? "Copied!" : "Kopieret!") : "📋 " + (EN ? "Copy" : "Kopiér")) + '</button>' +
+    (kanDele ? '<button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="delTekst" data-v="' + felt + '">📤 ' + (EN ? "Share…" : "Del…") + '</button>' : '') + '</div>';
+}
+
 let S = {
-  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
+  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -707,6 +714,18 @@ const A = {
   ttSletSpoerg: (i) => { S.ttSletB = +i; render(); },
   ttSletFortryd: () => { S.ttSletB = null; render(); },
   ttSlet: (i) => { S.ttLog.splice(+i, 1); S.ttSletB = null; lager.gem("oskar-tennis-log", JSON.stringify(S.ttLog)); render(); },
+  kopier: (felt) => {
+    const t = S[felt]; if (!t) return;
+    const ok = () => { S.kopieret = felt; render(); setTimeout(() => { S.kopieret = null; render(); }, 1600); };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(ok, ok); }
+      else { const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); ok(); }
+    } catch (e) { ok(); }
+  },
+  delTekst: (felt) => {
+    const t = S[felt]; if (!t) return;
+    try { if (navigator.share) navigator.share({ text: t }); } catch (e) { /* annulleret */ }
+  },
   backupLav: () => {
     S.backupTekst = "TEAMOSKAR-BACKUP-V1\n" + JSON.stringify({ kampe: S.gemte, fysLog: S.fysLog, ttLog: S.ttLog });
     S.gendanAaben = false; render();
@@ -938,7 +957,7 @@ function render() {
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="fysSletSpoerg" data-v="'+i+'">🗑</button>') +
               '</div>'; }).join("") +
           '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="fysEksport">📤 '+(EN?"Export new to Claude":"Eksportér nye til Claude")+' ('+S.fysLog.filter(function(e){return !e.x;}).length+')</button></div>';
-        if (S.fysEks) h += '<p class="lille">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()" style="height:100px">'+esc(S.fysEks)+'</textarea>';
+        if (S.fysEks) h += '<p class="lille">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()" style="height:100px">'+esc(S.fysEks)+'</textarea>' + eksportKnapper('fysEks', EN);
       }
       const ttTot = S.ttLog.reduce(function(a, e){ return a + e.m; }, 0);
       const ttGk = S.ttLog.length ? (S.ttLog.reduce(function(a, e){ return a + e.k; }, 0) / S.ttLog.length).toFixed(1) : null;
@@ -958,7 +977,7 @@ function render() {
                 ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="ttSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="ttSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="ttSletSpoerg" data-v="'+i+'">🗑</button>') + '</div>'; }).join("") +
           '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="ttEksport">📤 '+(EN?"Export new to Claude":"Eksportér nye til Claude")+' ('+S.ttLog.filter(function(e){return !e.x;}).length+')</button></div>';
-        if (S.ttEks) h += '<p class="lille">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()" style="height:110px">'+esc(S.ttEks)+'</textarea>';
+        if (S.ttEks) h += '<p class="lille">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()" style="height:110px">'+esc(S.ttEks)+'</textarea>' + eksportKnapper('ttEks', EN);
       }
       h += (EN?FYSISK_EN:FYSISK).map(function(f){ return '<div class="kort"'+(f[0]==="🗓"?' style="border-left:3px solid var(--is)"':'')+'><h3>'+f[0]+' '+esc(f[1])+'</h3><p>'+esc(f[2])+'</p></div>'; }).join("");
     }
@@ -1073,7 +1092,7 @@ function render() {
     }
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">💾 '+(EN?"Backup":"Sikkerhedskopi")+'</h2>' +
       '<div class="raekke"><button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="backupLav">💾 '+(EN?"Create full backup":"Lav fuld backup")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="gendanToggle">♻️ '+(EN?"Restore":"Gendan")+'</button></div>';
-    if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and save it in the family chat/notes — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den i familiegruppen/noter — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>';
+    if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and save it in the family chat/notes — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den i familiegruppen/noter — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>' + eksportKnapper('backupTekst', EN);
     if (S.gendanAaben) {
       h += '<p class="lille">'+(EN?"Paste a backup text below. NOTE: restoring REPLACES all data on this device.":"Indsæt en backup-tekst herunder. OBS: Gendannelse ERSTATTER alle data på denne enhed.")+'</p>' +
         '<textarea data-felt="gendanTekst" placeholder="TEAMOSKAR-BACKUP-V1 ..." style="height:80px;color:var(--kridt)">'+esc(S.gendanTekst)+'</textarea>' +
@@ -1081,7 +1100,7 @@ function render() {
     }
     if (S.gendanBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read the backup text — check that everything was copied.":"Kunne ikke læse backup-teksten — tjek at alt kom med.")+'</p>';
     if (S.gendanBesked && S.gendanBesked.indexOf("OK:") === 0) { const t = S.gendanBesked.split(":"); h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Restored: ":"Gendannet: ")+t[1]+' '+(EN?"matches":"kampe")+' · '+t[2]+' '+(EN?"running sessions":"løbepas")+' · '+t[3]+' '+(EN?"tennis sessions":"tennistræninger")+'</p>'; }
-    if (S.eksport) h += '<p class="lille" style="margin-top:10px">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>';
+    if (S.eksport) h += '<p class="lille" style="margin-top:10px">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>' + eksportKnapper('eksport', EN);
   }
 
   if (!LAAST && S.tab === "status") {

@@ -270,8 +270,8 @@ const STRATEGI = [
 const PLAN = [
   ["Uge 29-30","Hvile + træningsblok (Sinner-budene + wide-serven)","Planlagt pause","Restitution og våbentræning. Programmet ligger i 💪 Fysisk-fanen. Ingen udløb truer — der tabes intet ved at hvile.","-"],
   ["Uge 31 · 30/7-2/8","HRT Sommer Cup — U14 HS Kat. G (Rungsted)","✅ TILMELDT","EV ~7-8 pt ved vanligt 5/8-niveau — en KF løfter direkte. Kun kat. G for U14-drenge: skarpt felt.","1"],
-  ["Uge 32 · 3-8/8","🌍 HRT TE U14 (TE kat. 3, grus)","🥳 HOVEDRUNDEN","DIREKTE i hovedrunden (nr. 24 af 48, OA) — Oskars internationale gennembrud på hjemmebanens grus! 104 tilmeldte, felt fra 15+ nationer. Kendinge i feltet: Le Li (8), Midtgaard (9), Tiedemann og Thøgersen via OA. TE-point = ren bonus; op til 10 kampdage i træk med Sommer Cup ugen før — belastningsstyring!","TE"],
-  ["9/8 + 16/8","DTF Juniorhold 4.-5. runde (B.93)","Holdkampe","Holdpoint oveni, koster ingen termin. Seniorholdrunder 8/8, 15/8, 22/8 giver også.","H"],
+  ["Uge 32 · 3-8/8","🌍 HRT TE U14 (TE kat. 3, grus)","🎾 INDE · HOVEDRUNDEN","DIREKTE i hovedrunden (nr. 24 af 48, OA) — Oskars internationale gennembrud på hjemmebanens grus! 104 tilmeldte, felt fra 15+ nationer. Kendinge i feltet: Le Li (8), Midtgaard (9), Tiedemann og Thøgersen via OA. TE-point = ren bonus; op til 10 kampdage i træk med Sommer Cup ugen før — belastningsstyring!","TE"],
+  ["9/8 + 16/8","🛡 DTF Juniorhold 4.-5. runde (B.93)","🎾 INDE · 2. SINGLE","Fast plads som 2. single på klubbens juniorhold — holdkampe giver gratis kamptræning med holdånd oveni, og formatet (single + double samme dag) træner netop omstilling. Holdpoint lægges oveni og koster ingen termin; seniorholdrunder 8/8, 15/8, 22/8 giver også point, hvis B.93 stiller hold.","H"],
   ["Uge 33","U14 kat. G eller 1 (øst)","GRUNDSTAMME","EV ~7-8 pt. Navn vælges, når kalenderens augustsider bekræftes.","1"],
   ["Uge 34","Senior kat. 2 ELLER U16 kat. 1","Sejrspoint-uge","Voksne (sejrspoint) eller ældre juniorer (stærkere felt).","S2"],
   ["Uge 35 · 29-30/8","⚠️ KONFLIKT: Holdmedaljespil vs TE Birkerød-start","Beslutning kræves","Kvalificerer B.93 sig, vinder holdet. Direkte TE-hovedfelt (start 31/8) = begge kan nås.","H"],
@@ -392,8 +392,8 @@ const STRATEGI_EN = [
 const PLAN_EN = [
   ["Wk 29-30","Rest + training block (the Sinner rules + the wide serve)","Planned break","Recovery and weapons training. The programme lives in the 💪 Fitness tab. No expiries threaten — nothing is lost by resting.","-"],
   ["Wk 31 · 30/7-2/8","HRT Sommer Cup — U14 BS Cat. G (Rungsted)","✅ ENTERED","EV ~7-8 pts at his usual 5/8 level — a QF lifts directly. Only Cat. G is offered for U14 boys: sharp field.","1"],
-  ["Wk 32 · 3-8/8","🌍 HRT TE U14 (TE Cat. 3, clay)","🥳 MAIN DRAW","DIRECTLY into the main draw (no. 24 of 48, OA) — an international breakthrough for Oskar on home clay! 104 entries, field from 15+ nations. Familiar names: Le Li (8), Midtgaard (9), Tiedemann and Thogersen via OA. TE points = pure bonus; up to 10 match days in a row with the Summer Cup the week before — load management!","TE"],
-  ["9/8 + 16/8","Junior team rounds 4-5 (B.93)","Team play","Team points on top, no window used. Senior team rounds 8/8, 15/8, 22/8 also count.","H"],
+  ["Wk 32 · 3-8/8","🌍 HRT TE U14 (TE Cat. 3, clay)","🎾 IN · MAIN DRAW","DIRECTLY into the main draw (no. 24 of 48, OA) — an international breakthrough for Oskar on home clay! 104 entries, field from 15+ nations. Familiar names: Le Li (8), Midtgaard (9), Tiedemann and Thogersen via OA. TE points = pure bonus; up to 10 match days in a row with the Summer Cup the week before — load management!","TE"],
+  ["9/8 + 16/8","🛡 DTF Junior Team rounds 4-5 (B.93)","🎾 IN · 2ND SINGLES","Confirmed spot as 2nd singles on the club junior team — team matches mean free match practice with team spirit on top, and the format (singles + doubles same day) trains exactly that switch. Team points come on top and use no window; senior team rounds 8/8, 15/8, 22/8 also count if B.93 fields a team.","H"],
   ["Wk 33","U14 Cat. G or 1 (East)","CORE","EV ~7-8 pts. Named when the calendar's August pages are confirmed.","1"],
   ["Wk 34","Senior Cat. 2 OR U16 Cat. 1","Win-points week","Adults (win points) or older juniors (stronger field).","S2"],
   ["Wk 35 · 29-30/8","⚠️ CLASH: Team medal round vs TE Birkerød start","Decision needed","If B.93 qualifies, the team wins. Direct TE main-draw entry (starts 31/8) = both possible.","H"],
@@ -1097,9 +1097,13 @@ function render() {
          '<p class="lille">'+(EN?'Point scenarios ("what does a Cat. G quarterfinal move?") are computed in the chat with Claude.':'Point-scenarier ("hvad flytter en G-kvartfinale?") regnes i chatten med Claude.')+'</p>';
   }
   if (!LAAST && S.tab === "plan") {
-    h += '<p class="lille">'+(EN?"✅ ENTERED = confirmed · ★ = top priority · 🚨 = cliff cover, must play.":"✅ TILMELDT = bekræftet · ★ = hovedprioritet · 🚨 = klippe-dækning, skal spilles.")+'</p>' + (EN?PLAN_EN:PLAN).map(function(u){
-      var farve = (u[2].indexOf("TILMELDT")>=0||u[2].indexOf("ENTERED")>=0) ? "var(--vundet)" : (u[2].indexOf("SKAL")>=0||u[2].indexOf("MUST")>=0) ? "var(--tabt)" : u[2].indexOf("★")>=0 ? "var(--guld)" : "var(--kant)";
-      return '<div class="kort" style="border-left:3px solid '+farve+'"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b style="font-size:12.5px">'+esc(u[0])+'</b><span style="font-size:11px;font-weight:700;color:'+farve+'">'+esc(u[2])+'</span></div><div style="font-size:12.5px;font-weight:600;margin:2px 0">'+esc(u[1])+'</div><p style="font-size:11.5px">'+esc(u[3])+'</p></div>'; }).join("");
+    h += '<p class="lille">'+(EN?"🎾 Filled green = IN (place in the draw confirmed) · ✅ ENTERED = green edge · ★ = top priority · 🚨 = cliff cover, must play.":"🎾 Fyldt grøn = INDE (plads i feltet bekræftet) · ✅ TILMELDT = grøn kant · ★ = hovedprioritet · 🚨 = klippe-dækning, skal spilles.")+'</p>' + (EN?PLAN_EN:PLAN).map(function(u){
+      var inde = u[2].indexOf("HOVEDRUNDEN")>=0 || u[2].indexOf("MAIN DRAW")>=0 || u[2].indexOf("INDE")>=0;
+      var farve = (inde||u[2].indexOf("TILMELDT")>=0||u[2].indexOf("ENTERED")>=0) ? "var(--vundet)" : (u[2].indexOf("SKAL")>=0||u[2].indexOf("MUST")>=0) ? "var(--tabt)" : u[2].indexOf("★")>=0 ? "var(--guld)" : "var(--kant)";
+      var statusHtml = inde
+        ? '<span style="font-size:11px;font-weight:800;background:var(--vundet);color:#0B141D;padding:3px 10px;border-radius:12px;white-space:nowrap">'+esc(u[2])+'</span>'
+        : '<span style="font-size:11px;font-weight:700;color:'+farve+'">'+esc(u[2])+'</span>';
+      return '<div class="kort" style="border-left:3px solid '+farve+(inde?';background:linear-gradient(90deg,rgba(74,157,107,.14),transparent 55%)':'')+'"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><b style="font-size:12.5px">'+esc(u[0])+'</b>'+statusHtml+'</div><div style="font-size:12.5px;font-weight:600;margin:2px 0">'+esc(u[1])+'</div><p style="font-size:11.5px">'+esc(u[3])+'</p></div>'; }).join("");
   }
   if (!LAAST && S.tab === "regler") {
     h += (EN?REGLER_EN:REGLER).map(function(r){ return '<div style="display:flex;gap:8px;margin-bottom:9px;font-size:12.5px;line-height:1.6;color:#B9C6D2"><span style="color:var(--gruslys);font-weight:800">§</span><span>'+esc(r)+'</span></div>'; }).join("") +

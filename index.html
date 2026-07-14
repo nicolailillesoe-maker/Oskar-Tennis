@@ -16,11 +16,13 @@
   .eyebrow { font-size:10px; letter-spacing:4px; color:var(--is); text-transform:uppercase; font-weight:700; }
   h1 { font-size:25px; margin:2px 0 0; font-weight:800; text-transform:uppercase; letter-spacing:1px; }
   .sub { font-size:12px; color:var(--daempet); }
-  .tabs { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:14px; }
-  .tabs button { flex:1 1 15%; padding:9px 2px; border-radius:7px; cursor:pointer; font-size:11.5px; font-weight:700;
-    border:1.5px solid var(--kant); background:transparent; color:var(--daempet); }
+  .tabs { display:flex; gap:6px; flex-wrap:nowrap; overflow-x:auto; margin:0 -10px 14px; padding:2px 10px 6px;
+    scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tabs button { flex:0 0 auto; padding:9px 14px; border-radius:18px; cursor:pointer; font-size:12px; font-weight:700;
+    border:1.5px solid var(--kant); background:transparent; color:var(--daempet); white-space:nowrap; }
   .tabs button.aktiv { border-color:var(--is); background:var(--kort); color:var(--is); }
-  .kort { background:var(--kort); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+  .kort { background:var(--kort); border:1px solid var(--kant); border-radius:12px; padding:13px 15px; margin-bottom:9px; }
   .kort h3 { margin:0 0 3px; font-size:13.5px; }
   .kort p { margin:0; font-size:12.5px; color:#B9C6D2; line-height:1.65; }
   input { width:100%; padding:12px; border-radius:8px; border:1.5px solid var(--kant); background:var(--kort);
@@ -268,7 +270,8 @@ const STRATEGI = [
   ["🗓","6. Én turnering pr. termin — planlæg terminerne","Kun ÉN turnering pr. termin. U14 kat. 1 i terminerne, hvor de findes; tomme terminer til senior/U16. Indendørs udtages efter rangliste — sensommerens point er billetten."],
 ];
 const PLAN = [
-  ["Uge 29-30","Hvile + træningsblok (Sinner-budene + wide-serven)","Planlagt pause","Restitution og våbentræning. Programmet ligger i 💪 Fysisk-fanen. Ingen udløb truer — der tabes intet ved at hvile.","-"],
+  ["Uge 29-30","Hvile + træningsblok (Sinner-budene + wide-serven)","Planlagt pause","Restitution og våbentræning. Programmet ligger i 💪 Fysisk-fanen. OBS: Rom-turen deler blokken i to vinduer — fokus på BÅDE fysisk træning OG selvtræning på banen FØR afrejsen (til og med 22/7) og EFTER hjemkomsten (29-30/7). Ingen udløb truer — der tabes intet ved at hvile.","-"],
+  ["23-28/7","🏛 Rom med familien","Rejse","Træningspause — og det er helt fint: benene får gågade-kilometer, og hovedet får ro før den store august. Hjemme 28/7, Sommer Cup-premiere 30/7 — de to dage imellem bruges på ét let pas + serv, ikke på at indhente noget.","-"],
   ["Uge 31 · 30/7-2/8","HRT Sommer Cup — U14 HS Kat. G (Rungsted)","✅ TILMELDT","EV ~7-8 pt ved vanligt 5/8-niveau — en KF løfter direkte. Kun kat. G for U14-drenge: skarpt felt.","1"],
   ["Uge 32 · 3-8/8","🌍 HRT TE U14 (TE kat. 3, grus)","🎾 INDE · HOVEDRUNDEN","DIREKTE i hovedrunden (nr. 24 af 48, OA) — Oskars internationale gennembrud på hjemmebanens grus! 104 tilmeldte, felt fra 15+ nationer. Kendinge i feltet: Le Li (8), Midtgaard (9), Tiedemann og Thøgersen via OA. TE-point = ren bonus; op til 10 kampdage i træk med Sommer Cup ugen før — belastningsstyring!","TE"],
   ["9/8 + 16/8","🛡 DTF Juniorhold 4.-5. runde (B.93)","🎾 INDE · 2. SINGLE","Fast plads som 2. single på klubbens juniorhold — holdkampe giver gratis kamptræning med holdånd oveni, og formatet (single + double samme dag) træner netop omstilling. Holdpoint lægges oveni og koster ingen termin; seniorholdrunder 8/8, 15/8, 22/8 giver også point, hvis B.93 stiller hold.","H"],
@@ -390,7 +393,8 @@ const STRATEGI_EN = [
   ["🗓","6. One tournament per window — plan the calendar","Only ONE tournament per window. Put U14 Cat. 1 where it exists; use empty windows for senior/U16. Indoor entry is ranking-based — late-summer points are the winter ticket."],
 ];
 const PLAN_EN = [
-  ["Wk 29-30","Rest + training block (the Sinner rules + the wide serve)","Planned break","Recovery and weapons training. The programme lives in the 💪 Fitness tab. No expiries threaten — nothing is lost by resting.","-"],
+  ["Wk 29-30","Rest + training block (the Sinner rules + the wide serve)","Planned break","Recovery and weapons training. The programme lives in the 💪 Fitness tab. NOTE: the Rome trip splits the block in two windows — focus on BOTH physical training AND self-practice on court BEFORE departure (through 22/7) and AFTER returning (29-30/7). No expiries threaten — nothing is lost by resting.","-"],
+  ["23-28/7","🏛 Rome with the family","Travel","Training break — and that is fine: the legs get sightseeing kilometres and the head gets rest before the big August. Home 28/7, Summer Cup premiere 30/7 — the two days in between are for one light session + serves, not for catching up.","-"],
   ["Wk 31 · 30/7-2/8","HRT Sommer Cup — U14 BS Cat. G (Rungsted)","✅ ENTERED","EV ~7-8 pts at his usual 5/8 level — a QF lifts directly. Only Cat. G is offered for U14 boys: sharp field.","1"],
   ["Wk 32 · 3-8/8","🌍 HRT TE U14 (TE Cat. 3, clay)","🎾 IN · MAIN DRAW","DIRECTLY into the main draw (no. 24 of 48, OA) — an international breakthrough for Oskar on home clay! 104 entries, field from 15+ nations. Familiar names: Le Li (8), Midtgaard (9), Tiedemann and Thogersen via OA. TE points = pure bonus; up to 10 match days in a row with the Summer Cup the week before — load management!","TE"],
   ["9/8 + 16/8","🛡 DTF Junior Team rounds 4-5 (B.93)","🎾 IN · 2ND SINGLES","Confirmed spot as 2nd singles on the club junior team — team matches mean free match practice with team spirit on top, and the format (singles + doubles same day) trains exactly that switch. Team points come on top and use no window; senior team rounds 8/8, 15/8, 22/8 also count if B.93 fields a team.","H"],
@@ -427,7 +431,7 @@ const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h =
 const LAASTE_FANER = ["stil","rutiner","planer","historik","s2026","fysisk","status","strategi","plan","regler"];
 
 const FYSISK = [
-  ["🎾","Tennistræningen — status (opdateret 12. jul)","Klubtræningen holder sommerpause og starter først op igen omkring skolestart i august. August-programmet bliver med RETTELSER: Oskar skal træne med Peter Brøndum — tiderne er endnu ikke på plads. Indtil da er banen selvtræningens: løbepassene her i fanen + wide-serven og forehand-crossen fra Stil-fanen. Når Brøndum-tiderne lander, opdateres skemaet her (sig til Claude)."],
+  ["🎾","Tennistræningen — status (opdateret 12. jul)","Klubtræningen holder sommerpause og starter først op igen omkring skolestart i august. August-programmet bliver med RETTELSER: Oskar skal træne med Peter Brøndum — tiderne er endnu ikke på plads. Indtil da er banen selvtræningens: løbepassene her i fanen + wide-serven og forehand-crossen fra Stil-fanen. Sommerens to vinduer: FØR Rom (til og med 22/7) og EFTER hjemkomsten (29-30/7, let). Når Brøndum-tiderne lander, opdateres skemaet her (sig til Claude)."],
   ["🔥","OPVARMNING — altid først (10 min.)","1) 4 min. sjipning — minimum 1.000 sjip, TÆL dem! · 2) 4 min. stille og roligt løb · 3) 2 min. stræk: for- og bagside af lår + begge lægge. Ingen genveje — opvarmningen ER en del af passet."],
   ["🏃","PAS 1 · Konditionsløb (38 min.)","2 min. hårdt løb (80-85 %) + 2 min. restitutionsløb (60-65 %) — gentages 4 gange. Så 4 minutters pause. Derefter HELE blokken igen: 4 × (2 min. hårdt + 2 min. roligt). Afslut med 2 min. meget langsomt løb + stræk af lår, lægge og baller."],
   ["⚡","PAS 2 · Intervaller (ca. 33 min.)","30 sek. hårdt løb + 30 sek. roligt løb — gentages 10 gange. 3 minutters pause. Så 10 gange igen. Afslut med 10 min. roligt løb (60 %). Temposkiftene her er tennis-motoren: eksplosion, ro, eksplosion."],
@@ -435,7 +439,7 @@ const FYSISK = [
   ["🗓","Ugerytmen (Claudes kobling til sæsonplanen)","Uge 29-30 er sæsonplanens træningsblok — programmets hjem: fx Pas 1 mandag, Pas 3 onsdag, Pas 2 fredag. Gylden regel: Hurtighed (Pas 3) kræver friske ben — aldrig dagen efter hård kondition. Og på banen ved siden af: wide-serven fra fordelsiden. Fysikken bygger motoren; serven bygger våbnet."],
 ];
 const FYSISK_EN = [
-  ["🎾","Tennis training — status (updated 12 Jul)","Club training is on summer break and resumes around the school start in August. The August programme will be REVISED: Oskar trains with Peter Brøndum — times are not yet confirmed. Until then the court belongs to self-training: the running sessions in this tab + the wide serve and forehand cross from the Style tab. When the Brøndum times land, the schedule here will be updated (tell Claude)."],
+  ["🎾","Tennis training — status (updated 12 Jul)","Club training is on summer break and resumes around the school start in August. The August programme will be REVISED: Oskar trains with Peter Brøndum — times are not yet confirmed. Until then the court belongs to self-training: the running sessions in this tab + the wide serve and forehand cross from the Style tab. The two summer windows: BEFORE Rome (through 22/7) and AFTER returning (29-30/7, light). When the Brøndum times land, the schedule here will be updated (tell Claude)."],
   ["🔥","WARM-UP — always first (10 min.)","1) 4 min. skipping rope — minimum 1,000 skips, COUNT them! · 2) 4 min. easy jogging · 3) 2 min. stretching: front and back of thighs + both calves. No shortcuts — the warm-up IS part of the session."],
   ["🏃","SESSION 1 · Endurance run (38 min.)","2 min. hard running (80-85 %) + 2 min. recovery pace (60-65 %) — repeat 4 times. Then a 4-minute break. Then the WHOLE block again: 4 × (2 min. hard + 2 min. easy). Finish with 2 min. very slow jogging + stretch thighs, calves and glutes."],
   ["⚡","SESSION 2 · Intervals (approx. 33 min.)","30 sec. hard + 30 sec. easy — repeat 10 times. 3-minute break. Then 10 more. Finish with 10 min. easy running (60 %). These tempo shifts are the tennis engine: explode, recover, explode."],
@@ -564,6 +568,24 @@ function eksportKnapper(felt, EN) {
   return '<div class="raekke" style="margin-top:6px">' +
     '<button class="knap" style="background:var(--is);color:#0B141D;font-weight:800" data-a="kopier" data-v="' + felt + '">' + (S.kopieret === felt ? "✓ " + (EN ? "Copied!" : "Kopieret!") : "📋 " + (EN ? "Copy" : "Kopiér")) + '</button>' +
     (kanDele ? '<button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="delTekst" data-v="' + felt + '">📤 ' + (EN ? "Share…" : "Del…") + '</button>' : '') + '</div>';
+}
+
+const KOMMENDE = [
+  ["2026-07-23", "🏛 Rom", "🏛 Rome"],
+  ["2026-07-30", "🎾 Sommer Cup · Rungsted", "🎾 Summer Cup · Rungsted"],
+  ["2026-08-03", "🌍 TE-hovedrunden · Rungsted", "🌍 TE main draw · Rungsted"],
+  ["2026-08-09", "🛡 Holdkamp · 4. runde", "🛡 Team match · round 4"],
+  ["2026-08-16", "🛡 Holdkamp · 5. runde", "🛡 Team match · round 5"],
+];
+function naesteChip(EN) {
+  const idag = new Date(); idag.setHours(0, 0, 0, 0);
+  for (const [dato, da, en] of KOMMENDE) {
+    const d = Math.round((new Date(dato + "T00:00:00") - idag) / 86400000);
+    if (d < 0) continue;
+    const tid = d === 0 ? (EN ? "TODAY" : "I DAG") : d === 1 ? (EN ? "tomorrow" : "i morgen") : (EN ? "in " + d + " days" : "om " + d + " dage");
+    return '<div style="margin-top:7px"><span style="display:inline-block;background:var(--kort);border:1px solid var(--kant);border-radius:14px;padding:5px 12px;font-size:11.5px;font-weight:700;color:var(--is)">⏳ ' + (EN ? en : da) + ' — ' + tid + '</span></div>';
+  }
+  return "";
 }
 
 let S = {
@@ -826,7 +848,7 @@ function render() {
   const EN = S.sprog === "en";
   const el = document.getElementById("app");
   let h = '<div style="display:flex;justify-content:flex-end"><button class="knap" style="flex:none;padding:6px 14px;font-size:11.5px;background:transparent;border:1.5px solid var(--kant);color:var(--is)" data-a="sprog">'+(EN?"🌐 Dansk":"🌐 English")+'</button></div>';
-  h += '<div class="hero"><div class="eyebrow">Grus &amp; Is</div><h1>Team Oskar</h1><div class="sub">'+(EN?'High tempo · ball in · cool head':'Højt tempo · bolden ind · hovedet koldt')+'</div></div>';
+  h += '<div class="hero"><div class="eyebrow">Grus &amp; Is</div><h1>Team Oskar</h1><div class="sub">'+(EN?'High tempo · ball in · cool head':'Højt tempo · bolden ind · hovedet koldt')+'</div>'+naesteChip(EN)+'</div>';
   h += '<div class="raekke"><button class="knap" style="background:'+(S.verden==="udv"?"var(--grus)":"var(--kort)")+';color:'+(S.verden==="udv"?"var(--kridt)":"var(--daempet)")+'" data-a="verden" data-v="udv">'+(EN?"🎾 DEVELOPMENT":"🎾 UDVIKLING")+'</button><button class="knap" style="background:'+(S.verden==="saeson"?"var(--grus)":"var(--kort)")+';color:'+(S.verden==="saeson"?"var(--kridt)":"var(--daempet)")+'" data-a="verden" data-v="saeson">'+(EN?"📅 SEASON":"📅 SÆSON")+'</button></div>';
   const FANER = S.verden === "udv"
     ? (EN ? [["kamp","🎾 Match"],["guide","ℹ️ Guide"],["stil","🎯 Style"],["rutiner","🧊 Routines"],["planer","🗒 Plans"],["historik","📓 History"],["s2026","📈 2026"],["fysisk","💪 Fitness"]]

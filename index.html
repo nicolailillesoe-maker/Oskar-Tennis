@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Oskar Udvikling</title>
+<title>Team Oskar</title>
 <style>
   :root { --nat:#101B26; --grus:#B0502E; --gruslys:#C97B54; --is:#9FD8E8; --kridt:#F2EDE4;
           --vundet:#3F9C5C; --tabt:#C24E4E; --daempet:#5E7386; --guld:#E3B341; --kort:#18293A; --kant:#223243; }
@@ -588,8 +588,26 @@ function naesteChip(EN) {
   return "";
 }
 
+const UGEFOKUS = [
+  ["2026-07-13", "2026-07-22", "💪 Træningsblokken: Pas 1-2-3 i trackeren + wide-serven på banen", "💪 Training block: sessions 1-2-3 in the tracker + the wide serve on court"],
+  ["2026-07-23", "2026-07-28", "🏛 Rom — helt fri. Benene går, hovedet hviler", "🏛 Rome — fully off. Legs walk, head rests"],
+  ["2026-07-29", "2026-07-29", "🎾 Ét let pas + serv. Intet skal indhentes", "🎾 One light session + serves. Nothing to catch up"],
+  ["2026-07-30", "2026-08-02", "🏆 SOMMER CUP: Bolden ind — bud IV vinder kampe", "🏆 SUMMER CUP: Ball in — rule IV wins matches"],
+  ["2026-08-03", "2026-08-08", "🌍 TE-HOVEDRUNDEN: Spil DIT spil — nyd scenen", "🌍 TE MAIN DRAW: Play YOUR game — enjoy the stage"],
+  ["2026-08-09", "2026-08-09", "🛡 Holdkamp 4. runde: 2. singlen leverer for holdet", "🛡 Team match round 4: 2nd singles delivers"],
+  ["2026-08-10", "2026-08-15", "♻️ Restitution + let træning — holdkamp søndag", "♻️ Recovery + light training — team match Sunday"],
+  ["2026-08-16", "2026-08-16", "🛡 Holdkamp 5. runde — august lukkes stærkt", "🛡 Team match round 5 — finish August strong"],
+];
+function ugensFokus(EN) {
+  const nu = new Date(); nu.setHours(0, 0, 0, 0);
+  for (const [fra, til, da, en] of UGEFOKUS) {
+    if (nu >= new Date(fra + "T00:00:00") && nu <= new Date(til + "T00:00:00")) return EN ? en : da;
+  }
+  return null;
+}
+
 let S = {
-  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
+  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: true, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -736,6 +754,7 @@ const A = {
   ttSletSpoerg: (i) => { S.ttSletB = +i; render(); },
   ttSletFortryd: () => { S.ttSletB = null; render(); },
   ttSlet: (i) => { S.ttLog.splice(+i, 1); S.ttSletB = null; lager.gem("oskar-tennis-log", JSON.stringify(S.ttLog)); render(); },
+  planToggle: (i) => { S.planAaben = S.planAaben === +i ? null : +i; render(); },
   kopier: (felt) => {
     const t = S[felt]; if (!t) return;
     const ok = () => { S.kopieret = felt; render(); setTimeout(() => { S.kopieret = null; render(); }, 1600); };
@@ -1138,17 +1157,44 @@ function render() {
          '<p class="lille">'+(EN?'Point scenarios ("what does a Cat. G quarterfinal move?") are computed in the chat with Claude.':'Point-scenarier ("hvad flytter en G-kvartfinale?") regnes i chatten med Claude.')+'</p>';
   }
   if (!LAAST && S.tab === "plan") {
-    h += '<p class="lille">'+(EN?"🎾 Filled green = IN (place in the draw confirmed) · ✅ ENTERED = green edge · ★ = top priority · 🚨 = cliff cover, must play.":"🎾 Fyldt grøn = INDE (plads i feltet bekræftet) · ✅ TILMELDT = grøn kant · ★ = hovedprioritet · 🚨 = klippe-dækning, skal spilles.")+'</p>' + (EN?PLAN_EN:PLAN).map(function(u){
+    const fokus = ugensFokus(EN);
+    if (fokus) {
+      h += '<div class="kort" style="border:1.5px solid var(--grus);background:linear-gradient(90deg,rgba(200,90,40,.12),transparent 60%)">' +
+        '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:4px">🎯 '+(EN?"THIS WEEK\'S FOCUS":"UGENS FOKUS")+'</div>' +
+        '<div style="font-size:15px;font-weight:800;line-height:1.4">'+fokus+'</div></div>';
+    }
+    h += (EN?PLAN_EN:PLAN).map(function(u, i){
       var inde = u[2].indexOf("HOVEDRUNDEN")>=0 || u[2].indexOf("MAIN DRAW")>=0 || u[2].indexOf("INDE")>=0;
       var farve = (inde||u[2].indexOf("TILMELDT")>=0||u[2].indexOf("ENTERED")>=0) ? "var(--vundet)" : (u[2].indexOf("SKAL")>=0||u[2].indexOf("MUST")>=0) ? "var(--tabt)" : u[2].indexOf("★")>=0 ? "var(--guld)" : "var(--kant)";
-      var statusHtml = inde
-        ? '<span style="font-size:11px;font-weight:800;background:var(--vundet);color:#0B141D;padding:3px 10px;border-radius:12px;white-space:nowrap">'+esc(u[2])+'</span>'
-        : '<span style="font-size:11px;font-weight:700;color:'+farve+'">'+esc(u[2])+'</span>';
-      return '<div class="kort" style="border-left:3px solid '+farve+(inde?';background:linear-gradient(90deg,rgba(74,157,107,.14),transparent 55%)':'')+'"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><b style="font-size:12.5px">'+esc(u[0])+'</b>'+statusHtml+'</div><div style="font-size:12.5px;font-weight:600;margin:2px 0">'+esc(u[1])+'</div><p style="font-size:11.5px">'+esc(u[3])+'</p></div>'; }).join("");
+      var aaben = S.planAaben === i;
+      var ikonMatch = u[1].match(/^([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}])/u);
+      var ikon = ikonMatch ? ikonMatch[1] : (u[4] === "TE" ? "🌍" : u[4] === "H" ? "🛡" : u[4] === "1" ? "🎯" : "🗓");
+      var titel = u[1].replace(/^[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]\s*/u, "");
+      var statusKort = inde
+        ? '<span style="font-size:10px;font-weight:800;background:var(--vundet);color:#0B141D;padding:2px 8px;border-radius:10px;white-space:nowrap">'+(EN?"IN":"INDE")+'</span>'
+        : (u[2].indexOf("TILMELDT")>=0||u[2].indexOf("ENTERED")>=0) ? '<span style="font-size:12px;color:var(--vundet)">✅</span>'
+        : u[2].indexOf("★")>=0 ? '<span style="font-size:12px;color:var(--guld)">★</span>'
+        : (u[2].indexOf("SKAL")>=0||u[2].indexOf("MUST")>=0) ? '<span style="font-size:12px;color:var(--tabt)">🚨</span>' : '';
+      var rk = '<div class="kort" data-a="planToggle" data-v="'+i+'" style="cursor:pointer;padding:11px 13px;border-left:3px solid '+farve+(inde?';background:linear-gradient(90deg,rgba(74,157,107,.14),transparent 55%)':'')+'">' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+        '<span style="font-size:20px;flex:none">'+ikon+'</span>' +
+        '<div style="flex:1;min-width:0">' +
+        '<div style="font-size:10.5px;font-weight:800;letter-spacing:.5px;color:var(--daempet)">'+esc(u[0]).toUpperCase()+'</div>' +
+        '<div style="font-size:13px;font-weight:700;white-space:'+(aaben?'normal':'nowrap')+';overflow:hidden;text-overflow:ellipsis">'+esc(titel)+'</div>' +
+        '</div>' + statusKort +
+        '<span style="color:var(--daempet);font-size:11px;flex:none">'+(aaben?'▲':'▼')+'</span></div>';
+      if (aaben) {
+        rk += '<div style="margin-top:9px;padding-top:9px;border-top:1px solid var(--kant)">' +
+          '<div style="font-size:11px;font-weight:800;color:'+farve+';margin-bottom:4px">'+esc(u[2])+'</div>' +
+          '<p style="font-size:12px;margin:0;line-height:1.65;color:#B9C6D2">'+esc(u[3])+'</p></div>';
+      }
+      return rk + '</div>';
+    }).join("");
+    h += '<p class="lille" style="margin-top:10px">'+(EN?"Tap a row for details. 🎾 IN = place confirmed · ✅ = entered · ★ = top priority · 🚨 = must play.":"Tryk på en række for detaljer. 🎾 INDE = plads bekræftet · ✅ = tilmeldt · ★ = hovedprioritet · 🚨 = skal spilles.")+'</p>';
   }
   if (!LAAST && S.tab === "regler") {
     h += (EN?REGLER_EN:REGLER).map(function(r){ return '<div style="display:flex;gap:8px;margin-bottom:9px;font-size:12.5px;line-height:1.6;color:#B9C6D2"><span style="color:var(--gruslys);font-weight:800">§</span><span>'+esc(r)+'</span></div>'; }).join("") +
-         '<a href="https://tennis.dk/spiller/ranglister/" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 '+(EN?"Oskar\'s current DTF ranking":"Oskars aktuelle rangliste hos DTF")+'</a>';
+         '<a href="https://dtf.tournamentsoftware.com/ranking/category.aspx?id=52585&amp;category=2531" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 '+(EN?"Oskar\'s current DTF ranking":"Oskars aktuelle rangliste hos DTF")+'</a>';
   }
 
   h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Claude via Nicolai. Team Oskar · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Team Oskar · juli 2026.")+'</p>';

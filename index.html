@@ -429,7 +429,7 @@ const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved:
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 const KODEHASH = 1187643301;
 const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
-const LAASTE_FANER = ["stil","rutiner","planer","historik","s2026","fysisk","status","strategi","plan","regler"];
+const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
 
 const FYSISK = [
   ["🎾","Tennistræningen — status (opdateret 12. jul)","Klubtræningen holder sommerpause og starter først op igen omkring skolestart i august. August-programmet bliver med RETTELSER: Oskar skal træne med Peter Brøndum — tiderne er endnu ikke på plads. Indtil da er banen selvtræningens: løbepassene her i fanen + wide-serven og forehand-crossen fra Stil-fanen. Sommerens to vinduer: FØR Rom (til og med 22/7) og EFTER hjemkomsten (29-30/7, let). Når Brøndum-tiderne lander, opdateres skemaet her (sig til Claude)."],
@@ -499,11 +499,16 @@ function trendRaekke(EN, label, vals, enhed, stigerGodt) {
   const godt = retning === 0 ? 1 : ((retning === 1) === stigerGodt ? 2 : 0);
   const pil = retning === 1 ? "▲" : retning === -1 ? "▼" : "—";
   const mx = Math.max.apply(null, vals.concat([1]));
-  const soejler = '<span style="display:inline-flex;align-items:flex-end;gap:2px;height:24px;vertical-align:middle;margin-right:8px">' +
-    vals.map(function(v, i){ return '<span style="width:8px;border-radius:2px 2px 0 0;background:' + (i === vals.length - 1 ? nivFarve(godt) : "#223243") + ';height:' + Math.max(3, Math.round(v / mx * 24)) + 'px"></span>'; }).join("") + '</span>';
-  return '<tr><td style="padding:5px 6px 5px 0;font-size:11.5px;color:var(--daempet)">' + label + '</td>' +
-    '<td style="padding:5px 6px;font-size:11.5px">' + soejler + '<span style="color:var(--daempet)">' + vals.slice(0, -1).join(" · ") + (vals.length > 1 ? " · " : "") + '</span><b style="font-size:12.5px">' + b + (enhed || "") + '</b></td>' +
-    '<td style="padding:5px 0;text-align:center;width:34px"><span style="color:' + nivFarve(godt) + ';font-weight:800">' + pil + ' ' + (godt === 2 ? "✓" : godt === 0 ? "⚠" : "") + '</span></td></tr>';
+  const snit = vals.reduce(function(x, y){ return x + y; }, 0) / vals.length;
+  const soejler = '<div style="display:flex;align-items:flex-end;gap:3px;height:36px;margin:5px 0 3px">' +
+    vals.map(function(v, i){
+      const god = stigerGodt ? v >= snit : v <= snit;
+      return '<span style="flex:1;max-width:16px;border-radius:2px 2px 0 0;background:' + (god ? "var(--vundet)" : "var(--tabt)") + ';opacity:' + (i === vals.length - 1 ? "1" : ".7") + ';height:' + Math.max(3, Math.round(v / mx * 36)) + 'px' + (i === vals.length - 1 ? ';outline:1.5px solid var(--kridt)' : '') + '"></span>';
+    }).join("") + '</div>';
+  return '<tr><td colspan="3" style="padding:8px 0 3px">' +
+    '<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11.5px;font-weight:700;color:var(--daempet)">' + label + '</span>' +
+    '<span style="color:' + nivFarve(godt) + ';font-weight:800;font-size:12px">' + pil + ' ' + (godt === 2 ? "✓" : godt === 0 ? "⚠" : "") + '</span></div>' + soejler +
+    '<div style="font-size:10.5px;color:var(--daempet)">' + (EN ? "first " : "første ") + a + (enhed || "") + ' · ' + (EN ? "avg " : "snit ") + (Math.round(snit * 10) / 10) + (enhed || "") + ' · <b style="color:var(--kridt)">' + (EN ? "latest " : "seneste ") + b + (enhed || "") + '</b> — <span style="color:var(--vundet)">■</span> ' + (EN ? "better than own avg" : "bedre end eget snit") + ' · <span style="color:var(--tabt)">■</span> ' + (EN ? "worse" : "dårligere") + '</div></td></tr>';
 }
 function statTabel(s, EN) {
   const diff = s.vindere - s.uf, nD = diff >= 0 ? 2 : diff >= -4 ? 1 : 0;
@@ -699,6 +704,44 @@ function duoRk(label, vaerdi, n) {
     '<td style="padding:3px 0;font-size:12px;font-weight:700;text-align:right;white-space:nowrap">' + vaerdi + '</td>' +
     '<td style="padding:3px 0 3px 6px;text-align:center;width:18px">' + (n === null ? "" : nivIkon(n)) + '</td></tr>';
 }
+
+function anbefalinger(EN) {
+  const vl = visningsListe();
+  if (vl.liste.length < 2) return null;
+  const kron = vl.liste.slice().reverse();
+  const serier = kron.map(function(k){ const s = statistik(k); const pcx = function(p){ return p[1] ? Math.round(p[0] / p[1] * 100) : null; };
+    return { uf: s.uf, vin: s.vindere, s1: s.s1pct, s2: pcx(s.s2), bpF: pcx(s.bpFor), bpM: pcx(s.bpMod), bud: s.budIVbrud }; });
+  const sen = serier.slice(-3);
+  const felt = function(navn){ const alle = serier.map(function(x){ return x[navn]; }).filter(function(v){ return v !== null; });
+    const s3 = sen.map(function(x){ return x[navn]; }).filter(function(v){ return v !== null; });
+    return { snit: alle.reduce(function(a, b){ return a + b; }, 0) / (alle.length || 1), nu: s3.reduce(function(a, b){ return a + b; }, 0) / (s3.length || 1), s3: s3 }; };
+  const M = [
+    { label: EN ? "Free errors per match" : "Gratis fejl pr. kamp", f: felt("uf"), maal: null, ned: true, maalTekst: EN ? "fewer than winners" : "færre end vinderne", tjek: function(i){ return serier[i].uf <= serier[i].vin; } },
+    { label: EN ? "1st serve in" : "1. serv i spil", f: felt("s1"), maal: 60, ned: false, enhed: " %" },
+    { label: EN ? "Won on 2nd serve" : "Vundet på 2. serven", f: felt("s2"), maal: 50, ned: false, enhed: " %" },
+    { label: EN ? "Break points converted" : "Breakbolde udnyttet", f: felt("bpF"), maal: 40, ned: false, enhed: " %" },
+    { label: EN ? "Break points saved" : "Breakbolde afværget", f: felt("bpM"), maal: 60, ned: false, enhed: " %" },
+    { label: EN ? "Rule IV breaches" : "Bud IV-brud pr. kamp", f: felt("bud"), maal: 2, ned: true, enhed: "" },
+  ];
+  const virker = [], arbejd = [];
+  M.forEach(function(m){
+    const nu = Math.round(m.f.nu * 10) / 10, snit = Math.round(m.f.snit * 10) / 10;
+    const trendGodt = m.ned ? m.f.nu <= m.f.snit : m.f.nu >= m.f.snit;
+    let iMaal, senesteOK = 0, maalTekst;
+    if (m.tjek) {
+      const n = serier.length; for (let i = Math.max(0, n - 3); i < n; i++) if (m.tjek(i)) senesteOK++;
+      iMaal = senesteOK >= 2; maalTekst = m.maalTekst;
+    } else {
+      m.f.s3.forEach(function(v){ if (m.ned ? v <= m.maal : v >= m.maal) senesteOK++; });
+      iMaal = senesteOK >= 2; maalTekst = (m.ned ? (EN ? "max " : "højst ") : (EN ? "min. " : "mindst ")) + m.maal + (m.enhed || "");
+    }
+    const item = { label: m.label, nu: nu, snit: snit, enhed: m.enhed || "", trendGodt: trendGodt, senesteOK: senesteOK, antal: Math.min(3, serier.length), maalTekst: maalTekst, afstand: m.maal !== null ? Math.abs(m.f.nu - m.maal) : (m.f.nu - 0) };
+    (iMaal ? virker : arbejd).push(item);
+  });
+  arbejd.sort(function(a, b){ return (a.trendGodt === b.trendGodt) ? 0 : a.trendGodt ? 1 : -1; });
+  return { virker: virker, arbejd: arbejd, dummy: vl.dummy, antal: vl.liste.length };
+}
+
 function rivalUdvidet(navn, liste, rec, dummy) {
   const EN = S.sprog === "en";
   const ag = rivalAgg(liste), T = beregnTid(liste), antal = liste.length;
@@ -1018,8 +1061,8 @@ function render() {
   h += '<div class="hero"><div class="eyebrow">Grus &amp; Is</div><h1>Team Oskar</h1><div class="sub">'+(EN?'High tempo · ball in · cool head':'Højt tempo · bolden ind · hovedet koldt')+'</div>'+naesteChip(EN)+'</div>';
   h += '<div class="raekke"><button class="knap" style="background:'+(S.verden==="udv"?"var(--grus)":"var(--kort)")+';color:'+(S.verden==="udv"?"var(--kridt)":"var(--daempet)")+'" data-a="verden" data-v="udv">'+(EN?"🎾 DEVELOPMENT":"🎾 UDVIKLING")+'</button><button class="knap" style="background:'+(S.verden==="saeson"?"var(--grus)":"var(--kort)")+';color:'+(S.verden==="saeson"?"var(--kridt)":"var(--daempet)")+'" data-a="verden" data-v="saeson">'+(EN?"📅 SEASON":"📅 SÆSON")+'</button></div>';
   const FANER = S.verden === "udv"
-    ? (EN ? [["kamp","🎾 Match"],["guide","ℹ️ Guide"],["stil","🎯 Style"],["rutiner","🧊 Routines"],["planer","🎯 Opponents"],["historik","📓 History"],["s2026","📈 2026"],["fysisk","🎾💪 Tennis & fitness"]]
-          : [["kamp","🎾 Kamp"],["guide","ℹ️ Guide"],["stil","🎯 Stil"],["rutiner","🧊 Rutiner"],["planer","🎯 Modstandere"],["historik","📓 Historik"],["s2026","📈 2026"],["fysisk","🎾💪 Tennis & fysisk"]])
+    ? (EN ? [["kamp","🎾 Match"],["guide","ℹ️ Guide"],["stil","🎯 Style"],["rutiner","🧊 Routines"],["planer","🎯 Opponents"],["anbefal","💡 Insights"],["historik","📓 History"],["s2026","📈 2026"],["fysisk","🎾💪 Tennis & fitness"]]
+          : [["kamp","🎾 Kamp"],["guide","ℹ️ Guide"],["stil","🎯 Stil"],["rutiner","🧊 Rutiner"],["planer","🎯 Modstandere"],["anbefal","💡 Anbefalinger"],["historik","📓 Historik"],["s2026","📈 2026"],["fysisk","🎾💪 Tennis & fysisk"]])
     : (EN ? [["status","📊 Status"],["strategi","🎯 Strategy"],["plan","📅 Schedule"],["regler","§ Rules"]]
           : [["status","📊 Status"],["strategi","🎯 Strategi"],["plan","📅 Plan"],["regler","§ Regler"]]);
   if (S.verden === "udv") {
@@ -1143,6 +1186,30 @@ function render() {
           '<span style="color:var(--daempet);font-size:11px;flex:none">'+(aaben?"▲":"▼")+'</span></div>' +
           (aaben ? '<div style="margin-top:6px;padding-top:2px;border-top:1px solid var(--kant)">'+rivalUdvidet(navn, liste, rec, vl.dummy)+'</div>' : '') + '</div>';
       });
+    }
+  }
+
+  if (!LAAST && S.tab === "anbefal") {
+    const R = anbefalinger(EN);
+    if (!R) h += '<div class="kort"><p class="lille" style="margin:0">'+(EN?"Recommendations appear after 2+ matches.":"Anbefalinger vises, når der er registreret mindst 2 kampe.")+'</p></div>';
+    else {
+      h += '<p class="lille">'+(EN?"Auto-generated from ":"Genereret automatisk af ")+R.antal+(EN?" matches — recent 3 vs own average. Updates with every match.":" kampe — de 3 seneste mod eget snit. Opdateres ved hver ny kamp.")+(R.dummy?' 🟡 DUMMY':'')+'</p>';
+      h += '<div class="kort" style="border-left:3px solid var(--grus)"><h3>🔧 '+(EN?"WORK ON — focus next period":"ARBEJDSPUNKTER — fokus den næste periode")+'</h3>';
+      if (!R.arbejd.length) h += '<p class="lille" style="margin:0">'+(EN?"Nothing burning — all goals met!":"Intet brænder — alle mål er nået!")+'</p>';
+      R.arbejd.forEach(function(m, i){
+        h += '<div style="padding:8px 0;border-top:'+(i?'1px solid var(--kant)':'none')+'">' +
+          '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><b style="font-size:13px">'+(i===0?'🎯 ':'')+m.label+'</b>' +
+          '<span style="font-size:12px;font-weight:800;color:'+(m.trendGodt?'var(--vundet)':'var(--tabt)')+'">'+(m.trendGodt?'▲ '+(EN?'improving':'på vej frem'):'▼ '+(EN?'slipping':'går den forkerte vej'))+'</span></div>' +
+          '<div style="font-size:11.5px;color:var(--daempet);margin-top:2px">'+(EN?'Now ':'Nu ')+m.nu+m.enhed+' ('+(EN?'avg ':'snit ')+m.snit+m.enhed+') · '+(EN?'GOAL: ':'I MÅL NÅR: ')+m.maalTekst+(EN?' in 2 of last 3 matches':' i 2 af de 3 seneste kampe')+' — '+(EN?'now ':'lige nu ')+m.senesteOK+'/'+m.antal+'</div></div>';
+      });
+      h += '</div><div class="kort" style="border-left:3px solid var(--vundet)"><h3>✅ '+(EN?"WORKING — keep it up":"DET VIRKER — behold det")+'</h3>';
+      if (!R.virker.length) h += '<p class="lille" style="margin:0">'+(EN?"Goals not met yet — see above.":"Ingen mål nået endnu — se arbejdspunkterne.")+'</p>';
+      R.virker.forEach(function(m, i){
+        h += '<div style="padding:7px 0;border-top:'+(i?'1px solid var(--kant)':'none')+';display:flex;justify-content:space-between;align-items:baseline;gap:8px">' +
+          '<span style="font-size:12.5px;font-weight:700">'+m.label+'</span>' +
+          '<span style="font-size:11.5px;color:var(--daempet)">'+m.nu+m.enhed+' · '+m.senesteOK+'/'+m.antal+' '+(EN?'recent in goal':'seneste i mål')+' '+(m.trendGodt?'<span style="color:var(--vundet)">▲</span>':'<span style="color:var(--guld)">▼</span>')+'</span></div>';
+      });
+      h += '</div>';
     }
   }
 

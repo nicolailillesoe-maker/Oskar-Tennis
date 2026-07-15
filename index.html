@@ -646,7 +646,7 @@ function ikRk(ok, tekst) {
   return '<div style="display:flex;gap:8px;align-items:baseline;margin:3px 0"><span style="color:'+(ok===null?"var(--guld)":ok?"var(--vundet)":"var(--tabt)")+';font-weight:800;flex:none">'+(ok===null?"●":ok?"✓":"⚠")+'</span><span style="font-size:12px;line-height:1.55">'+tekst+'</span></div>';
 }
 function beregnTid(liste) {
-  const T = { s: [[0,0],[0,0],[0,0]], f: [[0,0],[0,0],[0,0]], luk: [0,0,0,0] };
+  const T = { s: [[0,0],[0,0],[0,0]], f: [[0,0],[0,0],[0,0]], sf: [[[0,0],[0,0],[0,0]],[[0,0],[0,0],[0,0]],[[0,0],[0,0],[0,0]]], luk: [0,0,0,0] };
   liste.forEach(function(k){
     const st = beregnStilling(k.point, k.oskarFirst, k.mtb, k.justeringer || []);
     const F = st.flags; if (!F) return;
@@ -656,8 +656,8 @@ function beregnTid(liste) {
       const si = +sn - 1, pts = perSet[sn];
       pts.forEach(function(p, j){
         const fase = Math.min(2, Math.floor(j / (pts.length / 3)));
-        T.s[si][1]++; T.f[fase][1]++;
-        if (p.r === "V") { T.s[si][0]++; T.f[fase][0]++; }
+        T.s[si][1]++; T.f[fase][1]++; T.sf[si][fase][1]++;
+        if (p.r === "V") { T.s[si][0]++; T.f[fase][0]++; T.sf[si][fase][0]++; }
       });
     });
     const vandtS1 = st.hist.length && st.hist[0][0] > st.hist[0][1];
@@ -719,7 +719,11 @@ function rivalUdvidet(navn, liste, rec, dummy) {
     duoRk(EN ? "Error zones (net·long·wide)" : "Fejl-zoner (net·lang·bred)", ag.zN + " · " + ag.zL + " · " + ag.zB, (ag.zN + ag.zL + ag.zB) === 0 ? null : ag.zN >= ag.zL && ag.zN >= ag.zB ? 0 : 1));
   ht += emne("⏱ " + (EN ? "THE MATCH OVER TIME" : "KAMPEN OVER TID")) + tb(
     duoRk(EN ? "Points won per set" : "Point vundet pr. sæt", sp.filter(function(v){ return v !== null; }).map(function(v, i){ return "S" + (i + 1) + " " + v + " %"; }).join(" · ") || "—", sp[0] !== null && sp[1] !== null ? (sp[1] >= sp[0] ? 2 : 0) : 1) +
-    duoRk(EN ? "Set phases (start·mid·close)" : "Sættets faser (start·midte·slut)", fp.join(" · ") + " %", fp[2] >= fp[0] ? 2 : 0) +
+    T.sf.map(function(sf, si){
+      if (!sf[0][1] && !sf[1][1] && !sf[2][1]) return "";
+      const fv = sf.map(function(x){ return x[1] ? Math.round(x[0] / x[1] * 100) : 0; });
+      return duoRk((EN ? "Set " : "Sæt ") + (si + 1) + (EN ? " phases (start·mid·close)" : "s faser (start·midte·slut)"), fv.join(" · ") + " %", fv[2] >= fv[0] ? 2 : 0);
+    }).join("") +
     duoRk(EN ? "Closes / turns matches" : "Lukker / vender kampe", (T.luk[1] ? T.luk[0] + "/" + T.luk[1] : "—") + " · " + (T.luk[3] ? T.luk[2] + "/" + T.luk[3] : "—"), T.luk[1] ? (T.luk[0] / T.luk[1] >= 0.7 ? 2 : 1) : null));
   if (fokus) ht += '<div style="background:linear-gradient(90deg,rgba(200,90,40,.12),transparent 60%);border:1px solid var(--grus);border-radius:10px;padding:9px 12px;margin-top:10px">' +
     '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:3px">🎯 ' + (EN ? "FOCUS" : "FOKUS") + '</div>' +

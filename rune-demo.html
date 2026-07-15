@@ -475,7 +475,37 @@ const fysByg = (EN) => {
 };
 
 // Sinner-referencetal (ATP 2025/26-sæsonniveau, afrundede — kilde: ATP Tour/Infosys)
-const SINNER = { s1in: 64, s1won: 79, s2won: 58, bpSave: 74, bpConv: 46, df: 1.2 };
+const BENCHMARKS = {
+  sinner:   { navn: "Sinner",   emoji: "🧊", s1in: 64, s1won: 79, s2won: 58, bpSave: 74, bpConv: 46, df: 1.2,
+    dna: "Tempo og præcision — afslutter dueller tidligt, næsten ingen gratis fejl. Marginen ligger i timing, ikke risiko.",
+    bud: [["I","Tag bolden på vej op","Stå på eller inde i baglinjen. Tempoet kommer fra TIMING — at tage bolden tidligt, ikke fra at slå hårdere."],
+          ["II","Dybde, ikke linjer","Sigt efter den bageste tredjedel med god luft over nettet. Marginen ligger i højden over nettet."],
+          ["III","Cross er standard","Crossbolden er længere, går over nettets laveste punkt og lukker banen. Skift kun retning på den korte bold."],
+          ["IV","De to første bolde skal IND","Hver duel starter med to bolde uden risiko: dyb serv/retur + dyb cross."],
+          ["V","Samme ansigt ved 40-0 og 0-40","Ingen må kunne se, om du fører eller er bagud. Ryggen rank, blikket på strengene."]] },
+  alcaraz:  { navn: "Alcaraz",  emoji: "🔥", s1in: 67, s1won: 76, s2won: 55, bpSave: 68, bpConv: 44, df: 2.0,
+    dna: "Eksplosiv allrounder — variation, drop-shots og løb frem. Vinder ved at tage initiativet og bruge hele banen.",
+    bud: [["I","Tag initiativet FØRST","Vent ikke — vær den, der dikterer. Første angreb vinder duellen."],
+          ["II","Variation er våbnet","Bland tempo, højde og drop-shots. Modstanderen må aldrig finde rytmen."],
+          ["III","Brug hele banen","Vinkler åbner banen. Træk modstanderen ud og ram det åbne rum."],
+          ["IV","Kom til nettet","Afslut korte bolde ved nettet — belønner det aggressive valg."],
+          ["V","Energi som våben","Fejr de store point, brug publikum og benene. Fysisk overskud nedbryder."]] },
+  zverev:   { navn: "Zverev",   emoji: "🎯", s1in: 72, s1won: 75, s2won: 52, bpSave: 70, bpConv: 40, df: 3.5,
+    dna: "Servemaskine og tålmodig baglinje — verdens højeste 1.serv-procent. Venter på modstanderens fejl.",
+    bud: [["I","Serven er fundamentet","1.serv i spil over 70 %. Byg hvert point på en stor første serv."],
+          ["II","Tålmodighed vinder","Hold bolden i spil, spil dybt, vent på den korte bold. Ingen forcerede fejl."],
+          ["III","Baghånden er ankeret","Den tunge, dybe baghånd cross holder dig i enhver duel."],
+          ["IV","Kropsserv under pres","På store point: serv på kroppen og tag rytmen fra returneringen."],
+          ["V","Rolige skuldre","Hold roen i de lange dueller — den, der stresser først, taber."]] },
+  djokovic: { navn: "Djokovic", emoji: "🧱", s1in: 65, s1won: 74, s2won: 56, bpSave: 72, bpConv: 45, df: 2.2,
+    dna: "Historiens bedste returspiller — elastik, 2.serv-vinder og mental mur. Neutraliserer alt og vender pres til fordel.",
+    bud: [["I","Returen er et våben","Stå og tag returen tidligt — sæt serveren under pres fra bold ét."],
+          ["II","Forsvar bliver angreb","Nå alt, glid i bolden, vend forsvar til modangreb med dybde."],
+          ["III","2.serven skal turde","Vind point på 2.serven — placering og dybde over ren kraft."],
+          ["IV","Elastik i banen","Brug bredden defensivt, genrejs dig altid til midten. Ingen bold er tabt."],
+          ["V","Mentalt jernbur","De store point vindes med ro. Vær bedst, når det gælder mest."]] },
+};
+const SINNER = BENCHMARKS.sinner; // bagudkompatibel
 // ---------- Visuel statistik: skemaer, Sinner-streg og niveau-ikoner ----------
 const pctAf = (a) => (a && a[1] ? Math.round(a[0] / a[1] * 100) : null);
 const nivFarve = (n) => n === 2 ? "var(--vundet)" : n === 1 ? "var(--guld)" : "var(--tabt)";
@@ -514,12 +544,13 @@ function statTabel(s, EN) {
   const diff = s.vindere - s.uf, nD = diff >= 0 ? 2 : diff >= -4 ? 1 : 0;
   const s1i = s.serve[1] ? s.s1pct : null, s1w = pctAf(s.s1), s2w = pctAf(s.s2), bpF = pctAf(s.bpFor), bpM = pctAf(s.bpMod), rt = pctAf(s.retur);
   let r = statRk(EN ? "Winners / gifts" : "Vindere / gaver", s.vindere + " / " + s.uf, null, null, nD, "🧊");
-  r += statRk(EN ? "1st serve in" : "1. serv i spil", s1i === null ? "–" : s1i + " %", s1i, SINNER.s1in, niv(s1i, 60, 45));
-  r += statRk(EN ? "Won on 1st serve" : "Vundet på 1. serv", s1w === null ? "–" : s1w + " %", s1w, SINNER.s1won, niv(s1w, 65, 50));
-  r += statRk(EN ? "Won on 2nd serve" : "Vundet på 2. serv", s2w === null ? "–" : s2w + " %", s2w, SINNER.s2won, niv(s2w, 50, 40));
+  const B = (typeof BENCHMARKS !== "undefined" && S && BENCHMARKS[S.benchmark]) ? BENCHMARKS[S.benchmark] : SINNER;
+  r += statRk(EN ? "1st serve in" : "1. serv i spil", s1i === null ? "–" : s1i + " %", s1i, B.s1in, niv(s1i, 60, 45));
+  r += statRk(EN ? "Won on 1st serve" : "Vundet på 1. serv", s1w === null ? "–" : s1w + " %", s1w, B.s1won, niv(s1w, 65, 50));
+  r += statRk(EN ? "Won on 2nd serve" : "Vundet på 2. serv", s2w === null ? "–" : s2w + " %", s2w, B.s2won, niv(s2w, 50, 40));
   r += statRk(EN ? "Return points won" : "Returpoint vundet", rt === null ? "–" : rt + " %", rt, null, niv(rt, 45, 30));
-  if (s.bpFor[1]) r += statRk(EN ? "Break points converted" : "Breakbolde udnyttet", s.bpFor[0] + "/" + s.bpFor[1], bpF, SINNER.bpConv, niv(bpF, 40, 25));
-  if (s.bpMod[1]) r += statRk(EN ? "Break points saved" : "Breakbolde afværget", s.bpMod[0] + "/" + s.bpMod[1], bpM, SINNER.bpSave, niv(bpM, 60, 40));
+  if (s.bpFor[1]) r += statRk(EN ? "Break points converted" : "Breakbolde udnyttet", s.bpFor[0] + "/" + s.bpFor[1], bpF, B.bpConv, niv(bpF, 40, 25));
+  if (s.bpMod[1]) r += statRk(EN ? "Break points saved" : "Breakbolde afværget", s.bpMod[0] + "/" + s.bpMod[1], bpM, B.bpSave, niv(bpM, 60, 40));
   [[s.dK, EN ? "Short rallies (1-4)" : "Korte dueller (1-4)"], [s.dM, EN ? "Medium (5-8)" : "Mellem (5-8)"], [s.dL, EN ? "Long (9+)" : "Lange (9+)"]].forEach(function(par){
     const q = par[0]; if (!q[1]) return;
     const pd = Math.round(q[0] / q[1] * 100);
@@ -767,7 +798,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
       EN ? "Points won when the 1st resp. 2nd serve is in play. The 2nd serve is the key number: 50 %+ means the serve holds up under pressure." : "Point vundet, når hhv. 1. og 2. serven er i spil. 2. serven er nøgletallet: 50 %+ betyder, at serven holder, når kampen strammer.", ["65 % / 50 %","79 % / 58 %"]) +
     duoRk(EN ? "Break points won / saved" : "Breakbolde vekslet / afværget", ag.bpFor[0] + "/" + ag.bpFor[1] + " · " + ag.bpMod[0] + "/" + ag.bpMod[1], niv(pc(ag.bpFor), 40, 25),
       EN ? "First: own break points converted. Second: opponent's break points saved. The biggest points of the match — tight matches are decided here." : "Første tal: egne breakbolde udnyttet. Andet tal: modstanderens breakbolde afværget. Kampens største point — tætte kampe afgøres præcis her."));
-  ht += emne("🧊 " + (EN ? "THE SINNER RULES" : "SINNER-BUDENE I DUELLEN")) + tb(
+  ht += emne((BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).emoji + " " + (EN ? (BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).navn.toUpperCase()+" RULES" : (BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).navn.toUpperCase()+"-BUDENE I DUELLEN")) + tb(
     duoRk(EN ? "Winners vs gifts" : "Vindere mod gaver", ag.vindere + " / " + ag.uf, ag.vindere >= ag.uf ? 2 : ag.uf - ag.vindere <= 8 ? 1 : 0,
       EN ? "Sinner rule I: points should be ENDED with winners, not given away as errors. Totals across these matches — the ratio should favour the winners." : "Sinner-bud I: point skal AFSLUTTES med vindere, ikke foræres væk som fejl. Summen på tværs af kampene — forholdet skal helst være i vinder-favør.") +
     duoRk(EN ? "Rule IV breaches per match" : "Bud IV-brud pr. kamp", String(Math.round(ag.budIVbrud / antal)), ag.budIVbrud / antal <= 2 ? 2 : ag.budIVbrud / antal <= 4 ? 1 : 0,
@@ -804,7 +835,7 @@ function demoLaast() {
   render(); if (S._dbTimer) clearTimeout(S._dbTimer); S._dbTimer = setTimeout(function(){ S.demoBesked = null; render(); }, 3500);
 }
 let S = {
-  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
+  verden: "udv", tab: "kamp", benchmark: "sinner", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -827,6 +858,7 @@ try { const sp = lager.hent("rune-sprog"); if (sp === "en") S.sprog = "en"; } ca
 try { if (lager.hent("rune-laas") === "op") S.laast = false; } catch(e) {}
 try { if (lager.hent("rune-tryk") === "3") S.tryk3 = true; } catch(e) {}
 try { if (lager.hent("rune-zoner") === "1") S.zoner = true; } catch(e) {}
+try { const b = lager.hent("rune-benchmark"); if (b && BENCHMARKS[b]) S.benchmark = b; } catch(e) {}
 try { const fa = lager.hent("rune-fysisk-aktiv"); if (fa) S.fysAktiv = JSON.parse(fa); } catch(e) {}
 try { const fl = JSON.parse(lager.hent("rune-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = fl; } catch(e) {}
 try { const tl = JSON.parse(lager.hent("rune-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = tl; } catch(e) {}
@@ -1013,6 +1045,8 @@ const A = {
     render();
   },
   trykToggle: () => { S.tryk3 = !S.tryk3; S.aarsagValgt = null; S.laengdeValgt = null; lager.gem("rune-tryk", S.tryk3 ? "3" : "2"); render(); },
+  vaelgBenchmark: (b) => { if (BENCHMARKS[b]) { S.benchmark = b; lager.gem("rune-benchmark", b); render(); } },
+  sammenlignToggle: (n) => { const i = S.sammenlign.indexOf(n); if (i >= 0) S.sammenlign.splice(i, 1); else { if (S.sammenlign.length >= 2) S.sammenlign.shift(); S.sammenlign.push(n); } render(); },
   zonerToggle: () => { S.zoner = !S.zoner; S.laengdeValgt = null; lager.gem("rune-zoner", S.zoner ? "1" : "0"); render(); },
   jAnvend: () => {
     if (!S.aktiv || !S.j) return;
@@ -1205,11 +1239,67 @@ function render() {
   }
 
   if (S.tab === "guide") h += '<p class="lille">'+(EN?'How to use the app courtside — built for one thumb and bright sun.':'Sådan bruges appen fra sidelinjen — bygget til én tommelfinger og skarp sol.')+'</p>' + (EN?GUIDE_EN:GUIDE).map(g => '<div class="kort"><h3 style="color:var(--is)">'+esc(g[0])+'</h3><p>'+esc(g[1])+'</p></div>').join("");
-  if (!LAAST && S.tab === "stil") h += '<p class="lille">'+(EN?'The Sinner model translated for Rune: pace from timing and discipline — not risk. Below: the left-handed weapon with two Nadal patterns.':'Sinner-modellen oversat til Rune: Tempo fra timing og disciplin — ikke risiko. Nedenunder: venstrehåndsvåbnet med to Nadal-mønstre.')+'</p>' + (EN?BUD_EN:BUD).map(b => '<div class="kort" style="display:flex;gap:12px"><div style="font-size:22px;font-weight:800;color:var(--gruslys);width:30px;text-align:center;flex-shrink:0">'+b[0]+'</div><div><h3 style="text-transform:uppercase;letter-spacing:.5px">'+esc(b[1])+'</h3><p>'+esc(b[2])+'</p></div></div>').join("") + '<h2 style="font-size:15px;color:var(--is);margin:18px 0 8px;text-transform:uppercase;letter-spacing:1px">🤚 '+(EN?'The left-handed weapon — two Nadal patterns':'Venstrehåndsvåbnet — to Nadal-mønstre')+'</h2>' + (EN?NADAL_EN:NADAL).map(n => '<div class="kort" style="display:flex;gap:12px;border-left:3px solid var(--is)"><div style="font-size:20px;width:30px;text-align:center;flex-shrink:0">'+n[0]+'</div><div><h3 style="text-transform:uppercase;letter-spacing:.5px">'+esc(n[1])+'</h3><p>'+esc(n[2])+'</p></div></div>').join("");
+  if (!LAAST && S.tab === "stil") {
+    const B = BENCHMARKS[S.benchmark] || BENCHMARKS.sinner;
+    h += '<p class="lille">'+(EN?'Pick a pro to model Rune\'s game on. The rules, benchmark numbers and the whole style change with your choice.':'Vælg den prospiller, Runes spil skal modelleres efter. Budene, benchmark-tallene og hele stilen skifter med valget.')+'</p>';
+    h += '<div class="raekke" style="flex-wrap:wrap;gap:6px;margin-bottom:12px">' +
+      Object.keys(BENCHMARKS).map(function(k){ const b = BENCHMARKS[k]; const valgt = k === S.benchmark;
+        return '<button class="knap valg '+(valgt?"til":"")+'" style="flex:1;min-width:70px;padding:9px 6px;font-size:12.5px" data-a="vaelgBenchmark" data-v="'+k+'">'+b.emoji+' '+b.navn+'</button>';
+      }).join("") + '</div>';
+    h += '<div class="kort" style="border-left:3px solid var(--is);background:linear-gradient(90deg,rgba(90,160,200,.10),transparent 60%)">' +
+      '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--is);margin-bottom:3px">'+B.emoji+' '+(EN?B.navn.toUpperCase()+" DNA":B.navn.toUpperCase()+"-DNA")+'</div>' +
+      '<p style="font-size:12.5px;margin:0;line-height:1.6">'+esc(B.dna)+'</p></div>';
+    h += B.bud.map(function(b){ return '<div class="kort" style="display:flex;gap:12px"><div style="font-size:22px;font-weight:800;color:var(--gruslys);width:30px;text-align:center;flex-shrink:0">'+b[0]+'</div><div><h3 style="text-transform:uppercase;letter-spacing:.5px">'+esc(b[1])+'</h3><p>'+esc(b[2])+'</p></div></div>'; }).join("");
+    h += '<h2 style="font-size:15px;color:var(--is);margin:18px 0 8px;text-transform:uppercase;letter-spacing:1px">🤚 '+(EN?'The left-handed weapon — two Nadal patterns':'Venstrehåndsvåbnet — to Nadal-mønstre')+'</h2>' + (EN?NADAL_EN:NADAL).map(n => '<div class="kort" style="display:flex;gap:12px;border-left:3px solid var(--is)"><div style="font-size:20px;width:30px;text-align:center;flex-shrink:0">'+n[0]+'</div><div><h3 style="text-transform:uppercase;letter-spacing:.5px">'+esc(n[1])+'</h3><p>'+esc(n[2])+'</p></div></div>').join("");
+  }
   if (!LAAST && S.tab === "rutiner") h += '<p class="lille">'+(EN?'Coaching is forbidden in U14 matches — the cool head is installed BEFORE the first serve.':'Coaching er forbudt i U14-kampe — det kolde hoved installeres FØR første serv.')+'</p>' + (EN?RUTINER_EN:RUTINER).map(r => '<div class="kort"><h3>'+r[0]+' '+esc(r[1])+'</h3><p>'+esc(r[2])+'</p></div>').join("");
   if (!LAAST && S.tab === "planer") {
     const vl = visningsListe();
     if (vl.liste.length) {
+      // ===== SAMMENLIGN TO MODSTANDERE =====
+      const grAlle = {};
+      vl.liste.forEach(function(k){ (grAlle[k.modstander] = grAlle[k.modstander] || []).push(k); });
+      const navne = Object.keys(grAlle);
+      if (navne.length >= 2) {
+        h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>⚖️ '+(EN?"Compare two opponents":"Sammenlign to modstandere")+(vl.dummy?' <span style="background:var(--guld);color:#101B26;font-size:10px;padding:2px 7px;border-radius:5px">'+(EN?"DUMMY":"DUMMY")+'</span>':'')+'</h3>' +
+          '<p class="lille" style="margin:0 0 8px">'+(EN?"Pick two — see what each demands of you side by side.":"Vælg to — se hvad hver især kræver af dig, side om side.")+'</p>' +
+          '<div class="raekke" style="flex-wrap:wrap;gap:6px">' +
+          navne.map(function(n){ const valgt = S.sammenlign.indexOf(n) >= 0;
+            return '<button class="knap valg '+(valgt?"til":"")+'" style="flex:0 1 auto;padding:7px 11px;font-size:12px" data-a="sammenlignToggle" data-v="'+esc(n)+'">'+(valgt?"✓ ":"")+esc(n.split(" ").pop())+'</button>';
+          }).join("") + '</div>';
+        if (S.sammenlign.length === 2) {
+          const A = S.sammenlign[0], Bn = S.sammenlign[1];
+          const agA = rivalAgg(grAlle[A]||[]), agB = rivalAgg(grAlle[Bn]||[]);
+          const recA = rivalRecord(grAlle[A]||[]), recB = rivalRecord(grAlle[Bn]||[]);
+          const pc = function(p){ return p[1] ? Math.round(p[0]/p[1]*100) : 0; };
+          const kolon = function(label, vA, vB, hoejGodt){
+            let farveA = "var(--kridt)", farveB = "var(--kridt)";
+            if (vA !== vB) { const aBedre = hoejGodt ? vA > vB : vA < vB; farveA = aBedre ? "var(--vundet)" : "var(--tabt)"; farveB = aBedre ? "var(--tabt)" : "var(--vundet)"; }
+            return '<tr><td style="padding:5px 4px;font-size:11px;color:var(--daempet)">'+label+'</td>' +
+              '<td style="padding:5px 4px;text-align:center;font-size:12.5px;font-weight:700;color:'+farveA+'">'+vA+'</td>' +
+              '<td style="padding:5px 4px;text-align:center;font-size:12.5px;font-weight:700;color:'+farveB+'">'+vB+'</td></tr>';
+          };
+          h += '<div style="margin-top:10px;overflow-x:auto"><table style="width:100%;border-collapse:collapse">' +
+            '<tr><td></td><td style="padding:4px;text-align:center;font-size:11px;font-weight:800;color:var(--is)">'+esc(A.split(" ").pop())+'<br><span style="font-size:10px;color:var(--daempet)">'+recA[0]+'-'+recA[1]+'</span></td>' +
+            '<td style="padding:4px;text-align:center;font-size:11px;font-weight:800;color:var(--is)">'+esc(Bn.split(" ").pop())+'<br><span style="font-size:10px;color:var(--daempet)">'+recB[0]+'-'+recB[1]+'</span></td></tr>' +
+            kolon(EN?"UE/match":"Fejl/kamp", Math.round(agA.uf/(grAlle[A].length)), Math.round(agB.uf/(grAlle[Bn].length)), false) +
+            kolon(EN?"Winners/match":"Vindere/kamp", Math.round(agA.vindere/(grAlle[A].length)), Math.round(agB.vindere/(grAlle[Bn].length)), true) +
+            kolon(EN?"1st serve in %":"1. serv i spil %", agA.s1pct, agB.s1pct, true) +
+            kolon(EN?"Won 2nd serve %":"Vundet 2. serv %", pc(agA.s2), pc(agB.s2), true) +
+            kolon(EN?"BP converted %":"BP udnyttet %", pc(agA.bpFor), pc(agB.bpFor), true) +
+            kolon(EN?"BP saved %":"BP afværget %", pc(agA.bpMod), pc(agB.bpMod), true) +
+            kolon(EN?"Rule IV/match":"Bud IV/kamp", Math.round(agA.budIVbrud/(grAlle[A].length)), Math.round(agB.budIVbrud/(grAlle[Bn].length)), false) +
+            '</table></div>';
+          // Hvem kræver hvad — automatisk tekst
+          const svagA = pc(agA.s2) < pc(agB.s2) ? (EN?"your 2nd serve is more exposed":"din 2. serv er mere udsat") : (Math.round(agA.uf/grAlle[A].length) > Math.round(agB.uf/grAlle[Bn].length) ? (EN?"you give away more free errors":"du giver flere gratis fejl") : (EN?"break points are the battleground":"breakboldene er slagmarken"));
+          const svagB = pc(agB.s2) < pc(agA.s2) ? (EN?"your 2nd serve is more exposed":"din 2. serv er mere udsat") : (Math.round(agB.uf/grAlle[Bn].length) > Math.round(agA.uf/grAlle[A].length) ? (EN?"you give away more free errors":"du giver flere gratis fejl") : (EN?"break points are the battleground":"breakboldene er slagmarken"));
+          h += '<div style="margin-top:10px;padding:9px 12px;background:linear-gradient(90deg,rgba(200,90,40,.12),transparent 60%);border:1px solid var(--grus);border-radius:10px">' +
+            '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:4px">🎯 '+(EN?"WHAT EACH DEMANDS":"HVAD HVER KRÆVER")+'</div>' +
+            '<p style="font-size:12px;margin:0 0 3px;line-height:1.6"><b>vs '+esc(A.split(" ").pop())+':</b> '+(EN?"here ":"her ")+svagA+'.</p>' +
+            '<p style="font-size:12px;margin:0;line-height:1.6"><b>vs '+esc(Bn.split(" ").pop())+':</b> '+(EN?"here ":"her ")+svagB+'.</p></div>';
+        }
+        h += '</div>';
+      }
       h += '<div class="kort" style="border-left:3px solid var(--grus)"><h3>🆚 '+(EN?"Opponent analyses":"Modstander-analyser")+(vl.dummy?dummyBadge():'')+'</h3><p class="lille" style="margin:0">'+(vl.dummy?(EN?"Example data — replaced automatically by real matches.":"Eksempeldata i Rune-demoens format — erstattes automatisk af rigtige kampe, som de registreres."):(EN?"Computed from registered matches.":"Regnet direkte fra de registrerede kampe."))+'</p><p class="lille" style="margin:4px 0 0">'+(EN?'🟡 = dummy example · 🟢 = real matches — switches automatically per opponent.':'🟡 = dummy-eksempel · 🟢 = ægte kampe — skifter automatisk pr. modstander.')+'</p></div>';
       const gr = {};
       vl.liste.forEach(function(k){ (gr[k.modstander] = gr[k.modstander] || []).push(k); });
@@ -1419,7 +1509,7 @@ function render() {
         '<td style="text-align:center;font-size:10px;color:var(--daempet)">'+(EN?"SET 1":"SÆT 1")+'</td>' +
         '<td style="text-align:center;font-size:10px;color:var(--daempet)">'+(EN?"SET 2":"SÆT 2")+'</td>' +
         '<td style="text-align:center;font-size:10px;font-weight:800;color:var(--kridt)">'+(EN?"MATCH":"KAMP")+(harData?'':' (dummy)')+'</td>' +
-        '<td style="text-align:center;font-size:10px;color:var(--is)">SINNER ▎</td></tr>' +
+        '<td style="text-align:center;font-size:10px;color:var(--is)">'+((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn.toUpperCase():"SINNER")+' ▎</td></tr>' +
         rk4(EN?"1st serve in":"1. serv i spil", pcE(pc(sa[0].s1, sa[0].sp)), pcE(pc(sa[1].s1, sa[1].sp)), o.s1in, SINNER.s1in) +
         rk4(EN?"Won on 1st serve":"Vundet på 1. serv", pcE(pc(sa[0].s1v, sa[0].s1)), pcE(pc(sa[1].s1v, sa[1].s1)), o.s1won, SINNER.s1won) +
         rk4(EN?"Won on 2nd serve":"Vundet på 2. serv", pcE(pc(sa[0].s2v, sa[0].s2)), pcE(pc(sa[1].s2v, sa[1].s2)), o.s2won, SINNER.s2won) +

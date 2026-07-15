@@ -475,6 +475,8 @@ const fysByg = (EN) => {
 };
 
 // Sinner-referencetal (ATP 2025/26-sæsonniveau, afrundede — kilde: ATP Tour/Infosys)
+const DTFRANG = {"Kevin Le Li": {"rang": 2, "point": 432.0, "wtn": 26.2, "klub": "Virum-Sorgenfri", "aargang": 2012}, "Philip Hartvigsen Dianati": {"rang": 1, "point": 715.0, "wtn": 25.8, "klub": "Birkerød TK", "aargang": 2012}, "Andreas Falch Midtgaard": {"rang": 3, "point": 311.0, "wtn": 27.8, "klub": "Københavns BK", "aargang": 2012}, "Philip Tiedemann": {"rang": 7, "point": 169.0, "wtn": 28.2, "klub": "Københavns BK", "aargang": 2012}, "Emil Thøgersen": {"rang": 9, "point": 165.5, "wtn": 29.5, "klub": "Københavns BK", "aargang": 2013}};
+const OSKARRANG = {"rang": 15, "point": 84.0, "ind": 76.0, "hold": 6.0, "wtn": 29.5, "turneringer": 10, "uge": "29-2026", "klub": "B.93/Boldklubben af 1893"};
 const SINNER = { s1in: 64, s1won: 79, s2won: 58, bpSave: 74, bpConv: 46, df: 1.2 };
 // ---------- Visuel statistik: skemaer, Sinner-streg og niveau-ikoner ----------
 const pctAf = (a) => (a && a[1] ? Math.round(a[0] / a[1] * 100) : null);
@@ -757,7 +759,16 @@ function rivalUdvidet(navn, liste, rec, dummy) {
   const sp = T.s.map(function(x){ return x[1] ? Math.round(x[0] / x[1] * 100) : null; });
   const fp = T.f.map(function(x){ return x[1] ? Math.round(x[0] / x[1] * 100) : 0; });
   const tb = function(rows){ return '<table style="width:100%;border-collapse:collapse">' + rows + '</table>'; };
-  let ht = emne("📊 " + (EN ? "THE LEDGER" : "REGNSKABET")) + tb(
+  let ht = "";
+  if (typeof DTFRANG !== "undefined" && DTFRANG[navn]) {
+    const R = DTFRANG[navn], o = (typeof OSKARRANG !== "undefined") ? OSKARRANG : null;
+    const diff = o ? (R.rang < o.rang ? '<span style="color:var(--tabt)">' + (o.rang - R.rang) + (EN ? " ahead of Oskar" : " foran Oskar") + '</span>' : '<span style="color:var(--vundet)">' + (R.rang - o.rang) + (EN ? " behind Oskar" : " bag Oskar") + '</span>') : "";
+    ht += '<div style="background:#101B26;border:1px solid var(--kant);border-radius:10px;padding:8px 11px;margin-bottom:4px">' +
+      '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--is);margin-bottom:3px">📋 ' + (EN ? "DTF RANKING" : "DTF-RANGLISTE") + ' <span style="opacity:.6;font-weight:600">' + (o ? o.uge : "") + '</span></div>' +
+      '<div style="font-size:12.5px;font-weight:700">' + (EN ? "No. " : "Nr. ") + R.rang + ' · ' + R.point + (EN ? " pts" : " point") + ' · WTN ' + R.wtn + '</div>' +
+      '<div style="font-size:11px;color:var(--daempet);margin-top:1px">' + esc(R.klub) + ' · ' + R.aargang + (diff ? ' · ' + diff : '') + '</div></div>';
+  }
+  ht += emne("📊 " + (EN ? "THE LEDGER" : "REGNSKABET")) + tb(
     duoRk(EN ? "Errors / winners per match" : "Fejl / vindere pr. kamp", Math.round(ag.uf / antal) + " / " + Math.round(ag.vindere / antal), ag.vindere >= ag.uf ? 2 : 1,
       EN ? "Free errors vs points ended with a winner. Green when winners outnumber the errors — the aggressive game pays for itself." : "Gratis fejl mod point afsluttet med en vinder — begge pr. kamp i snit. Grønt flueben, når vinderne overstiger fejlene: så betaler det offensive spil sig selv.") +
     duoRk(EN ? "1st serve in" : "1. serv i spil", ag.s1pct + " %", niv(ag.s1pct, 60, 45), 
@@ -1485,7 +1496,7 @@ function render() {
          '<a href="https://dtf.tournamentsoftware.com/ranking/category.aspx?id=52585&amp;category=2531" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 '+(EN?"Oskar\'s current DTF ranking":"Oskars aktuelle rangliste hos DTF")+'</a>';
   }
 
-  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Claude via Nicolai. Team Oskar · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Team Oskar · juli 2026.")+'</p>';
+  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Claude via Nicolai. Team Oskar · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Team Oskar · rangliste uge 29 · juli 2026.")+'</p>';
   el.innerHTML = h;
 }
 

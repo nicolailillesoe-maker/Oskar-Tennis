@@ -944,8 +944,13 @@ function render() {
       h += '<input placeholder="'+(EN?'Tournament (e.g. HRT Sommer Cup)':'Turnering (fx HRT Sommer Cup, kat. G)')+'" value="'+esc(S.nyTur)+'" data-felt="nyTur">';
       h += '<div class="raekke"><button class="knap valg '+(S.nyFirst?"til":"")+'" data-a="first" data-v="1">'+(EN?"Oskar serves first":"Oskar server først")+'</button><button class="knap valg '+(!S.nyFirst?"til":"")+'" data-a="first" data-v="0">'+(EN?"Opponent serves first":"Modstander server først")+'</button></div>';
       h += '<div class="raekke"><button class="knap valg '+(S.nyMtb?"til":"")+'" data-a="mtb" data-v="1">'+(EN?"3rd set = match tiebreak (10)":"3. sæt = match-tiebreak (10)")+'</button><button class="knap valg '+(!S.nyMtb?"til":"")+'" data-a="mtb" data-v="0">'+(EN?"Full 3rd set":"Fuldt 3. sæt")+'</button></div>';
-      h += '<div class="raekke"><button class="knap valg '+(S.tryk3?"til":"")+'" data-a="trykToggle">'+(S.tryk3?(EN?"⏱ Rally length: ON":"⏱ Duel-længde: TIL"):(EN?"⏱ Rally length: OFF":"⏱ Duel-længde: FRA"))+'</button>' +
-        '<button class="knap valg '+(S.zoner?"til":"")+'" data-a="zonerToggle">'+(S.zoner?(EN?"🗺 Error zones: ON":"🗺 Fejl-zoner: TIL"):(EN?"🗺 Error zones: OFF":"🗺 Fejl-zoner: FRA"))+'</button></div>';
+      h += '<div style="border:1.5px dashed var(--kant);border-radius:12px;padding:11px 12px;margin:10px 0 10px">' +
+        '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--daempet)">⚙️ '+(EN?"ADVANCED — OPTIONAL":"AVANCERET — VALGFRIT")+'</div>' +
+        '<p class="lille" style="margin:3px 0 9px">'+(EN?"Extra taps, extra data. Both can be toggled mid-match.":"Ekstra tryk, ekstra data. Begge kan slås til/fra midt i kampen.")+'</p>' +
+        '<div class="raekke" style="margin-bottom:0">' +
+        '<button class="knap valg '+(S.tryk3?"til":"")+'" data-a="trykToggle">⏱ '+(EN?"Rally length":"Duel-længde")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.tryk3?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+'</span></button>' +
+        '<button class="knap valg '+(S.zoner?"til":"")+'" data-a="zonerToggle">🗺 '+(EN?"Error zones":"Fejl-zoner")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.zoner?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+'</span></button>' +
+        '</div></div>';
       h += '<p class="lille" style="margin:2px 0 10px;opacity:.8">'+(EN?"Advanced = a third tap per ball registers rally length (rule IV data). Can be switched mid-match.":"Avanceret = et tredje tryk pr. bold registrerer duel-længden (bud IV-data). Kan skiftes midt i kampen.")+'</p>';
       h += '<div class="raekke"><button class="knap stor" style="background:var(--grus)" data-a="start">'+(EN?"Start match":"Start kamp")+'</button></div>';
     } else {

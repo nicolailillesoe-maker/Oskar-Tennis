@@ -635,7 +635,7 @@ function ugeMaal(fysLog) {
 }
 
 let S = {
-  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
+  verden: "udv", tab: "kamp", gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, gendanAaben: false, gendanTekst: "", gendanBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -656,6 +656,7 @@ const rensKamp = (g) => {
 try { const sp = lager.hent("oskar-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
 try { if (lager.hent("oskar-laas") === "op") S.laast = false; } catch(e) {}
 try { if (lager.hent("oskar-tryk") === "3") S.tryk3 = true; } catch(e) {}
+try { if (lager.hent("oskar-zoner") === "1") S.zoner = true; } catch(e) {}
 try { const fa = lager.hent("oskar-fysisk-aktiv"); if (fa) S.fysAktiv = JSON.parse(fa); } catch(e) {}
 try { const fl = JSON.parse(lager.hent("oskar-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = fl; } catch(e) {}
 try { const tl = JSON.parse(lager.hent("oskar-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = tl; } catch(e) {}
@@ -832,7 +833,8 @@ const A = {
     lager.gem("oskar-tennis-log", JSON.stringify(S.ttLog));
     render();
   },
-  trykToggle: () => { S.tryk3 = !S.tryk3; S.aarsagValgt = null; lager.gem("oskar-tryk", S.tryk3 ? "3" : "2"); render(); },
+  trykToggle: () => { S.tryk3 = !S.tryk3; S.aarsagValgt = null; S.laengdeValgt = null; lager.gem("oskar-tryk", S.tryk3 ? "3" : "2"); render(); },
+  zonerToggle: () => { S.zoner = !S.zoner; S.laengdeValgt = null; lager.gem("oskar-zoner", S.zoner ? "1" : "0"); render(); },
   jAnvend: () => {
     if (!S.aktiv || !S.j) return;
     S.aktiv.justeringer = (S.aktiv.justeringer || []).concat([{ i: S.aktiv.point.length, sO: S.j.sO, sM: S.j.sM, gO: S.j.gO, gM: S.j.gM, server: S.j.server }]);
@@ -856,6 +858,9 @@ const A = {
   aarsag: (id) => {
     if (!S.aktiv || !S.afventer) return;
     if (!S.tryk3) {
+      if (S.zoner && S.afventer === "tabt" && (id === "uf" || id === "tvunget")) {
+        S.aarsagValgt = id; S.laengdeValgt = 0; render(); return;
+      }
       S.aktiv.point.push({ r: S.afventer === "vundet" ? "V" : "T", å: id, f: S.serv, l: 0, z: 0 });
       S.afventer = null; S.serv = 1; gemAktiv(); render(); return;
     }
@@ -864,7 +869,7 @@ const A = {
   laengde: (v) => {
     if (!S.aktiv || !S.afventer || !S.aarsagValgt) return;
     const l = [1,2,3].indexOf(+v) >= 0 ? +v : 0;
-    if (S.afventer === "tabt" && (S.aarsagValgt === "uf" || S.aarsagValgt === "tvunget")) {
+    if (S.zoner && S.afventer === "tabt" && (S.aarsagValgt === "uf" || S.aarsagValgt === "tvunget")) {
       S.laengdeValgt = l; render(); return;
     }
     S.aktiv.point.push({ r: S.afventer === "vundet" ? "V" : "T", å: S.aarsagValgt, f: S.serv, l: l, z: 0 });
@@ -877,7 +882,7 @@ const A = {
   },
   fortryd: () => {
     if (!S.aktiv) return;
-    if (S.laengdeValgt !== null) { S.laengdeValgt = null; render(); return; }
+    if (S.laengdeValgt !== null) { S.laengdeValgt = null; if (!S.tryk3) S.aarsagValgt = null; render(); return; }
     if (S.aarsagValgt) { S.aarsagValgt = null; render(); return; }
     if (S.afventer) { S.afventer = null; render(); return; }
     if (S.aktiv.point.length) { S.aktiv.point.pop(); S.serv = 1; gemAktiv(); }
@@ -939,7 +944,8 @@ function render() {
       h += '<input placeholder="'+(EN?'Tournament (e.g. HRT Sommer Cup)':'Turnering (fx HRT Sommer Cup, kat. G)')+'" value="'+esc(S.nyTur)+'" data-felt="nyTur">';
       h += '<div class="raekke"><button class="knap valg '+(S.nyFirst?"til":"")+'" data-a="first" data-v="1">'+(EN?"Oskar serves first":"Oskar server først")+'</button><button class="knap valg '+(!S.nyFirst?"til":"")+'" data-a="first" data-v="0">'+(EN?"Opponent serves first":"Modstander server først")+'</button></div>';
       h += '<div class="raekke"><button class="knap valg '+(S.nyMtb?"til":"")+'" data-a="mtb" data-v="1">'+(EN?"3rd set = match tiebreak (10)":"3. sæt = match-tiebreak (10)")+'</button><button class="knap valg '+(!S.nyMtb?"til":"")+'" data-a="mtb" data-v="0">'+(EN?"Full 3rd set":"Fuldt 3. sæt")+'</button></div>';
-      h += '<div class="raekke"><button class="knap valg '+(S.tryk3?"til":"")+'" data-a="trykToggle">'+(S.tryk3?(EN?"🎯 Advanced registration: ON":"🎯 Avanceret registrering: TIL"):(EN?"🎯 Advanced registration: OFF":"🎯 Avanceret registrering: FRA"))+'</button></div>';
+      h += '<div class="raekke"><button class="knap valg '+(S.tryk3?"til":"")+'" data-a="trykToggle">'+(S.tryk3?(EN?"⏱ Rally length: ON":"⏱ Duel-længde: TIL"):(EN?"⏱ Rally length: OFF":"⏱ Duel-længde: FRA"))+'</button>' +
+        '<button class="knap valg '+(S.zoner?"til":"")+'" data-a="zonerToggle">'+(S.zoner?(EN?"🗺 Error zones: ON":"🗺 Fejl-zoner: TIL"):(EN?"🗺 Error zones: OFF":"🗺 Fejl-zoner: FRA"))+'</button></div>';
       h += '<p class="lille" style="margin:2px 0 10px;opacity:.8">'+(EN?"Advanced = a third tap per ball registers rally length (rule IV data). Can be switched mid-match.":"Avanceret = et tredje tryk pr. bold registrerer duel-længden (bud IV-data). Kan skiftes midt i kampen.")+'</p>';
       h += '<div class="raekke"><button class="knap stor" style="background:var(--grus)" data-a="start">'+(EN?"Start match":"Start kamp")+'</button></div>';
     } else {
@@ -965,7 +971,9 @@ function render() {
         h += '<div class="banner is">🧊 <b>'+(EN?'Three free errors in a row — reset:':'Tre gratis fejl i træk — nulstilling:')+'</b> '+(EN?'strings → breathing → keyword. Next rally 100 % percentage tennis.':'strenge → vejrtrækning → nøgleord. Næste duel 100 % procentuel.')+'</div>';
 
       if (!st.done) {
-        h += '<div class="raekke" style="margin-bottom:6px"><button class="knap valg" style="font-size:11.5px;padding:8px 6px" data-a="trykToggle">'+(S.tryk3?(EN?"🎯 Advanced registration ON — rally length":"🎯 Avanceret registrering TIL — duel-længde"):(EN?"⚡ Standard — 2 taps per ball":"⚡ Standard — 2 tryk pr. bold"))+' · '+(EN?"tap to switch":"tryk for at skifte")+'</button></div>';
+        h += '<div class="raekke" style="margin-bottom:6px">' +
+          '<button class="knap valg'+(S.tryk3?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="trykToggle">⏱ '+(S.tryk3?(EN?"Length ON":"Længde TIL"):(EN?"Length OFF":"Længde FRA"))+'</button>' +
+          '<button class="knap valg'+(S.zoner?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="zonerToggle">🗺 '+(S.zoner?(EN?"Zones ON":"Zoner TIL"):(EN?"Zones OFF":"Zoner FRA"))+'</button></div>';
         h += '<div class="raekke"><button class="knap valg '+(S.serv===1?"til":"")+'" data-a="serv" data-v="1">'+(EN?"1st serve":"1. serv")+'</button><button class="knap valg '+(S.serv===2?"gul":"")+'" data-a="serv" data-v="2">'+(EN?"2nd serve (first serve missed)":"2. serv (førsteserv fejlet)")+'</button></div>';
         if (!S.afventer) {
           h += '<div class="raekke"><button class="knap stor" style="background:var(--vundet)" data-a="udfald" data-v="vundet">'+(EN?"Oskar won":"Oskar vandt")+'</button><button class="knap stor" style="background:var(--tabt)" data-a="udfald" data-v="tabt">'+(EN?"Lost":"Tabt")+'</button></div>';

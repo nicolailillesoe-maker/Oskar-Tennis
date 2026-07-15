@@ -1136,7 +1136,7 @@ function render() {
   if (!LAAST && S.tab === "planer") {
     const vl = visningsListe();
     if (vl.liste.length) {
-      h += '<div class="kort" style="border-left:3px solid var(--grus)"><h3>🆚 '+(EN?"Opponent analyses":"Modstander-analyser")+(vl.dummy?dummyBadge():'')+'</h3><p class="lille" style="margin:0">'+(vl.dummy?(EN?"Example data — replaced automatically by real matches.":"Eksempeldata i Rune-demoens format — erstattes automatisk af rigtige kampe, som de registreres."):(EN?"Computed from registered matches.":"Regnet direkte fra de registrerede kampe."))+'</p></div>';
+      h += '<div class="kort" style="border-left:3px solid var(--grus)"><h3>🆚 '+(EN?"Opponent analyses":"Modstander-analyser")+(vl.dummy?dummyBadge():'')+'</h3><p class="lille" style="margin:0">'+(vl.dummy?(EN?"Example data — replaced automatically by real matches.":"Eksempeldata i Rune-demoens format — erstattes automatisk af rigtige kampe, som de registreres."):(EN?"Computed from registered matches.":"Regnet direkte fra de registrerede kampe."))+'</p><p class="lille" style="margin:4px 0 0">'+(EN?'🟡 = dummy example · 🟢 = real matches — switches automatically per opponent.':'🟡 = dummy-eksempel · 🟢 = ægte kampe — skifter automatisk pr. modstander.')+'</p></div>';
       const gr = {};
       vl.liste.forEach(function(k){ (gr[k.modstander] = gr[k.modstander] || []).push(k); });
       Object.keys(gr).forEach(function(navn){
@@ -1145,13 +1145,12 @@ function render() {
         h += '<div class="kort" data-a="rivalToggle" data-v="P_'+esc(navn)+'" style="cursor:pointer;padding:11px 13px;border-left:3px solid '+farve+'">' +
           '<div style="display:flex;align-items:center;gap:10px">' +
           '<span style="font-size:12px;font-weight:800;background:'+farve+';color:#0B141D;padding:3px 9px;border-radius:10px;flex:none">'+rec[0]+'-'+rec[1]+'</span>' +
-          '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800">'+esc(navn)+(vl.dummy?' 🟡':'')+'</div>' +
+          '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800">'+esc(navn)+(vl.dummy?' 🟡':' 🟢')+'</div>' +
           '<div style="font-size:11px;color:var(--daempet)">'+liste.length+(EN?" matches":" kampe")+'</div></div>' +
           '<span style="color:var(--daempet);font-size:11px;flex:none">'+(aaben?"▲":"▼")+'</span></div>' +
           (aaben ? '<div style="margin-top:6px;padding-top:2px;border-top:1px solid var(--kant)">'+rivalUdvidet(navn, liste, rec, vl.dummy)+'</div>' : '') + '</div>';
       });
     }
-    h += '<p class="lille">' +(EN?'Match plans are made with Claude the day before and boiled down to three sentences Rune says out loud himself.':'Kampplaner laves med Claude dagen før og koges ned til tre sætninger, Rune selv siger højt.')+'</p>' + (EN?MODSTANDERE_EN:MODSTANDERE).map(m => '<div class="kort" style="border-left:3px solid var(--grus)"><h3>'+esc(m[0])+'</h3><div style="font-size:11px;color:var(--is);margin:2px 0 5px">'+esc(m[1])+'</div><p>'+esc(m[2])+'</p></div>').join("");
   }
 
   if (!LAAST && S.tab === "s2026") {

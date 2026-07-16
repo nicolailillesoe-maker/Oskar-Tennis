@@ -559,7 +559,7 @@ function statTabel(s, EN) {
   r += statRk(EN ? "Free errors, short rallies" : "Gratis fejl i korte dueller", String(s.budIVbrud), null, null, s.budIVbrud <= 1 ? 2 : s.budIVbrud <= 3 ? 1 : 0, "BUD IV");
   if ((s.zN || 0) + (s.zL || 0) + (s.zB || 0) > 0) r += statRk(EN ? "Error zones (net·long·wide)" : "Fejl-zoner (net·lang·bred)", s.zN + " · " + s.zL + " · " + s.zB, null, null, 1, "🗺");
   return '<table style="width:100%;border-collapse:collapse;margin:6px 0 2px">' + r +
-    '<tr><td colspan="4" style="font-size:10px;color:var(--daempet);padding-top:4px">▎ ' + (EN ? "gold line = Sinner level (ATP 25/26) · ✓ strong · ● okay · ⚠ sharpen" : "guldstreg = Sinner-niveau (ATP 25/26) · ✓ stærkt · ● okay · ⚠ skal skærpes") + '</td></tr></table>';
+    '<tr><td colspan="4" style="font-size:10px;color:var(--daempet);padding-top:4px">▎ ' + (EN ? "gold line = "+((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner")+" level (ATP 25/26) · ✓ strong · ● okay · ⚠ sharpen" : "guldstreg = "+((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner")+"-niveau (ATP 25/26) · ✓ stærkt · ● okay · ⚠ skal skærpes") + '</td></tr></table>';
 }
 function saetTabel(s, EN) {
   if (s.perSaet.length < 2) return "";
@@ -738,7 +738,7 @@ function duoRk(label, vaerdi, n, fork, maal) {
     '<td style="padding:4px 0;font-size:12px;font-weight:700;text-align:right;white-space:nowrap">' + vaerdi + '</td>' +
     '<td style="padding:4px 0 4px 6px;text-align:center;width:18px">' + (n === null ? "" : nivIkon(n)) + '</td></tr>';
   if (maal) r += '<tr><td colspan="3" style="padding:0 0 3px;font-size:10px;color:var(--daempet)">' +
-    '🎯 ' + (S.sprog === "en" ? "Goal" : "Mål") + ' ' + maal[0] + ' · 🏔 Sinner ' + maal[1] + '</td></tr>';
+    '🎯 ' + (S.sprog === "en" ? "Goal" : "Mål") + ' ' + maal[0] + ' · ' + ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].emoji:"🏔") + ' ' + ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner") + ' ' + maal[1] + '</td></tr>';
   if (aaben) r += '<tr><td colspan="3" style="padding:1px 0 8px"><div style="font-size:11.5px;line-height:1.6;color:var(--kridt);background:#101B26;border-left:2px solid var(--is);border-radius:0 8px 8px 0;padding:7px 10px">' + fork + '</div></td></tr>';
   return r;
 }
@@ -1504,7 +1504,7 @@ function render() {
           '<td style="text-align:center;font-size:12.5px;color:var(--is)">'+sinner+e+'</td></tr>';
       };
       const pcE = function(v){ return v === null ? null : v + " %"; };
-      h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>🆚 '+(EN?"Rune vs Sinner":"Rune mod Sinner")+(harData?'':' <span style="background:var(--guld);color:#101B26;font-size:10px;padding:2px 7px;border-radius:5px;vertical-align:middle">'+(EN?"EXAMPLE — DUMMY DATA":"EKSEMPEL — DUMMY-DATA")+'</span>')+'</h3>' +
+      h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>🆚 '+(EN?"Rune vs "+((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner"):"Rune mod "+((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner"))+(harData?'':' <span style="background:var(--guld);color:#101B26;font-size:10px;padding:2px 7px;border-radius:5px;vertical-align:middle">'+(EN?"EXAMPLE — DUMMY DATA":"EKSEMPEL — DUMMY-DATA")+'</span>')+'</h3>' +
         '<table style="width:100%;border-collapse:collapse"><tr><td></td>' +
         '<td style="text-align:center;font-size:10px;color:var(--daempet)">'+(EN?"SET 1":"SÆT 1")+'</td>' +
         '<td style="text-align:center;font-size:10px;color:var(--daempet)">'+(EN?"SET 2":"SÆT 2")+'</td>' +
@@ -1516,7 +1516,7 @@ function render() {
         rk4(EN?"Break points saved":"Breakbolde afværget", null, null, o.bpSave, SINNER.bpSave) +
         rk4(EN?"Break points converted":"Breakbolde udnyttet", null, null, o.bpConv, SINNER.bpConv) +
         rk4(EN?"Double faults":"Dobbeltfejl", sa[0].df, sa[1].df, o.df, SINNER.df, harData?(EN?" pr. match":" pr. kamp"):"") + '</table>' +
-        '<p style="font-size:11px;color:var(--daempet);margin-top:6px">'+(harData?(EN?"Rune = all "+kilder.length+" registered matches (set columns = sums across matches). ":"Rune = alle "+kilder.length+" registrerede kampe (sæt-kolonner = summeret på tværs). "):(EN?"⚠ The whole table is the example match until the first real match is saved. ":"⚠ Hele tabellen er eksempel-kampen, indtil første rigtige kamp gemmes. "))+(EN?"Sinner = ATP 2025/26 (rounded). Benchmarks, not verdicts — the DIRECTION counts. Set 1 vs set 2 reveals whether the level holds when the match gets long.":"Sinner = ATP 2025/26 (afrundet). Pejlemærker, ikke facit — det er RETNINGEN, der tæller. Sæt 1 mod sæt 2 afslører, om niveauet holder, når kampen bliver lang.")+'</p></div>';
+        '<p style="font-size:11px;color:var(--daempet);margin-top:6px">'+(harData?(EN?"Rune = all "+kilder.length+" registered matches (set columns = sums across matches). ":"Rune = alle "+kilder.length+" registrerede kampe (sæt-kolonner = summeret på tværs). "):(EN?"⚠ The whole table is the example match until the first real match is saved. ":"⚠ Hele tabellen er eksempel-kampen, indtil første rigtige kamp gemmes. "))+(EN?((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner")+" = ATP 2025/26 (rounded). Benchmarks, not verdicts — the DIRECTION counts. Set 1 vs set 2 reveals whether the level holds when the match gets long.":((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner")+" = ATP 2025/26 (afrundet). Pejlemærker, ikke facit — det er RETNINGEN, der tæller. Sæt 1 mod sæt 2 afslører, om niveauet holder, når kampen bliver lang.")+'</p></div>';
     })();
         if (!S.gemte.length) h += '<p style="font-size:13px;color:var(--daempet)">'+(EN?'New matches with point-by-point data are recorded under 🎾 Match and collected here: per-match statistics and development over time.':'Nye kampe med point-for-point data registreres under 🎾 Kamp og lander her under baselinen.')+'</p>';
     h += S.gemte.map((k,i) => {

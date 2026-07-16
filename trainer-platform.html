@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Klub-platform — Prototype</title>
+<title>SportsAInalytics — Klub-platform</title>
 <style>
   :root {
     --nat:#101B26; --kort:#18293A; --kant:#223243; --kridt:#F2EDE4; --daempet:#5E7386;
@@ -15,7 +15,6 @@
   body { margin:0; background:var(--nat); color:var(--kridt); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; font-size:15px; line-height:1.5; padding-bottom:80px; }
   #app { max-width:520px; margin:0 auto; padding:14px; }
   h1 { font-size:20px; margin:2px 0; }
-  h2 { font-size:15px; }
   h3 { font-size:14px; margin:0 0 6px; }
   .eyebrow { font-size:11px; font-weight:800; letter-spacing:1.5px; color:var(--daempet); text-transform:uppercase; }
   .kort { background:var(--kort); border-radius:14px; padding:13px 15px; margin-bottom:10px; }
@@ -25,7 +24,6 @@
   .knap.til { background:var(--is); color:var(--nat); }
   .knap.valg { background:transparent; border:1.5px solid var(--kant); }
   .knap.valg.til { background:#18293A; border-color:var(--is); color:var(--is); }
-  .pille { display:inline-block; font-size:11px; font-weight:800; padding:3px 9px; border-radius:10px; }
   .top { display:flex; align-items:center; gap:10px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--kant); }
   .avatar { width:38px; height:38px; border-radius:50%; background:var(--grus); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; flex:none; color:var(--kridt); }
   .rolle-skift { position:fixed; bottom:0; left:0; right:0; background:var(--kort); border-top:1px solid var(--kant); padding:8px 14px calc(8px + env(safe-area-inset-bottom)); }
@@ -33,70 +31,56 @@
   .fane-rk { display:flex; gap:6px; overflow-x:auto; margin-bottom:12px; padding-bottom:2px; }
   .fane-rk button { flex:none; padding:8px 13px; border:1px solid var(--kant); border-radius:10px; background:transparent; color:var(--daempet); font-weight:700; font-size:12.5px; cursor:pointer; font-family:inherit; white-space:nowrap; }
   .fane-rk button.aktiv { background:var(--is); color:var(--nat); border-color:var(--is); }
-  .bar-bg { background:var(--nat); border-radius:5px; height:8px; overflow:hidden; }
-  .bar-fill { height:100%; border-radius:5px; }
   .streak-chip { display:inline-flex; align-items:center; gap:3px; font-size:12px; font-weight:800; padding:3px 8px; border-radius:9px; background:var(--nat); }
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .spiller-rk { display:flex; align-items:center; gap:10px; padding:10px 0; border-top:1px solid var(--kant); cursor:pointer; }
   .spiller-rk:first-of-type { border-top:none; }
-  .dim-rk { display:flex; align-items:center; gap:8px; margin:5px 0; }
-  .dim-navn { font-size:12.5px; width:120px; flex:none; color:var(--daempet); }
-  .stars { display:flex; gap:3px; }
-  .star { font-size:22px; cursor:pointer; opacity:.28; }
-  .star.on { opacity:1; }
   .badge-ai { background:linear-gradient(90deg,var(--is),var(--gruslys)); color:var(--nat); font-size:10px; font-weight:800; padding:2px 7px; border-radius:7px; letter-spacing:.5px; }
-  textarea { width:100%; background:var(--nat); border:1px solid var(--kant); border-radius:10px; color:var(--kridt); padding:10px; font-family:inherit; font-size:13px; resize:vertical; }
+  textarea { width:100%; background:var(--nat); border:1px solid var(--kant); border-radius:10px; color:var(--kridt); padding:10px; font-family:inherit; font-size:13px; resize:vertical; line-height:1.55; }
   .proto-note { background:rgba(227,179,65,.12); border:1px solid var(--guld); border-radius:10px; padding:8px 11px; font-size:11.5px; color:var(--guld); margin-bottom:12px; }
   .medalje { font-size:15px; }
+  .dot { width:34px; height:34px; border-radius:50%; border:2px solid var(--kant); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex:none; }
+  .dot.valgt { border-color:var(--kridt); box-shadow:0 0 0 2px var(--nat), 0 0 0 4px currentColor; }
+  .skala-band { display:flex; align-items:center; gap:9px; padding:6px 0; font-size:12.5px; }
+  .skala-cirkel { width:15px; height:15px; border-radius:50%; flex:none; }
+  .logo-rk { display:flex; align-items:center; gap:9px; margin-bottom:12px; }
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div class="rolle-skift"><div class="inner" id="rollebar"></div></div>
 <script>
-const DATA = {"grupper": {"U14 Elite": {"aargang": "U14", "spillere": ["Oskar Lillesø", "Kevin Le Li", "Andreas Falch Midtgaard", "Philip Tiedemann", "Emil Thøgersen"]}, "U14 Talent": {"aargang": "U14", "spillere": ["Philip Aackermann", "Magnus Emde", "Victor Christiansen", "William Schlittler"]}, "U12 Udvikling": {"aargang": "U12", "spillere": ["Frederik Brandi", "Marcus Olsen", "Aaric Tajhya", "Noah Bang"]}}, "spillere": {"Oskar Lillesø": {"navn": "Oskar Lillesø", "rang": 15, "klub": "B.93", "wtn": 29.5, "erBruger": true, "gruppe": "U14 Elite", "fysStreak": 2, "tennisStreak": 12, "q1": {"serv": 3, "baglinje": 4, "net": 4, "fysik": 3, "mental": 2, "indsats": 2}, "q2": {"serv": 3, "baglinje": 4, "net": 4, "fysik": 4, "mental": 1, "indsats": 2}, "kampe": 13, "sejre": 2, "sidsteTraening": "2 dage siden", "traeningerKvartal": 25}, "Kevin Le Li": {"navn": "Kevin Le Li", "rang": 2, "klub": "Virum-Sorgenfri", "wtn": 26.2, "erBruger": false, "gruppe": "U14 Elite", "fysStreak": 4, "tennisStreak": 9, "q1": {"serv": 3, "baglinje": 2, "net": 4, "fysik": 2, "mental": 4, "indsats": 2}, "q2": {"serv": 3, "baglinje": 3, "net": 4, "fysik": 3, "mental": 4, "indsats": 3}, "kampe": 8, "sejre": 4, "sidsteTraening": "I dag", "traeningerKvartal": 16}, "Andreas Falch Midtgaard": {"navn": "Andreas Falch Midtgaard", "rang": 3, "klub": "KB", "wtn": 27.8, "erBruger": false, "gruppe": "U14 Elite", "fysStreak": 6, "tennisStreak": 9, "q1": {"serv": 2, "baglinje": 2, "net": 4, "fysik": 2, "mental": 2, "indsats": 2}, "q2": {"serv": 2, "baglinje": 1, "net": 4, "fysik": 3, "mental": 2, "indsats": 3}, "kampe": 10, "sejre": 4, "sidsteTraening": "2 dage siden", "traeningerKvartal": 16}, "Philip Tiedemann": {"navn": "Philip Tiedemann", "rang": 7, "klub": "KB", "wtn": 28.2, "erBruger": false, "gruppe": "U14 Elite", "fysStreak": 5, "tennisStreak": 10, "q1": {"serv": 3, "baglinje": 3, "net": 2, "fysik": 4, "mental": 4, "indsats": 4}, "q2": {"serv": 3, "baglinje": 4, "net": 1, "fysik": 4, "mental": 4, "indsats": 5}, "kampe": 5, "sejre": 2, "sidsteTraening": "I dag", "traeningerKvartal": 27}, "Emil Thøgersen": {"navn": "Emil Thøgersen", "rang": 9, "klub": "KB", "wtn": 29.5, "erBruger": false, "gruppe": "U14 Elite", "fysStreak": 3, "tennisStreak": 6, "q1": {"serv": 4, "baglinje": 2, "net": 2, "fysik": 4, "mental": 4, "indsats": 3}, "q2": {"serv": 3, "baglinje": 1, "net": 3, "fysik": 5, "mental": 4, "indsats": 4}, "kampe": 8, "sejre": 8, "sidsteTraening": "2 dage siden", "traeningerKvartal": 21}, "Philip Aackermann": {"navn": "Philip Aackermann", "rang": 19, "klub": "Hellerup", "wtn": 29.7, "erBruger": false, "gruppe": "U14 Talent", "fysStreak": 3, "tennisStreak": 8, "q1": {"serv": 2, "baglinje": 3, "net": 2, "fysik": 2, "mental": 4, "indsats": 4}, "q2": {"serv": 1, "baglinje": 3, "net": 2, "fysik": 3, "mental": 3, "indsats": 5}, "kampe": 9, "sejre": 6, "sidsteTraening": "I går", "traeningerKvartal": 32}, "Magnus Emde": {"navn": "Magnus Emde", "rang": 18, "klub": "Roskilde", "wtn": 31.2, "erBruger": false, "gruppe": "U14 Talent", "fysStreak": 1, "tennisStreak": 7, "q1": {"serv": 4, "baglinje": 3, "net": 3, "fysik": 2, "mental": 2, "indsats": 3}, "q2": {"serv": 3, "baglinje": 4, "net": 4, "fysik": 1, "mental": 2, "indsats": 4}, "kampe": 9, "sejre": 9, "sidsteTraening": "2 dage siden", "traeningerKvartal": 32}, "Victor Christiansen": {"navn": "Victor Christiansen", "rang": 20, "klub": "Fruens Bøge", "wtn": 31.6, "erBruger": false, "gruppe": "U14 Talent", "fysStreak": 3, "tennisStreak": 9, "q1": {"serv": 3, "baglinje": 2, "net": 2, "fysik": 4, "mental": 4, "indsats": 4}, "q2": {"serv": 4, "baglinje": 1, "net": 2, "fysik": 3, "mental": 5, "indsats": 3}, "kampe": 8, "sejre": 2, "sidsteTraening": "2 dage siden", "traeningerKvartal": 16}, "William Schlittler": {"navn": "William Schlittler", "rang": 22, "klub": "Skovbakken", "wtn": 30.8, "erBruger": false, "gruppe": "U14 Talent", "fysStreak": 8, "tennisStreak": 8, "q1": {"serv": 3, "baglinje": 3, "net": 4, "fysik": 3, "mental": 2, "indsats": 2}, "q2": {"serv": 4, "baglinje": 3, "net": 5, "fysik": 4, "mental": 2, "indsats": 2}, "kampe": 11, "sejre": 2, "sidsteTraening": "I dag", "traeningerKvartal": 23}, "Frederik Brandi": {"navn": "Frederik Brandi", "rang": 4, "klub": "Esbjerg", "wtn": 33.1, "erBruger": false, "gruppe": "U12 Udvikling", "fysStreak": 1, "tennisStreak": 12, "q1": {"serv": 4, "baglinje": 3, "net": 3, "fysik": 2, "mental": 3, "indsats": 3}, "q2": {"serv": 5, "baglinje": 2, "net": 4, "fysik": 3, "mental": 2, "indsats": 4}, "kampe": 7, "sejre": 6, "sidsteTraening": "I går", "traeningerKvartal": 25}, "Marcus Olsen": {"navn": "Marcus Olsen", "rang": 8, "klub": "Greve", "wtn": 34.0, "erBruger": false, "gruppe": "U12 Udvikling", "fysStreak": 4, "tennisStreak": 6, "q1": {"serv": 2, "baglinje": 2, "net": 2, "fysik": 4, "mental": 2, "indsats": 4}, "q2": {"serv": 2, "baglinje": 2, "net": 3, "fysik": 4, "mental": 2, "indsats": 4}, "kampe": 14, "sejre": 6, "sidsteTraening": "2 dage siden", "traeningerKvartal": 30}, "Aaric Tajhya": {"navn": "Aaric Tajhya", "rang": 12, "klub": "Greve", "wtn": 33.8, "erBruger": false, "gruppe": "U12 Udvikling", "fysStreak": 7, "tennisStreak": 12, "q1": {"serv": 2, "baglinje": 4, "net": 3, "fysik": 2, "mental": 2, "indsats": 3}, "q2": {"serv": 2, "baglinje": 4, "net": 2, "fysik": 2, "mental": 1, "indsats": 3}, "kampe": 7, "sejre": 4, "sidsteTraening": "I dag", "traeningerKvartal": 22}, "Noah Bang": {"navn": "Noah Bang", "rang": 16, "klub": "Hørsholm", "wtn": 35.2, "erBruger": false, "gruppe": "U12 Udvikling", "fysStreak": 6, "tennisStreak": 3, "q1": {"serv": 2, "baglinje": 4, "net": 2, "fysik": 4, "mental": 3, "indsats": 4}, "q2": {"serv": 2, "baglinje": 4, "net": 3, "fysik": 4, "mental": 2, "indsats": 4}, "kampe": 9, "sejre": 4, "sidsteTraening": "2 dage siden", "traeningerKvartal": 25}}, "venner": {"Oskar Lillesø": ["Kevin Le Li", "Philip Aackermann", "Frederik Brandi"], "Philip Aackermann": ["Oskar Lillesø", "Magnus Emde"], "Kevin Le Li": ["Oskar Lillesø", "Andreas Falch Midtgaard"]}, "traenere": [{"navn": "Thomas", "grupper": ["U14 Elite", "U14 Talent"]}, {"navn": "Marie", "grupper": ["U12 Udvikling"]}]};
+const DATA = {"grupper": {"U14 Elite": {"aargang": "U14", "spillere": ["Oskar Lillesø", "Kevin Le Li", "Andreas Falch Midtgaard", "Philip Tiedemann", "Emil Thøgersen"]}, "U14 Talent": {"aargang": "U14", "spillere": ["Philip Aackermann", "Magnus Emde", "Victor Christiansen", "William Schlittler"]}, "U12 Udvikling": {"aargang": "U12", "spillere": ["Frederik Brandi", "Marcus Olsen", "Aaric Tajhya", "Noah Bang"]}}, "spillere": {"Oskar Lillesø": {"navn": "Oskar Lillesø", "rang": 15, "klub": "B.93", "wtn": 29.5, "erBruger": true, "gruppe": "U14 Elite", "fysStreak": 8, "tennisStreak": 11, "vurdering": {"fysisk": {"score": 9, "tekst": "Meget stærk indsats i den fysiske træning, som du har deltaget i. Du gør dig umage med øvelserne, du brokker dig ikke, og du forsøger at give 100 procent og giver ikke op, selvom det kan være hårdt. Det har været rigtig positivt at se, og det skal du fortsætte med, for det vil virkelig gøre en forskel for dig i din tennisudvikling."}, "petersbane": {"score": 8, "tekst": "God indsats. Jeg har ikke haft fornøjelsen af dig lige så mange gange som med de andre, da du var lidt skadet i starten, men generelt har du gjort det rigtig godt og leveret en rigtig god arbejdsindsats, og du får meget ud af øvelserne. Vi arbejder med, at du kan slå de samme slag med samme spin, fart, højde over nettet og længde igen og igen, og det kan udfordre dig, men du arbejder rigtig godt med det."}, "spilselv": {"score": 7, "tekst": "God indsats. Du har leveret en god arbejdsindsats på spil-selv-banen, og det er positivt, for det er vanskeligt for mange. Det er vigtigt at kunne spille med en 100 procents arbejdsindsats, når man selv er ansvarlig, og der ikke står en forælder eller træner og fortæller en, hvad man skal gøre. Der er stadig mulighed for at gøre mere ved det, men det er et godt sted lige nu."}}, "kampe": 10, "sejre": 5, "sidsteTraening": "I dag", "traeningerKvartal": 25, "kampliste": [{"mod": "Kevin Le Li", "res": "4-6, 7-6, 3-6", "dato": "2026-05-10", "v": false, "vin": 35, "uf": 31, "pct": 44}, {"mod": "Kevin Le Li", "res": "5-7, 6-4", "dato": "2026-06-10", "v": true, "vin": 30, "uf": 24, "pct": 51}, {"mod": "Philip Hartvigsen Dianati", "res": "3-6, 6-7", "dato": "2026-05-11", "v": false, "vin": 29, "uf": 28, "pct": 46}, {"mod": "Philip Hartvigsen Dianati", "res": "3-6, 6-7", "dato": "2026-06-11", "v": false, "vin": 25, "uf": 29, "pct": 45}, {"mod": "Andreas Falch Midtgaard", "res": "7-5, 6-4", "dato": "2026-05-12", "v": true, "vin": 20, "uf": 26, "pct": 55}, {"mod": "Andreas Falch Midtgaard", "res": "6-4, 6-2", "dato": "2026-06-12", "v": true, "vin": 17, "uf": 18, "pct": 56}, {"mod": "Philip Tiedemann", "res": "7-6, 6-2", "dato": "2026-05-13", "v": true, "vin": 29, "uf": 24, "pct": 53}, {"mod": "Philip Tiedemann", "res": "6-4, 6-4", "dato": "2026-06-13", "v": true, "vin": 22, "uf": 14, "pct": 56}, {"mod": "Emil Thøgersen", "res": "3-6, 4-6", "dato": "2026-05-14", "v": false, "vin": 30, "uf": 29, "pct": 44}, {"mod": "Emil Thøgersen", "res": "1-6, 2-6", "dato": "2026-06-14", "v": false, "vin": 18, "uf": 19, "pct": 35}], "statistik": {"pointPct": 49, "vindere": 255, "esser": 75, "uf": 242, "dobbelt": 33, "diff": 13}, "rivaler": {"Kevin Le Li": {"k": 2, "v": 1}, "Philip Hartvigsen Dianati": {"k": 2, "v": 0}, "Andreas Falch Midtgaard": {"k": 2, "v": 2}, "Philip Tiedemann": {"k": 2, "v": 2}, "Emil Thøgersen": {"k": 2, "v": 0}}}, "Kevin Le Li": {"navn": "Kevin Le Li", "rang": 2, "klub": "Virum-Sorgenfri", "wtn": 26.2, "erBruger": false, "gruppe": "U14 Elite", "fysStreak": 2, "tennisStreak": 4, "vurdering": {"fysisk": {"score": 7, "tekst": "God indsats i den fysiske træning. Kevin arbejder godt med øvelserne. Der kan skrues yderligere op for intensiteten, men niveauet er godt."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 9, "tekst": "Meget stærk selvstændig indsats. Spiller med fuld arbejdsindsats uden at skulle guides — imponerende."}}, "kampe": 13, "sejre": 2, "sidsteTraening": "2 dage siden", "traeningerKvartal": 31}, "Andreas Falch Midtgaard": {"navn": "Andreas Falch Midtgaard", "rang": 3, "klub": "KB", "wtn": 27.8, "erBruger": false, "gruppe": "U14 Elite", "fysStreak": 2, "tennisStreak": 12, "vurdering": {"fysisk": {"score": 7, "tekst": "God indsats i den fysiske træning. Andreas arbejder godt med øvelserne. Der kan skrues yderligere op for intensiteten, men niveauet er godt."}, "petersbane": {"score": 9, "tekst": "Meget stærk indsats på banen. Får rigtig meget ud af øvelserne og udfordrer sig selv. Vi arbejder videre med konsistens i slagene."}, "spilselv": {"score": 9, "tekst": "Meget stærk selvstændig indsats. Spiller med fuld arbejdsindsats uden at skulle guides — imponerende."}}, "kampe": 5, "sejre": 5, "sidsteTraening": "I dag", "traeningerKvartal": 29}, "Philip Tiedemann": {"navn": "Philip Tiedemann", "rang": 7, "klub": "KB", "wtn": 28.2, "erBruger": false, "gruppe": "U14 Elite", "fysStreak": 6, "tennisStreak": 5, "vurdering": {"fysisk": {"score": 7, "tekst": "God indsats i den fysiske træning. Philip arbejder godt med øvelserne. Der kan skrues yderligere op for intensiteten, men niveauet er godt."}, "petersbane": {"score": 8, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 8, "tekst": "God arbejdsindsats på spil-selv-banen — vanskeligt for mange. Vigtigt at kunne yde 100 procent, når man selv er ansvarlig. Stadig plads til mere, men et godt sted."}}, "kampe": 11, "sejre": 3, "sidsteTraening": "I dag", "traeningerKvartal": 15}, "Emil Thøgersen": {"navn": "Emil Thøgersen", "rang": 9, "klub": "KB", "wtn": 29.5, "erBruger": false, "gruppe": "U14 Elite", "fysStreak": 2, "tennisStreak": 6, "vurdering": {"fysisk": {"score": 7, "tekst": "God indsats i den fysiske træning. Emil arbejder godt med øvelserne. Der kan skrues yderligere op for intensiteten, men niveauet er godt."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 7, "tekst": "God arbejdsindsats på spil-selv-banen — vanskeligt for mange. Vigtigt at kunne yde 100 procent, når man selv er ansvarlig. Stadig plads til mere, men et godt sted."}}, "kampe": 4, "sejre": 5, "sidsteTraening": "2 dage siden", "traeningerKvartal": 20}, "Philip Aackermann": {"navn": "Philip Aackermann", "rang": 19, "klub": "Hellerup", "wtn": 29.7, "erBruger": false, "gruppe": "U14 Talent", "fysStreak": 8, "tennisStreak": 3, "vurdering": {"fysisk": {"score": 9, "tekst": "Meget stærk indsats i den fysiske træning. Philip giver 100 procent, brokker sig ikke og giver ikke op, selvom det er hårdt. Rigtig positivt — fortsæt det."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 9, "tekst": "Meget stærk selvstændig indsats. Spiller med fuld arbejdsindsats uden at skulle guides — imponerende."}}, "kampe": 11, "sejre": 8, "sidsteTraening": "I dag", "traeningerKvartal": 31}, "Magnus Emde": {"navn": "Magnus Emde", "rang": 18, "klub": "Roskilde", "wtn": 31.2, "erBruger": false, "gruppe": "U14 Talent", "fysStreak": 6, "tennisStreak": 11, "vurdering": {"fysisk": {"score": 7, "tekst": "God indsats i den fysiske træning. Magnus arbejder godt med øvelserne. Der kan skrues yderligere op for intensiteten, men niveauet er godt."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 8, "tekst": "God arbejdsindsats på spil-selv-banen — vanskeligt for mange. Vigtigt at kunne yde 100 procent, når man selv er ansvarlig. Stadig plads til mere, men et godt sted."}}, "kampe": 5, "sejre": 10, "sidsteTraening": "I dag", "traeningerKvartal": 23}, "Victor Christiansen": {"navn": "Victor Christiansen", "rang": 20, "klub": "Fruens Bøge", "wtn": 31.6, "erBruger": false, "gruppe": "U14 Talent", "fysStreak": 1, "tennisStreak": 12, "vurdering": {"fysisk": {"score": 6, "tekst": "Svingende indsats fysisk. Vi arbejder på, at Victor giver mere konsekvent i øvelserne."}, "petersbane": {"score": 9, "tekst": "Meget stærk indsats på banen. Får rigtig meget ud af øvelserne og udfordrer sig selv. Vi arbejder videre med konsistens i slagene."}, "spilselv": {"score": 6, "tekst": "Der arbejdes på at holde intensiteten oppe, når der spilles selvstændigt uden voksenstyring."}}, "kampe": 13, "sejre": 9, "sidsteTraening": "I dag", "traeningerKvartal": 14}, "William Schlittler": {"navn": "William Schlittler", "rang": 22, "klub": "Skovbakken", "wtn": 30.8, "erBruger": false, "gruppe": "U14 Talent", "fysStreak": 3, "tennisStreak": 6, "vurdering": {"fysisk": {"score": 9, "tekst": "Meget stærk indsats i den fysiske træning. William giver 100 procent, brokker sig ikke og giver ikke op, selvom det er hårdt. Rigtig positivt — fortsæt det."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 8, "tekst": "God arbejdsindsats på spil-selv-banen — vanskeligt for mange. Vigtigt at kunne yde 100 procent, når man selv er ansvarlig. Stadig plads til mere, men et godt sted."}}, "kampe": 14, "sejre": 5, "sidsteTraening": "I dag", "traeningerKvartal": 25}, "Frederik Brandi": {"navn": "Frederik Brandi", "rang": 4, "klub": "Esbjerg", "wtn": 33.1, "erBruger": false, "gruppe": "U12 Udvikling", "fysStreak": 6, "tennisStreak": 5, "vurdering": {"fysisk": {"score": 6, "tekst": "Svingende indsats fysisk. Vi arbejder på, at Frederik giver mere konsekvent i øvelserne."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 7, "tekst": "God arbejdsindsats på spil-selv-banen — vanskeligt for mange. Vigtigt at kunne yde 100 procent, når man selv er ansvarlig. Stadig plads til mere, men et godt sted."}}, "kampe": 11, "sejre": 2, "sidsteTraening": "2 dage siden", "traeningerKvartal": 25}, "Marcus Olsen": {"navn": "Marcus Olsen", "rang": 8, "klub": "Greve", "wtn": 34.0, "erBruger": false, "gruppe": "U12 Udvikling", "fysStreak": 6, "tennisStreak": 11, "vurdering": {"fysisk": {"score": 8, "tekst": "God indsats i den fysiske træning. Marcus arbejder godt med øvelserne. Der kan skrues yderligere op for intensiteten, men niveauet er godt."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 9, "tekst": "Meget stærk selvstændig indsats. Spiller med fuld arbejdsindsats uden at skulle guides — imponerende."}}, "kampe": 12, "sejre": 8, "sidsteTraening": "I går", "traeningerKvartal": 18}, "Aaric Tajhya": {"navn": "Aaric Tajhya", "rang": 12, "klub": "Greve", "wtn": 33.8, "erBruger": false, "gruppe": "U12 Udvikling", "fysStreak": 7, "tennisStreak": 10, "vurdering": {"fysisk": {"score": 6, "tekst": "Svingende indsats fysisk. Vi arbejder på, at Aaric giver mere konsekvent i øvelserne."}, "petersbane": {"score": 8, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 6, "tekst": "Der arbejdes på at holde intensiteten oppe, når der spilles selvstændigt uden voksenstyring."}}, "kampe": 4, "sejre": 4, "sidsteTraening": "2 dage siden", "traeningerKvartal": 25}, "Noah Bang": {"navn": "Noah Bang", "rang": 16, "klub": "Hørsholm", "wtn": 35.2, "erBruger": false, "gruppe": "U12 Udvikling", "fysStreak": 6, "tennisStreak": 2, "vurdering": {"fysisk": {"score": 10, "tekst": "Meget stærk indsats i den fysiske træning. Noah giver 100 procent, brokker sig ikke og giver ikke op, selvom det er hårdt. Rigtig positivt — fortsæt det."}, "petersbane": {"score": 6, "tekst": "Nogenlunde indsats. Vi arbejder på at holde fokus gennem hele træningen."}, "spilselv": {"score": 9, "tekst": "Meget stærk selvstændig indsats. Spiller med fuld arbejdsindsats uden at skulle guides — imponerende."}}, "kampe": 4, "sejre": 3, "sidsteTraening": "I går", "traeningerKvartal": 17}}, "venner": {"Oskar Lillesø": ["Kevin Le Li", "Philip Aackermann", "Frederik Brandi"], "Philip Aackermann": ["Oskar Lillesø", "Magnus Emde"], "Kevin Le Li": ["Oskar Lillesø", "Andreas Falch Midtgaard"]}, "traenere": [{"navn": "Peter Brøndum", "grupper": ["U14 Elite", "U14 Talent"]}, {"navn": "Marie", "grupper": ["U12 Udvikling"]}], "omraader": [{"id": "fysisk", "navn": "Den fysiske træning", "emoji": "💪"}, {"id": "petersbane", "navn": "Træningen på Peters bane", "emoji": "🎾"}, {"id": "spilselv", "navn": "Træningen på spil-selv-banen", "emoji": "🏓"}], "saeson": ["🏛 Rom · 23/7", "🎾 Sommer Cup · Rungsted · 30/7", "🌍 TE-hovedrunden · Rungsted · 3/8", "🛡 Holdkamp · 4. runde · 9/8", "🛡 Holdkamp · 5. runde · 16/8"]};
 const KONFIG = {
-  klub: "B.93", klubKort: "B.93", saeson: "2026",
+  klub: "B.93", klubKort: "B.93", saeson: "2026", maaned: "juni",
   aargange: ["U10","U12","U14","U16"],
-  dimensioner: [
-    { id:"serv", navn:"Serv", emoji:"🎾" },
-    { id:"baglinje", navn:"Baglinjespil", emoji:"↔️" },
-    { id:"net", navn:"Netspil", emoji:"🥅" },
-    { id:"fysik", navn:"Fysik & fodarbejde", emoji:"🏃" },
-    { id:"mental", navn:"Mentalt & kampmod", emoji:"🧠" },
-    { id:"indsats", navn:"Indsats i dag", emoji:"🔥" },
+  omraader: DATA.omraader,
+  farveskala: [
+    { min:1, max:2,  emoji:"🔴", farve:"#C24E4E", label:"Stærkt utilfredsstillende", kort:"spilleren er slet ikke i stand til at løse opgaven" },
+    { min:3, max:4,  emoji:"🟠", farve:"#C97B54", label:"Utilfredsstillende", kort:"for uengageret, har svært ved at løfte sin arbejdsindsats" },
+    { min:5, max:6,  emoji:"🟡", farve:"#E3B341", label:"Nogenlunde", kort:"udfører træning i rimeligt omfang, men for svingende" },
+    { min:7, max:8,  emoji:"🟢", farve:"#3F9C5C", label:"God indsats", kort:"leverer en god arbejdsindsats og får meget ud af øvelserne" },
+    { min:9, max:10, emoji:"🟢", farve:"#4FB56B", label:"Meget stærk indsats", kort:"god arbejdsindsats i alle øvelser i hele træningen" },
   ],
 };
-const DIMNAVN = {}; KONFIG.dimensioner.forEach(d => DIMNAVN[d.id] = d);
+const OMRNAVN = {}; KONFIG.omraader.forEach(o => OMRNAVN[o.id] = o);
+function skala(score){ for (const b of KONFIG.farveskala) if (score >= b.min && score <= b.max) return b; return KONFIG.farveskala[0]; }
+
+const LOGO = '<div class="logo-rk"><svg width="30" height="30" viewBox="0 0 40 40" style="flex:none"><defs><linearGradient id="sai-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9FD8E8"/><stop offset="1" stop-color="#C97B54"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#sai-g)"/><circle cx="20" cy="20" r="9" fill="none" stroke="#101B26" stroke-width="2.2"/><path d="M20 11 Q14 20 20 29" fill="none" stroke="#101B26" stroke-width="2.2"/><path d="M20 11 Q26 20 20 29" fill="none" stroke="#101B26" stroke-width="2.2"/></svg><div style="font-size:14px;font-weight:800;letter-spacing:-.3px;color:var(--kridt);line-height:1">Sports<span style="color:var(--is)">AI</span>nalytics</div></div>';
 
 let S = {
-  rolle: "traener",        // traener | spiller
-  traener: "Thomas",
-  spiller: "Oskar Lillesø",
-  tab: "grupper",          // træner: grupper|vurder|kvartal ; spiller: mig|gruppe|venner
-  aabenGruppe: null,
-  aabenSpiller: null,
-  vurderGruppe: null,
-  vurderScores: {},        // spiller -> {dim:score}
-  vurderIndsats: {},       // hurtig-vurdering: spiller -> 1-3
+  rolle: "traener", traener: "Peter Brøndum", spiller: "Oskar Lillesø",
+  tab: "grupper", aabenSpiller: null,
+  vurderOmraade: null, vurderGruppe: null, vurderScores: {},
   kvartalUdkast: null,
 };
-
 const el = id => document.getElementById(id);
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function init(n){ return n.split(" ").map(w=>w[0]).slice(0,2).join(""); }
-function farveScore(v){ return v>=4 ? "var(--vundet)" : v>=3 ? "var(--guld)" : "var(--tabt)"; }
+function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); return v.length? v.reduce((a,b)=>a+b,0)/v.length : 0; }
 
-// ============ RENDER ============
 function render(){
-  let h = "";
-  if (S.rolle === "traener") h = renderTraener();
-  else h = renderSpiller();
-  el("app").innerHTML = h;
-  renderRollebar();
-}
-
-function renderRollebar(){
+  el("app").innerHTML = S.rolle === "traener" ? renderTraener() : renderSpiller();
   el("rollebar").innerHTML =
     '<button class="knap '+(S.rolle==="traener"?"til":"")+'" data-act="rolle" data-v="traener">🧑\u200d🏫 Træner</button>' +
     '<button class="knap '+(S.rolle==="spiller"?"til":"")+'" data-act="rolle" data-v="spiller">🎾 Spiller</button>';
@@ -105,43 +89,33 @@ function renderRollebar(){
 // ---------- TRÆNER ----------
 function renderTraener(){
   const t = DATA.traenere.find(x=>x.navn===S.traener);
-  let h = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><svg width="26" height="26" viewBox="0 0 40 40" style="flex:none"><defs><linearGradient id="sai-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9FD8E8"/><stop offset="1" stop-color="#C97B54"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#sai-g)"/><circle cx="20" cy="20" r="9" fill="none" stroke="#101B26" stroke-width="2.2"/><path d="M20 11 Q14 20 20 29" fill="none" stroke="#101B26" stroke-width="2.2"/><path d="M20 11 Q26 20 20 29" fill="none" stroke="#101B26" stroke-width="2.2"/></svg><div style="font-size:13px;font-weight:800;letter-spacing:-.3px;color:var(--kridt);line-height:1">Sports<span style="color:var(--is)">AI</span>nalytics</div></div>';
-  h += '<div class="top"><div class="avatar">'+init(t.navn)+'</div>' +
+  let h = LOGO + '<div class="top"><div class="avatar">'+init(t.navn)+'</div>' +
     '<div style="flex:1"><div class="eyebrow">'+esc(KONFIG.klub)+' · TRÆNER</div><h1>'+esc(t.navn)+'</h1></div></div>';
-  h += '<div class="proto-note">⚡ PROTOTYPE — fake data. Tester idéen; deling mellem enheder kommer med backend.</div>';
-  h += '<div class="fane-rk">' +
-    faneKnap("grupper","👥 Grupper") + faneKnap("vurder","⚡ Vurdér træning") + faneKnap("kvartal","📋 Kvartalsvurdering") + '</div>';
-
-  if (S.tab === "grupper") h += traenerGrupper(t);
-  else if (S.tab === "vurder") h += traenerVurder(t);
-  else if (S.tab === "kvartal") h += traenerKvartal(t);
+  h += '<div class="proto-note">⚡ PROTOTYPE — fake data. 💡 <b>Prøv loopet:</b> giv Oskar en score under ⚡ Vurdér træning — skift så til 🎾 Spiller og se den lande.</div>';
+  h += '<div class="fane-rk">'+faneKnap("grupper","👥 Grupper")+faneKnap("vurder","⚡ Vurdér træning")+faneKnap("kvartal","📋 Evaluering")+'</div>';
+  if (S.tab==="grupper") h += traenerGrupper(t);
+  else if (S.tab==="vurder") h += traenerVurder(t);
+  else if (S.tab==="kvartal") h += traenerKvartal(t);
   return h;
 }
-
-function faneKnap(id, label){
-  return '<button class="'+(S.tab===id?"aktiv":"")+'" data-act="tab" data-v="'+id+'">'+label+'</button>';
-}
+function faneKnap(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'" data-act="tab" data-v="'+id+'">'+label+'</button>'; }
 
 function traenerGrupper(t){
   if (S.aabenSpiller) return spillerDetalje(S.aabenSpiller);
   let h = "";
   t.grupper.forEach(function(gnavn){
-    const g = DATA.grupper[gnavn];
-    const sp = g.spillere.map(n=>DATA.spillere[n]);
-    // Gruppe-gennemsnit for udvikling (q2 samlet)
-    const snit = sp.reduce((a,s)=>a + Object.values(s.q2).reduce((x,y)=>x+y,0)/6, 0)/sp.length;
-    h += '<div class="kort">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">' +
-      '<h3>'+esc(gnavn)+'</h3><span class="pille" style="background:var(--kant);color:var(--is)">'+g.aargang+'</span></div>' +
-      '<p class="lille">'+sp.length+' spillere · gruppesnit '+snit.toFixed(1)+'/5 · fælles mål pr. '+g.aargang+'</p>';
+    const g = DATA.grupper[gnavn], sp = g.spillere.map(n=>DATA.spillere[n]);
+    const snit = sp.reduce((a,s)=>a+snitVurd(s),0)/sp.length;
+    h += '<div class="kort"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">' +
+      '<h3>'+esc(gnavn)+'</h3><span style="font-size:11px;font-weight:800;background:var(--kant);color:var(--is);padding:3px 9px;border-radius:10px">'+g.aargang+'</span></div>' +
+      '<p class="lille">'+sp.length+' spillere · snit '+snit.toFixed(1)+'/10 · fælles mål pr. '+g.aargang+'</p>';
     sp.forEach(function(s){
-      const udv = Object.values(s.q2).reduce((a,b)=>a+b,0) - Object.values(s.q1).reduce((a,b)=>a+b,0);
-      const pil = udv>0 ? '<span style="color:var(--vundet)">▲ +'+udv+'</span>' : udv<0 ? '<span style="color:var(--tabt)">▼ '+udv+'</span>' : '<span style="color:var(--daempet)">—</span>';
+      const sn = snitVurd(s), b = skala(Math.round(sn));
       h += '<div class="spiller-rk" data-act="spiller-detalje" data-v="'+esc(s.navn)+'">' +
         '<div class="avatar" style="width:32px;height:32px;font-size:13px;'+(s.erBruger?'background:var(--is);color:var(--nat)':'')+'">'+init(s.navn)+'</div>' +
         '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">'+esc(s.navn)+(s.erBruger?' ⭐':'')+'</div>' +
-        '<div class="lille">DTF #'+s.rang+' · '+s.kampe+' kampe · sidst trænet: '+s.sidsteTraening+'</div></div>' +
-        '<div style="text-align:right;font-size:12px;font-weight:800">'+pil+'<div class="lille">kvartal</div></div>' +
+        '<div class="lille">DTF #'+s.rang+' · '+s.kampe+' kampe · sidst: '+s.sidsteTraening+'</div></div>' +
+        '<div style="display:flex;align-items:center;gap:6px"><span style="width:11px;height:11px;border-radius:50%;background:'+b.farve+';display:inline-block"></span><b style="font-size:13px">'+sn.toFixed(1)+'</b></div>' +
         '<span style="color:var(--daempet)">›</span></div>';
     });
     h += '</div>';
@@ -151,90 +125,141 @@ function traenerGrupper(t){
 
 function spillerDetalje(navn){
   const s = DATA.spillere[navn];
-  let h = '<button class="knap valg" style="margin-bottom:12px;flex:none;padding:8px 14px" data-act="luk-spiller">‹ Tilbage til grupper</button>';
-  h += '<div class="kort"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
+  let h = '<button class="knap valg" style="margin-bottom:12px;flex:none;padding:8px 14px" data-act="luk-spiller">‹ Tilbage</button>';
+  h += '<div class="kort"><div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">' +
     '<div class="avatar" style="width:48px;height:48px;font-size:19px">'+init(navn)+'</div>' +
-    '<div><h2 style="margin:0">'+esc(navn)+'</h2><p class="lille">'+esc(s.gruppe)+' · DTF #'+s.rang+' · WTN '+s.wtn+'</p></div></div>';
-  h += '<div class="grid2">' +
-    miniStat("Kampe i alt", s.kampe) + miniStat("Sejrsrate", (s.kampe?Math.round(s.sejre/s.kampe*100):0)+"%") +
-    miniStat("🔥 Fys-streak", s.fysStreak+" uger") + miniStat("🎾 Træning", s.traeningerKvartal+" i kvartal") + '</div></div>';
-  // Udvikling pr. dimension (q1 → q2)
-  h += '<div class="kort"><h3>📈 Udvikling — sidste kvartal</h3>';
-  KONFIG.dimensioner.forEach(function(dim){
-    const a = s.q1[dim.id], b = s.q2[dim.id];
-    h += '<div class="dim-rk"><div class="dim-navn">'+dim.emoji+' '+dim.navn+'</div>' +
-      '<div style="flex:1"><div class="bar-bg"><div class="bar-fill" style="width:'+(b/5*100)+'%;background:'+farveScore(b)+'"></div></div></div>' +
-      '<div style="width:56px;text-align:right;font-size:12px;font-weight:700">'+a+'→'+b+' '+(b>a?'<span style="color:var(--vundet)">▲</span>':b<a?'<span style="color:var(--tabt)">▼</span>':'')+'</div></div>';
+    '<div><h1 style="margin:0;font-size:19px">'+esc(navn)+'</h1><p class="lille">'+esc(s.gruppe)+' · DTF #'+s.rang+' · WTN '+s.wtn+'</p></div></div>';
+  h += '<div class="grid2" style="margin-top:8px">' +
+    mini("Kampe", s.kampe) + mini("Sejrsrate", (s.kampe?Math.round(s.sejre/s.kampe*100):0)+"%") +
+    mini("🔥 Fys-streak", s.fysStreak+" uger") + mini("🎾 Træninger", s.traeningerKvartal) + '</div></div>';
+  h += faellesLag(s);
+  // Vurdering pr. område (score + tekst)
+  h += '<div class="kort"><h3>📋 Seneste vurdering pr. område</h3>';
+  KONFIG.omraader.forEach(function(o){
+    const v = (s.vurdering||{})[o.id]; if (!v) return;
+    const b = skala(v.score);
+    h += '<div style="border-top:1px solid var(--kant);padding:10px 0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">' +
+      '<span style="width:13px;height:13px;border-radius:50%;background:'+b.farve+';flex:none"></span>' +
+      '<b style="font-size:13px">'+o.emoji+' '+esc(o.navn)+'</b>' +
+      '<span style="margin-left:auto;font-size:12px;font-weight:800;color:'+b.farve+'">'+v.score+'/10</span></div>' +
+      '<p style="font-size:12px;color:var(--daempet);margin:0 0 0 21px;line-height:1.5">'+esc(v.tekst)+'</p></div>';
   });
   h += '</div>';
-  // Data-drevet træningsmål (kobler kamp + træning)
-  const svagest = KONFIG.dimensioner.slice().sort((x,y)=>s.q2[x.id]-s.q2[y.id])[0];
-  h += '<div class="kort" style="border-left:3px solid var(--grus)"><div class="eyebrow" style="color:var(--grus)">🎯 DATA-DREVET TRÆNINGSMÅL</div>' +
-    '<p style="margin:6px 0 0;font-size:13px">Laveste dimension er <b>'+svagest.emoji+' '+svagest.navn+'</b> ('+s.q2[svagest.id]+'/5). Kampdata viser samme mønster — sæt fokus her de næste uger. Kombinér med spillerens kamp-app for at følge om det flytter sig.</p></div>';
+  // Data-drevet fokus: svageste område
+  const omr = KONFIG.omraader.filter(o=>(s.vurdering||{})[o.id]);
+  if (omr.length){
+    const svag = omr.slice().sort((a,b)=>s.vurdering[a.id].score - s.vurdering[b.id].score)[0];
+    h += '<div class="kort" style="border-left:3px solid var(--grus)"><div class="eyebrow" style="color:var(--grus)">🎯 DATA-DREVET FOKUS</div>' +
+      '<p style="margin:6px 0 0;font-size:13px">Laveste score er <b>'+svag.emoji+' '+esc(svag.navn)+'</b> ('+s.vurdering[svag.id].score+'/10). Sæt træningsfokus her — og følg med i spillerens kamp-app, om det flytter sig.</p></div>';
+  }
   return h;
 }
+function mini(label,v){ return '<div style="background:var(--nat);border-radius:10px;padding:10px 12px"><div style="font-size:19px;font-weight:800">'+v+'</div><div class="lille">'+label+'</div></div>'; }
 
-function miniStat(label, v){
-  return '<div style="background:var(--nat);border-radius:10px;padding:10px 12px"><div style="font-size:19px;font-weight:800">'+v+'</div><div class="lille">'+label+'</div></div>';
+function faellesLag(s){
+  if (!s.kampliste || !s.kampliste.length) return "";
+  const st = s.statistik || {};
+  let h = '<div class="kort" style="border-left:3px solid var(--is)"><div class="eyebrow" style="color:var(--is)">\ud83d\udd17 F\u00c6LLES LAG \u2014 FRA KAMP-APP\u0027EN</div>';
+  // Fuld statistik
+  h += '<div class="grid2" style="margin-top:8px">' +
+    mini("Point vundet", (st.pointPct||0)+"%") +
+    mini("Vindere", (st.vindere||0)+" (heraf "+(st.esser||0)+" es)") +
+    mini("Gratis fejl", (st.uf||0)+" (heraf "+(st.dobbelt||0)+" db)") +
+    mini("Vindere \u2212 fejl", (st.diff>0?"+":"")+(st.diff||0)) + '</div>';
+  // Kamp-for-kamp søjler (vindere + fejl pr. kamp)
+  const soejleRk = function(label, vals, farve){
+    const mx = Math.max.apply(null, vals.concat([1]));
+    return '<div style="font-size:10.5px;color:var(--daempet);margin:9px 0 2px">'+label+' \u2014 kamp for kamp (\u00e6ldste \u2192 nyeste)</div>' +
+      '<div style="display:flex;align-items:flex-end;gap:3px;height:30px">' +
+      vals.map(function(v,i){ return '<span style="flex:1;max-width:16px;border-radius:2px 2px 0 0;background:'+farve+';opacity:'+(i===vals.length-1?'1':'.65')+';height:'+Math.max(3,Math.round(v/mx*30))+'px'+(i===vals.length-1?';outline:1.5px solid var(--kridt)':'')+'"></span>'; }).join("") + '</div>';
+  };
+  h += soejleRk("Vindere", s.kampliste.map(function(k){return k.vin;}), "var(--vundet)");
+  h += soejleRk("Gratis fejl", s.kampliste.map(function(k){return k.uf;}), "var(--tabt)");
+  // Alle kampe
+  h += '<h3 style="margin:12px 0 4px">\ud83c\udfbe Alle kampe ('+s.kampliste.length+')</h3>';
+  s.kampliste.slice().reverse().forEach(function(k){
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--kant);font-size:12px">' +
+      '<span style="font-weight:800;width:14px;color:'+(k.v?'var(--vundet)':'var(--tabt)')+'">'+(k.v?'V':'T')+'</span>' +
+      '<span style="flex:1;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(k.mod)+'</span>' +
+      '<span style="color:var(--daempet);flex:none">'+esc(k.res)+'</span>' +
+      '<span style="color:var(--daempet);flex:none;font-size:10.5px">'+esc(k.dato.slice(5))+'</span></div>';
+  });
+  // Pr. modstander
+  if (s.rivaler){
+    h += '<h3 style="margin:12px 0 4px">\ud83c\udfaf Pr. modstander</h3><div>';
+    Object.keys(s.rivaler).forEach(function(mod){
+      const r = s.rivaler[mod];
+      h += '<span style="display:inline-block;background:var(--nat);border-radius:9px;padding:4px 9px;margin:2px 4px 2px 0;font-size:11.5px"><b>'+esc(mod.split(" ").pop())+'</b> <span style="color:'+(r.v*2>=r.k?'var(--vundet)':'var(--tabt)')+';font-weight:800">'+r.v+'-'+(r.k-r.v)+'</span></span>';
+    });
+    h += '</div>';
+  }
+  // Sæson
+  if (DATA.saeson && DATA.saeson.length){
+    h += '<h3 style="margin:12px 0 4px">\ud83d\udcc5 S\u00e6son</h3>';
+    DATA.saeson.forEach(function(e){ h += '<p class="lille" style="margin:3px 0">'+esc(e)+'</p>'; });
+  }
+  h += '<p class="lille" style="margin-top:8px">Samme tal hos spiller og tr\u00e6ner. Den fulde motor-analyse (serveprocenter, breakbolde, benchmark-sammenligning) bor i spillerens kamp-app \u2014 med backend spejles den 1:1 her.</p></div>';
+  return h;
 }
-
-// ---------- HURTIG VURDERING EFTER TRÆNING ----------
+// ---------- HURTIG VURDERING ----------
 function traenerVurder(t){
+  if (!S.vurderOmraade){
+    let h = '<p class="lille">Hvad trænede du? Vælg område — så giver du hver spiller en score på farveskalaen med ét tryk.</p>';
+    KONFIG.omraader.forEach(function(o){
+      h += '<div class="kort" data-act="vurder-omraade" data-v="'+o.id+'" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">' +
+        '<h3 style="margin:0">'+o.emoji+' '+esc(o.navn)+'</h3><span style="color:var(--daempet)">›</span></div>';
+    });
+    h += skalaForklaring();
+    return h;
+  }
   if (!S.vurderGruppe){
-    let h = '<p class="lille">Vælg gruppen du lige har trænet — så giver du hver spiller en hurtig vurdering på få tryk.</p>';
+    let h = '<button class="knap valg" style="margin-bottom:10px;flex:none;padding:8px 14px" data-act="luk-omraade">‹ Skift område</button>';
+    h += '<p class="lille">'+OMRNAVN[S.vurderOmraade].emoji+' '+esc(OMRNAVN[S.vurderOmraade].navn)+' — vælg gruppe:</p>';
     t.grupper.forEach(function(g){
       h += '<div class="kort" data-act="vurder-gruppe" data-v="'+esc(g)+'" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center">' +
         '<div><h3 style="margin:0">'+esc(g)+'</h3><p class="lille">'+DATA.grupper[g].spillere.length+' spillere</p></div><span style="color:var(--daempet)">›</span></div>';
     });
     return h;
   }
-  // Hurtig-flow: for hver spiller — indsats (😴/👍/🔥) + valgfri stjerne-detalje
   const sp = DATA.grupper[S.vurderGruppe].spillere;
-  let done = sp.filter(n => S.vurderIndsats[n]).length;
-  let h = '<button class="knap valg" style="margin-bottom:10px;flex:none;padding:8px 14px" data-act="luk-vurder">‹ '+esc(S.vurderGruppe)+'</button>';
+  const done = sp.filter(n => S.vurderScores[n]).length;
+  let h = '<button class="knap valg" style="margin-bottom:10px;flex:none;padding:8px 14px" data-act="luk-gruppe">‹ '+esc(S.vurderGruppe)+'</button>';
   h += '<div class="kort" style="padding:11px 14px"><div style="display:flex;justify-content:space-between;align-items:center">' +
-    '<div><div class="eyebrow">DAGENS TRÆNING</div><h3 style="margin:2px 0 0">Hurtig vurdering</h3></div>' +
+    '<div><div class="eyebrow">'+OMRNAVN[S.vurderOmraade].emoji+' '+esc(OMRNAVN[S.vurderOmraade].navn).toUpperCase()+'</div><h3 style="margin:2px 0 0">Dagens indsats</h3></div>' +
     '<div style="text-align:right"><div style="font-size:18px;font-weight:800">'+done+'/'+sp.length+'</div><div class="lille">færdig</div></div></div>' +
-    '<p class="lille" style="margin-top:6px">Ét tryk pr. spiller — under 20 sek. i alt. Stjerner er valgfrit, hvis du vil detaljere.</p></div>';
+    '<p class="lille" style="margin-top:6px">Ét tryk pr. spiller på farveskalaen — under 20 sek. i alt.</p></div>';
   sp.forEach(function(n){
-    const s = DATA.spillere[n];
-    const valgt = S.vurderIndsats[n];
-    h += '<div class="kort" style="padding:11px 13px">' +
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:'+(valgt?'9px':'0')+'">' +
-      '<div class="avatar" style="width:30px;height:30px;font-size:12px;'+(s.erBruger?'background:var(--is);color:var(--nat)':'')+'">'+init(n)+'</div>' +
-      '<div style="flex:1;font-size:13.5px;font-weight:700">'+esc(n)+'</div>' +
-      '<div class="raekke" style="flex:none;gap:5px">' +
-        vurderKnap(n,1,"😴") + vurderKnap(n,2,"👍") + vurderKnap(n,3,"🔥") + '</div></div>';
-    if (valgt){
-      // Valgfri detalje: to vigtigste dimensioner som stjerner
-      h += '<div style="border-top:1px solid var(--kant);padding-top:8px">';
-      ["serv","mental"].forEach(function(did){
-        const sc = (S.vurderScores[n]||{})[did] || 0;
-        let stars = '';
-        for (let i=1;i<=5;i++) stars += '<span class="star '+(i<=sc?"on":"")+'" data-act="star" data-sp="'+esc(n)+'" data-dim="'+did+'" data-v="'+i+'">★</span>';
-        h += '<div class="dim-rk"><div class="dim-navn">'+DIMNAVN[did].emoji+' '+DIMNAVN[did].navn+'</div><div class="stars">'+stars+'</div></div>';
-      });
-      h += '</div>';
-    }
-    h += '</div>';
+    const s = DATA.spillere[n], valgt = S.vurderScores[n];
+    h += '<div class="kort" style="padding:11px 13px"><div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">' +
+      '<div class="avatar" style="width:28px;height:28px;font-size:11px;'+(s.erBruger?'background:var(--is);color:var(--nat)':'')+'">'+init(n)+'</div>' +
+      '<div style="flex:1;font-size:13px;font-weight:700">'+esc(n)+'</div></div>' +
+      '<div style="display:flex;gap:7px;justify-content:space-between">';
+    KONFIG.farveskala.forEach(function(b){
+      const on = valgt === b.max;
+      h += '<div class="dot'+(on?' valgt':'')+'" style="background:'+b.farve+';color:'+b.farve+'" data-act="score" data-sp="'+esc(n)+'" data-v="'+b.max+'"><span style="color:#fff;font-size:9px">'+b.min+'-'+b.max+'</span></div>';
+    });
+    h += '</div></div>';
   });
-  if (done === sp.length && done>0){
+  if (done===sp.length && done>0){
     h += '<div class="kort" style="border:1.5px solid var(--vundet);text-align:center"><h3 style="color:var(--vundet);margin:0">✓ Alle vurderet!</h3>' +
-      '<p class="lille" style="margin:4px 0 0">Gemmes til spillernes historik. Efter kvartalet samler AI det til en samlet vurdering.</p></div>';
+      '<p class="lille" style="margin:4px 0 0">Gemmes til spillernes historik. Ved kvartalets slut samler AI det til en evaluering.</p></div>';
   }
   return h;
 }
-function vurderKnap(n, v, emoji){
-  const on = S.vurderIndsats[n] === v;
-  return '<button class="knap valg '+(on?"til":"")+'" style="flex:none;width:44px;padding:9px 0;font-size:17px" data-act="indsats" data-sp="'+esc(n)+'" data-v="'+v+'">'+emoji+'</button>';
+function skalaForklaring(){
+  let h = '<div class="kort" style="margin-top:4px"><div class="eyebrow">FARVESKALA</div>';
+  KONFIG.farveskala.forEach(function(b){
+    h += '<div class="skala-band"><span class="skala-cirkel" style="background:'+b.farve+'"></span><b>'+b.min+'-'+b.max+'</b> = '+esc(b.label)+'</div>';
+  });
+  h += '</div>';
+  return h;
 }
 
-// ---------- KVARTALSVURDERING (AI-genereret + godkend) ----------
+// ---------- EVALUERING (kvartals, mail-format) ----------
 function traenerKvartal(t){
-  const alleSp = [];
-  t.grupper.forEach(g => DATA.grupper[g].spillere.forEach(n => alleSp.push(n)));
+  const alleSp = []; t.grupper.forEach(g => DATA.grupper[g].spillere.forEach(n => alleSp.push(n)));
   if (!S.kvartalUdkast){
-    let h = '<p class="lille">AI samler kvartalets trænings- og kampdata til en vurdering pr. spiller. Du gennemlæser, retter og godkender — så sendes den til spilleren.</p>';
+    let h = '<p class="lille">AI samler kvartalets scores og noter til en evaluering pr. spiller — i klubbens format. Du retter og godkender, så sendes den til spilleren.</p>';
     alleSp.forEach(function(n){
       const s = DATA.spillere[n];
       h += '<div class="kort" style="display:flex;align-items:center;gap:10px">' +
@@ -244,125 +269,124 @@ function traenerKvartal(t){
     });
     return h;
   }
-  // Udkast-visning
-  const n = S.kvartalUdkast, s = DATA.spillere[n];
-  const bedst = KONFIG.dimensioner.slice().sort((a,b)=>s.q2[b.id]-s.q2[a.id])[0];
-  const svag = KONFIG.dimensioner.slice().sort((a,b)=>s.q2[a.id]-s.q2[b.id])[0];
-  const udv = Object.values(s.q2).reduce((a,b)=>a+b,0) - Object.values(s.q1).reduce((a,b)=>a+b,0);
-  const tekst = "Kvartalsvurdering — "+n+"\n\n"+
-    n.split(" ")[0]+" har trænet "+s.traeningerKvartal+" gange og spillet "+s.kampe+" kampe i kvartalet"+(s.kampe?" ("+Math.round(s.sejre/s.kampe*100)+"% sejre)":"")+". "+
-    "Størst fremgang ses samlet set ("+(udv>=0?"+":"")+udv+" point på tværs af dimensioner). "+
-    "Stærkeste område er "+bedst.navn.toLowerCase()+" ("+s.q2[bedst.id]+"/5) — et tydeligt aktiv i kampene. "+
-    "Fokus næste kvartal bør være "+svag.navn.toLowerCase()+" ("+s.q2[svag.id]+"/5), hvor både trænings- og kampdata peger på potentiale. "+
-    "Fysisk er "+n.split(" ")[0]+" mødt stabilt op ("+s.fysStreak+" ugers streak). Fortsæt det gode fremmøde.";
+  const n = S.kvartalUdkast, s = DATA.spillere[n], fornavn = n.split(" ")[0];
+  let tekst = "Hej "+fornavn+"\n\nHermed evaluering fra "+KONFIG.maaned+" "+KONFIG.saeson+"\n\nSpiller: "+n+"\nTræner: "+t.navn+"\n";
+  KONFIG.omraader.forEach(function(o){
+    const v = (s.vurdering||{})[o.id]; if (!v) return;
+    const b = skala(v.score);
+    tekst += "\n"+o.navn+"\n"+b.emoji+" "+b.min+"-"+b.max+" = "+b.label+". "+v.tekst+"\n";
+  });
+  S.kvartalTekst = tekst;
   let h = '<button class="knap valg" style="margin-bottom:10px;flex:none;padding:8px 14px" data-act="luk-kvartal">‹ Alle spillere</button>';
-  h += '<div class="kort"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="badge-ai">AI-UDKAST</span><h3 style="margin:0">'+esc(n)+' — Q3 2026</h3></div>' +
-    '<p class="lille">Genereret fra trænings- + kampdata. Ret frit, godkend derefter.</p>' +
-    '<textarea rows="9">'+esc(tekst)+'</textarea>' +
-    '<div class="raekke" style="margin-top:10px">' +
-    '<button class="knap valg" data-act="luk-kvartal">Kassér</button>' +
-    '<button class="knap til" data-act="kvartal-godkend">✓ Godkend & send til spiller</button></div></div>';
+  h += '<div class="kort"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="badge-ai">AI-UDKAST</span><h3 style="margin:0">'+esc(n)+'</h3></div>' +
+    '<p class="lille">Samlet fra scores + noter i klubbens format. Ret frit, godkend derefter.</p>' +
+    '<textarea id="evalTekst" rows="16">'+esc(tekst)+'</textarea>' +
+    '<div class="raekke" style="margin-top:10px"><button class="knap valg" data-act="luk-kvartal">Kassér</button>' +
+    '<button class="knap til" data-act="kvartal-godkend">✓ Godkend & send</button></div></div>';
   return h;
 }
 
 // ---------- SPILLER ----------
 function renderSpiller(){
   const s = DATA.spillere[S.spiller];
-  let h = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><svg width="26" height="26" viewBox="0 0 40 40" style="flex:none"><defs><linearGradient id="sai-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9FD8E8"/><stop offset="1" stop-color="#C97B54"/></linearGradient></defs><rect width="40" height="40" rx="11" fill="url(#sai-g)"/><circle cx="20" cy="20" r="9" fill="none" stroke="#101B26" stroke-width="2.2"/><path d="M20 11 Q14 20 20 29" fill="none" stroke="#101B26" stroke-width="2.2"/><path d="M20 11 Q26 20 20 29" fill="none" stroke="#101B26" stroke-width="2.2"/></svg><div style="font-size:13px;font-weight:800;letter-spacing:-.3px;color:var(--kridt);line-height:1">Sports<span style="color:var(--is)">AI</span>nalytics</div></div>';
-  h += '<div class="top"><div class="avatar" style="background:var(--is);color:var(--nat)">'+init(S.spiller)+'</div>' +
+  let h = LOGO + '<div class="top"><div class="avatar" style="background:var(--is);color:var(--nat)">'+init(S.spiller)+'</div>' +
     '<div style="flex:1"><div class="eyebrow">'+esc(KONFIG.klub)+' · '+esc(s.gruppe)+'</div><h1>'+esc(S.spiller.split(" ")[0])+'</h1></div></div>';
-  h += '<div class="proto-note">⚡ PROTOTYPE — fake data. Streaks, venner og konkurrence deles mellem spillere når backend er på plads.</div>';
-  h += '<div class="fane-rk">' + faneKnapS("mig","🎾 Mig") + faneKnapS("gruppe","🏆 Min gruppe") + faneKnapS("venner","👋 Venner") + '</div>';
-  if (S.tab === "mig") h += spillerMig(s);
-  else if (S.tab === "gruppe") h += spillerGruppe(s);
-  else if (S.tab === "venner") h += spillerVenner(s);
+  h += '<div class="proto-note">⚡ PROTOTYPE — fake data. Streaks og venner deles mellem spillere når backend er på plads.</div>';
+  h += '<div class="fane-rk">'+fS("mig","🎾 Mig")+fS("gruppe","🏆 Min gruppe")+fS("venner","👋 Venner")+'</div>';
+  if (S.tab==="mig") h += spillerMig(s);
+  else if (S.tab==="gruppe") h += spillerGruppe(s);
+  else if (S.tab==="venner") h += spillerVenner(s);
   return h;
 }
-function faneKnapS(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'" data-act="tab" data-v="'+id+'">'+label+'</button>'; }
+function fS(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'" data-act="tab" data-v="'+id+'">'+label+'</button>'; }
 
 function spillerMig(s){
   let h = '<div class="grid2">' +
     '<div class="kort" style="margin:0;text-align:center"><div style="font-size:30px">🔥</div><div style="font-size:24px;font-weight:800">'+s.fysStreak+'</div><div class="lille">ugers fys-streak</div></div>' +
     '<div class="kort" style="margin:0;text-align:center"><div style="font-size:30px">🎾</div><div style="font-size:24px;font-weight:800">'+s.tennisStreak+'</div><div class="lille">tennis-streak</div></div></div>';
-  h += '<div class="kort" style="margin-top:10px"><h3>📋 Seneste vurdering fra træneren</h3>' +
-    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span class="badge-ai">AI + TRÆNER</span><span class="lille">godkendt af Thomas · Q3</span></div>' +
-    '<p style="font-size:13px;margin:0">Stærk fremgang på baglinjen i kvartalet. Fokus næste periode: netspil — både trænings- og kampdata peger på potentiale. Flot stabilt fremmøde! 🎾</p></div>';
-  // Egen udvikling
-  h += '<div class="kort"><h3>📈 Min udvikling</h3>';
-  KONFIG.dimensioner.forEach(function(dim){
-    const b = s.q2[dim.id];
-    h += '<div class="dim-rk"><div class="dim-navn">'+dim.emoji+' '+dim.navn+'</div>' +
-      '<div style="flex:1"><div class="bar-bg"><div class="bar-fill" style="width:'+(b/5*100)+'%;background:'+farveScore(b)+'"></div></div></div>' +
-      '<div style="width:30px;text-align:right;font-size:12px;font-weight:700">'+b+'</div></div>';
-  });
+  // Dagens træning (fra trænerens hurtig-vurdering — LOOPET)
+  if (s.dagens){ const b = skala(s.dagens.score); const o = OMRNAVN[s.dagens.omraade]||{navn:s.dagens.omraade,emoji:"\ud83c\udfbe"};
+    h += '<div class="kort" style="margin-top:10px;border:1.5px solid '+b.farve+'"><div class="eyebrow">\ud83d\udd14 DAGENS TR\u00c6NING \u2014 NY</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-top:5px"><span style="width:13px;height:13px;border-radius:50%;background:'+b.farve+';flex:none"></span>' +
+      '<b style="font-size:13px">'+o.emoji+' '+esc(o.navn)+'</b><span style="margin-left:auto;font-weight:800;color:'+b.farve+'">'+s.dagens.score+'/10</span></div>' +
+      '<p class="lille" style="margin:5px 0 0">'+esc(b.label)+' \u00b7 registreret af '+esc(S.traener)+' lige nu.</p></div>'; }
+  // Fælles lag: kampe, statistik, sæson
+  h += faellesLag(s);
+  // Seneste evaluering (mail-format)
+  h += '<div class="kort" style="margin-top:10px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="badge-ai">AI + TR\u00c6NER</span>' +
+    (s.evalNy ? '<span style="background:var(--guld);color:var(--nat);font-size:10px;font-weight:800;padding:2px 7px;border-radius:7px">\u2709\ufe0f NY</span>' : '') +
+    '<span class="lille">godkendt af '+esc(S.traener)+' \u00b7 '+KONFIG.maaned+' '+KONFIG.saeson+'</span></div>' +
+    '<h3 style="margin:0 0 8px">\ud83d\udccb Din evaluering</h3>';
+  if (s.evalSendt){
+    h += '<p style="font-size:12.5px;line-height:1.55;white-space:pre-wrap;margin:0">'+esc(s.evalSendt)+'</p>';
+  } else {
+    KONFIG.omraader.forEach(function(o){
+      const v = (s.vurdering||{})[o.id]; if (!v) return;
+      const b = skala(v.score);
+      h += '<div style="border-top:1px solid var(--kant);padding:10px 0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">' +
+        '<span style="width:13px;height:13px;border-radius:50%;background:'+b.farve+';flex:none"></span>' +
+        '<b style="font-size:13px">'+esc(o.navn)+'</b>' +
+        '<span style="margin-left:auto;font-size:11.5px;font-weight:800;color:'+b.farve+'">'+b.min+'-'+b.max+' \u00b7 '+esc(b.label)+'</span></div>' +
+        '<p style="font-size:12.5px;margin:0;line-height:1.55">'+esc(v.tekst)+'</p></div>';
+    });
+  }
   h += '</div>';
   return h;
 }
 
 function spillerGruppe(s){
-  // Streak-leaderboard i gruppen
   const sp = DATA.grupper[s.gruppe].spillere.map(n=>DATA.spillere[n]).slice().sort((a,b)=>(b.fysStreak+b.tennisStreak)-(a.fysStreak+a.tennisStreak));
   let h = '<div class="kort"><h3>🏆 '+esc(s.gruppe)+' — streak-stigen</h3><p class="lille">Samlet streak (fys + tennis) denne uge. Venlig konkurrence! 🔥</p>';
   sp.forEach(function(p,i){
-    const total = p.fysStreak + p.tennisStreak;
-    const medalje = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:var(--daempet);font-weight:700">'+(i+1)+'</span>';
-    h += '<div class="spiller-rk" style="cursor:default">' +
-      '<div style="width:24px;text-align:center" class="medalje">'+medalje+'</div>' +
+    const total = p.fysStreak+p.tennisStreak, m = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:var(--daempet);font-weight:700">'+(i+1)+'</span>';
+    h += '<div class="spiller-rk" style="cursor:default"><div style="width:24px;text-align:center" class="medalje">'+m+'</div>' +
       '<div class="avatar" style="width:30px;height:30px;font-size:12px;'+(p.erBruger?'background:var(--is);color:var(--nat)':'')+'">'+init(p.navn)+'</div>' +
       '<div style="flex:1;font-size:13.5px;font-weight:700">'+esc(p.navn)+(p.erBruger?' <span style="color:var(--is)">(dig)</span>':'')+'</div>' +
       '<div class="streak-chip">🔥 '+total+'</div></div>';
   });
-  h += '</div>';
-  h += '<div class="kort" style="border-left:3px solid var(--is)"><div class="eyebrow" style="color:var(--is)">🎯 GRUPPENS FÆLLES MÅL ('+DATA.grupper[s.gruppe].aargang+')</div>' +
-    '<p style="margin:6px 0 0;font-size:13px">3 træninger + 3 løbeture om ugen. <b>'+sp.filter(p=>p.fysStreak>0).length+'/'+sp.length+'</b> spillere har aktiv streak lige nu. Kom så! 💪</p></div>';
+  h += '</div><div class="kort" style="border-left:3px solid var(--is)"><div class="eyebrow" style="color:var(--is)">🎯 GRUPPENS FÆLLES MÅL ('+DATA.grupper[s.gruppe].aargang+')</div>' +
+    '<p style="margin:6px 0 0;font-size:13px">3 træninger + 3 løbeture om ugen. <b>'+sp.filter(p=>p.fysStreak>0).length+'/'+sp.length+'</b> med aktiv streak lige nu. Kom så! 💪</p></div>';
   return h;
 }
 
 function spillerVenner(s){
   const venner = DATA.venner[S.spiller] || [];
   let h = '<div class="kort"><h3>👋 Mine venner</h3><p class="lille">På tværs af træningsgrupper. Se hinandens streaks og hep på hinanden.</p>';
-  venner.forEach(function(vn){
-    const v = DATA.spillere[vn];
-    if (!v) return;
-    h += '<div class="spiller-rk" style="cursor:default">' +
-      '<div class="avatar" style="width:32px;height:32px;font-size:13px">'+init(vn)+'</div>' +
+  venner.forEach(function(vn){ const v = DATA.spillere[vn]; if(!v) return;
+    h += '<div class="spiller-rk" style="cursor:default"><div class="avatar" style="width:32px;height:32px;font-size:13px">'+init(vn)+'</div>' +
       '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">'+esc(vn)+'</div><div class="lille">'+esc(v.gruppe)+'</div></div>' +
       '<div class="streak-chip">🔥 '+(v.fysStreak+v.tennisStreak)+'</div></div>';
   });
   h += '</div>';
-  // Forslag til nye venner (andre spillere man ikke er ven med)
   const alle = Object.keys(DATA.spillere).filter(n => n!==S.spiller && !venner.includes(n));
   h += '<div class="kort"><h3>➕ Find venner</h3>';
-  alle.slice(0,5).forEach(function(n){
-    const p = DATA.spillere[n];
-    h += '<div class="spiller-rk" style="cursor:default">' +
-      '<div class="avatar" style="width:30px;height:30px;font-size:12px">'+init(n)+'</div>' +
+  alle.slice(0,5).forEach(function(n){ const p = DATA.spillere[n];
+    h += '<div class="spiller-rk" style="cursor:default"><div class="avatar" style="width:30px;height:30px;font-size:12px">'+init(n)+'</div>' +
       '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+esc(n)+'</div><div class="lille">'+esc(p.gruppe)+'</div></div>' +
       '<button class="knap" style="flex:none;padding:7px 13px;font-size:12.5px" data-act="add-ven" data-v="'+esc(n)+'">Tilføj</button></div>';
   });
-  h += '<p class="lille" style="margin-top:8px">🔒 I den rigtige version godkender en forælder venneanmodninger for spillere under 13.</p></div>';
+  h += '<p class="lille" style="margin-top:8px">🔒 For spillere under 13 godkender en forælder venneanmodninger.</p></div>';
   return h;
 }
 
-// ============ EVENTS ============
+// ---------- EVENTS ----------
 document.addEventListener("click", function(e){
-  const t = e.target.closest("[data-act]");
-  if (!t) return;
+  const t = e.target.closest("[data-act]"); if (!t) return;
   const act = t.dataset.act, v = t.dataset.v;
-  if (act === "rolle"){ S.rolle = v; S.tab = v==="traener"?"grupper":"mig"; S.aabenSpiller=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); }
-  else if (act === "tab"){ S.tab = v; S.aabenSpiller=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); }
-  else if (act === "spiller-detalje"){ S.aabenSpiller = v; render(); }
-  else if (act === "luk-spiller"){ S.aabenSpiller = null; render(); }
-  else if (act === "vurder-gruppe"){ S.vurderGruppe = v; render(); }
-  else if (act === "luk-vurder"){ S.vurderGruppe = null; render(); }
-  else if (act === "indsats"){ S.vurderIndsats[t.dataset.sp] = +v; render(); }
-  else if (act === "star"){ const sp=t.dataset.sp, dim=t.dataset.dim; S.vurderScores[sp]=S.vurderScores[sp]||{}; S.vurderScores[sp][dim]=+v; render(); }
-  else if (act === "kvartal-gen"){ S.kvartalUdkast = v; render(); }
-  else if (act === "luk-kvartal"){ S.kvartalUdkast = null; render(); }
-  else if (act === "kvartal-godkend"){ alert("✓ Vurdering sendt til "+S.kvartalUdkast.split(" ")[0]+"!\n\n(I prototypen er dette en demo — med backend lander den i spillerens app.)"); S.kvartalUdkast = null; render(); }
-  else if (act === "add-ven"){ alert("👋 Venneanmodning sendt til "+v.split(" ")[0]+"!\n\n(Demo — med backend sendes en rigtig anmodning.)"); }
+  if (act==="rolle"){ S.rolle=v; S.tab = v==="traener"?"grupper":"mig"; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); }
+  else if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); }
+  else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
+  else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
+  else if (act==="vurder-omraade"){ S.vurderOmraade=v; render(); }
+  else if (act==="luk-omraade"){ S.vurderOmraade=null; S.vurderGruppe=null; render(); }
+  else if (act==="vurder-gruppe"){ S.vurderGruppe=v; render(); }
+  else if (act==="luk-gruppe"){ S.vurderGruppe=null; render(); }
+  else if (act==="score"){ const sp=t.dataset.sp; S.vurderScores[sp] = +v; const d=DATA.spillere[sp]; if(d){ d.dagens={omraade:S.vurderOmraade, score:+v}; d.sidsteTraening="I dag"; } render(); }
+  else if (act==="kvartal-gen"){ S.kvartalUdkast=v; render(); }
+  else if (act==="luk-kvartal"){ S.kvartalUdkast=null; render(); }
+  else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekst=(ta&&ta.value)||S.kvartalTekst||""; const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } alert("\u2713 Evaluering sendt til "+n.split(" ")[0]+"!\n\nSkift til \ud83c\udfbe Spiller-rollen og se den lande under \u0027Din evaluering\u0027."); S.kvartalUdkast=null; render(); }
+  else if (act==="add-ven"){ alert("👋 Venneanmodning sendt til "+v.split(" ")[0]+"!"); }
 });
-
 render();
 </script>
 </body>

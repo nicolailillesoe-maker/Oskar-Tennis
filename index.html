@@ -293,7 +293,7 @@ const STRATEGI = [
 const PLAN = [
   ["Uge 29-30","Hvile + træningsblok (Sinner-budene + wide-serven)","Planlagt pause","Restitution og våbentræning. Programmet ligger i 🎾💪 Tennis & fysisk-fanen. OBS: Rom-turen deler blokken i to vinduer — fokus på BÅDE fysisk træning OG selvtræning på banen FØR afrejsen (til og med 22/7) og EFTER hjemkomsten (29-30/7). Ingen udløb truer — der tabes intet ved at hvile.","-"],
   ["23-28/7","🏛 Rom med familien","Rejse","Træningspause — og det er helt fint: benene får gågade-kilometer, og hovedet får ro før den store august. Hjemme 28/7, Sommer Cup-premiere 30/7 — de to dage imellem bruges på ét let pas + serv, ikke på at indhente noget.","-"],
-  ["Uge 31 · 30/7-2/8","HRT Sommer Cup — U14 HS Kat. G (Rungsted)","✅ TILMELDT","EV ~7-8 pt ved vanligt 5/8-niveau — en KF løfter direkte. Kun kat. G for U14-drenge: skarpt felt.","1"],
+  ["Uge 31 · 30/7-2/8","HRT Sommer Cup — U14 HS Kat. G (Rungsted)","✅ INDE — 6. på rang i feltet","ACCEPTLISTE 16/7: højeste rang i feltet er #6 Krogager — Le Li og Midtgaard er IKKE med. Hovedfelt 16 (14 direkte + 2 WC); kendinge: Thøgersen #9, Emde #18, Philip A. #19. EV løftet markant: dyb turnering — måske titlen — er realistisk med venlig lodtrækning. App-premieren!","1"],
   ["Uge 32 · 3-8/8","🌍 HRT TE U14 (TE kat. 3, grus)","🎾 INDE · HOVEDRUNDEN","DIREKTE i hovedrunden (nr. 24 af 48, OA) — Oskars internationale gennembrud på hjemmebanens grus! 104 tilmeldte, felt fra 15+ nationer. Kendinge i feltet: Le Li (8), Midtgaard (9), Tiedemann og Thøgersen via OA. TE-point = ren bonus; op til 10 kampdage i træk med Sommer Cup ugen før — belastningsstyring!","TE"],
   ["9/8 + 16/8","🛡 DTF Juniorhold 4.-5. runde (B.93)","🎾 INDE · 2. SINGLE","Fast plads som 2. single på klubbens juniorhold — holdkampe giver gratis kamptræning med holdånd oveni, og formatet (single + double samme dag) træner netop omstilling. Holdpoint lægges oveni og koster ingen termin; seniorholdrunder 8/8, 15/8, 22/8 giver også point, hvis B.93 stiller hold.","H"],
   ["Uge 33","U14 kat. G eller 1 (øst)","GRUNDSTAMME","EV ~7-8 pt. Navn vælges, når kalenderens augustsider bekræftes.","1"],
@@ -412,7 +412,7 @@ const STRATEGI_EN = [
 const PLAN_EN = [
   ["Wk 29-30","Rest + training block (the Sinner rules + the wide serve)","Planned break","Recovery and weapons training. The programme lives in the 🎾💪 Tennis & fitness tab. NOTE: the Rome trip splits the block in two windows — focus on BOTH physical training AND self-practice on court BEFORE departure (through 22/7) and AFTER returning (29-30/7). No expiries threaten — nothing is lost by resting.","-"],
   ["23-28/7","🏛 Rome with the family","Travel","Training break — and that is fine: the legs get sightseeing kilometres and the head gets rest before the big August. Home 28/7, Summer Cup premiere 30/7 — the two days in between are for one light session + serves, not for catching up.","-"],
-  ["Wk 31 · 30/7-2/8","HRT Sommer Cup — U14 BS Cat. G (Rungsted)","✅ ENTERED","EV ~7-8 pts at his usual 5/8 level — a QF lifts directly. Only Cat. G is offered for U14 boys: sharp field.","1"],
+  ["Wk 31 · 30/7-2/8","HRT Sommer Cup — U14 BS Cat. G (Rungsted)","✅ MAIN DRAW — 6th on rank in field","ACCEPTANCE LIST 16/7: highest rank in the field is #6 Krogager — Le Li and Midtgaard are NOT playing. Main draw of 16 (14 direct + 2 WC); familiar names: Thøgersen #9, Emde #18, Philip A. #19. EV lifted: a deep run — maybe the title — is realistic with a friendly draw. The app premiere!","1"],
   ["Wk 32 · 3-8/8","🌍 HRT TE U14 (TE Cat. 3, clay)","🎾 IN · MAIN DRAW","DIRECTLY into the main draw (no. 24 of 48, OA) — an international breakthrough for Oskar on home clay! 104 entries, field from 15+ nations. Familiar names: Le Li (8), Midtgaard (9), Tiedemann and Thogersen via OA. TE points = pure bonus; up to 10 match days in a row with the Summer Cup the week before — load management!","TE"],
   ["9/8 + 16/8","🛡 DTF Junior Team rounds 4-5 (B.93)","🎾 IN · 2ND SINGLES","Confirmed spot as 2nd singles on the club junior team — team matches mean free match practice with team spirit on top, and the format (singles + doubles same day) trains exactly that switch. Team points come on top and use no window; senior team rounds 8/8, 15/8, 22/8 also count if B.93 fields a team.","H"],
   ["Wk 33","U14 Cat. G or 1 (East)","CORE","EV ~7-8 pts. Named when the calendar's August pages are confirmed.","1"],
@@ -780,7 +780,7 @@ function anbefalinger(EN) {
     { label: EN ? "Won on 2nd serve" : "Vundet på 2. serven", f: felt("s2"), maal: 50, ned: false, enhed: " %", sinner: ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].s2won+" %":"58 %"), hvorfor: EN ? "The key number separating the top from the rest — 50 %+ means the serve holds under pressure." : "Nøgletallet, der skiller toppen fra resten — 50 %+ betyder, serven holder under pres." },
     { label: EN ? "Break points converted" : "Breakbolde udnyttet", f: felt("bpF"), maal: 40, ned: false, enhed: " %", sinner: ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].bpConv+" %":"46 %"), hvorfor: EN ? "Convert the big points. Tight matches are decided on these." : "Veksl de store point. Tætte kampe afgøres på disse." },
     { label: EN ? "Break points saved" : "Breakbolde afværget", f: felt("bpM"), maal: 60, ned: false, enhed: " %", sinner: ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].bpSave+" %":"74 %"), hvorfor: EN ? "Defend your own service games when it matters most." : "Forsvar egne servepartier, når det gælder mest." },
-    (function(){ const B = (typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark]:null; const fm = B&&B.fokusMaal?B.fokusMaal:{felt:"bud",label:(EN?"Rule IV breaches":"Bud IV-brud pr. kamp"),maal:2,ned:true,forklaring:""}; return { label: fm.label, f: felt(fm.felt), maal: fm.maal, ned: fm.ned, enhed: fm.felt==="s1"||fm.felt==="s2"?" %":"", sinner: (B?B.navn:"Sinner"), benchForklaring: fm.forklaring }; })(),
+    (function(){ const B = (typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark]:null; const fm = B&&B.fokusMaal?B.fokusMaal:{felt:"bud",label:(EN?"Rule IV breaches":"Bud IV-brud pr. kamp"),maal:2,ned:true,forklaring:""}; return { label: fm.label, f: felt(fm.felt), maal: fm.maal, ned: fm.ned, enhed: fm.felt==="s1"||fm.felt==="s2"?" %":"", sinner: "", benchForklaring: fm.forklaring }; })(),
   ];
   const virker = [], arbejd = [];
   M.forEach(function(m){
@@ -1180,7 +1180,21 @@ function render() {
           : [["status","📊 Status"],["strategi","🎯 Strategi"],["plan","📅 Plan"],["regler","§ Regler"]]);
   if (S.verden === "udv") {
     h += '<button class="fane-stor' + (S.tab === "kamp" ? " aktiv" : "") + '" data-a="tab" data-v="kamp">🎾 ' + (EN ? "MATCH — register points" : "KAMP — registrér point") + '</button>';
-    h += '<div class="tabs">' + FANER.filter(([id]) => id !== "kamp").map(([id,l]) => '<button class="' + (S.tab===id?"aktiv":"") + '" data-a="tab" data-v="'+id+'">'+(S.laast && LAASTE_FANER.indexOf(id)>=0 ? "🔒 " : "")+l+'</button>').join("") + '</div>';
+    const HB = ["guide","stil","rutiner"];
+    const RUM = [
+      ["🎾💪 "+(EN?"TRAIN":"TRÆN"), EN?"today's session":"dagens pas", FANER.filter(([id]) => id === "fysisk")],
+      ["📊 "+(EN?"TRACK":"FØLG"), EN?"stats & rivals":"statistik & rivaler", ["anbefal","planer","historik","s2026"].map((id) => FANER.find((f) => f[0] === id)).filter(Boolean)],
+      ["📘 "+(EN?"HANDBOOK":"HÅNDBOG"), EN?"guide & style":"guide & stil", FANER.filter(([id]) => HB.indexOf(id) >= 0)],
+    ].filter((r) => r[2].length > 0);
+    const rumAktiv = RUM.find((r) => r[2].some(([id]) => id === S.tab));
+    h += '<div class="raekke" style="margin-top:8px;margin-bottom:8px">' + RUM.map((r) => {
+      const aktiv = rumAktiv === r;
+      const laas = S.laast && r[2].every(([id]) => LAASTE_FANER.indexOf(id) >= 0);
+      return '<button class="knap" style="background:'+(aktiv?"var(--grus)":"var(--kort)")+';color:'+(aktiv?"var(--kridt)":"var(--daempet)")+';padding:10px 4px;line-height:1.35" data-a="tab" data-v="'+r[2][0][0]+'">'+(laas?"🔒 ":"")+r[0]+'<br><span style="font-size:10px;opacity:.75;font-weight:600">'+r[1]+'</span></button>';
+    }).join("") + '</div>';
+    if (rumAktiv && rumAktiv[2].length > 1) {
+      h += '<div class="tabs">' + rumAktiv[2].map(([id,l]) => '<button class="' + (S.tab===id?"aktiv":"") + '" data-a="tab" data-v="'+id+'">'+(S.laast && LAASTE_FANER.indexOf(id)>=0 ? "🔒 " : "")+l+'</button>').join("") + '</div>';
+    }
   } else {
     h += '<div class="tabs">' + FANER.map(([id,l]) => '<button class="' + (S.tab===id?"aktiv":"") + '" data-a="tab" data-v="'+id+'">'+(S.laast && LAASTE_FANER.indexOf(id)>=0 ? "🔒 " : "")+l+'</button>').join("") + '</div>';
   }
@@ -1656,7 +1670,7 @@ function render() {
          '<a href="https://dtf.tournamentsoftware.com/ranking/category.aspx?id=52585&amp;category=2531" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 '+(EN?"Oskar\'s current DTF ranking":"Oskars aktuelle rangliste hos DTF")+'</a>';
   }
 
-  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Claude via Nicolai. Team Oskar · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Team Oskar · v1.7 · håndethed-vælger · juli 2026.")+'</p>';
+  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Claude via Nicolai. Team Oskar · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Team Oskar · v2.0 · tre rum-navigation · juli 2026.")+'</p>';
   el.innerHTML = h;
 }
 

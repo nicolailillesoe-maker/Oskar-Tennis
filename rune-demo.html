@@ -779,7 +779,7 @@ function anbefalinger(EN) {
     { label: EN ? "Won on 2nd serve" : "Vundet på 2. serven", f: felt("s2"), maal: 50, ned: false, enhed: " %", sinner: ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].s2won+" %":"58 %"), hvorfor: EN ? "The key number separating the top from the rest — 50 %+ means the serve holds under pressure." : "Nøgletallet, der skiller toppen fra resten — 50 %+ betyder, serven holder under pres." },
     { label: EN ? "Break points converted" : "Breakbolde udnyttet", f: felt("bpF"), maal: 40, ned: false, enhed: " %", sinner: ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].bpConv+" %":"46 %"), hvorfor: EN ? "Convert the big points. Tight matches are decided on these." : "Veksl de store point. Tætte kampe afgøres på disse." },
     { label: EN ? "Break points saved" : "Breakbolde afværget", f: felt("bpM"), maal: 60, ned: false, enhed: " %", sinner: ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].bpSave+" %":"74 %"), hvorfor: EN ? "Defend your own service games when it matters most." : "Forsvar egne servepartier, når det gælder mest." },
-    (function(){ const B = (typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark]:null; const fm = B&&B.fokusMaal?B.fokusMaal:{felt:"bud",label:(EN?"Rule IV breaches":"Bud IV-brud pr. kamp"),maal:2,ned:true,forklaring:""}; return { label: fm.label, f: felt(fm.felt), maal: fm.maal, ned: fm.ned, enhed: fm.felt==="s1"||fm.felt==="s2"?" %":"", sinner: (B?B.navn:"Sinner"), benchForklaring: fm.forklaring }; })(),
+    (function(){ const B = (typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark]:null; const fm = B&&B.fokusMaal?B.fokusMaal:{felt:"bud",label:(EN?"Rule IV breaches":"Bud IV-brud pr. kamp"),maal:2,ned:true,forklaring:""}; return { label: fm.label, f: felt(fm.felt), maal: fm.maal, ned: fm.ned, enhed: fm.felt==="s1"||fm.felt==="s2"?" %":"", sinner: "", benchForklaring: fm.forklaring }; })(),
   ];
   const virker = [], arbejd = [];
   M.forEach(function(m){
@@ -1204,7 +1204,21 @@ function render() {
           : [["status","📊 Status"],["strategi","🎯 Strategi"],["plan","📅 Plan"],["regler","§ Regler"]]);
   if (S.verden === "udv") {
     h += '<button class="fane-stor' + (S.tab === "kamp" ? " aktiv" : "") + '" data-a="tab" data-v="kamp">🎾 ' + (EN ? "MATCH — register points" : "KAMP — registrér point") + '</button>';
-    h += '<div class="tabs">' + FANER.filter(([id]) => id !== "kamp").map(([id,l]) => '<button class="' + (S.tab===id?"aktiv":"") + '" data-a="tab" data-v="'+id+'">'+(S.laast && LAASTE_FANER.indexOf(id)>=0 ? "🔒 " : "")+l+'</button>').join("") + '</div>';
+    const HB = ["guide","stil","rutiner"];
+    const RUM = [
+      ["🎾💪 "+(EN?"TRAIN":"TRÆN"), EN?"today's session":"dagens pas", FANER.filter(([id]) => id === "fysisk")],
+      ["📊 "+(EN?"TRACK":"FØLG"), EN?"stats & rivals":"statistik & rivaler", ["anbefal","planer","historik","s2026"].map((id) => FANER.find((f) => f[0] === id)).filter(Boolean)],
+      ["📘 "+(EN?"HANDBOOK":"HÅNDBOG"), EN?"guide & style":"guide & stil", FANER.filter(([id]) => HB.indexOf(id) >= 0)],
+    ].filter((r) => r[2].length > 0);
+    const rumAktiv = RUM.find((r) => r[2].some(([id]) => id === S.tab));
+    h += '<div class="raekke" style="margin-top:8px;margin-bottom:8px">' + RUM.map((r) => {
+      const aktiv = rumAktiv === r;
+      const laas = S.laast && r[2].every(([id]) => LAASTE_FANER.indexOf(id) >= 0);
+      return '<button class="knap" style="background:'+(aktiv?"var(--grus)":"var(--kort)")+';color:'+(aktiv?"var(--kridt)":"var(--daempet)")+';padding:10px 4px;line-height:1.35" data-a="tab" data-v="'+r[2][0][0]+'">'+(laas?"🔒 ":"")+r[0]+'<br><span style="font-size:10px;opacity:.75;font-weight:600">'+r[1]+'</span></button>';
+    }).join("") + '</div>';
+    if (rumAktiv && rumAktiv[2].length > 1) {
+      h += '<div class="tabs">' + rumAktiv[2].map(([id,l]) => '<button class="' + (S.tab===id?"aktiv":"") + '" data-a="tab" data-v="'+id+'">'+(S.laast && LAASTE_FANER.indexOf(id)>=0 ? "🔒 " : "")+l+'</button>').join("") + '</div>';
+    }
   } else {
     h += '<div class="tabs">' + FANER.map(([id,l]) => '<button class="' + (S.tab===id?"aktiv":"") + '" data-a="tab" data-v="'+id+'">'+(S.laast && LAASTE_FANER.indexOf(id)>=0 ? "🔒 " : "")+l+'</button>').join("") + '</div>';
   }
@@ -1686,7 +1700,7 @@ function render() {
          '<a href="https://dtf.tournamentsoftware.com/ranking/category.aspx?id=52585&amp;category=2531" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 '+(EN?"Rune\'s current DTF ranking":"Runes aktuelle rangliste hos DTF")+'</a>';
   }
 
-  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Claude via Nicolai. Team Rune · v1.7 · handedness picker · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Team Rune · v1.7 · håndethed-vælger · juli 2026.")+'</p>';
+  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Claude via Nicolai. Team Rune · v1.7 · handedness picker · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Team Rune · v2.0 · tre rum-navigation · juli 2026.")+'</p>';
   el.innerHTML = h;
 }
 

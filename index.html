@@ -448,7 +448,7 @@ const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h =
 const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
 
 const FYSISK = [
-  ["🎾","Tennistræningen — status (opdateret 12. jul)","Klubtræningen holder sommerpause og starter først op igen omkring skolestart i august. August-programmet bliver med RETTELSER: Oskar skal træne med Peter Brøndum — tiderne er endnu ikke på plads. Indtil da er banen selvtræningens: løbepassene her i fanen + wide-serven og forehand-crossen fra Stil-fanen. Sommerens to vinduer: FØR Rom (til og med 22/7) og EFTER hjemkomsten (29-30/7, let). Når Brøndum-tiderne lander, opdateres skemaet her (sig til Claude)."],
+  ["🎾","Tennistræningen — status (opdateret 12. jul)","Klubtræningen holder sommerpause og starter først op igen omkring skolestart i august. August-programmet bliver med RETTELSER: Oskar skal træne med træneren — tiderne er endnu ikke på plads. Indtil da er banen selvtræningens: løbepassene her i fanen + wide-serven og forehand-crossen fra Stil-fanen. Sommerens to vinduer: FØR Rom (til og med 22/7) og EFTER hjemkomsten (29-30/7, let). Når træningstiderne lander, opdateres skemaet her (sig til Claude)."],
   ["🔥","OPVARMNING — altid først (10 min.)","1) 4 min. sjipning — minimum 1.000 sjip, TÆL dem! · 2) 4 min. stille og roligt løb · 3) 2 min. stræk: for- og bagside af lår + begge lægge. Ingen genveje — opvarmningen ER en del af passet."],
   ["🏃","PAS 1 · Konditionsløb (38 min.)","2 min. hårdt løb (80-85 %) + 2 min. restitutionsløb (60-65 %) — gentages 4 gange. Så 4 minutters pause. Derefter HELE blokken igen: 4 × (2 min. hårdt + 2 min. roligt). Afslut med 2 min. meget langsomt løb + stræk af lår, lægge og baller."],
   ["⚡","PAS 2 · Intervaller (ca. 33 min.)","30 sek. hårdt løb + 30 sek. roligt løb — gentages 10 gange. 3 minutters pause. Så 10 gange igen. Afslut med 10 min. roligt løb (60 %). Temposkiftene her er tennis-motoren: eksplosion, ro, eksplosion."],
@@ -456,7 +456,7 @@ const FYSISK = [
   ["🗓","Ugerytmen (Claudes kobling til sæsonplanen)","Uge 29-30 er sæsonplanens træningsblok — programmets hjem: fx Pas 1 mandag, Pas 3 onsdag, Pas 2 fredag. Gylden regel: Hurtighed (Pas 3) kræver friske ben — aldrig dagen efter hård kondition. Og på banen ved siden af: wide-serven fra fordelsiden. Fysikken bygger motoren; serven bygger våbnet."],
 ];
 const FYSISK_EN = [
-  ["🎾","Tennis training — status (updated 12 Jul)","Club training is on summer break and resumes around the school start in August. The August programme will be REVISED: Oskar trains with Peter Brøndum — times are not yet confirmed. Until then the court belongs to self-training: the running sessions in this tab + the wide serve and forehand cross from the Style tab. The two summer windows: BEFORE Rome (through 22/7) and AFTER returning (29-30/7, light). When the Brøndum times land, the schedule here will be updated (tell Claude)."],
+  ["🎾","Tennis training — status (updated 12 Jul)","Club training is on summer break and resumes around the school start in August. The August programme will be REVISED: Oskar trains with the coach — times are not yet confirmed. Until then the court belongs to self-training: the running sessions in this tab + the wide serve and forehand cross from the Style tab. The two summer windows: BEFORE Rome (through 22/7) and AFTER returning (29-30/7, light). When the training times land, the schedule here will be updated (tell Claude)."],
   ["🔥","WARM-UP — always first (10 min.)","1) 4 min. skipping rope — minimum 1,000 skips, COUNT them! · 2) 4 min. easy jogging · 3) 2 min. stretching: front and back of thighs + both calves. No shortcuts — the warm-up IS part of the session."],
   ["🏃","SESSION 1 · Endurance run (38 min.)","2 min. hard running (80-85 %) + 2 min. recovery pace (60-65 %) — repeat 4 times. Then a 4-minute break. Then the WHOLE block again: 4 × (2 min. hard + 2 min. easy). Finish with 2 min. very slow jogging + stretch thighs, calves and glutes."],
   ["⚡","SESSION 2 · Intervals (approx. 33 min.)","30 sec. hard + 30 sec. easy — repeat 10 times. 3-minute break. Then 10 more. Finish with 10 min. easy running (60 %). These tempo shifts are the tennis engine: explode, recover, explode."],
@@ -861,7 +861,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {"Kevin Le Li": "EKSEMPEL: Sådan vil analysen se ud mod UM-rivalen — her ses et mønster med for mange gaver i korte dueller og en 2. serv, der skal beskyttes. Efter jeres rigtige kampe står de ÆGTE tal her.", "Philip Hartvigsen Dianati": "EKSEMPEL: Mod feltets nr. 1 vil skemaet vise, om marginerne holder — her fortæller dummy-tallene en historie om netfejl og breakbolde, der skal veksles.", "Philip Tiedemann": "EKSEMPEL: Tætte kampe afgøres på returpoint — dummy-mønstret viser præcis den slags marginer, systemet fanger.", "Andreas Falch Midtgaard": "EKSEMPEL: Mod double-makkeren viser dummy-data en opskrift, der virker — server-dominans og tålmodighed.", "Emil Thøgersen": "EKSEMPEL: En stabil opskrift i dummy-tallene — 2. serv-niveau og ro på breakbolde."};
 
 let S = {
-  verden: "udv", tab: "kamp", benchmark: "sinner", haand: "venstre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null,
+  verden: "udv", tab: "kamp", benchmark: "sinner", haand: "venstre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -1003,11 +1003,12 @@ const A = {
   },
   ttMinJust: (v) => { S.ttMin = Math.max(15, Math.min(300, S.ttMin + (+v))); render(); },
   ttKvalVaelg: (v) => { S.ttKval = +v; render(); },
+  ttTypeVaelg: (v) => { S.ttType = +v; render(); },
   ttGem: () => {
-    if (!S.ttKval) return;
-    S.ttLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.ttMin, k: S.ttKval, n: S.ttNote || "" });
+    if (!S.ttKval || !S.ttType) return;
+    S.ttLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.ttMin, k: S.ttKval, t: S.ttType, n: S.ttNote || "" });
     lager.gem("oskar-tennis-log", JSON.stringify(S.ttLog));
-    S.ttKval = 0; S.ttNote = ""; S.ttEks = null; render();
+    S.ttKval = 0; S.ttType = 0; S.ttNote = ""; S.ttEks = null; render();
   },
   ttSletSpoerg: (i) => { S.ttSletB = +i; render(); },
   ttSletFortryd: () => { S.ttSletB = null; render(); },
@@ -1079,8 +1080,8 @@ const A = {
     const dm = nye.reduce((a, e) => a + e.m, 0), dk = (nye.reduce((a, e) => a + e.k, 0) / nye.length).toFixed(1);
     const tm = S.ttLog.reduce((a, e) => a + e.m, 0), tk = (S.ttLog.reduce((a, e) => a + e.k, 0) / S.ttLog.length).toFixed(1);
     S.ttEks = "TENNISTRÆNING — Oskar (nyt siden sidste eksport)\n" +
-      nye.map((e) => e.d + " · " + e.m + " min · kvalitet " + e.k + "/5" + (e.n ? " · " + e.n : "")).join("\n") +
-      "\nDelta: " + nye.length + " træninger · " + (dm / 60).toFixed(1) + " timer · Ø " + dk + "/5" +
+      nye.map((e) => e.d + " · " + e.m + " min · " + (e.t===1 ? "selv" : e.t===2 ? "m. træner" : "type uoplyst") + " · kvalitet " + e.k + "/5" + (e.n ? " · " + e.n : "")).join("\n") +
+      "\nDelta: " + nye.length + " træninger · " + (dm / 60).toFixed(1) + " timer · Ø " + dk + "/5 · " + nye.filter((e)=>e.t===2).length + " m. træner / " + nye.filter((e)=>e.t===1).length + " selv" +
       "\nSamlet i appen: " + S.ttLog.length + " træninger · " + (tm / 60).toFixed(1) + " timer · Ø " + tk + "/5";
     S.ttLog.forEach((e) => { e.x = 1; });
     lager.gem("oskar-tennis-log", JSON.stringify(S.ttLog));
@@ -1454,12 +1455,16 @@ function render() {
         '<p class="lille" style="margin:0 0 5px">'+(EN?"Oskar's own quality rating (required)":"Oskars egen kvalitetsbedømmelse (skal vælges)")+'</p>' +
         '<div class="raekke">'+[1,2,3,4,5].map(function(n){ return '<button class="knap valg '+(S.ttKval===n?"til":"")+'" style="padding:11px 2px" data-a="ttKvalVaelg" data-v="'+n+'">'+n+'</button>'; }).join("")+'</div>' +
         '<p class="lille" style="margin:2px 0 8px;opacity:.8">1 = '+(EN?"heavy day":"tung dag")+' · 3 = '+(EN?"solid work":"solidt arbejde")+' · 5 = '+(EN?"top session":"toptræning")+'</p>' +
+        '<p class="lille" style="margin:0 0 5px">'+(EN?"Type of session (required)":"Selv-træning eller med træner? (skal vælges)")+'</p>' +
+        '<div class="raekke" style="margin-bottom:8px">' +
+          '<button class="knap valg '+(S.ttType===1?"til":"")+'" style="padding:11px 2px" data-a="ttTypeVaelg" data-v="1">🎾 '+(EN?"Self-practice":"Selv-træning")+'</button>' +
+          '<button class="knap valg '+(S.ttType===2?"til":"")+'" style="padding:11px 2px" data-a="ttTypeVaelg" data-v="2">🧑‍🏫 '+(EN?"With coach":"Med træner")+'</button></div>' +
         '<input placeholder="'+(EN?"Note (optional — e.g. \'wide serve drills\')":"Note (valgfri — fx \'wide-serv træning\')")+'" value="'+esc(S.ttNote)+'" data-felt="ttNote" style="margin-bottom:8px">' +
-        '<div class="raekke"><button class="knap" style="background:'+(S.ttKval?"var(--grus)":"#223243")+'" data-a="ttGem">💾 '+(EN?"Save training":"Gem træningen")+'</button></div></div>';
+        '<div class="raekke"><button class="knap" style="background:'+(S.ttKval&&S.ttType?"var(--grus)":"#223243")+'" data-a="ttGem">💾 '+(EN?"Save training":"Gem træningen")+'</button></div></div>';
       if (S.ttLog.length) {
         h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(ttTot/60).toFixed(1)+' '+(EN?"hours":"timer")+' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+ttGk+'/5</h3>' +
           S.ttLog.slice(0,8).map(function(e, i){
-            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+e.m+' min · '+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span>' +
+            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+e.m+' min · '+(e.t===1?'🎾 ':e.t===2?'🧑‍🏫 ':'')+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span>' +
               (S.ttSletB === i
                 ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="ttSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="ttSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="ttSletSpoerg" data-v="'+i+'">🗑</button>') + '</div>'; }).join("") +

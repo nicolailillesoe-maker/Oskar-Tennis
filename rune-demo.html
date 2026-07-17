@@ -448,7 +448,7 @@ const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h =
 const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
 
 const FYSISK = [
-  ["🎾","Tennistræningen — status (opdateret 12. jul)","Klubtræningen holder sommerpause og starter først op igen omkring skolestart i august. August-programmet bliver med RETTELSER: Rune skal træne med Peter Brøndum — tiderne er endnu ikke på plads. Indtil da er banen selvtræningens: løbepassene her i fanen + wide-serven og forehand-crossen fra Stil-fanen. Sommerens to vinduer: FØR Rom (til og med 22/7) og EFTER hjemkomsten (29-30/7, let). Når Brøndum-tiderne lander, opdateres skemaet her (sig til Claude)."],
+  ["🎾","Tennistræningen — status (opdateret 12. jul)","Klubtræningen holder sommerpause og starter først op igen omkring skolestart i august. August-programmet bliver med RETTELSER: Rune skal træne med træneren — tiderne er endnu ikke på plads. Indtil da er banen selvtræningens: løbepassene her i fanen + wide-serven og forehand-crossen fra Stil-fanen. Sommerens to vinduer: FØR Rom (til og med 22/7) og EFTER hjemkomsten (29-30/7, let). Når træningstiderne lander, opdateres skemaet her (sig til Claude)."],
   ["🔥","OPVARMNING — altid først (10 min.)","1) 4 min. sjipning — minimum 1.000 sjip, TÆL dem! · 2) 4 min. stille og roligt løb · 3) 2 min. stræk: for- og bagside af lår + begge lægge. Ingen genveje — opvarmningen ER en del af passet."],
   ["🏃","PAS 1 · Konditionsløb (38 min.)","2 min. hårdt løb (80-85 %) + 2 min. restitutionsløb (60-65 %) — gentages 4 gange. Så 4 minutters pause. Derefter HELE blokken igen: 4 × (2 min. hårdt + 2 min. roligt). Afslut med 2 min. meget langsomt løb + stræk af lår, lægge og baller."],
   ["⚡","PAS 2 · Intervaller (ca. 33 min.)","30 sek. hårdt løb + 30 sek. roligt løb — gentages 10 gange. 3 minutters pause. Så 10 gange igen. Afslut med 10 min. roligt løb (60 %). Temposkiftene her er tennis-motoren: eksplosion, ro, eksplosion."],
@@ -456,7 +456,7 @@ const FYSISK = [
   ["🗓","Ugerytmen (Claudes kobling til sæsonplanen)","Uge 29-30 er sæsonplanens træningsblok — programmets hjem: fx Pas 1 mandag, Pas 3 onsdag, Pas 2 fredag. Gylden regel: Hurtighed (Pas 3) kræver friske ben — aldrig dagen efter hård kondition. Og på banen ved siden af: wide-serven fra fordelsiden. Fysikken bygger motoren; serven bygger våbnet."],
 ];
 const FYSISK_EN = [
-  ["🎾","Tennis training — status (updated 12 Jul)","Club training is on summer break and resumes around the school start in August. The August programme will be REVISED: Rune trains with Peter Brøndum — times are not yet confirmed. Until then the court belongs to self-training: the running sessions in this tab + the wide serve and forehand cross from the Style tab. The two summer windows: BEFORE Rome (through 22/7) and AFTER returning (29-30/7, light). When the Brøndum times land, the schedule here will be updated (tell Claude)."],
+  ["🎾","Tennis training — status (updated 12 Jul)","Club training is on summer break and resumes around the school start in August. The August programme will be REVISED: Rune trains with the coach — times are not yet confirmed. Until then the court belongs to self-training: the running sessions in this tab + the wide serve and forehand cross from the Style tab. The two summer windows: BEFORE Rome (through 22/7) and AFTER returning (29-30/7, light). When the training times land, the schedule here will be updated (tell Claude)."],
   ["🔥","WARM-UP — always first (10 min.)","1) 4 min. skipping rope — minimum 1,000 skips, COUNT them! · 2) 4 min. easy jogging · 3) 2 min. stretching: front and back of thighs + both calves. No shortcuts — the warm-up IS part of the session."],
   ["🏃","SESSION 1 · Endurance run (38 min.)","2 min. hard running (80-85 %) + 2 min. recovery pace (60-65 %) — repeat 4 times. Then a 4-minute break. Then the WHOLE block again: 4 × (2 min. hard + 2 min. easy). Finish with 2 min. very slow jogging + stretch thighs, calves and glutes."],
   ["⚡","SESSION 2 · Intervals (approx. 33 min.)","30 sec. hard + 30 sec. easy — repeat 10 times. 3-minute break. Then 10 more. Finish with 10 min. easy running (60 %). These tempo shifts are the tennis engine: explode, recover, explode."],
@@ -843,6 +843,8 @@ function rivalUdvidet(navn, liste, rec, dummy) {
   if (fokus) ht += '<div style="background:linear-gradient(90deg,rgba(200,90,40,.12),transparent 60%);border:1px solid var(--grus);border-radius:10px;padding:9px 12px;margin-top:10px">' +
     '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:3px">🎯 ' + (EN ? "FOCUS" : "FOKUS") + '</div>' +
     '<p style="font-size:12px;margin:0;line-height:1.6">' + esc(fokus) + '</p></div>';
+  const atp = (typeof ATPRANG !== "undefined" && ATPRANG[navn]) || null;
+  if (atp) ht += emne("🌍 " + (EN ? "ATP STATUS" : "ATP-STATUS")) + '<p style="font-size:12px;margin:0 0 2px;line-height:1.6"><b>' + (EN ? "World No. " : "Verdens nr. ") + atp.rang + '</b> · ' + (EN ? atp.noteEN : atp.note) + ' <span style="opacity:.55;font-size:10px">(' + (EN ? ATPKILDE.en : ATPKILDE.da) + ')</span></p>';
   if (det.stil) ht += emne("🎾 " + (EN ? "STYLE & MATCH-UP" : "SPILLESTIL & DUELBILLEDE")) + '<p style="font-size:12px;margin:0;line-height:1.6">' + esc(det.stil) + '</p>';
   if (det.plan.length) ht += emne("🎯 " + (EN ? "MATCH PLAN — THREE SENTENCES" : "KAMPPLANEN — TRE SÆTNINGER")) +
     det.plan.map(function(p, i){ return '<p style="font-size:12px;margin:0 0 3px;line-height:1.55"><b style="color:var(--grus)">' + (i + 1) + '.</b> ' + esc(p) + '</p>'; }).join("");
@@ -855,7 +857,7 @@ function demoLaast() {
   render(); if (S._dbTimer) clearTimeout(S._dbTimer); S._dbTimer = setTimeout(function(){ S.demoBesked = null; render(); }, 3500);
 }
 let S = {
-  verden: "udv", tab: "kamp", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
+  verden: "udv", tab: "kamp", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
 };
 const MEM = {};
@@ -889,6 +891,47 @@ const GENERELTREND = "📈 GENERELLE TRENDS på tværs af 20 kampe: (1) BUD IV F
 try { const rå = JSON.parse(lager.hent("rune-kampe") || "[]"); S.gemte = (Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean); } catch(e) {}
 if (!S.gemte.length) { S.gemte = RUNEKAMPE.map(rensKamp).filter(Boolean); }
 Object.assign(RIVALDETALJER, {"Jannik Sinner": {"stil": "Verdens hårdest slående baghåndsside og et tempo, der stjæler tid — duellerne bliver korte, og presset lander på ANDENSERVEN og netmarginen.", "plan": ["Mere højde og spin — nettet må ikke koste 30 fejl igen", "2. serven på kroppen: 45 % vundet skal over 50", "Bud IV som lov: ingen gaver i de korte dueller"]}, "Carlos Alcaraz": {"stil": "Eksplosiv allrounder — men Barcelona-finalen viste, at initiativ SLÅR reaktion: 72 % førsteserv gjorde HAM til den jagede.", "plan": ["Servér højt (70 %+) og ej første slag", "Veksl breakboldene med det samme (3/3!)", "Drop-shots besvares med angreb, ikke tilbageløb"]}, "Alexander Zverev": {"stil": "Maskinserv og verdens mest tålmodige baglinje — han venter på din fejl, og din 2. serv er hans spisekammer.", "plan": ["Kropsserv som 2. serv — tag rytmen fra returen", "Net-marginen OP: 40 netfejl er duellens pris", "Breakboldene: 2/6 vinder ikke — returen skal IND"]}, "Daniil Medvedev": {"stil": "Dyb returposition og vægge af baghånd — men opskriften virker allerede: server-dominans + tålmodighed (2-0).", "plan": ["Gentag: serv + førsteslag, intet panik-tempo", "Lange dueller er OK — han knækker først", "Brug banens fulde bredde mod den dybe position"]}, "Taylor Fritz": {"stil": "Serve-bot med flad tyngde — kampene er rene marginer og afgøres på DINE returpoint.", "plan": ["Breakboldene ER kampen: 2/10 skal fordobles", "Blokér returen dybt i midten — fjern vinklerne", "Større margin over nettet i tempo-duellerne"]}, "Casper Ruud": {"stil": "Grus-grinder med tung forehand-topspin — en nordisk tålmodsduel, som opskriften allerede vinder (2-0).", "plan": ["Hold 2. serv-niveauet (63 % vundet)", "Angrib baghånden tidligt i duellen", "Bevar BP-roen: 8/10 afværget"]}, "Andrey Rublev": {"stil": "Ren kraft i forehanden og turbo-tempo — men han lever af DIN serverytme: 53 % førsteserv er en åben invitation.", "plan": ["Serv-rytmen før alt andet: over 60 % eller ballade", "Variation — han hader lave slice-bolde", "Netfejlene (50) = spil en halv meter højere"]}, "Novak Djokovic": {"stil": "Historiens bedste returspiller — Paris-finalen blev vundet på vinder-MOD (48 pr. kamp), ikke på sikkerhed.", "plan": ["Modet belønnes: bliv ved med at gå efter vindere", "2. serven (44 %) er hans dør ind — kropsserv", "Fejlene under 30, ellers vinder rutinen"]}, "Jack Draper": {"stil": "Venstrehåndet pres med tung kick-serv — IW-finalen viste prisen for passivitet: kun 17 vindere.", "plan": ["Stå PÅ baglinjen — afvent ikke kicken", "2. serven skal turde mere end 39 %", "Angrib hans baghånd, før han angriber din"]}, "Stefanos Tsitsipas": {"stil": "Enkelthåndsbaghånd og førsteslags-tennis — arkivets reneste kamp (14 fejl) viser vejen.", "plan": ["Servér mod baghånden igen og igen", "Kontrolleret angreb — ingen gaver (5 bud IV-brud)", "Tag nettet, når enkelthånden strækkes"]}, "Lorenzo Musetti": {"stil": "Kunstner-baghånd og variation — duellen blev afbrudt, så døm på mønstrene, ikke facit.", "plan": ["Variation mod variation: slice + højde", "Fysisk tryk tidligt — tag benene", "Datahul: chart næste møde!"]}});
+const ATPKILDE = { da: "ATP-rangliste · juli 2026", en: "ATP rankings · July 2026" };
+const ATPRANG = {
+  "Jannik Sinner":      { rang: 1,   note: "Verdens nr. 1",                                          noteEN: "World No. 1" },
+  "Carlos Alcaraz":     { rang: 2,   note: "Verdens nr. 2",                                          noteEN: "World No. 2" },
+  "Alexander Zverev":   { rang: 3,   note: "French Open-mester 2026 · Wimbledon-finalist 2026",      noteEN: "2026 French Open champion · 2026 Wimbledon finalist" },
+  "Daniil Medvedev":    { rang: 7,   note: "Tidl. nr. 1 · US Open-mester 2021",                      noteEN: "Former No. 1 · 2021 US Open champion" },
+  "Novak Djokovic":     { rang: 8,   note: "24 Grand Slam-titler",                                   noteEN: "24 Grand Slam titles" },
+  "Taylor Fritz":       { rang: 9,   note: "US Open-finalist 2024",                                  noteEN: "2024 US Open finalist" },
+  "Andrey Rublev":      { rang: 13,  note: "Madrid-mester 2024",                                     noteEN: "2024 Madrid champion" },
+  "Casper Ruud":        { rang: 14,  note: "3× Grand Slam-finalist",                                 noteEN: "3× Grand Slam finalist" },
+  "Lorenzo Musetti":    { rang: 15,  note: "OL-bronze 2024",                                         noteEN: "2024 Olympic bronze" },
+  "Stefanos Tsitsipas": { rang: 85,  note: "Tidl. nr. 3 · 2× GS-finalist — i frit fald på listen",   noteEN: "Former No. 3 · 2× GS finalist — in free fall on the list" },
+  "Jack Draper":        { rang: 131, note: "IW-mester 2025 · skadesplaget 2026, comeback m. Andy Murray i teamet", noteEN: "2025 IW champion · injury-hit 2026, comeback with Andy Murray on team" },
+};
+function atpTag(navn, EN) {
+  const a = ATPRANG[navn]; if (!a) return "";
+  return ' · <span style="color:var(--is);font-weight:700">ATP ' + (EN ? "No. " : "nr. ") + a.rang + '</span>';
+}
+function karriereKort(EN) {
+  const cel = function(tal, lbl, farve){ return '<div style="background:var(--nat);border-radius:9px;padding:8px 6px;text-align:center"><div style="font-size:17px;font-weight:800;color:' + (farve||"var(--kridt)") + '">' + tal + '</div><div style="font-size:9.5px;color:var(--daempet);letter-spacing:.5px">' + lbl + '</div></div>'; };
+  return '<div class="kort" style="border-left:3px solid var(--is)">' +
+    '<h3 style="margin:0 0 2px">🇩🇰 ' + (EN ? "HOLGER RUNE — THE CAREER" : "HOLGER RUNE — KARRIEREN") + '</h3>' +
+    '<p class="lille" style="margin:0 0 8px;opacity:.7">' + (EN ? "Real ATP facts · as of July 2026" : "Ægte ATP-fakta · pr. juli 2026") + '</p>' +
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">' +
+    cel((EN?"No. ":"nr. ")+"81", (EN?"RANK NOW*":"RANG NU*")) +
+    cel((EN?"No. ":"nr. ")+"4", "CAREER HIGH", "var(--is)") +
+    cel("5", (EN?"ATP TITLES":"ATP-TITLER"), "var(--guld)") +
+    cel("175-107", (EN?"CAREER W-L":"KARRIERE"), "var(--vundet)") + '</div>' +
+    '<p style="font-size:11.5px;margin:9px 0 0;line-height:1.6;color:var(--guld)">🏥 ' + (EN
+      ? "*Out since Oct 2025 — ruptured left Achilles in the Stockholm SF, surgery, ~9 months out. Comeback expected at Cincinnati (13 Aug) or the US Open — protected ranking ready."
+      : "*Ude siden okt. 2025 — akillesseneruptur (venstre) i Stockholm-semifinalen, opereret, ~9 måneders pause. Comeback ventes ved Cincinnati (13/8) eller US Open — beskyttet rangering klar.") + '</p>' +
+    '<p style="font-size:11.5px;margin:7px 0 0;line-height:1.6">🏆 ' + (EN
+      ? "<b>Titles:</b> Paris Masters 2022 · Stockholm 2022 · Munich 2022 · Munich 2023 · Barcelona 2025 (beat Alcaraz in the final)"
+      : "<b>Titler:</b> Paris Masters 2022 · Stockholm 2022 · München 2022 · München 2023 · Barcelona 2025 (slog Alcaraz i finalen)") + '</p>' +
+    '<p style="font-size:11.5px;margin:5px 0 0;line-height:1.6">📊 ' + (EN
+      ? "Grand Slam: 3× QF (RG ’22 + ’23, Wimbledon ’23) · vs. Top 10: 20-24 · 2025 season: 36-22 · career high in prize money $15.2M"
+      : "Grand Slam: 3× kvartfinale (RG ’22 + ’23, Wimbledon ’23) · mod Top 10: 20-24 · 2025-sæsonen: 36-22 · præmiepenge $15,2 mio.") + '</p>' +
+    '<p style="font-size:10.5px;margin:7px 0 0;opacity:.55">' + (EN
+      ? "1.88 m · coaches: Kenneth Carlsen & Lars Christensen · the 20 charted matches below are career highlights 2022-2025 — the engine reads every point."
+      : "1,88 m · trænere: Kenneth Carlsen & Lars Christensen · de 20 chartede kampe herunder er karriere-højdepunkter 2022-2025 — motoren læser hvert point.") + '</p></div>';
+}
 Object.assign(OSKARFOKUS, {"Jannik Sinner": "2-1 på papiret — men begge sejre kom ved afbrud, og spillet fortæller, hvorfor duellen er hård: 35 gratis fejl pr. kamp, og 88 af fejlene dør i NETTET — Sinners tempo presser marginen væk. Fokus: mere højde/spin, beskyt 2. serven (kun 45 % vundet) og gør bud IV til kampens lov — 68 brud er billetten, han ikke skal have.", "Carlos Alcaraz": "✅ Opskriften FINDES — Barcelona-finalen: 72 % førsteserv, 3/3 breakbolde udnyttet og flere vindere (29) end fejl (24). Skabelonen mod Alcaraz: servér højt, tag initiativet FØRST, og lad ham løbe.", "Alexander Zverev": "0-2 i to tætte kampe. Sprækken: 2. serven (49 %) er byttet, Zverev lever af, og 40 netfejl = for lav margin. Fokus: kropsserv som 2. serv, net-højde op, og breakboldene (2/6) SKAL veksles.", "Daniil Medvedev": "✅ 2-0 og en opskrift, der bare virker: 73/67 % på 1./2. serv — server-dominans + tålmodighed i de lange dueller. Gentag planen; ingen grund til opfindelser.", "Taylor Fritz": "1-2 og kampene afgøres på ÉN ting: breakboldene (2/10!). Returen skal ind på de store bolde — resten af regnskabet er lige. Fejlene deler sig net/lang: spil med større margin mod hans tempo.", "Casper Ruud": "✅ 2-0. Solidt: 63 % vundet på 2. serven og BP-ro (8/10 afværget). Nordiske dueller vindes på tålmodighed — fortsæt.", "Andrey Rublev": "1-1 og alarmen hedder FØRSTESERV: kun 53 % i spil — under 60 % bliver returen Rublevs våben. 50 netfejl viser presset. Fokus: serv-rytme før alt andet.", "Novak Djokovic": "1-1 inkl. Paris-FINALEN 2022 — Masters-titlen! Vinder-festival (48 pr. kamp) bar sejren, men 2. serven (44 %) er sprækken, Novak borer i. Fokus: hold fejlene (33) nede, når vinderne ikke falder.", "Jack Draper": "0-1 fra IW-finalen: 2. serven kollapsede (39 %) og vinderne forsvandt (17). Mod venstrehåndspresset: servér modigere og stå tættere på baglinjen — afvent ikke.", "Stefanos Tsitsipas": "✅ Renest af alle kampe: kun 14 fejl og 22 vindere. Skabelonen for kontrolleret angreb — enkelthåndsbaghånden blev fundet igen og igen.", "Lorenzo Musetti": "0-1 — kampen på Queen's blev afbrudt før tid, så tallene dækker kun det spillede: variationen fandt enkelthåndsbaghånden, og fejlregnskabet var i balance. Ingen konklusioner på et halvt datasæt."});
 
 try { const a = lager.hent("oskar-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.parse(a)); } catch(e) {}
@@ -1007,11 +1050,12 @@ const A = {
   },
   ttMinJust: (v) => { S.ttMin = Math.max(15, Math.min(300, S.ttMin + (+v))); render(); },
   ttKvalVaelg: (v) => { S.ttKval = +v; render(); },
+  ttTypeVaelg: (v) => { S.ttType = +v; render(); },
   ttGem: () => {
-    if (!S.ttKval) return;
-    S.ttLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.ttMin, k: S.ttKval, n: S.ttNote || "" });
+    if (!S.ttKval || !S.ttType) return;
+    S.ttLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.ttMin, k: S.ttKval, t: S.ttType, n: S.ttNote || "" });
     lager.gem("rune-tennis-log", JSON.stringify(S.ttLog));
-    S.ttKval = 0; S.ttNote = ""; S.ttEks = null; render();
+    S.ttKval = 0; S.ttType = 0; S.ttNote = ""; S.ttEks = null; render();
   },
   ttSletSpoerg: (i) => { S.ttSletB = +i; render(); },
   ttSletFortryd: () => { S.ttSletB = null; render(); },
@@ -1058,8 +1102,8 @@ const A = {
     const dm = nye.reduce((a, e) => a + e.m, 0), dk = (nye.reduce((a, e) => a + e.k, 0) / nye.length).toFixed(1);
     const tm = S.ttLog.reduce((a, e) => a + e.m, 0), tk = (S.ttLog.reduce((a, e) => a + e.k, 0) / S.ttLog.length).toFixed(1);
     S.ttEks = "TENNISTRÆNING — Rune (nyt siden sidste eksport)\n" +
-      nye.map((e) => e.d + " · " + e.m + " min · kvalitet " + e.k + "/5" + (e.n ? " · " + e.n : "")).join("\n") +
-      "\nDelta: " + nye.length + " træninger · " + (dm / 60).toFixed(1) + " timer · Ø " + dk + "/5" +
+      nye.map((e) => e.d + " · " + e.m + " min · " + (e.t===1 ? "selv" : e.t===2 ? "m. træner" : "type uoplyst") + " · kvalitet " + e.k + "/5" + (e.n ? " · " + e.n : "")).join("\n") +
+      "\nDelta: " + nye.length + " træninger · " + (dm / 60).toFixed(1) + " timer · Ø " + dk + "/5 · " + nye.filter((e)=>e.t===2).length + " m. træner / " + nye.filter((e)=>e.t===1).length + " selv" +
       "\nSamlet i appen: " + S.ttLog.length + " træninger · " + (tm / 60).toFixed(1) + " timer · Ø " + tk + "/5";
     S.ttLog.forEach((e) => { e.x = 1; });
     lager.gem("rune-tennis-log", JSON.stringify(S.ttLog));
@@ -1335,6 +1379,7 @@ function render() {
         }
         h += '</div>';
       }
+      h += karriereKort(EN);
       h += '<div class="kort" style="border-left:3px solid var(--grus)"><h3>🆚 '+(EN?"Opponent analyses":"Modstander-analyser")+(vl.dummy?dummyBadge():'')+'</h3><p class="lille" style="margin:0">'+(vl.dummy?(EN?"Example data — replaced automatically by real matches.":"Eksempeldata i Rune-demoens format — erstattes automatisk af rigtige kampe, som de registreres."):(EN?"Computed from registered matches.":"Regnet direkte fra de registrerede kampe."))+'</p><p class="lille" style="margin:4px 0 0">'+(EN?'🟡 = dummy example · 🟢 = real matches — switches automatically per opponent.':'🟡 = dummy-eksempel · 🟢 = ægte kampe — skifter automatisk pr. modstander.')+'</p></div>';
       const gr = {};
       vl.liste.forEach(function(k){ (gr[k.modstander] = gr[k.modstander] || []).push(k); });
@@ -1345,7 +1390,7 @@ function render() {
           '<div style="display:flex;align-items:center;gap:10px">' +
           '<span style="font-size:12px;font-weight:800;background:'+farve+';color:#0B141D;padding:3px 9px;border-radius:10px;flex:none">'+rec[0]+'-'+rec[1]+'</span>' +
           '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800">'+esc(navn)+(vl.dummy?' 🟡':' 🟢')+'</div>' +
-          '<div style="font-size:11px;color:var(--daempet)">'+liste.length+(EN?" matches":" kampe")+'</div></div>' +
+          '<div style="font-size:11px;color:var(--daempet)">'+liste.length+(EN?" matches":" kampe")+atpTag(navn,EN)+'</div></div>' +
           '<span style="color:var(--daempet);font-size:11px;flex:none">'+(aaben?"▲":"▼")+'</span></div>' +
           (aaben ? '<div style="margin-top:6px;padding-top:2px;border-top:1px solid var(--kant)">'+rivalUdvidet(navn, liste, rec, vl.dummy)+'</div>' : '') + '</div>';
       });
@@ -1429,12 +1474,16 @@ function render() {
         '<p class="lille" style="margin:0 0 5px">'+(EN?"Rune's own quality rating (required)":"Runes egen kvalitetsbedømmelse (skal vælges)")+'</p>' +
         '<div class="raekke">'+[1,2,3,4,5].map(function(n){ return '<button class="knap valg '+(S.ttKval===n?"til":"")+'" style="padding:11px 2px" data-a="ttKvalVaelg" data-v="'+n+'">'+n+'</button>'; }).join("")+'</div>' +
         '<p class="lille" style="margin:2px 0 8px;opacity:.8">1 = '+(EN?"heavy day":"tung dag")+' · 3 = '+(EN?"solid work":"solidt arbejde")+' · 5 = '+(EN?"top session":"toptræning")+'</p>' +
+        '<p class="lille" style="margin:0 0 5px">'+(EN?"Type of session (required)":"Selv-træning eller med træner? (skal vælges)")+'</p>' +
+        '<div class="raekke" style="margin-bottom:8px">' +
+          '<button class="knap valg '+(S.ttType===1?"til":"")+'" style="padding:11px 2px" data-a="ttTypeVaelg" data-v="1">🎾 '+(EN?"Self-practice":"Selv-træning")+'</button>' +
+          '<button class="knap valg '+(S.ttType===2?"til":"")+'" style="padding:11px 2px" data-a="ttTypeVaelg" data-v="2">🧑‍🏫 '+(EN?"With coach":"Med træner")+'</button></div>' +
         '<input placeholder="'+(EN?"Note (optional — e.g. \'wide serve drills\')":"Note (valgfri — fx \'wide-serv træning\')")+'" value="'+esc(S.ttNote)+'" data-felt="ttNote" style="margin-bottom:8px">' +
-        '<div class="raekke"><button class="knap" style="background:'+(S.ttKval?"var(--grus)":"#223243")+'" data-a="ttGem">💾 '+(EN?"Save training":"Gem træningen")+'</button></div></div>';
+        '<div class="raekke"><button class="knap" style="background:'+(S.ttKval&&S.ttType?"var(--grus)":"#223243")+'" data-a="ttGem">💾 '+(EN?"Save training":"Gem træningen")+'</button></div></div>';
       if (S.ttLog.length) {
         h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(ttTot/60).toFixed(1)+' '+(EN?"hours":"timer")+' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+ttGk+'/5</h3>' +
           S.ttLog.slice(0,8).map(function(e, i){
-            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+e.m+' min · '+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span>' +
+            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+e.m+' min · '+(e.t===1?'🎾 ':e.t===2?'🧑‍🏫 ':'')+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span>' +
               (S.ttSletB === i
                 ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="ttSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="ttSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="ttSletSpoerg" data-v="'+i+'">🗑</button>') + '</div>'; }).join("") +
@@ -1637,7 +1686,7 @@ function render() {
          '<a href="https://dtf.tournamentsoftware.com/ranking/category.aspx?id=52585&amp;category=2531" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 '+(EN?"Rune\'s current DTF ranking":"Runes aktuelle rangliste hos DTF")+'</a>';
   }
 
-  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Claude via Nicolai. Team Rune · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Team Rune · juli 2026.")+'</p>';
+  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Claude via Nicolai. Team Rune · v1.7 · handedness picker · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Team Rune · v1.7 · håndethed-vælger · juli 2026.")+'</p>';
   el.innerHTML = h;
 }
 

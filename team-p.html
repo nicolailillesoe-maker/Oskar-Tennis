@@ -32,6 +32,7 @@
   .knap { flex:1; padding:12px 8px; border-radius:10px; border:none; cursor:pointer; background:var(--kant);
     color:var(--kridt); font-weight:800; font-size:13px; }
   .knap.stor { padding:24px 8px; font-size:19px; letter-spacing:1.2px; text-transform:uppercase; }
+  .badge-ai { background:linear-gradient(90deg,var(--is),var(--grus)); color:var(--nat); font-size:10px; font-weight:800; padding:2px 7px; border-radius:7px; letter-spacing:.5px; }
   .knap.valg { background:transparent; border:1.5px solid var(--kant); color:var(--daempet); }
   .knap.valg.til { background:var(--kort); border-color:var(--is); color:var(--kridt); }
   .knap.valg.gul { background:#3A2A18; border-color:var(--guld); color:var(--kridt); }
@@ -63,9 +64,11 @@ window.onerror = function (msg, kilde, linje) {
 // ============ ENGINE-START ============
 // Beregner hele tennis-stillingen ud fra point-sekvensen.
 // pts: [{r:"V"|"T", å, f}] · oskarFirst: Oskar server først · mtb: 3. sæt = match-tiebreak til 10
-function beregnStilling(pts, oskarFirst, mtb, justeringer) {
+function beregnStilling(pts, oskarFirst, mtb, justeringer, saetTil, noAd) {
   if (!Array.isArray(pts)) pts = [];
   if (typeof oskarFirst !== "boolean") oskarFirst = true;
+  const SG = saetTil === 4 ? 4 : 6;
+  const TBG = SG === 4 ? 3 : 6; // NextGen: tiebreak ved 3-3
   const jmap = {};
   if (Array.isArray(justeringer)) for (const j of justeringer) { if (j && typeof j.i === "number") jmap[j.i] = j; }
   let setsO = 0, setsM = 0, gO = 0, gM = 0, pO = 0, pM = 0;
@@ -76,11 +79,11 @@ function beregnStilling(pts, oskarFirst, mtb, justeringer) {
 
   const anvendBasis = (b) => {
     setsO = Math.max(0, Math.min(1, b.sO | 0)); setsM = Math.max(0, Math.min(1, b.sM | 0));
-    gO = Math.max(0, Math.min(6, b.gO | 0)); gM = Math.max(0, Math.min(6, b.gM | 0));
+    gO = Math.max(0, Math.min(SG, b.gO | 0)); gM = Math.max(0, Math.min(SG, b.gM | 0));
     pO = 0; pM = 0; server = b.server !== false;
     done = false; vinderOskar = null; tb = false; tbFirst = null; tbTo = 7;
     if (setsO === 1 && setsM === 1 && mtb) { tb = true; tbTo = 10; tbFirst = server; gO = 0; gM = 0; }
-    else if (gO === 6 && gM === 6) { tb = true; tbFirst = server; }
+    else if (gO === TBG && gM === TBG) { tb = true; tbFirst = server; }
   };
 
   const tbServer = (first, idx) => (Math.floor((idx + 1) / 2) % 2 === 0 ? first : !first);
@@ -102,10 +105,10 @@ function beregnStilling(pts, oskarFirst, mtb, justeringer) {
     } else {
       const gpO = pO >= 3 && pO >= pM + 1, gpM = pM >= 3 && pM >= pO + 1;
       if (gpO) {
-        const vinderSæt = gO + 1 >= 6 && gO + 1 - gM >= 2;
+        const vinderSæt = gO + 1 >= SG && gO + 1 - gM >= 2;
         stor = vinderSæt && setsO === 1 ? "MATCHBOLD "+SPILLER : vinderSæt ? "SÆTBOLD "+SPILLER : srvNu ? "PARTIBOLD "+SPILLER : "BREAKBOLD "+SPILLER;
       } else if (gpM) {
-        const vinderSæt = gM + 1 >= 6 && gM + 1 - gO >= 2;
+        const vinderSæt = gM + 1 >= SG && gM + 1 - gO >= 2;
         stor = vinderSæt && setsM === 1 ? "MATCHBOLD mod "+SPILLER : vinderSæt ? "SÆTBOLD mod "+SPILLER : !srvNu ? "PARTIBOLD modst." : "BREAKBOLD mod "+SPILLER;
       } else if (pO === pM && pO >= 2) stor = "STORT POINT (deuce/30-30)";
     }
@@ -132,17 +135,17 @@ function beregnStilling(pts, oskarFirst, mtb, justeringer) {
         else if (setsO === 1 && setsM === 1 && mtb) { tb = true; tbTo = 10; tbFirst = server; }
       }
     } else {
-      const partiVundet = (pO >= 4 || pM >= 4) && Math.abs(pO - pM) >= 2;
+      const partiVundet = noAd ? (pO >= 4 || pM >= 4) && (Math.abs(pO - pM) >= 2 || (pO >= 3 && pM >= 3)) : (pO >= 4 || pM >= 4) && Math.abs(pO - pM) >= 2;
       if (partiVundet) {
         if (pO > pM) gO++; else gM++;
         pO = 0; pM = 0; server = !server;
-        if (gO >= 6 && gO - gM >= 2 || gM >= 6 && gM - gO >= 2) {
+        if (gO >= SG && gO - gM >= 2 || gM >= SG && gM - gO >= 2) {
           hist.push([gO, gM, null]);
           if (gO > gM) setsO++; else setsM++;
           gO = 0; gM = 0;
           if (setsO === 2 || setsM === 2) { done = true; vinderOskar = setsO === 2; }
           else if (setsO === 1 && setsM === 1 && mtb) { tb = true; tbTo = 10; tbFirst = server; }
-        } else if (gO === 6 && gM === 6) { tb = true; tbTo = 7; tbFirst = server; }
+        } else if (gO === TBG && gM === TBG) { tb = true; tbTo = 7; tbFirst = server; }
       }
     }
   }
@@ -623,7 +626,7 @@ function ikRk(ok, tekst) {
 function beregnTid(liste) {
   const T = { s: [[0,0],[0,0],[0,0]], f: [[0,0],[0,0],[0,0]], sf: [[[0,0],[0,0],[0,0]],[[0,0],[0,0],[0,0]],[[0,0],[0,0],[0,0]]], luk: [0,0,0,0] };
   liste.forEach(function(k){
-    const st = beregnStilling(k.point, k.oskarFirst, k.mtb, k.justeringer || []);
+    const st = beregnStilling(k.point, k.oskarFirst, k.mtb, k.justeringer || [], k.saetTil, k.noAd);
     const F = st.flags; if (!F) return;
     const perSet = {};
     k.point.forEach(function(p, i){ const sn = Math.min(3, (F[i] && F[i].saet) || 1); (perSet[sn] = perSet[sn] || []).push(p); });
@@ -644,7 +647,7 @@ function beregnTid(liste) {
 function rivalRecord(liste) {
   let w = 0, t = 0;
   liste.forEach(function(k){
-    const st = beregnStilling(k.point, k.oskarFirst, k.mtb, k.justeringer || []);
+    const st = beregnStilling(k.point, k.oskarFirst, k.mtb, k.justeringer || [], k.saetTil, k.noAd);
     const vandt = typeof k.facitVandt === "boolean" ? k.facitVandt : st.setsO > st.setsM;
     if (vandt) w++; else t++;
   });
@@ -681,6 +684,86 @@ function duoRk(label, vaerdi, n, fork, maal) {
   return r;
 }
 
+function grafVT(EN) {
+  const vl = visningsListe();
+  if (vl.liste.length < 2) return "";
+  const kron = vl.liste.slice().reverse();
+  const rk = kron.map(function(k){
+    let v;
+    if (typeof k.facitVandt === "boolean") { v = k.facitVandt; }
+    else { const st = statistik(k); v = st.setsO > st.setsM; }
+    return { v: v, d: k.dato || "" };
+  });
+  const nk = function(s){ const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s || ""); return m ? m[3] + "-" + m[2] + "-" + m[1] : (s || ""); };
+  rk.sort(function(a, b){ const x = nk(a.d), y = nk(b.d); return x < y ? -1 : x > y ? 1 : 0; });
+  const vT = rk.filter(function(x){ return x.v; }).length, tT = rk.length - vT;
+  let sum = 0;
+  const netto = rk.map(function(x){ sum += x.v ? 1 : -1; return sum; });
+  const maxAbs = Math.max(1, Math.max.apply(null, netto.map(function(v){ return Math.abs(v); })));
+  const slut = netto[netto.length - 1];
+  const slutFarve = slut >= 0 ? "var(--vundet)" : "var(--tabt)";
+  const H = 30;
+  const bar = rk.map(function(x){
+    return '<div style="flex:1;max-width:16px;min-width:4px;display:flex;flex-direction:column;height:' + (H * 2 + 1) + 'px">' +
+      '<div style="flex:1;display:flex;align-items:flex-end">' + (x.v ? '<div style="width:100%;height:' + (H - 3) + 'px;background:var(--vundet);border-radius:2.5px 2.5px 0 0"></div>' : '') + '</div>' +
+      '<div style="height:1px;background:var(--kant)"></div>' +
+      '<div style="flex:1;display:flex;align-items:flex-start">' + (!x.v ? '<div style="width:100%;height:' + (H - 3) + 'px;background:var(--tabt);border-radius:0 0 2.5px 2.5px"></div>' : '') + '</div></div>';
+  }).join("");
+  const W = 300, HH = 84, pad = 7, n = netto.length;
+  const px = function(i){ return pad + i * (W - 2 * pad) / Math.max(1, n - 1); };
+  const py = function(v){ return HH / 2 - v * (HH / 2 - pad) / maxAbs; };
+  const pts = netto.map(function(v, i){ return px(i).toFixed(1) + "," + py(v).toFixed(1); }).join(" ");
+  const badge = vl.dummy ? ' <span style="background:var(--guld);color:#101B26;border-radius:99px;padding:1px 8px;font-size:9.5px;font-weight:800;vertical-align:middle;white-space:nowrap">' + (EN ? "EXAMPLE — DUMMY DATA" : "EKSEMPEL — DUMMY-DATA") + '</span>' : '';
+  let g = '<div class="kort" style="border-left:3px solid var(--is)">';
+  g += '<h3 style="margin-bottom:2px">📈 ' + (EN ? "Won / lost over time" : "Vundet / tabt over tid") + badge + '</h3>';
+  g += '<p class="lille" style="margin:2px 0 6px">' + (EN ? "Record" : "Facit") + ': <b style="color:var(--vundet)">' + vT + ' ' + (EN ? "W" : "V") + '</b> · <b style="color:var(--tabt)">' + tT + ' ' + (EN ? "L" : "T") + '</b> · ' + (EN ? "net" : "netto") + ' <b style="color:' + slutFarve + '">' + (slut > 0 ? "+" : "") + slut + '</b> · ' + rk.length + (EN ? " matches" : " kampe") + '</p>';
+  g += emne(EN ? "EACH MATCH — WON UP, LOST DOWN" : "HVER KAMP — VUNDET OP, TABT NED");
+  g += '<div style="display:flex;gap:2px;align-items:center;margin:3px 0 2px">' + bar + '</div>';
+  g += '<div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--daempet);margin-bottom:2px"><span>' + esc(rk[0].d) + ' · ' + (EN ? "oldest" : "ældste") + '</span><span>' + (EN ? "latest" : "nyeste") + ' · ' + esc(rk[rk.length - 1].d) + '</span></div>';
+  g += emne(EN ? "NET WINS — ACCUMULATED OVER TIME" : "NETTO VUNDNE — AKKUMULERET OVER TID");
+  g += '<svg viewBox="0 0 ' + W + ' ' + HH + '" preserveAspectRatio="none" style="width:100%;height:84px;display:block;margin-top:3px">' +
+       '<line x1="0" y1="' + (HH / 2) + '" x2="' + W + '" y2="' + (HH / 2) + '" stroke="var(--kant)" stroke-width="1" stroke-dasharray="4 3"/>' +
+       '<polyline points="' + pts + '" fill="none" stroke="var(--is)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+       '<circle cx="' + px(n - 1).toFixed(1) + '" cy="' + py(slut).toFixed(1) + '" r="3.2" fill="' + slutFarve + '"/></svg>';
+  g += '<p class="lille" style="margin-top:4px">' + (EN ? "Above the dashed line = more wins than losses. The direction of the curve is the development — updated with every saved match." : "Over den stiplede linje = flere sejre end nederlag. Kurvens retning er udviklingen — opdateres ved hver gemt kamp.") + '</p>';
+  g += '</div>';
+  return g;
+}
+
+function livAnalyse(EN) {
+  const k = S.aktiv;
+  if (!k || k.point.length < 4) return '<div class="kort" style="border:1.5px solid var(--guld)"><h3 style="margin-top:0"><span class="badge-ai">AI</span> '+(EN?"Quick analysis — live":"Hurtig analyse — live")+'</h3><p class="lille" style="margin:0">'+(EN?"Register a few points first — the engine needs data before it can advise.":"Registrér et par point først — motoren skal have data, før den kan rådgive.")+'</p></div>';
+  const s = statistik(k);
+  const st = s.st;
+  const pc = (a,b) => b ? Math.round(100*a/b) : null;
+  const rp = pc(s.retur[0], s.retur[1]);
+  const chips = [];
+  const chip = (ok, txt) => chips.push('<span style="display:inline-block;border:1.5px solid var(--'+(ok?"vundet":"tabt")+');color:var(--'+(ok?"vundet":"tabt")+');border-radius:14px;padding:3px 10px;font-size:11.5px;font-weight:700;margin:0 6px 6px 0">'+(ok?"✓ ":"⚠ ")+txt+'</span>');
+  chip(s.budIVbrud <= 1, (EN?"Rule IV: ":"Bud IV: ")+s.budIVbrud+(EN?" free err. short rallies":" gratis fejl i korte"));
+  chip(s.uf <= s.vindere + 1, (EN?"Winners/errors ":"Vindere/fejl ")+s.vindere+"/"+s.uf);
+  if (s.serve[1] >= 6 && s.s1pct !== null) chip(s.s1pct >= 55, (EN?"1st serve ":"1. serv ")+s.s1pct+" %");
+  if (s.retur[1] >= 6 && rp !== null) chip(rp >= 30, (EN?"Return ":"Retur ")+rp+" %");
+  if (s.bpFor[1] >= 1) chip(s.bpFor[0] > 0, (EN?"BP converted ":"BP udnyttet ")+s.bpFor[0]+"/"+s.bpFor[1]);
+  const raad = [];
+  if (s.budIVbrud >= 2) raad.push(EN?("RULE IV: "+s.budIVbrud+" free errors in short rallies. The first two balls MUST go in — deep serve/return + deep cross, zero risk. Pressure is built, not forced."):("BUD IV: "+s.budIVbrud+" gratis fejl i de korte dueller. De to første bolde SKAL ind — dyb serv/retur + dyb cross, nul risiko. Presset bygges op, det forceres ikke."));
+  if (s.uf > s.vindere + 2) raad.push(EN?("The error count ("+s.uf+") beats the winners ("+s.vindere+"). Rules II+III: depth over lines, cross as standard — let the opponent take the risk."):("Fejlkontoen ("+s.uf+") overstiger vinderne ("+s.vindere+"). Bud II+III: dybde frem for linjer, cross som standard — lad modstanderen tage risikoen."));
+  if (s.serve[1] >= 6 && s.s1pct !== null && s.s1pct < 55) raad.push(EN?("First serve at "+s.s1pct+" % — take pace off and spin it in. Placement beats power today."):("1. serven er på "+s.s1pct+" % — træk tempoet af og spin den ind. Placering slår kraft i dag."));
+  if (s.zN >= 3 && s.zN > s.zL && s.zN > s.zB) raad.push(EN?("The errors die in the NET ("+s.zN+"). More air over the net — aim for the back third (rule II)."):("Fejlene dør i NETTET ("+s.zN+"). Mere luft over nettet — sigt efter den bageste tredjedel (bud II)."));
+  if (s.dM[1] >= 5 && s.dM[0] / s.dM[1] < 0.4) raad.push(EN?("Medium rallies (5-8) are being lost ("+s.dM[0]+"/"+s.dM[1]+"). Hold the cross pattern — only change direction on the short ball (rule III)."):("Mellemduellerne (5-8) tabes ("+s.dM[0]+"/"+s.dM[1]+"). Hold cross-mønsteret — skift kun retning på den korte bold (bud III)."));
+  if (s.bpFor[1] >= 2 && s.bpFor[0] / s.bpFor[1] < 0.5) raad.push(EN?("Break points not converted ("+s.bpFor[0]+"/"+s.bpFor[1]+"). Big point = run the weapon pattern: set up the forehand into the open court."):("Breakboldene udnyttes ikke ("+s.bpFor[0]+"/"+s.bpFor[1]+"). Stort point = kør våben-mønsteret: byg op til forehanden i det åbne felt."));
+  if (s.retur[1] >= 6 && rp !== null && rp < 30) raad.push(EN?("The return gives too little ("+rp+" %). One step back, deep return through the middle — make the rally long."):("Returspillet giver for lidt ("+rp+" %). Et skridt tilbage, dyb retur gennem midten — gør duellen lang."));
+  const top = raad.slice(0, 3);
+  let rh;
+  if (top.length) rh = '<p class="lille" style="margin:6px 0 4px;font-weight:800;letter-spacing:.5px">'+(EN?"ADVICE NOW":"RÅD NU")+'</p>' + top.map((r,i)=>'<p style="margin:0 0 7px;font-size:13px;line-height:1.5"><b style="color:var(--guld)">'+(i+1)+'.</b> '+r+'</p>').join("");
+  else rh = '<p style="margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--vundet)"><b>✓ '+(EN?"The strategy is holding.":"Strategien holder.")+'</b> '+(EN?"Errors under control, rallies on own terms. Keep going: depth, cross as standard, same face at 40-0 and 0-40 (rule V).":"Fejlene er under kontrol, og duellerne spilles på egne præmisser. Fortsæt: dybde, cross som standard, samme ansigt ved 40-0 og 0-40 (bud V).")+'</p>';
+  const sn = st.setsO + st.setsM + 1;
+  const ps = s.perSaet[sn-1] || { v:0, t:0, uf:0, vin:0 };
+  return '<div class="kort" style="border:1.5px solid var(--guld)">' +
+    '<h3 style="margin-top:0"><span class="badge-ai">AI</span> '+(EN?"Quick analysis — live":"Hurtig analyse — live")+'</h3>' +
+    '<p class="lille" style="margin:0 0 8px">'+(EN?"Sets ":"Sæt ")+st.setsO+'-'+st.setsM+' · '+(EN?"games ":"partier ")+st.gO+'-'+st.gM+' · '+(EN?"this set ":"dette sæt ")+ps.v+'-'+ps.t+(EN?" pts":" point")+'</p>' +
+    '<div>'+chips.join("")+'</div>' + rh +
+    '<p class="lille" style="margin:8px 0 0;opacity:.75">'+(EN?"For team matches and U16+, where coaching is allowed.":"Til holdkampe og fra U16, hvor coaching er tilladt.")+'</p></div>';
+}
 function anbefalinger(EN) {
   const vl = visningsListe();
   if (vl.liste.length < 2) return null;
@@ -771,7 +854,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
     '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:3px">🎯 ' + (EN ? "FOCUS" : "FOKUS") + '</div>' +
     '<p style="font-size:12px;margin:0;line-height:1.6">' + esc(fokus) + '</p></div>';
   if (det.stil) ht += emne("🎾 " + (EN ? "STYLE & MATCH-UP" : "SPILLESTIL & DUELBILLEDE")) + '<p style="font-size:12px;margin:0;line-height:1.6">' + esc(det.stil) + '</p>';
-  if (det.plan.length) ht += emne("🎯 " + (EN ? "MATCH PLAN — THREE SENTENCES" : "KAMPPLANEN — TRE SÆTNINGER")) +
+  if (det.plan.length) ht += emne('<span class="badge-ai">AI</span> 🎯 ' + (EN ? "MATCH PLAN — THREE SENTENCES" : "KAMPPLANEN — TRE SÆTNINGER")) +
     det.plan.map(function(p, i){ return '<p style="font-size:12px;margin:0 0 3px;line-height:1.55"><b style="color:var(--grus)">' + (i + 1) + '.</b> ' + esc(p) + '</p>'; }).join("");
   return ht;
 }
@@ -779,7 +862,7 @@ const OSKARFOKUS = {"Philip Hartvigsen Dianati": "EKSEMPEL: Sådan vil analysen 
 
 let S = {
   verden: "udv", tab: "kamp", benchmark: "sinner", haand: "hoejre", sammenlign: [], fletAaben: false, fletTekst: "", fletBesked: null, gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null,
-  nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, resInput: "",
+  nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: true, livAaben: false, resInput: "",
 };
 const MEM = {};
 const lager = {
@@ -793,7 +876,7 @@ const rensKamp = (g) => {
   return { modstander: g.modstander || "Ukendt modstander", turnering: g.turnering || "",
     dato: g.dato || new Date().toISOString().slice(0,10),
     oskarFirst: typeof g.oskarFirst === "boolean" ? g.oskarFirst : true,
-    mtb: typeof g.mtb === "boolean" ? g.mtb : true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : undefined, resultat: g.resultat || "", analyse: g.analyse || "", justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
+    mtb: typeof g.mtb === "boolean" ? g.mtb : true, saetTil: g.saetTil === 4 ? 4 : 6, noAd: g.noAd === true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : undefined, resultat: g.resultat || "", analyse: g.analyse || "", justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
     point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1, l: [1,2,3].indexOf(q.l) >= 0 ? q.l : 0, z: [1,2,3].indexOf(q.z) >= 0 ? q.z : 0 })) };
 };
 try { const sp = lager.hent("teamp-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
@@ -813,7 +896,7 @@ const gemAktiv = () => { S.aktiv ? lager.gem("oskar-kamp-aktiv", JSON.stringify(
 
 // ---------- Statistik ----------
 function statistik(k) {
-  const st = beregnStilling(k.point, k.oskarFirst, k.mtb, k.justeringer);
+  const st = beregnStilling(k.point, k.oskarFirst, k.mtb, k.justeringer, k.saetTil, k.noAd);
   const F = st.flags;
   const v = k.point.filter(p => p.r === "V").length;
   const t = k.point.length - v;
@@ -880,13 +963,13 @@ const A = {
   justToggle: () => {
     if (!S.aktiv) return;
     if (S.justAaben) { S.justAaben = false; render(); return; }
-    const st = beregnStilling(S.aktiv.point, S.aktiv.oskarFirst, S.aktiv.mtb, S.aktiv.justeringer);
+    const st = beregnStilling(S.aktiv.point, S.aktiv.oskarFirst, S.aktiv.mtb, S.aktiv.justeringer, S.aktiv.saetTil, S.aktiv.noAd);
     S.j = { sO: st.setsO, sM: st.setsM, gO: st.gO, gM: st.gM, server: st.server !== false };
     S.justAaben = true; render();
   },
   jstep: (v) => {
     const felt = v.slice(0, 2), op = v.charAt(2) === "p" ? 1 : -1;
-    const loft = felt.charAt(0) === "s" ? 1 : 6;
+    const loft = felt.charAt(0) === "s" ? 1 : ((S.aktiv && S.aktiv.saetTil === 4) ? 4 : 6);
     S.j[felt] = Math.max(0, Math.min(loft, (S.j[felt] | 0) + op)); render();
   },
   jServer: (v) => { S.j.server = v === "1"; render(); },
@@ -1024,9 +1107,12 @@ const A = {
   felt: (navn, v) => { S[navn] = v; },
   first: (v) => { S.nyFirst = v === "1"; render(); },
   mtb: (v) => { S.nyMtb = v === "1"; render(); },
+  format: (v) => { S.nyFormat = v === "4" ? 4 : 6; render(); },
+  noad: (v) => { S.nyNoAd = v === "1"; render(); },
+  livToggle: () => { S.livAaben = !S.livAaben; render(); },
   start: () => {
     S.aktiv = { modstander: S.nyMod || "Ukendt modstander", turnering: S.nyTur || "",
-      dato: new Date().toISOString().slice(0,10), oskarFirst: S.nyFirst, mtb: S.nyMtb, point: [], justeringer: [] };
+      dato: new Date().toISOString().slice(0,10), oskarFirst: S.nyFirst, mtb: S.nyMtb, saetTil: S.nyFormat === 4 ? 4 : 6, noAd: S.nyFormat === 4 && S.nyNoAd, point: [], justeringer: [] };
     S.afventer = null; S.serv = 1; gemAktiv(); render();
   },
   serv: (v) => { S.serv = +v; render(); },
@@ -1066,7 +1152,7 @@ const A = {
   },
   afslut: () => {
     if (!S.aktiv) return;
-    const st = beregnStilling(S.aktiv.point, S.aktiv.oskarFirst, S.aktiv.mtb, S.aktiv.justeringer);
+    const st = beregnStilling(S.aktiv.point, S.aktiv.oskarFirst, S.aktiv.mtb, S.aktiv.justeringer, S.aktiv.saetTil, S.aktiv.noAd);
     const auto = st.hist.map(h => h[2] && h[2].indexOf("MTB") === 0 ? h[2].replace("MTB ","") : h[0]+"-"+h[1]).join(", ");
     S.aktiv.resultat = S.resInput || auto; S.aktiv.afsluttet = true;
     S.gemte.unshift(S.aktiv); gemAlle();
@@ -1135,6 +1221,8 @@ function render() {
       h += '<input placeholder="'+(EN?'Tournament (e.g. HRT Sommer Cup)':'Turnering (fx HRT Sommer Cup, kat. G)')+'" value="'+esc(S.nyTur)+'" data-felt="nyTur">';
       h += '<div class="raekke"><button class="knap valg '+(S.nyFirst?"til":"")+'" data-a="first" data-v="1">'+(EN?SPILLER+" serves first":SPILLER+" server først")+'</button><button class="knap valg '+(!S.nyFirst?"til":"")+'" data-a="first" data-v="0">'+(EN?"Opponent serves first":"Modstander server først")+'</button></div>';
       h += '<div class="raekke"><button class="knap valg '+(S.nyMtb?"til":"")+'" data-a="mtb" data-v="1">'+(EN?"3rd set = match tiebreak (10)":"3. sæt = match-tiebreak (10)")+'</button><button class="knap valg '+(!S.nyMtb?"til":"")+'" data-a="mtb" data-v="0">'+(EN?"Full 3rd set":"Fuldt 3. sæt")+'</button></div>';
+      h += '<div class="raekke"><button class="knap valg '+(S.nyFormat!==4?"til":"")+'" data-a="format" data-v="6">'+(EN?"Sets to 6 (standard)":"Sæt til 6 (standard)")+'</button><button class="knap valg '+(S.nyFormat===4?"til":"")+'" data-a="format" data-v="4">'+(EN?"Sets to 4 (NextGen)":"Sæt til 4 (NextGen)")+'</button></div>';
+      if (S.nyFormat === 4) h += '<div class="raekke"><button class="knap valg '+(S.nyNoAd?"til":"")+'" data-a="noad" data-v="1">'+(EN?"Deciding point at deuce (no-ad)":"Afgørende point ved lige (no-ad)")+'</button><button class="knap valg '+(!S.nyNoAd?"til":"")+'" data-a="noad" data-v="0">'+(EN?"With advantage scoring":"Med fordelspoint")+'</button></div>';
       h += '<div style="border:1.5px dashed var(--kant);border-radius:12px;padding:11px 12px;margin:10px 0 10px">' +
         '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--daempet)">⚙️ '+(EN?"ADVANCED — OPTIONAL":"AVANCERET — VALGFRIT")+'</div>' +
         '<p class="lille" style="margin:3px 0 9px">'+(EN?"Extra taps, extra data. Both can be toggled mid-match.":"Ekstra tryk, ekstra data. Begge kan slås til/fra midt i kampen.")+'</p>' +
@@ -1154,7 +1242,7 @@ function render() {
       h += '<div style="text-align:right;font-size:12.5px;font-weight:700;color:'+(st.server?"var(--is)":"var(--daempet)")+'">'+(st.done?(st.vinderOskar?(EN?"🏆 MATCH WON":"🏆 KAMP VUNDET"):(EN?"Match over":"Kamp slut")):(st.server?(EN?"🎾 "+SPILLER+" serving":"🎾 "+SPILLER+" server"):(EN?"↩️ Opponent serving":"↩️ Modstander server")))+'</div></div></div>';
 
       if (!st.done) {
-        const naeste = beregnStilling(S.aktiv.point.concat([{r:"V",å:"x",f:1}]), S.aktiv.oskarFirst, S.aktiv.mtb, S.aktiv.justeringer).flags[S.aktiv.point.length];
+        const naeste = beregnStilling(S.aktiv.point.concat([{r:"V",å:"x",f:1}]), S.aktiv.oskarFirst, S.aktiv.mtb, S.aktiv.justeringer, S.aktiv.saetTil, S.aktiv.noAd).flags[S.aktiv.point.length];
         if (naeste && naeste.stor) h += '<div class="banner guld">🎯 '+esc(EN?naeste.stor.replace('PARTIBOLD','GAME POINT').replace('BREAKBOLD','BREAK POINT').replace('SÆTBOLD','SET POINT').replace('MATCHBOLD','MATCH POINT').replace('mod Oskar','against Oskar').replace('modst.','opp.').replace('STORT POINT (deuce/30-30)','BIG POINT (deuce/30-30)').replace('STORT POINT','BIG POINT'):naeste.stor)+(EN?' — percentage tennis now (rule IV)':' — procenttennis nu (bud IV: to bolde ind)')+'</div>';
       }
 
@@ -1198,7 +1286,8 @@ function render() {
           }
         }
       }
-      h += '<div class="raekke"><button class="knap" data-a="fortryd">'+(EN?"↶ Undo last":"↶ Fortryd seneste")+'</button><button class="knap valg" data-a="justToggle">⚙ '+(EN?"Adjust score":"Justér stillingen")+'</button></div>' +
+      h += '<div class="raekke"><button class="knap" data-a="fortryd">'+(EN?"↶ Undo last":"↶ Fortryd seneste")+'</button><button class="knap valg" data-a="justToggle">⚙ '+(EN?"Adjust score":"Justér stillingen")+'</button><button class="knap valg" style="border:1.5px solid var(--guld)" data-a="livToggle"><span class="badge-ai">AI</span> '+(EN?"Analysis":"Analyse")+'</button></div>' +
+      (S.livAaben ? livAnalyse(EN) : "") +
       (S.justAaben && S.j ? '<div class="kort" style="border:1.5px solid var(--is)">' +
         '<p class="lille" style="margin-top:0">'+(EN?"Came in mid-match or missed a game? Set the CURRENT score — tracking continues from here. Points in the game reset to 0-0.":"Kom du ind midt i kampen, eller røg et parti? Sæt den AKTUELLE stilling — registreringen fortsætter herfra. Pointene i partiet nulstilles til 0-0.")+'</p>' +
         [["sO",(EN?"Sets "+SPILLER:"Sæt "+SPILLER)],["sM",(EN?"Sets opp.":"Sæt modst.")],["gO",(EN?"Games "+SPILLER:"Partier "+SPILLER)],["gM",(EN?"Games opp.":"Partier modst.")]].map(function(f){
@@ -1308,7 +1397,7 @@ function render() {
     if (!R) h += '<div class="kort"><p class="lille" style="margin:0">'+(EN?"Recommendations appear after 2+ matches.":"Anbefalinger vises, når der er registreret mindst 2 kampe.")+'</p></div>';
     else {
       h += '<p class="lille">'+(EN?"Auto-generated from ":"Genereret automatisk af ")+R.antal+(EN?" matches — recent 3 vs own average. Updates with every match.":" kampe — de 3 seneste mod eget snit. Opdateres ved hver ny kamp.")+(R.dummy?' 🟡 DUMMY':'')+'</p>';
-      h += '<div class="kort" style="border-left:3px solid var(--grus)"><h3>🔧 '+(EN?"WORK ON — focus next period":"ARBEJDSPUNKTER — fokus den næste periode")+'</h3>';
+      h += '<div class="kort" style="border-left:3px solid var(--grus)"><h3><span class="badge-ai">AI</span> 🔧 '+(EN?"WORK ON — focus next period":"ARBEJDSPUNKTER — fokus den næste periode")+'</h3>';
       if (!R.arbejd.length) h += '<p class="lille" style="margin:0">'+(EN?"Nothing burning — all goals met!":"Intet brænder — alle mål er nået!")+'</p>';
       R.arbejd.forEach(function(m, i){
         { const aab = S.rkAaben === "A_" + m.label;
@@ -1319,7 +1408,7 @@ function render() {
           '<div style="font-size:10px;color:var(--daempet);margin-top:3px">🎯 '+(EN?'Goal':'Mål')+' '+(m.maalTekst)+' · 🏔 '+(EN?'Sinner':'Sinner')+' '+(m.sinner||"—")+'</div>' +
           (aab ? '<p style="font-size:11.5px;line-height:1.6;margin:6px 0 0;color:var(--kridt)">'+esc(m.hvorfor||"")+'</p>' : '') + '</div>'; }
       });
-      h += '</div><div class="kort" style="border-left:3px solid var(--vundet)"><h3>✅ '+(EN?"WORKING — keep it up":"DET VIRKER — behold det")+'</h3>';
+      h += '</div><div class="kort" style="border-left:3px solid var(--vundet)"><h3><span class="badge-ai">AI</span> ✅ '+(EN?"WORKING — keep it up":"DET VIRKER — behold det")+'</h3>';
       if (!R.virker.length) h += '<p class="lille" style="margin:0">'+(EN?"Goals not met yet — see above.":"Ingen mål nået endnu — se arbejdspunkterne.")+'</p>';
       R.virker.forEach(function(m, i){
         h += '<div style="padding:7px 0;border-top:'+(i?'1px solid var(--kant)':'none')+';display:flex;justify-content:space-between;align-items:baseline;gap:8px">' +
@@ -1410,6 +1499,7 @@ function render() {
   }
 
   if (!LAAST && S.tab === "historik") {
+    h += grafVT(EN);
     if (S.gemte.length >= 2) {
       const sa = statistik(S.gemte[0]), sb = statistik(S.gemte[1]);
       const frem = [], skaerp = [];
@@ -1424,7 +1514,7 @@ function render() {
       dom(EN?"BP converted":"BP udnyttet", pctAf(sa.bpFor), pctAf(sb.bpFor), true, " pp");
       dom(EN?"Rule IV breaches":"Bud IV-brud", sa.budIVbrud, sb.budIVbrud, false);
       const pille = function(t, farve){ return '<span style="display:inline-block;background:transparent;border:1.5px solid '+farve+';color:'+farve+';font-size:11px;font-weight:700;padding:3px 8px;border-radius:12px;margin:2px 4px 2px 0">'+t+'</span>'; };
-      h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>🧭 '+(EN?"Latest match vs previous":"Seneste kamp mod forrige")+'</h3>' +
+      h += '<div class="kort" style="border-left:3px solid var(--is)"><h3><span class="badge-ai">AI</span> 🧭 '+(EN?"Latest match vs previous":"Seneste kamp mod forrige")+'</h3>' +
         (frem.length ? '<p style="margin-bottom:2px;font-size:11px;color:var(--daempet)">'+(EN?"THE RIGHT WAY":"DEN RIGTIGE VEJ")+'</p><p style="margin-bottom:6px">'+frem.map(function(t){return pille("✓ "+t, "var(--vundet)");}).join("")+'</p>' : '') +
         (skaerp.length ? '<p style="margin-bottom:2px;font-size:11px;color:var(--daempet)">'+(EN?"SHARPEN ("+(BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).navn+" rules)":"SKAL SKÆRPES ("+(BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).navn+"-budene)")+'</p><p style="margin-bottom:0">'+skaerp.map(function(t){return pille("⚠ "+t, "var(--tabt)");}).join("")+'</p>' : '') +
         (!frem.length && !skaerp.length ? '<p style="margin-bottom:0;font-size:12px;color:var(--daempet)">'+(EN?"Level with the previous match — steady as ice. 🧊":"Status quo mod forrige kamp — stabilt som is. 🧊")+'</p>' : '') + '</div>';
@@ -1590,7 +1680,7 @@ function render() {
          '<a href="https://dtf.tournamentsoftware.com/ranking/category.aspx?id=52585&amp;category=2531" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 '+(EN?SPILLER+"\'s current DTF ranking":SPILLER+"s aktuelle rangliste hos DTF")+'</a>';
   }
 
-  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to "+EJER+" via Nicolai. Team "+SPILLER+" · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til "+EJER+" via Nicolai. Team P · v2.0 · tre rum-navigation · juli 2026.")+'</p>';
+  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to "+EJER+" via Nicolai. Team "+SPILLER+" · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til "+EJER+" via Nicolai. Team P · v2.1 · vundet/tabt-graf · juli 2026.")+'</p>';
   el.innerHTML = h;
 }
 

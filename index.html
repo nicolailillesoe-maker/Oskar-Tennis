@@ -1688,6 +1688,18 @@ function render() {
       h += '<textarea data-felt="aTekst" placeholder="'+(EN?'Paste the analysis here…':'Indsæt analysen her…')+'" style="height:120px;border-color:var(--guld);color:var(--kridt)">'+esc(S.aTekst)+'</textarea>';
       h += '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="analyseGem" data-v="'+S.redigerA+'">💾 '+(EN?"Save analysis to match":"Gem analysen på kampen")+'</button><button class="knap" data-a="analyseAnnuller">'+(EN?"Cancel":"Annullér")+'</button></div>';
     }
+    h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">🎾 '+(EN?"Training history":"Trænings-historik")+'</h2>';
+    if (!S.ttLog.length) {
+      h += '<p style="font-size:13px;color:var(--daempet)">'+(EN?"Training sessions are registered under the TRAIN tab — they will appear here.":"Træninger registreres under 🏃 TRÆN-fanen — så dukker de op her.")+'</p>';
+    } else {
+      var _tm = S.ttLog.reduce(function(a,e){ return a+e.m; }, 0);
+      var _tk = (S.ttLog.reduce(function(a,e){ return a+e.k; }, 0) / S.ttLog.length).toFixed(1);
+      h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(_tm/60).toFixed(1)+' '+(EN?"hours":"timer")+' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+_tk+'/5</h3>' +
+        S.ttLog.map(function(e){
+          return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+e.d+' · '+e.m+' min · '+(e.t===1?'🎾 ':e.t===2?'🧑‍🏫 ':'')+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span></div>';
+        }).join("") +
+        '<p class="lille" style="margin:6px 0 0;opacity:.75">'+(EN?"Edit or delete under the TRAIN tab.":"Redigér eller slet under 🏃 TRÆN-fanen.")+'</p></div>';
+    }
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">💾 '+(EN?"Backup":"Sikkerhedskopi")+'</h2>' +
       '<div class="raekke"><button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="backupLav">💾 '+(EN?"Create full backup":"Lav fuld backup")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="gendanToggle">♻️ '+(EN?"Restore":"Gendan")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--vundet);color:var(--vundet)" data-a="fletToggle">'+(EN?"🔀 Merge device":"🔀 Flet enhed")+'</button></div>';
     if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and save it in the family chat/notes — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den i familiegruppen/noter — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>' + eksportKnapper('backupTekst', EN);

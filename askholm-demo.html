@@ -1726,10 +1726,10 @@ function render() {
   }
 
   if (!LAAST && S.tab === "historik") {
-    h += '<details class="dev-fold dev-kant dev-kant-is"><summary><span class="dev-ikon">📈</span><span><b>' + (EN?"The form curve":"Formkurven") + '</b><small>' + (EN?"Win/loss trend match by match.":"Vind/tab-udviklingen kamp for kamp.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '<details class="dev-fold dev-kant dev-kant-is" data-sf="0"' + (S._sf && S._sf["0"] ? " open" : "") + '><summary><span class="dev-ikon">📈</span><span><b>' + (EN?"The form curve":"Formkurven") + '</b><small>' + (EN?"Win/loss trend match by match.":"Vind/tab-udviklingen kamp for kamp.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
     h += grafVT(EN);
     h += '</div></details>';
-    h += '<details class="dev-fold dev-kant dev-kant-is"><summary><span class="dev-ikon">🎾</span><span><b>' + (EN?"Match by match":"Kamp for kamp") + '</b><small>' + (EN?"Every match with full stats, set table and analysis.":"Hver kamp med fulde nøgletal, sæt-tabel og analyse.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '<details class="dev-fold dev-kant dev-kant-is" data-sf="1"' + (S._sf && S._sf["1"] ? " open" : "") + '><summary><span class="dev-ikon">🎾</span><span><b>' + (EN?"Match by match":"Kamp for kamp") + '</b><small>' + (EN?"Every match with full stats, set table and analysis.":"Hver kamp med fulde nøgletal, sæt-tabel og analyse.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
     if (S.gemte.length > 1 && typeof GENERELTREND !== "undefined") {
       const alle = rivalAgg(S.gemte), Ta = beregnTid(S.gemte), alleAaben = S.rivalAaben === "__ALLE__";
       const fpa = Ta.f.map(function(x){ return x[1] ? Math.round(x[0] / x[1] * 100) : 0; });
@@ -1856,7 +1856,7 @@ function render() {
       h += '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="analyseGem" data-v="'+S.redigerA+'">💾 '+(EN?"Save analysis to match":"Gem analysen på kampen")+'</button><button class="knap" data-a="analyseAnnuller">'+(EN?"Cancel":"Annullér")+'</button></div>';
     }
     h += '</div></details>';
-    h += '<details class="dev-fold dev-kant dev-kant-is"><summary><span class="dev-ikon">💾</span><span><b>' + (EN?"Backup & move data":"Backup & flyt data") + '</b><small>' + (EN?"Backup, restore and merge between devices.":"Sikkerhedskopi, gendan og flet mellem enheder.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '<details class="dev-fold dev-kant dev-kant-is" data-sf="2"' + (S._sf && S._sf["2"] ? " open" : "") + '><summary><span class="dev-ikon">💾</span><span><b>' + (EN?"Backup & move data":"Backup & flyt data") + '</b><small>' + (EN?"Backup, restore and merge between devices.":"Sikkerhedskopi, gendan og flet mellem enheder.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">💾 '+(EN?"Backup":"Sikkerhedskopi")+'</h2>' +
       '<div class="raekke"><button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="backupLav">💾 '+(EN?"Create full backup":"Lav fuld backup")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="gendanToggle">♻️ '+(EN?"Restore":"Gendan")+'</button></div>';
     if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and save it in the family chat/notes — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den i familiegruppen/noter — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>' + eksportKnapper('backupTekst', EN);
@@ -1964,6 +1964,10 @@ function devFoldning(){
   });
 }
 
+document.addEventListener("toggle", function(e){
+  var d = e.target;
+  if (d && d.dataset && d.dataset.sf !== undefined) { S._sf = S._sf || {}; S._sf[d.dataset.sf] = d.open; }
+}, true);
 document.getElementById("app").addEventListener("click", (e) => {
   const b = e.target.closest("[data-a]");
   if (b) A[b.dataset.a](b.dataset.v);

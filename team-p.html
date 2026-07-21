@@ -1198,7 +1198,8 @@ const A = {
     S.aktiv = null; S.afventer = null; S.resInput = ""; gemAktiv();
     S.tab = "historik"; render();
   },
-  eksport: (i) => { S.eksport = lavEksport(S.gemte[+i]); render(); },
+  eksport: (i) => { S.eksport = lavEksport(S.gemte[+i]); S._sf = S._sf || {}; S._sf["1"] = true; render();
+    setTimeout(function(){ var b = document.getElementById("eksport-boks"); if (b) b.scrollIntoView({behavior:"smooth", block:"center"}); }, 60); },
   analyseAabn: (i) => { S.redigerA = S.redigerA === +i ? null : +i; S.aTekst = (S.gemte[+i] && S.gemte[+i].analyse) || ""; render(); },
   analyseGem: (i) => { if (S.gemte[+i]) { S.gemte[+i].analyse = S.aTekst; gemAlle(); } S.redigerA = null; S.aTekst = ""; render(); },
   analyseAnnuller: () => { S.redigerA = null; S.aTekst = ""; render(); },
@@ -1741,6 +1742,7 @@ function render() {
       const s = statistik(k);
       return '<div class="kort"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><b style="font-size:13.5px">vs '+esc(k.modstander)+(k.resultat?' <span style="color:var(--is)">· '+esc(k.resultat)+'</span>':'')+'</b><span style="font-size:11px;color:var(--daempet)">'+esc(k.dato)+'</span></div>' +
         (k.turnering?'<p style="margin:2px 0 2px;font-size:11px;color:var(--daempet)">'+esc(k.turnering)+'</p>':'')+statTabel(s,EN)+saetTabel(s,EN)+
+        (k.analyse && S.redigerA !== i ? '<div style="border:1.5px solid var(--guld);border-radius:10px;padding:10px 12px;margin:10px 0 4px"><b style="color:var(--guld);font-size:11px;letter-spacing:.06em">📝 ANALYSE</b><p class="lille" style="margin:6px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(k.analyse) + '</p></div>' : '') +
         '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px" data-a="eksport" data-v="'+i+'">📤 '+(EN?"Export to Claude":"Eksportér til Claude")+'</button>' +
         '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--guld);color:var(--guld);font-size:12px" data-a="analyseAabn" data-v="'+i+'">📝 '+(k.analyse?(EN?"Analysis ✓":"Analyse ✓"):(EN?"Analysis":"Analyse"))+'</button>' +
         (S.sletBekraeft === i
@@ -1786,7 +1788,7 @@ function render() {
     if (S.fletBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read that text.":"Kunne ikke læse teksten.")+'</p>';
     if (S.gendanBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read the backup text — check that everything was copied.":"Kunne ikke læse backup-teksten — tjek at alt kom med.")+'</p>';
     if (S.gendanBesked && S.gendanBesked.indexOf("OK:") === 0) { const t = S.gendanBesked.split(":"); h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Restored: ":"Gendannet: ")+t[1]+' '+(EN?"matches":"kampe")+' · '+t[2]+' '+(EN?"running sessions":"løbepas")+' · '+t[3]+' '+(EN?"tennis sessions":"tennistræninger")+'</p>'; }
-    if (S.eksport) h += '<p class="lille" style="margin-top:10px">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>' + eksportKnapper('eksport', EN);
+    if (S.eksport) h += '<p class="lille" style="margin-top:10px">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea id="eksport-boks" readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>' + eksportKnapper('eksport', EN);
   }
     h += '</div></details>';
       if (!LAAST && S.tab === "status") {

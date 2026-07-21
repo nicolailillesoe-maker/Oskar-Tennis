@@ -45,6 +45,16 @@
   .skala-band { display:flex; align-items:center; gap:9px; padding:6px 0; font-size:12.5px; }
   .skala-cirkel { width:15px; height:15px; border-radius:50%; flex:none; }
   .logo-rk { display:flex; align-items:center; gap:9px; margin-bottom:12px; }
+  .dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .dev-flise{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:16px 14px 14px;border-radius:16px;color:var(--kridt);cursor:pointer;text-align:left;min-height:96px;border:1.5px solid transparent;background-origin:border-box}
+  .dev-flise .ik{font-size:26px;margin-bottom:4px}
+  .dev-flise b{font-size:13.5px;letter-spacing:.02em}
+  .dev-flise small{font-size:10.5px;color:var(--daempet);line-height:1.3}
+  .dev-kant-guld{background:linear-gradient(var(--kort),var(--kort)) padding-box,linear-gradient(135deg,#F7DE8F,#E3B341 45%,#A87A28) border-box}
+  .dev-kant-is{background:linear-gradient(var(--kort),var(--kort)) padding-box,linear-gradient(135deg,#D9F1F8,#9FD8E8 45%,#5E93A6) border-box}
+  .dev-kant-grus{background:linear-gradient(var(--kort),var(--kort)) padding-box,linear-gradient(135deg,#E8B394,#C97B54 45%,#8F4F31) border-box}
+  .dev-kant-gron{background:linear-gradient(var(--kort),var(--kort)) padding-box,linear-gradient(135deg,#9FE0BC,#4CAF78 45%,#2E7A50) border-box}
+  .dev-pilknap{width:auto;padding:9px 16px;background:var(--kort);border:1px solid #2A3A4A;border-radius:10px;color:var(--kridt);cursor:pointer;margin:10px 0 6px}
 </style>
 </head>
 <body>
@@ -71,7 +81,7 @@ const LOGO = '<div class="logo-rk"><img src="data:image/png;base64,iVBORw0KGgoAA
 
 let S = {
   rolle: "traener", traener: "Cheftræneren", spiller: "Oskar Lillesø",
-  tab: "grupper", aabenSpiller: null,
+  tab: "hjem", aabenSpiller: null,
   vurderOmraade: null, vurderGruppe: null, vurderScores: {},
   kvartalUdkast: null,
 };
@@ -93,10 +103,20 @@ function renderTraener(){
   let h = LOGO + '<div class="top"><div class="avatar">'+init(t.navn)+'</div>' +
     '<div style="flex:1"><div class="eyebrow">'+esc(KONFIG.klub)+' · TRÆNER</div><h1>'+esc(t.navn)+'</h1></div></div>';
   h += '<div class="proto-note">⚡ PROTOTYPE — fake data. 💡 <b>Prøv loopet:</b> giv Oskar en score under ⚡ Vurdér træning — skift så til 🎾 Spiller og se den lande.</div>';
-  h += '<div class="fane-rk">'+faneKnap("grupper","👥 Grupper")+faneKnap("vurder","⚡ Vurdér træning")+faneKnap("kvartal","📋 Evaluering")+'</div>';
-  if (S.tab==="grupper") h += traenerGrupper(t);
-  else if (S.tab==="vurder") h += traenerVurder(t);
-  else if (S.tab==="kvartal") h += traenerKvartal(t);
+  if (S.tab==="hjem") {
+    h += '<div style="margin:14px 2px 2px"><h2 style="margin:0;font-size:21px">Hej '+esc(t.navn.split(" ")[0])+' 👋</h2>' +
+      '<p style="margin:4px 0 0;font-size:12.5px;color:var(--daempet)">Vælg, hvad du vil i gang med</p></div>';
+    h += '<div class="dev-grid">' +
+      '<button class="dev-flise dev-kant-is" data-act="tab" data-v="grupper"><span class="ik">👥</span><b>GRUPPER</b><small>hold, spillere & udvikling</small></button>' +
+      '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="vurder"><span class="ik">⚡</span><b>VURDÉR TRÆNING</b><small>hele holdet på under 20 sek.</small></button>' +
+      '<button class="dev-flise dev-kant-gron" data-act="tab" data-v="kvartal"><span class="ik">📋</span><b>EVALUERING</b><small>AI-udkast — du godkender alt</small></button>' +
+      '</div>';
+  } else {
+    h += '<button class="dev-pilknap" data-act="tab" data-v="hjem">←</button>';
+    if (S.tab==="grupper") h += traenerGrupper(t);
+    else if (S.tab==="vurder") h += traenerVurder(t);
+    else if (S.tab==="kvartal") h += traenerKvartal(t);
+  }
   return h;
 }
 function faneKnap(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'" data-act="tab" data-v="'+id+'">'+label+'</button>'; }
@@ -293,10 +313,20 @@ function renderSpiller(){
   let h = LOGO + '<div class="top"><div class="avatar" style="background:var(--is);color:var(--nat)">'+init(S.spiller)+'</div>' +
     '<div style="flex:1"><div class="eyebrow">'+esc(KONFIG.klub)+' · '+esc(s.gruppe)+'</div><h1>'+esc(S.spiller.split(" ")[0])+'</h1></div></div>';
   h += '<div class="proto-note">⚡ PROTOTYPE — fake data. Streaks og venner deles mellem spillere når backend er på plads.</div>';
-  h += '<div class="fane-rk">'+fS("mig","🎾 Mig")+fS("gruppe","🏆 Min gruppe")+fS("venner","👋 Venner")+'</div>';
-  if (S.tab==="mig") h += spillerMig(s);
-  else if (S.tab==="gruppe") h += spillerGruppe(s);
-  else if (S.tab==="venner") h += spillerVenner(s);
+  if (S.tab==="hjem") {
+    h += '<div style="margin:14px 2px 2px"><h2 style="margin:0;font-size:21px">Hej '+esc(S.spiller.split(" ")[0])+' 👋</h2>' +
+      '<p style="margin:4px 0 0;font-size:12.5px;color:var(--daempet)">Din side i klubben</p></div>';
+    h += '<div class="dev-grid">' +
+      '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="mig"><span class="ik">🎾</span><b>MIG</b><small>evaluering, streaks & mine tal</small></button>' +
+      '<button class="dev-flise dev-kant-is" data-act="tab" data-v="gruppe"><span class="ik">🏆</span><b>MIN GRUPPE</b><small>streak-stigen & fælles mål</small></button>' +
+      '<button class="dev-flise dev-kant-grus" data-act="tab" data-v="venner"><span class="ik">👋</span><b>VENNER</b><small>på tværs af hold</small></button>' +
+      '</div>';
+  } else {
+    h += '<button class="dev-pilknap" data-act="tab" data-v="hjem">←</button>';
+    if (S.tab==="mig") h += spillerMig(s);
+    else if (S.tab==="gruppe") h += spillerGruppe(s);
+    else if (S.tab==="venner") h += spillerVenner(s);
+  }
   return h;
 }
 function fS(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'" data-act="tab" data-v="'+id+'">'+label+'</button>'; }
@@ -374,7 +404,7 @@ function spillerVenner(s){
 document.addEventListener("click", function(e){
   const t = e.target.closest("[data-act]"); if (!t) return;
   const act = t.dataset.act, v = t.dataset.v;
-  if (act==="rolle"){ S.rolle=v; S.tab = v==="traener"?"grupper":"mig"; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); }
+  if (act==="rolle"){ S.rolle=v; S.tab = "hjem"; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); }
   else if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }

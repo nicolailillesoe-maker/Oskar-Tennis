@@ -1063,7 +1063,7 @@ function statistik(k) {
   const F = st.flags;
   const v = k.point.filter(p => p.r === "V").length;
   const t = k.point.length - v;
-  const uf = k.point.filter(p => p.r === "T" && (p.å === "uf" || p.å === "dobbelt")).length;
+  const uf = k.point.filter(p => p.r === "T" && (p.å === "uf" || p.å === "dobbelt" || p.å === "returfejl")).length;
   const vindere = k.point.filter(p => p.r === "V" && (p.å === "vinder" || p.å === "es")).length;
   const idxServe = k.point.map((p,i)=>i).filter(i => F[i] && F[i].server === true);
   const oServe = idxServe.map(i => k.point[i]);
@@ -1078,7 +1078,7 @@ function statistik(k) {
     while (perSaet.length < sn) perSaet.push({ v: 0, t: 0, uf: 0, vin: 0, s1: 0, sp: 0, s1v: 0, s2: 0, s2v: 0, df: 0 });
     const ps = perSaet[sn - 1];
     if (p.r === "V") ps.v += 1; else ps.t += 1;
-    if (p.r === "T" && (p.å === "uf" || p.å === "dobbelt")) ps.uf += 1;
+    if (p.r === "T" && (p.å === "uf" || p.å === "dobbelt" || p.å === "returfejl")) ps.uf += 1;
     if (p.r === "V" && (p.å === "vinder" || p.å === "es")) ps.vin += 1;
     if (p.å === "dobbelt") ps.df += 1;
     if (F[i] && F[i].server === true) {
@@ -1088,8 +1088,8 @@ function statistik(k) {
     }
   });
   const dl = (n) => { const q = k.point.filter(p => p.l === n); return [q.filter(p => p.r === "V").length, q.length]; };
-  const budIVbrud = k.point.filter(p => p.l === 1 && p.r === "T" && (p.å === "uf" || p.å === "dobbelt")).length;
-  const oFejl = k.point.filter(p => p.r === "T" && (p.å === "uf" || p.å === "tvunget"));
+  const budIVbrud = k.point.filter(p => p.l === 1 && p.r === "T" && (p.å === "uf" || p.å === "dobbelt" || p.å === "returfejl")).length;
+  const oFejl = k.point.filter(p => p.r === "T" && (p.å === "uf" || p.å === "tvunget" || p.å === "returfejl"));
   const zN = oFejl.filter(p => p.z === 1).length, zL = oFejl.filter(p => p.z === 2).length, zB = oFejl.filter(p => p.z === 3).length;
   return { st, v, t, uf, vindere, perSaet, zN, zL, zB, dK: dl(1), dM: dl(2), dL: dl(3), budIVbrud,
     serve: [oServe.filter(p=>p.r==="V").length, oServe.length],
@@ -1265,7 +1265,7 @@ const A = {
   aarsag: (id) => {
     if (!S.aktiv || !S.afventer) return;
     if (!S.tryk3) {
-      if (S.zoner && S.afventer === "tabt" && (id === "uf" || id === "tvunget")) {
+      if (S.zoner && S.afventer === "tabt" && (id === "uf" || id === "tvunget" || id === "returfejl")) {
         S.aarsagValgt = id; S.laengdeValgt = 0; render(); return;
       }
       S.aktiv.point.push({ r: S.afventer === "vundet" ? "V" : "T", å: id, f: S.serv, l: 0, z: 0 });
@@ -1477,7 +1477,7 @@ function render() {
         : '<span style="font-size:11px;color:var(--kridt);opacity:.85">'+(EN?'The match footprints — won above the line, lost below':'Kampens fodspor — vundne over stregen, tabte under')+'</span>') + '</div></div>';
 
       const sidste3 = S.aktiv.point.slice(-3);
-      if (sidste3.length === 3 && sidste3.every(p => p.r==="T" && (p.å==="uf"||p.å==="dobbelt")))
+      if (sidste3.length === 3 && sidste3.every(p => p.r==="T" && (p.å==="uf"||p.å==="dobbelt"||p.å==="returfejl")))
         h += '<div class="banner is">🧊 <b>'+(EN?'Three free errors in a row — reset:':'Tre gratis fejl i træk — nulstilling:')+'</b> '+(EN?'strings → breathing → keyword. Next rally 100 % percentage tennis.':'strenge → vejrtrækning → nøgleord. Næste duel 100 % procentuel.')+'</div>';
 
       if (!st.done) {
@@ -1490,10 +1490,10 @@ function render() {
         } else {
           const vundet = S.afventer === "vundet";
           const liste = vundet
-            ? (EN ? [["vinder","Winner"],["es","Service ace"],["mod_uf","Opp. unforced error"], st.server ? ["mod_tvunget","Opp. forced error"] : ["mod_dobbelt","Opp. double fault"]]
-                  : [["vinder","Vinderslag"],["es","Serve-es"],["mod_uf","Modst. gratis fejl"], st.server ? ["mod_tvunget","Modst. presset til fejl"] : ["mod_dobbelt","Modst. dobbeltfejl"]])
-            : (EN ? [["uf","Askholm unforced error"],["tvunget","Askholm forced error"],["mod_vinder","Opp. winner"]].concat(st.server ? [["dobbelt","Double fault"]] : [])
-                  : [["uf","Askholm gratis fejl"],["tvunget","Askholm presset til fejl"],["mod_vinder","Modst. vinderslag"]].concat(st.server ? [["dobbelt","Dobbeltfejl"]] : []));
+            ? (EN ? (st.server ? [["vinder","Winner"],["es","Service ace"],["mod_uf","Opp. unforced error"],["mod_tvunget","Opp. forced error"]] : [["vinder","Winner"],["mod_uf","Opp. unforced error"],["mod_tvunget","Opp. forced error"],["mod_dobbelt","Opp. double fault"]])
+                  : (st.server ? [["vinder","Vinderslag"],["es","Serve-es"],["mod_uf","Modst. gratis fejl"],["mod_tvunget","Modst. presset til fejl"]] : [["vinder","Vinderslag"],["mod_uf","Modst. gratis fejl"],["mod_tvunget","Modst. presset til fejl"],["mod_dobbelt","Modst. dobbeltfejl"]]))
+            : (EN ? [["uf","Askholm unforced error"],["tvunget","Askholm forced error"],["mod_vinder","Opp. winner"]].concat(st.server ? [["dobbelt","Double fault"]] : [["returfejl","Return error"]])
+                  : [["uf","Askholm gratis fejl"],["tvunget","Askholm presset til fejl"],["mod_vinder","Modst. vinderslag"]].concat(st.server ? [["dobbelt","Dobbeltfejl"]] : [["returfejl","Returneringsfejl"]]));
           if (!S.aarsagValgt) {
             h += '<p class="lille">'+(EN?'How did the ball end?':'Hvordan endte bolden?')+'</p><div class="raekke" style="flex-wrap:wrap">' +
               liste.map(([id,l]) => '<button class="knap" style="flex:1 1 45%;padding:15px 6px;background:'+(vundet?"#2C5E3F":"#6E3535")+'" data-a="aarsag" data-v="'+id+'">'+l+'</button>').join("") + '</div>';

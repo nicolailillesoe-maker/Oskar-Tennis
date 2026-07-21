@@ -76,6 +76,15 @@
   .fod { font-size:10.5px; color:#3E5164; margin-top:22px; border-top:1px dashed var(--kant); padding-top:9px; }
   .lille { font-size:11.5px; color:var(--daempet); margin:0 0 6px; }
   .statlinje { font-size:12px; line-height:1.7; }
+  .avat{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;color:#101B26;flex:none;vertical-align:middle;letter-spacing:.02em}
+  .bundnav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:rgba(13,22,31,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid #22303E;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:50}
+  .bundnav button{background:none;border:none;color:var(--daempet);font-size:8.5px;letter-spacing:.08em;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:2px 10px}
+  .bundnav button span{font-size:19px;line-height:1}
+  .bundnav button.aktiv{color:var(--guld)}
+  body{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+  body{background:linear-gradient(180deg,#16222F 0%,var(--nat,#101B26) 260px) fixed}
+  .scoreboard{border:1.5px solid transparent !important;background:linear-gradient(var(--kort),var(--kort)) padding-box,linear-gradient(135deg,#E8B394,#C97B54 45%,#8F4F31) border-box !important}
+  .pil-tilbage{width:44px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--kort);border:1px solid #2A3A4E;border-radius:10px;color:var(--kridt);font-size:15px;cursor:pointer;padding:0;flex:none}
 </style>
 </head>
 <body>
@@ -1240,7 +1249,10 @@ const A = {
   format: (v) => { S.nyFormat = v === "4" ? 4 : 6; render(); },
   noad: (v) => { S.nyNoAd = v === "1"; render(); },
   livToggle: () => { S.livAaben = !S.livAaben; render(); },
+  wiz: (v) => { S.wiz = +v; render(); },
+  wizMod: (v) => { S.nyMod = v; render(); },
   start: () => {
+    S.wiz = 1; S._doneVist = false;
     S.aktiv = { modstander: S.nyMod || "Ukendt modstander", turnering: S.nyTur || "",
       dato: new Date().toISOString().slice(0,10), oskarFirst: S.nyFirst, mtb: S.nyMtb, saetTil: S.nyFormat === 4 ? 4 : 6, noAd: S.nyFormat === 4 && S.nyNoAd, point: [], justeringer: [] };
     S.afventer = null; S.serv = 1; gemAktiv(); render();
@@ -1304,6 +1316,28 @@ const A = {
 // ---------- Rendering ----------
 const esc = (t) => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+
+function avat(navn, px){
+  var farver = ["#E3B341","#9FD8E8","#C97B54","#4CAF78"];
+  var h = 0; for (var i = 0; i < navn.length; i++) h = (h * 31 + navn.charCodeAt(i)) >>> 0;
+  var dele = navn.trim().split(/\s+/);
+  var ini = (dele[0][0] + (dele.length > 1 ? dele[dele.length-1][0] : "")).toUpperCase();
+  return '<span class="avat" style="width:' + px + 'px;height:' + px + 'px;font-size:' + Math.round(px*0.4) + 'px;background:' + farver[h % 4] + '">' + ini + '</span>';
+}
+
+
+function bundNav(){
+  var EN = S.sprog === "en";
+  var akt = function(ja){ return ja ? " class=\"aktiv\"" : ""; };
+  var udv = S.verden === "udv";
+  return '<nav class="bundnav">' +
+    '<button data-a="devgaa" data-v="udv:hjem"' + akt(udv && (S.tab === "hjem" || S.tab === "hb-hjem")) + '><span>🏠</span>' + (EN?"HOME":"HJEM") + '</button>' +
+    '<button data-a="devgaa" data-v="udv:kamp"' + akt(udv && S.tab === "kamp") + '><span>🎾</span>' + (EN?"MATCH":"KAMP") + '</button>' +
+    '<button data-a="devgaa" data-v="udv:fysisk"' + akt(udv && S.tab === "fysisk") + '><span>💪</span>' + (EN?"TRAIN":"TRÆN") + '</button>' +
+    '<button data-a="devgaa" data-v="udv:historik"' + akt(udv && S.tab === "historik") + '><span>📊</span>STATS</button>' +
+    '</nav>';
+}
+
 function render() {
   const EN = S.sprog === "en";
   const el = document.getElementById("app");
@@ -1324,13 +1358,13 @@ function render() {
         '<span class="dev-ikon">' + ik + '</span><b>' + titel + '</b><small>' + tekst + '</small></button>';
     };
     const _hjempil = function(maal){
-      return '<button class="knap" style="width:auto;padding:9px 16px;background:var(--kort);border:1px solid #2A3A4A" data-a="tab" data-v="' + maal + '">←</button>';
+      return '<button class="pil-tilbage" data-a="tab" data-v="' + maal + '">←</button>';
     };
     if (S.tab === "hjem") {
       const _dsc = Math.max(0, Math.ceil((new Date("2026-07-30") - new Date())/86400000));
-      h += '<div style="margin:16px 2px 6px"><h2 style="margin:0;font-size:23px">' + (EN?"Hi Askholm 👋":"Hej Askholm 👋") + '</h2>' +
-        '<p style="margin:5px 0 0;font-size:12.5px;color:var(--daempet)">' + S.gemte.length + (EN?" matches":" kampe") + ' · ' + S.ttLog.length + (EN?" sessions":" træninger") + '</p></div>';
-      h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"MATCH":"KAMP") + '</b><br><small>' + (EN?"register points — 2 taps per point":"registrér point — 2 tryk pr. point") + '</small></span><span class="dev-pil">→</span></button>';
+      h += '<div style="margin:16px 2px 6px;display:flex;align-items:center;gap:12px">' + avat("Askholm",46) + '<div><h2 style="margin:0;font-size:23px">' + (EN?"Hi Askholm 👋":"Hej Askholm 👋") + '</h2>' +
+        '<p style="margin:5px 0 0;font-size:12.5px;color:var(--daempet)">' + S.gemte.length + (EN?" matches":" kampe") + ' · ' + S.ttLog.length + (EN?" sessions":" træninger") + '</p></div></div>';
+      h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"MATCH":"KAMP") + '</b><br><small id="hero-sub">' + (EN?"register points — 2 taps per point":"registrér point — 2 tryk pr. point") + '</small></span><span class="dev-pil">→</span></button>';
       h += '<div class="dev-grid">' +
         _flise("tab","fysisk","💪",(EN?"TRAIN":"TRÆN"),(EN?"todays session and running":"dagens pas & løb"),"dev-kant-gron") +
         _flise("tab","anbefal","💡",(EN?"INSIGHTS":"INDSIGT"),(EN?"focus points & key numbers":"fokuspunkter & nøgletal"),"dev-kant-is") +
@@ -1338,6 +1372,7 @@ function render() {
         _flise("tab","historik","📊",(EN?"STATISTICS":"STATISTIK"),(EN?"matches & training — all the numbers":"kampe & træning — alle tallene"),"dev-kant-is") +
         _flise("tab","s2026","📈",(EN?"2026":"2026"),(EN?"the season match by match":"sæsonen kamp for kamp"),"dev-kant-guld") +
         _flise("tab","hb-hjem","📘",(EN?"HANDBOOK":"HÅNDBOG"),(EN?"guide, style & routines":"guide, stil & rutiner"),"dev-kant-grus") +
+        '<button class="dev-flise dev-kant dev-kant-guld" style="grid-column:1/-1;flex-direction:row;align-items:center;min-height:0;padding:14px" data-a="devgaa" data-v="saeson:sa-hjem"><span class="dev-ikon" style="margin:0 10px 0 0">🏆</span><span style="flex:1"><b>' + (EN?"SEASON 2026":"SÆSONEN 2026") + '</b><small style="display:block">' + (EN?"schedule, strategy & rules":"plan, strategi & regler") + '</small></span><span class="dev-pil">→</span></button>' +
         '</div>';
           } else if (S.tab === "hb-hjem") {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") + '<b style="font-size:16px">📘 ' + (EN?"Handbook":"Håndbog") + '</b></div>';
@@ -1368,7 +1403,7 @@ function render() {
         '</div>';
     } else {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 8px">' +
-        '<button class="knap" style="width:auto;padding:9px 16px;background:var(--kort);border:1px solid #2A3A4A" data-a="tab" data-v="sa-hjem">←</button>' +
+        '<button class="pil-tilbage" data-a="tab" data-v="sa-hjem">←</button>' +
         '<b style="font-size:16px">' + _sfn(S.tab) + '</b></div>';
     }
   }
@@ -1387,10 +1422,28 @@ function render() {
   if (S.demoBesked) h += '<div class="kort" style="border:1.5px solid var(--guld);color:var(--guld);font-weight:700;font-size:12.5px">'+S.demoBesked+'</div>';
   if (S.tab === "kamp") {
     if (!S.aktiv) {
-      h += '<p style="font-size:13px;color:var(--daempet);line-height:1.6;margin-top:0">'+(EN?'Two taps per ball — the app computes the score by itself. First time? Read the <b style="color:var(--is)">ℹ️ Guide</b>.':'To tryk pr. bold — appen regner selv stillingen ud. Første gang? Læs <b style="color:var(--is)">ℹ️ Guide</b>.')+'</p>';
+      if (S.wiz === undefined) S.wiz = 1;
+      const _wp = function(n){ return '<div style="display:flex;gap:6px;justify-content:center;margin:2px 0 12px">' + [1,2,3].map(function(i){ return '<span style="width:8px;height:8px;border-radius:50%;background:' + (i<=n?"var(--guld)":"#2A3A4A") + '"></span>'; }).join("") + '</div>'; };
+      const _wtitel = function(t){ return '<h2 style="margin:2px 0 10px;font-size:19px;text-align:center">' + t + '</h2>'; };
+      const _wfrem = function(n,t){ return '<div class="raekke" style="margin-top:12px"><button class="knap stor" style="background:var(--grus)" data-a="wiz" data-v="' + n + '">' + t + ' →</button></div>'; };
+      const _wtilb = function(n){ return '<div style="text-align:center;margin-top:8px"><button class="knap" style="width:auto;padding:7px 16px;background:transparent;border:1px dashed var(--kant);color:var(--daempet);font-size:11.5px" data-a="wiz" data-v="' + n + '">← ' + (EN?"back":"tilbage") + '</button></div>'; };
+      if (S.wiz === 1) {
+        h += _wp(1) + _wtitel(EN?"Who are you playing?":"Hvem spiller du mod?");
+        const _mods = []; S.gemte.forEach(function(k){ if (k.modstander && _mods.indexOf(k.modstander) < 0) _mods.push(k.modstander); });
+        if (_mods.length) h += '<div class="raekke" style="flex-wrap:wrap;gap:7px;justify-content:center;margin:0 0 8px">' + _mods.slice(0,8).map(function(n){ return '<button class="knap valg' + (S.nyMod===n?" til":"") + '" style="flex:0 1 auto;padding:9px 14px;font-size:12.5px" data-a="wizMod" data-v="' + esc(n) + '">' + esc(n) + '</button>'; }).join("") + '</div>';
       h += '<input placeholder="'+(EN?'Opponent (e.g. Vinter)':'Modstander (fx Vinter)')+'" value="'+esc(S.nyMod)+'" data-felt="nyMod">';
       h += '<input placeholder="'+(EN?'Tournament (e.g. HRT Sommer Cup)':'Turnering (fx HRT Sommer Cup, kat. G)')+'" value="'+esc(S.nyTur)+'" data-felt="nyTur">';
+        if (S.nyMod) {
+          const _hk = S.gemte.filter(function(k){ return k.modstander === S.nyMod; }).length;
+          if (_hk) h += '<div class="kort dev-kant dev-kant-guld" style="padding:10px 12px"><b style="color:var(--guld)">🥊 ' + _hk + (EN?" previous matches vs ":" tidligere kampe mod ") + esc(S.nyMod) + '</b><p class="lille" style="margin:3px 0 0">' + (EN?"Head-to-head and the match plan are ready under Rivals.":"Head-to-head og kampplanen ligger klar under Modstandere.") + '</p></div>';
+        }
+        h += _wfrem(2, EN?"Next":"Videre");
+      } else if (S.wiz === 2) {
+        h += _wp(2) + _wtitel(EN?"Who serves first?":"Hvem server først?");
       h += '<div class="raekke"><button class="knap valg '+(S.nyFirst?"til":"")+'" data-a="first" data-v="1">'+(EN?"Askholm serves first":"Askholm server først")+'</button><button class="knap valg '+(!S.nyFirst?"til":"")+'" data-a="first" data-v="0">'+(EN?"Opponent serves first":"Modstander server først")+'</button></div>';
+        h += _wfrem(3, EN?"Next":"Videre") + _wtilb(1);
+      } else {
+        h += _wp(3) + _wtitel(EN?"Format — prefilled":"Format — forudfyldt");
       h += '<div class="raekke"><button class="knap valg '+(S.nyMtb?"til":"")+'" data-a="mtb" data-v="1">'+(EN?"3rd set = match tiebreak (10)":"3. sæt = match-tiebreak (10)")+'</button><button class="knap valg '+(!S.nyMtb?"til":"")+'" data-a="mtb" data-v="0">'+(EN?"Full 3rd set":"Fuldt 3. sæt")+'</button></div>';
       h += '<div class="raekke"><button class="knap valg '+(S.nyFormat!==4?"til":"")+'" data-a="format" data-v="6">'+(EN?"Sets to 6 (standard)":"Sæt til 6 (standard)")+'</button><button class="knap valg '+(S.nyFormat===4?"til":"")+'" data-a="format" data-v="4">'+(EN?"Sets to 4 (NextGen)":"Sæt til 4 (NextGen)")+'</button></div>';
       if (S.nyFormat === 4) h += '<div class="raekke"><button class="knap valg '+(!S.nyNoAd?"til":"")+'" data-a="noad" data-v="0">'+(EN?"With advantage scoring":"Med fordelspoint")+'</button><button class="knap valg '+(S.nyNoAd?"til":"")+'" data-a="noad" data-v="1">'+(EN?"Deciding point at deuce (no-ad)":"Afgørende point ved lige (no-ad)")+'</button></div>';
@@ -1403,6 +1456,8 @@ function render() {
         '</div></div>';
       h += '<p class="lille" style="margin:2px 0 10px;opacity:.8">'+(EN?"Advanced = a third tap per ball registers rally length (rule IV data). Can be switched mid-match.":"Avanceret = et tredje tryk pr. bold registrerer duel-længden (bud IV-data). Kan skiftes midt i kampen.")+'</p>';
       h += '<div class="raekke"><button class="knap stor" style="background:var(--grus)" data-a="start">'+(EN?"Start match":"Start kamp")+'</button></div>';
+        h += _wtilb(2);
+      }
     } else {
       const s = statistik(S.aktiv), st = s.st;
       const saetVis = st.hist.map(x => x[0]+"-"+x[1]).join("  ");
@@ -1456,6 +1511,12 @@ function render() {
               '<div class="raekke"><button class="knap" style="padding:9px 6px;background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px" data-a="laengde" data-v="0">'+(EN?'Skip — just save the point':'Spring over — gem bare pointet')+'</button></div>';
           }
         }
+      }
+      if (st.done) {
+        if (!S._doneVist) { S.livAaben = true; S._doneVist = true; }
+        h += '<div class="kort dev-kant dev-kant-guld"><h3 style="margin:0 0 4px">🏆 ' + (st.vinderAskholm ? (EN?"MATCH WON":"KAMP VUNDET") : (EN?"MATCH LOST":"KAMP TABT")) + '</h3>' +
+          '<b style="font-size:15px">' + saetVis + ' · vs ' + esc(S.aktiv.modstander) + '</b>' +
+          '<p class="lille" style="margin:6px 0 0">' + (EN?"The engine says the match is over — summary and analysis are ready below. Save to move it to Statistics.":"Motoren siger kampen er slut — resumé og analyse står klar nedenfor. Gem kampen, så flytter den til Statistik.") + '</p></div>';
       }
       h += '<div class="raekke"><button class="knap" data-a="fortryd">'+(EN?"↶ Undo last":"↶ Fortryd seneste")+'</button><button class="knap valg" data-a="justToggle">⚙ '+(EN?"Adjust score":"Justér stillingen")+'</button><button class="knap valg" style="border:1.5px solid var(--guld)" data-a="livToggle"><span class="badge-ai">AI</span> '+(EN?"Analysis":"Analyse")+'</button></div>' +
       (S.livAaben ? livAnalyse(EN) : "") +
@@ -1665,10 +1726,10 @@ function render() {
   }
 
   if (!LAAST && S.tab === "historik") {
-    h += '<details class="dev-fold" open><summary><span class="dev-ikon">📈</span><span><b>' + (EN?"The form curve":"Formkurven") + '</b><small>' + (EN?"Win/loss trend match by match.":"Vind/tab-udviklingen kamp for kamp.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '<details class="dev-fold dev-kant dev-kant-is"><summary><span class="dev-ikon">📈</span><span><b>' + (EN?"The form curve":"Formkurven") + '</b><small>' + (EN?"Win/loss trend match by match.":"Vind/tab-udviklingen kamp for kamp.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
     h += grafVT(EN);
     h += '</div></details>';
-    h += '<details class="dev-fold"><summary><span class="dev-ikon">🎾</span><span><b>' + (EN?"Match by match":"Kamp for kamp") + '</b><small>' + (EN?"Every match with full stats, set table and analysis.":"Hver kamp med fulde nøgletal, sæt-tabel og analyse.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '<details class="dev-fold dev-kant dev-kant-is"><summary><span class="dev-ikon">🎾</span><span><b>' + (EN?"Match by match":"Kamp for kamp") + '</b><small>' + (EN?"Every match with full stats, set table and analysis.":"Hver kamp med fulde nøgletal, sæt-tabel og analyse.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
     if (S.gemte.length > 1 && typeof GENERELTREND !== "undefined") {
       const alle = rivalAgg(S.gemte), Ta = beregnTid(S.gemte), alleAaben = S.rivalAaben === "__ALLE__";
       const fpa = Ta.f.map(function(x){ return x[1] ? Math.round(x[0] / x[1] * 100) : 0; });
@@ -1795,7 +1856,7 @@ function render() {
       h += '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="analyseGem" data-v="'+S.redigerA+'">💾 '+(EN?"Save analysis to match":"Gem analysen på kampen")+'</button><button class="knap" data-a="analyseAnnuller">'+(EN?"Cancel":"Annullér")+'</button></div>';
     }
     h += '</div></details>';
-    h += '<details class="dev-fold"><summary><span class="dev-ikon">💾</span><span><b>' + (EN?"Backup & move data":"Backup & flyt data") + '</b><small>' + (EN?"Backup, restore and merge between devices.":"Sikkerhedskopi, gendan og flet mellem enheder.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '<details class="dev-fold dev-kant dev-kant-is"><summary><span class="dev-ikon">💾</span><span><b>' + (EN?"Backup & move data":"Backup & flyt data") + '</b><small>' + (EN?"Backup, restore and merge between devices.":"Sikkerhedskopi, gendan og flet mellem enheder.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">💾 '+(EN?"Backup":"Sikkerhedskopi")+'</h2>' +
       '<div class="raekke"><button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="backupLav">💾 '+(EN?"Create full backup":"Lav fuld backup")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="gendanToggle">♻️ '+(EN?"Restore":"Gendan")+'</button></div>';
     if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and save it in the family chat/notes — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den i familiegruppen/noter — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>' + eksportKnapper('backupTekst', EN);
@@ -1863,6 +1924,7 @@ function render() {
   }
 
   h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Claude via Nicolai. Team Askholm · v1.7 · handedness picker · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Team Askholm · v2.1 · vundet/tabt-graf · juli 2026.")+'</p>';
+  h += bundNav();
   el.innerHTML = h;
   devFoldning();
 }
@@ -1881,9 +1943,10 @@ function devFoldning(){
   kort.forEach(function(k, i){
     const h3 = k.querySelector("h3");
     const det = document.createElement("details");
-    det.className = "dev-fold";
+    const KANTMAP = { fysisk:"dev-kant-gron", anbefal:"dev-kant-is", planer:"dev-kant-guld", s2026:"dev-kant-guld", guide:"dev-kant-grus", stil:"dev-kant-guld", rutiner:"dev-kant-grus", status:"dev-kant-gron", strategi:"dev-kant-guld", plan:"dev-kant-is", regler:"dev-kant-grus" };
+    det.className = "dev-fold dev-kant " + (KANTMAP[S.tab] || "");
     det.dataset.devi = i;
-    const aaben = husket ? husket.indexOf(String(i)) >= 0 : i === 0;
+    const aaben = husket ? husket.indexOf(String(i)) >= 0 : false;
     if (aaben) det.open = true;
     const sum = document.createElement("summary");
     sum.innerHTML = '<span style="flex:1;min-width:0"><b>' + h3.innerHTML + '</b></span><span class="dev-pil">▶</span>';

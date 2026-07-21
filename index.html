@@ -77,6 +77,14 @@
   .lille { font-size:11.5px; color:var(--daempet); margin:0 0 6px; }
   .statlinje { font-size:12px; line-height:1.7; }
   .avat{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;color:#101B26;flex:none;vertical-align:middle;letter-spacing:.02em}
+  .bundnav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:rgba(13,22,31,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid #22303E;padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:50}
+  .bundnav button{background:none;border:none;color:var(--daempet);font-size:8.5px;letter-spacing:.08em;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:2px 10px}
+  .bundnav button span{font-size:19px;line-height:1}
+  .bundnav button.aktiv{color:var(--guld)}
+  body{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+  body{background:linear-gradient(180deg,#16222F 0%,var(--nat,#101B26) 260px) fixed}
+  .scoreboard{border:1.5px solid transparent !important;background:linear-gradient(var(--kort),var(--kort)) padding-box,linear-gradient(135deg,#E8B394,#C97B54 45%,#8F4F31) border-box !important}
+  .pil-tilbage{width:44px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--kort);border:1px solid #2A3A4E;border-radius:10px;color:var(--kridt);font-size:15px;cursor:pointer;padding:0;flex:none}
 </style>
 </head>
 <body>
@@ -1219,7 +1227,10 @@ const A = {
   format: (v) => { S.nyFormat = v === "4" ? 4 : 6; render(); },
   noad: (v) => { S.nyNoAd = v === "1"; render(); },
   livToggle: () => { S.livAaben = !S.livAaben; render(); },
+  wiz: (v) => { S.wiz = +v; render(); },
+  wizMod: (v) => { S.nyMod = v; render(); },
   start: () => {
+    S.wiz = 1; S._doneVist = false;
     S.aktiv = { modstander: S.nyMod || "Ukendt modstander", turnering: S.nyTur || "",
       dato: new Date().toISOString().slice(0,10), oskarFirst: S.nyFirst, mtb: S.nyMtb, saetTil: S.nyFormat === 4 ? 4 : 6, noAd: S.nyFormat === 4 && S.nyNoAd, point: [], justeringer: [] };
     S.afventer = null; S.serv = 1; gemAktiv(); render();
@@ -1289,13 +1300,25 @@ function avat(navn, px){
   return '<span class="avat" style="width:' + px + 'px;height:' + px + 'px;font-size:' + Math.round(px*0.4) + 'px;background:' + farver[h % 4] + '">' + ini + '</span>';
 }
 
+
+function bundNav(){
+  var EN = S.sprog === "en";
+  var akt = function(ja){ return ja ? " class=\"aktiv\"" : ""; };
+  var udv = S.verden === "udv";
+  return '<nav class="bundnav">' +
+    '<button data-a="devgaa" data-v="udv:hjem"' + akt(udv && (S.tab === "hjem" || S.tab === "hb-hjem")) + '><span>🏠</span>' + (EN?"HOME":"HJEM") + '</button>' +
+    '<button data-a="devgaa" data-v="udv:kamp"' + akt(udv && S.tab === "kamp") + '><span>🎾</span>' + (EN?"MATCH":"KAMP") + '</button>' +
+    '<button data-a="devgaa" data-v="udv:fysisk"' + akt(udv && S.tab === "fysisk") + '><span>💪</span>' + (EN?"TRAIN":"TRÆN") + '</button>' +
+    '<button data-a="devgaa" data-v="udv:historik"' + akt(udv && S.tab === "historik") + '><span>📊</span>STATS</button>' +
+    '</nav>';
+}
+
 function render() {
   const EN = S.sprog === "en";
   const el = document.getElementById("app");
   let h = '<div style="display:flex;justify-content:flex-end"><button class="knap" style="flex:none;padding:6px 14px;font-size:11.5px;background:transparent;border:1.5px solid var(--kant);color:var(--is)" data-a="sprog">'+(EN?"🌐 Dansk":"🌐 English")+'</button></div>';
   h += '<div style="display:flex;align-items:center;gap:9px;margin-bottom:12px"><img src="data:image/png;base64,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" style="width:30px;height:30px;flex:none" alt=""><div style="font-size:14px;font-weight:800;letter-spacing:-.3px;color:var(--kridt);line-height:1">Sports<span style="color:var(--is)">AI</span>nalytics</div></div>';
   h += '<div class="hero"><div class="eyebrow">Grus &amp; Is</div><h1>Team Oskar</h1><div class="sub">'+(EN?'High tempo · ball in · cool head':'Højt tempo · bolden ind · hovedet koldt')+'</div>'+naesteChip(EN)+'</div>';
-  h += '<div class="raekke"><button class="knap" style="background:'+(S.verden==="udv"?"var(--grus)":"var(--kort)")+';color:'+(S.verden==="udv"?"var(--kridt)":"var(--daempet)")+'" data-a="verden" data-v="udv">'+(EN?"🎾 DEVELOPMENT":"🎾 UDVIKLING")+'</button><button class="knap" style="background:'+(S.verden==="saeson"?"var(--grus)":"var(--kort)")+';color:'+(S.verden==="saeson"?"var(--kridt)":"var(--daempet)")+'" data-a="verden" data-v="saeson">'+(EN?"📅 SEASON":"📅 SÆSON")+'</button></div>';
   const FANER = S.verden === "udv"
     ? (EN ? [["kamp","🎾 Match"],["guide","ℹ️ Guide"],["stil","🎯 Style"],["rutiner","🧊 Routines"],["planer","🎯 Opponents"],["anbefal","💡 Insights"],["historik","📊 Statistics"],["s2026","📈 2026"],["fysisk","🎾💪 Tennis & fitness"]]
           : [["kamp","🎾 Kamp"],["guide","ℹ️ Guide"],["stil","🎯 Stil"],["rutiner","🧊 Rutiner"],["planer","🎯 Modstandere"],["anbefal","💡 Anbefalinger"],["historik","📊 Statistik"],["s2026","📈 2026"],["fysisk","🎾💪 Tennis & fysisk"]])
@@ -1310,13 +1333,13 @@ function render() {
         '<span class="dev-ikon">' + ik + '</span><b>' + titel + '</b><small>' + tekst + '</small></button>';
     };
     const _hjempil = function(maal){
-      return '<button class="knap" style="width:auto;padding:9px 16px;background:var(--kort);border:1px solid #2A3A4A" data-a="tab" data-v="' + maal + '">←</button>';
+      return '<button class="pil-tilbage" data-a="tab" data-v="' + maal + '">←</button>';
     };
     if (S.tab === "hjem") {
       const _dsc = Math.max(0, Math.ceil((new Date("2026-07-30") - new Date())/86400000));
       h += '<div style="margin:16px 2px 6px;display:flex;align-items:center;gap:12px">' + avat("Oskar",46) + '<div><h2 style="margin:0;font-size:23px">' + (EN?"Hi Oskar 👋":"Hej Oskar 👋") + '</h2>' +
         '<p style="margin:5px 0 0;font-size:12.5px;color:var(--daempet)">' + S.gemte.length + (EN?" matches":" kampe") + ' · ' + S.ttLog.length + (EN?" sessions":" træninger") + (_dsc>0 ? ' · <b style="color:var(--guld)">' + _dsc + (EN?" days to Sommer Cup":" dage til Sommer Cup") + '</b>' : '') + '</p><p id="dev-kal" style="margin:4px 0 0;font-size:12px;color:var(--is)"></p></div></div>';
-      h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"MATCH":"KAMP") + '</b><br><small>' + (EN?"register points — 2 taps per point":"registrér point — 2 tryk pr. point") + '</small></span><span class="dev-pil">→</span></button>';
+      h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"MATCH":"KAMP") + '</b><br><small id="hero-sub">' + (EN?"register points — 2 taps per point":"registrér point — 2 tryk pr. point") + '</small></span><span class="dev-pil">→</span></button>';
       h += '<div class="dev-grid">' +
         _flise("tab","fysisk","💪",(EN?"TRAIN":"TRÆN"),(EN?"todays session and running":"dagens pas & løb"),"dev-kant-gron") +
         _flise("tab","anbefal","💡",(EN?"INSIGHTS":"INDSIGT"),(EN?"focus points & key numbers":"fokuspunkter & nøgletal"),"dev-kant-is") +
@@ -1324,6 +1347,7 @@ function render() {
         _flise("tab","historik","📊",(EN?"STATISTICS":"STATISTIK"),(EN?"matches & training — all the numbers":"kampe & træning — alle tallene"),"dev-kant-is") +
         _flise("tab","s2026","📈",(EN?"2026":"2026"),(EN?"the season match by match":"sæsonen kamp for kamp"),"dev-kant-guld") +
         _flise("tab","hb-hjem","📘",(EN?"HANDBOOK":"HÅNDBOG"),(EN?"guide, style & routines":"guide, stil & rutiner"),"dev-kant-grus") +
+        '<button class="dev-flise dev-kant dev-kant-guld" style="grid-column:1/-1;flex-direction:row;align-items:center;min-height:0;padding:14px" data-a="devgaa" data-v="saeson:sa-hjem"><span class="dev-ikon" style="margin:0 10px 0 0">🏆</span><span style="flex:1"><b>' + (EN?"SEASON 2026":"SÆSONEN 2026") + '</b><small style="display:block">' + (EN?"schedule, strategy & rules":"plan, strategi & regler") + '</small></span><span class="dev-pil">→</span></button>' +
         '</div>';
           } else if (S.tab === "hb-hjem") {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") + '<b style="font-size:16px">📘 ' + (EN?"Handbook":"Håndbog") + '</b></div>';
@@ -1354,7 +1378,7 @@ function render() {
         '</div>';
     } else {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 8px">' +
-        '<button class="knap" style="width:auto;padding:9px 16px;background:var(--kort);border:1px solid #2A3A4A" data-a="tab" data-v="sa-hjem">←</button>' +
+        '<button class="pil-tilbage" data-a="tab" data-v="sa-hjem">←</button>' +
         '<b style="font-size:16px">' + _sfn(S.tab) + '</b></div>';
       if (S.tab === "plan") h += '<div id="dev-kal-plan"></div>';
     }
@@ -1372,10 +1396,28 @@ function render() {
 
   if (S.tab === "kamp") {
     if (!S.aktiv) {
-      h += '<p style="font-size:13px;color:var(--daempet);line-height:1.6;margin-top:0">'+(EN?'Two taps per ball — the app computes the score by itself. First time? Read the <b style="color:var(--is)">ℹ️ Guide</b>.':'To tryk pr. bold — appen regner selv stillingen ud. Første gang? Læs <b style="color:var(--is)">ℹ️ Guide</b>.')+'</p>';
+      if (S.wiz === undefined) S.wiz = 1;
+      const _wp = function(n){ return '<div style="display:flex;gap:6px;justify-content:center;margin:2px 0 12px">' + [1,2,3].map(function(i){ return '<span style="width:8px;height:8px;border-radius:50%;background:' + (i<=n?"var(--guld)":"#2A3A4A") + '"></span>'; }).join("") + '</div>'; };
+      const _wtitel = function(t){ return '<h2 style="margin:2px 0 10px;font-size:19px;text-align:center">' + t + '</h2>'; };
+      const _wfrem = function(n,t){ return '<div class="raekke" style="margin-top:12px"><button class="knap stor" style="background:var(--grus)" data-a="wiz" data-v="' + n + '">' + t + ' →</button></div>'; };
+      const _wtilb = function(n){ return '<div style="text-align:center;margin-top:8px"><button class="knap" style="width:auto;padding:7px 16px;background:transparent;border:1px dashed var(--kant);color:var(--daempet);font-size:11.5px" data-a="wiz" data-v="' + n + '">← ' + (EN?"back":"tilbage") + '</button></div>'; };
+      if (S.wiz === 1) {
+        h += _wp(1) + _wtitel(EN?"Who are you playing?":"Hvem spiller du mod?");
+        const _mods = []; S.gemte.forEach(function(k){ if (k.modstander && _mods.indexOf(k.modstander) < 0) _mods.push(k.modstander); });
+        if (_mods.length) h += '<div class="raekke" style="flex-wrap:wrap;gap:7px;justify-content:center;margin:0 0 8px">' + _mods.slice(0,8).map(function(n){ return '<button class="knap valg' + (S.nyMod===n?" til":"") + '" style="flex:0 1 auto;padding:9px 14px;font-size:12.5px" data-a="wizMod" data-v="' + esc(n) + '">' + esc(n) + '</button>'; }).join("") + '</div>';
       h += '<input placeholder="'+(EN?'Opponent (e.g. Le Li)':'Modstander (fx Le Li)')+'" value="'+esc(S.nyMod)+'" data-felt="nyMod">';
       h += '<input placeholder="'+(EN?'Tournament (e.g. HRT Sommer Cup)':'Turnering (fx HRT Sommer Cup, kat. G)')+'" value="'+esc(S.nyTur)+'" data-felt="nyTur">';
+        if (S.nyMod) {
+          const _hk = S.gemte.filter(function(k){ return k.modstander === S.nyMod; }).length;
+          if (_hk) h += '<div class="kort dev-kant dev-kant-guld" style="padding:10px 12px"><b style="color:var(--guld)">🥊 ' + _hk + (EN?" previous matches vs ":" tidligere kampe mod ") + esc(S.nyMod) + '</b><p class="lille" style="margin:3px 0 0">' + (EN?"Head-to-head and the match plan are ready under Rivals.":"Head-to-head og kampplanen ligger klar under Modstandere.") + '</p></div>';
+        }
+        h += _wfrem(2, EN?"Next":"Videre");
+      } else if (S.wiz === 2) {
+        h += _wp(2) + _wtitel(EN?"Who serves first?":"Hvem server først?");
       h += '<div class="raekke"><button class="knap valg '+(S.nyFirst?"til":"")+'" data-a="first" data-v="1">'+(EN?"Oskar serves first":"Oskar server først")+'</button><button class="knap valg '+(!S.nyFirst?"til":"")+'" data-a="first" data-v="0">'+(EN?"Opponent serves first":"Modstander server først")+'</button></div>';
+        h += _wfrem(3, EN?"Next":"Videre") + _wtilb(1);
+      } else {
+        h += _wp(3) + _wtitel(EN?"Format — prefilled":"Format — forudfyldt");
       h += '<div class="raekke"><button class="knap valg '+(S.nyMtb?"til":"")+'" data-a="mtb" data-v="1">'+(EN?"3rd set = match tiebreak (10)":"3. sæt = match-tiebreak (10)")+'</button><button class="knap valg '+(!S.nyMtb?"til":"")+'" data-a="mtb" data-v="0">'+(EN?"Full 3rd set":"Fuldt 3. sæt")+'</button></div>';
       h += '<div class="raekke"><button class="knap valg '+(S.nyFormat!==4?"til":"")+'" data-a="format" data-v="6">'+(EN?"Sets to 6 (standard)":"Sæt til 6 (standard)")+'</button><button class="knap valg '+(S.nyFormat===4?"til":"")+'" data-a="format" data-v="4">'+(EN?"Sets to 4 (NextGen)":"Sæt til 4 (NextGen)")+'</button></div>';
       if (S.nyFormat === 4) h += '<div class="raekke"><button class="knap valg '+(!S.nyNoAd?"til":"")+'" data-a="noad" data-v="0">'+(EN?"With advantage scoring":"Med fordelspoint")+'</button><button class="knap valg '+(S.nyNoAd?"til":"")+'" data-a="noad" data-v="1">'+(EN?"Deciding point at deuce (no-ad)":"Afgørende point ved lige (no-ad)")+'</button></div>';
@@ -1388,6 +1430,8 @@ function render() {
         '</div></div>';
       h += '<p class="lille" style="margin:2px 0 10px;opacity:.8">'+(EN?"Advanced = a third tap per ball registers rally length (rule IV data). Can be switched mid-match.":"Avanceret = et tredje tryk pr. bold registrerer duel-længden (bud IV-data). Kan skiftes midt i kampen.")+'</p>';
       h += '<div class="raekke"><button class="knap stor" style="background:var(--grus)" data-a="start">'+(EN?"Start match":"Start kamp")+'</button></div>';
+        h += _wtilb(2);
+      }
     } else {
       const s = statistik(S.aktiv), st = s.st;
       const saetVis = st.hist.map(x => x[0]+"-"+x[1]).join("  ");
@@ -1441,6 +1485,12 @@ function render() {
               '<div class="raekke"><button class="knap" style="padding:9px 6px;background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px" data-a="laengde" data-v="0">'+(EN?'Skip — just save the point':'Spring over — gem bare pointet')+'</button></div>';
           }
         }
+      }
+      if (st.done) {
+        if (!S._doneVist) { S.livAaben = true; S._doneVist = true; }
+        h += '<div class="kort dev-kant dev-kant-guld"><h3 style="margin:0 0 4px">🏆 ' + (st.vinderOskar ? (EN?"MATCH WON":"KAMP VUNDET") : (EN?"MATCH LOST":"KAMP TABT")) + '</h3>' +
+          '<b style="font-size:15px">' + saetVis + ' · vs ' + esc(S.aktiv.modstander) + '</b>' +
+          '<p class="lille" style="margin:6px 0 0">' + (EN?"The engine says the match is over — summary and analysis are ready below. Save to move it to Statistics.":"Motoren siger kampen er slut — resumé og analyse står klar nedenfor. Gem kampen, så flytter den til Statistik.") + '</p></div>';
       }
       h += '<div class="raekke"><button class="knap" data-a="fortryd">'+(EN?"↶ Undo last":"↶ Fortryd seneste")+'</button><button class="knap valg" data-a="justToggle">⚙ '+(EN?"Adjust score":"Justér stillingen")+'</button><button class="knap valg" style="border:1.5px solid var(--guld)" data-a="livToggle"><span class="badge-ai">AI</span> '+(EN?"Analysis":"Analyse")+'</button></div>' +
       (S.livAaben ? livAnalyse(EN) : "") +
@@ -1657,10 +1707,10 @@ function render() {
   }
 
   if (!LAAST && S.tab === "historik") {
-    h += '<details class="dev-fold" open><summary><span class="dev-ikon">📈</span><span><b>' + (EN?"The form curve":"Formkurven") + '</b><small>' + (EN?"Win/loss trend match by match — can you see the progress?":"Vind/tab-udviklingen kamp for kamp — kan du se fremgangen?") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '<details class="dev-fold dev-kant dev-kant-is"><summary><span class="dev-ikon">📈</span><span><b>' + (EN?"The form curve":"Formkurven") + '</b><small>' + (EN?"Win/loss trend match by match — can you see the progress?":"Vind/tab-udviklingen kamp for kamp — kan du se fremgangen?") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
     h += grafVT(EN);
     h += '</div></details>';
-    h += '<details class="dev-fold"><summary><span class="dev-ikon">🎾</span><span><b>' + (EN?"Match by match":"Kamp for kamp") + '</b><small>' + (EN?"Every saved match with full stats, set table and analysis — plus opponent comparison.":"Hver gemt kamp med fulde nøgletal, sæt-tabel og analyse — og sammenlign to modstandere.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '<details class="dev-fold dev-kant dev-kant-is"><summary><span class="dev-ikon">🎾</span><span><b>' + (EN?"Match by match":"Kamp for kamp") + '</b><small>' + (EN?"Every saved match with full stats, set table and analysis — plus opponent comparison.":"Hver gemt kamp med fulde nøgletal, sæt-tabel og analyse — og sammenlign to modstandere.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
     if (S.gemte.length >= 2) {
       const sa = statistik(S.gemte[0]), sb = statistik(S.gemte[1]);
       const frem = [], skaerp = [];
@@ -1764,7 +1814,7 @@ function render() {
       h += '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="analyseGem" data-v="'+S.redigerA+'">💾 '+(EN?"Save analysis to match":"Gem analysen på kampen")+'</button><button class="knap" data-a="analyseAnnuller">'+(EN?"Cancel":"Annullér")+'</button></div>';
     }
     h += '</div></details>';
-    h += '<details class="dev-fold"><summary><span class="dev-ikon">🏃</span><span><b>' + (EN?"Training":"Træningen") + '</b><small>' + (EN?"Every session with time, quality and notes — consistency in black and white.":"Alle pas med tid, kvalitet og noter — vedholdenheden sort på hvidt.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '<details class="dev-fold dev-kant dev-kant-is"><summary><span class="dev-ikon">🏃</span><span><b>' + (EN?"Training":"Træningen") + '</b><small>' + (EN?"Every session with time, quality and notes — consistency in black and white.":"Alle pas med tid, kvalitet og noter — vedholdenheden sort på hvidt.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">🎾 '+(EN?"Training history":"Trænings-historik")+'</h2>';
     if (!S.ttLog.length) {
       h += '<p style="font-size:13px;color:var(--daempet)">'+(EN?"Training sessions are registered under the TRAIN tab — they will appear here.":"Træninger registreres under 🏃 TRÆN-fanen — så dukker de op her.")+'</p>';
@@ -1778,7 +1828,7 @@ function render() {
         '<p class="lille" style="margin:6px 0 0;opacity:.75">'+(EN?"Edit or delete under the TRAIN tab.":"Redigér eller slet under 🏃 TRÆN-fanen.")+'</p></div>';
     }
     h += '</div></details>';
-    h += '<details class="dev-fold"><summary><span class="dev-ikon">💾</span><span><b>' + (EN?"Backup & move data":"Backup & flyt data") + '</b><small>' + (EN?"Backup, restore and merge between phones — do it BEFORE deleting home screen shortcuts.":"Sikkerhedskopi, gendan og flet mellem telefoner — gør det FØR genveje slettes.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '<details class="dev-fold dev-kant dev-kant-is"><summary><span class="dev-ikon">💾</span><span><b>' + (EN?"Backup & move data":"Backup & flyt data") + '</b><small>' + (EN?"Backup, restore and merge between phones — do it BEFORE deleting home screen shortcuts.":"Sikkerhedskopi, gendan og flet mellem telefoner — gør det FØR genveje slettes.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">💾 '+(EN?"Backup":"Sikkerhedskopi")+'</h2>' +
       '<div class="raekke"><button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="backupLav">💾 '+(EN?"Create full backup":"Lav fuld backup")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="gendanToggle">♻️ '+(EN?"Restore":"Gendan")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--vundet);color:var(--vundet)" data-a="fletToggle">'+(EN?"🔀 Merge device":"🔀 Flet enhed")+'</button></div>';
     if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and save it in the family chat/notes — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den i familiegruppen/noter — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>' + eksportKnapper('backupTekst', EN);
@@ -1853,6 +1903,7 @@ function render() {
   }
 
   h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Claude via Nicolai. Team Oskar · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Team Oskar · v2.1 · vundet/tabt-graf · juli 2026.")+'</p>';
+  h += bundNav();
   el.innerHTML = h;
   devFoldning();
   devKalender();
@@ -1865,7 +1916,7 @@ function devKalender(){
   fetch("kalender.json",{cache:"no-store"}).then(function(r){ return r.json(); }).then(function(d){
     var nu = new Date();
     var kommende = (d.events||[]).filter(function(e){
-      return (e.team === "oskar" || e.team === "alle") && new Date(e.dato + "T" + (e.tid||"23:59")) > nu;
+      return (e.team === "oskar" || e.team === "alle") && new Date(e.dato + "T23:59:59") > nu;
     }).sort(function(a,b){ return (a.dato+a.tid).localeCompare(b.dato+b.tid); });
     if (!kommende.length) return;
     if (plan) {
@@ -1880,6 +1931,12 @@ function devKalender(){
     var e = kommende[0];
     var dd = e.dato.split("-");
     m.innerHTML = "📅 " + (+dd[2]) + "/" + (+dd[1]) + (e.tid ? " kl. " + e.tid : "") + (e.sted ? " · " + e.sted : "") + " · " + e.titel + " " + e.detalje;
+    var hero = document.getElementById("hero-sub");
+    if (hero) {
+      var idag = new Date(); var p2 = function(n){ return (n<10?"0":"")+n; };
+      var idagStr = idag.getFullYear() + "-" + p2(idag.getMonth()+1) + "-" + p2(idag.getDate());
+      if (e.dato === idagStr) hero.innerHTML = "<b style=\"color:var(--guld)\">I DAG" + (e.tid ? " kl. " + e.tid : "") + ": " + e.titel + " " + e.detalje + "</b>";
+    }
   }).catch(function(){});
 }
 
@@ -1898,9 +1955,10 @@ function devFoldning(){
   kort.forEach(function(k, i){
     const h3 = k.querySelector("h3");
     const det = document.createElement("details");
-    det.className = "dev-fold";
+    const KANTMAP = { fysisk:"dev-kant-gron", anbefal:"dev-kant-is", planer:"dev-kant-guld", s2026:"dev-kant-guld", guide:"dev-kant-grus", stil:"dev-kant-guld", rutiner:"dev-kant-grus", status:"dev-kant-gron", strategi:"dev-kant-guld", plan:"dev-kant-is", regler:"dev-kant-grus" };
+    det.className = "dev-fold dev-kant " + (KANTMAP[S.tab] || "");
     det.dataset.devi = i;
-    const aaben = husket ? husket.indexOf(String(i)) >= 0 : i === 0;
+    const aaben = husket ? husket.indexOf(String(i)) >= 0 : false;
     if (aaben) det.open = true;
     const sum = document.createElement("summary");
     sum.innerHTML = '<span style="flex:1;min-width:0"><b>' + h3.innerHTML + '</b></span><span class="dev-pil">▶</span>';

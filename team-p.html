@@ -797,7 +797,7 @@ function livAnalyse(EN) {
     '<h3 style="margin-top:0"><span class="badge-ai">AI</span> '+(EN?"Quick analysis — live":"Hurtig analyse — live")+'</h3>' +
     '<p class="lille" style="margin:0 0 8px">'+(EN?"Sets ":"Sæt ")+st.setsO+'-'+st.setsM+' · '+(EN?"games ":"partier ")+st.gO+'-'+st.gM+' · '+(EN?"this set ":"dette sæt ")+ps.v+'-'+ps.t+(EN?" pts":" point")+'</p>' +
     '<div>'+chips.join("")+'</div>' + rh +
-    '</div>';
+    turneringsKontekst(EN) + '</div>';
 }
 function anbefalinger(EN) {
   const vl = visningsListe();
@@ -1220,6 +1220,26 @@ function avat(navn, px){
 }
 
 
+
+function turneringsKontekst(EN){
+  if (!S._kal || !S._kal.length) return "";
+  var nu = new Date(); var p2 = function(n){ return (n<10?"0":"")+n; };
+  var idag = nu.getFullYear()+"-"+p2(nu.getMonth()+1)+"-"+p2(nu.getDate());
+  var im = new Date(nu.getTime()+86400000);
+  var imorgen = im.getFullYear()+"-"+p2(im.getMonth()+1)+"-"+p2(im.getDate());
+  var e = null, hvornaar = "";
+  for (var i=0;i<S._kal.length;i++){
+    var k = S._kal[i];
+    if (k.dato === idag && k.tid && (k.tid > p2(nu.getHours())+":"+p2(nu.getMinutes()))) { e=k; hvornaar = EN?"TODAY":"I DAG"; break; }
+    if (k.dato === imorgen) { e=k; hvornaar = EN?"tomorrow":"i morgen"; break; }
+  }
+  if (!e) return "";
+  var raad = hvornaar.indexOf("DAG")>=0 || hvornaar==="TODAY"
+    ? (EN?" — close out efficiently and recover: two matches in one day.":" — luk kampen effektivt og restituér: to kampe på én dag.")
+    : (EN?" — manage the legs; the ladder continues.":" — forvalt kræfterne; stigen fortsætter.");
+  return '<p class="lille" style="margin:8px 0 0;border-top:1px dashed var(--kant);padding-top:8px">🗓 <b style="color:var(--guld)">' + (EN?"NEXT":"NÆSTE") + ' (' + hvornaar + ' ' + (EN?"at":"kl.") + ' ' + e.tid + '):</b> ' + e.titel + ' ' + e.detalje + raad + '</p>';
+}
+
 function bundNav(){
   var EN = S.sprog === "en";
   var akt = function(ja){ return ja ? " class=\"aktiv\"" : ""; };
@@ -1409,7 +1429,7 @@ function render() {
         if (!S._doneVist) { S.livAaben = true; S._doneVist = true; }
         h += '<div class="kort dev-kant dev-kant-guld"><h3 style="margin:0 0 4px">🏆 ' + (st.vinderOskar ? (EN?"MATCH WON":"KAMP VUNDET") : (EN?"MATCH LOST":"KAMP TABT")) + '</h3>' +
           '<b style="font-size:15px">' + saetVis + ' · vs ' + esc(S.aktiv.modstander) + '</b>' +
-          '<p class="lille" style="margin:6px 0 0">' + (EN?"The engine says the match is over — summary and analysis are ready below. Save to move it to Statistics.":"Motoren siger kampen er slut — resumé og analyse står klar nedenfor. Gem kampen, så flytter den til Statistik.") + '</p></div>';
+          '<p class="lille" style="margin:6px 0 0">' + (EN?"The engine says the match is over — summary and analysis are ready below. Save to move it to Statistics.":"Motoren siger kampen er slut — resumé og analyse står klar nedenfor. Gem kampen, så flytter den til Statistik.") + '</p>' + turneringsKontekst(EN) + '</div>';
       }
       h += '<div class="raekke"><button class="knap" data-a="fortryd">'+(EN?"↶ Undo last":"↶ Fortryd seneste")+'</button><button class="knap valg" data-a="justToggle">⚙ '+(EN?"Adjust score":"Justér stillingen")+'</button><button class="knap valg" style="border:1.5px solid var(--guld)" data-a="livToggle"><span class="badge-ai">AI</span> '+(EN?"Analysis":"Analyse")+'</button></div>' +
       (S.livAaben ? livAnalyse(EN) : "") +
@@ -1846,6 +1866,7 @@ function devKalender(){
     var kommende = (d.events||[]).filter(function(e){
       return (e.team === "p" || e.team === "alle") && new Date(e.dato + "T23:59:59") > nu;
     }).sort(function(a,b){ return (a.dato+a.tid).localeCompare(b.dato+b.tid); });
+    S._kal = kommende;
     if (!kommende.length) return;
     if (plan) {
       m.innerHTML = '<div class="kort" style="border-left:3px solid var(--guld)"><h3>📅 Kampe & tider</h3>' +

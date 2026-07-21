@@ -76,6 +76,7 @@
   .fod { font-size:10.5px; color:#3E5164; margin-top:22px; border-top:1px dashed var(--kant); padding-top:9px; }
   .lille { font-size:11.5px; color:var(--daempet); margin:0 0 6px; }
   .statlinje { font-size:12px; line-height:1.7; }
+  .avat{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;color:#101B26;flex:none;vertical-align:middle;letter-spacing:.02em}
 </style>
 </head>
 <body>
@@ -1198,6 +1199,15 @@ const A = {
 // ---------- Rendering ----------
 const esc = (t) => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+
+function avat(navn, px){
+  var farver = ["#E3B341","#9FD8E8","#C97B54","#4CAF78"];
+  var h = 0; for (var i = 0; i < navn.length; i++) h = (h * 31 + navn.charCodeAt(i)) >>> 0;
+  var dele = navn.trim().split(/\s+/);
+  var ini = (dele[0][0] + (dele.length > 1 ? dele[dele.length-1][0] : "")).toUpperCase();
+  return '<span class="avat" style="width:' + px + 'px;height:' + px + 'px;font-size:' + Math.round(px*0.4) + 'px;background:' + farver[h % 4] + '">' + ini + '</span>';
+}
+
 function render() {
   const EN = S.sprog === "en";
   const el = document.getElementById("app");
@@ -1223,8 +1233,8 @@ function render() {
     };
     if (S.tab === "hjem") {
       const _dsc = Math.max(0, Math.ceil((new Date("2026-07-30") - new Date())/86400000));
-      h += '<div style="margin:16px 2px 6px"><h2 style="margin:0;font-size:23px">' + (EN?"Hi Philip 👋":"Hej Philip 👋") + '</h2>' +
-        '<p style="margin:5px 0 0;font-size:12.5px;color:var(--daempet)">' + S.gemte.length + (EN?" matches":" kampe") + ' · ' + S.ttLog.length + (EN?" sessions":" træninger") + (_dsc>0 ? ' · <b style="color:var(--guld)">' + _dsc + (EN?" days to Sommer Cup":" dage til Sommer Cup") + '</b>' : '') + '</p><p id="dev-kal" style="margin:4px 0 0;font-size:12px;color:var(--is)"></p></div>';
+      h += '<div style="margin:16px 2px 6px;display:flex;align-items:center;gap:12px">' + avat("Philip",46) + '<div><h2 style="margin:0;font-size:23px">' + (EN?"Hi Philip 👋":"Hej Philip 👋") + '</h2>' +
+        '<p style="margin:5px 0 0;font-size:12.5px;color:var(--daempet)">' + S.gemte.length + (EN?" matches":" kampe") + ' · ' + S.ttLog.length + (EN?" sessions":" træninger") + (_dsc>0 ? ' · <b style="color:var(--guld)">' + _dsc + (EN?" days to Sommer Cup":" dage til Sommer Cup") + '</b>' : '') + '</p><p id="dev-kal" style="margin:4px 0 0;font-size:12px;color:var(--is)"></p></div></div>';
       h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"MATCH":"KAMP") + '</b><br><small>' + (EN?"register points — 2 taps per point":"registrér point — 2 tryk pr. point") + '</small></span><span class="dev-pil">→</span></button>';
       h += '<div class="dev-grid">' +
         _flise("tab","fysisk","💪",(EN?"TRAIN":"TRÆN"),(EN?"todays session and running":"dagens pas & løb"),"dev-kant-gron") +
@@ -1265,6 +1275,7 @@ function render() {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 8px">' +
         '<button class="knap" style="width:auto;padding:9px 16px;background:var(--kort);border:1px solid #2A3A4A" data-a="tab" data-v="sa-hjem">←</button>' +
         '<b style="font-size:16px">' + _sfn(S.tab) + '</b></div>';
+      if (S.tab === "plan") h += '<div id="dev-kal-plan"></div>';
     }
   }
   const LAAST = S.laast && (LAASTE_FANER.indexOf(S.tab) >= 0);
@@ -1775,8 +1786,9 @@ function render() {
   devKalender();
 }
 function devKalender(){
-  if (S.tab !== "hjem" || S.verden !== "udv") return;
-  var m = document.getElementById("dev-kal");
+  var plan = (S.verden !== "udv" && S.tab === "plan");
+  if (!plan && (S.tab !== "hjem" || S.verden !== "udv")) return;
+  var m = document.getElementById(plan ? "dev-kal-plan" : "dev-kal");
   if (!m) return;
   fetch("kalender.json",{cache:"no-store"}).then(function(r){ return r.json(); }).then(function(d){
     var nu = new Date();
@@ -1784,9 +1796,18 @@ function devKalender(){
       return (e.team === "p" || e.team === "alle") && new Date(e.dato + "T" + (e.tid||"23:59")) > nu;
     }).sort(function(a,b){ return (a.dato+a.tid).localeCompare(b.dato+b.tid); });
     if (!kommende.length) return;
+    if (plan) {
+      m.innerHTML = '<div class="kort" style="border-left:3px solid var(--guld)"><h3>📅 Kampe & tider</h3>' +
+        kommende.map(function(e){
+          var dd = e.dato.split("-");
+          return '<div style="display:flex;gap:8px;font-size:12.5px;margin-bottom:6px"><b style="color:var(--guld);flex:none">' + (+dd[2]) + "/" + (+dd[1]) + (e.tid ? " " + e.tid : "") + '</b><span>' + e.titel + " " + e.detalje + (e.sted ? ' · <span style="color:var(--daempet)">' + e.sted + '</span>' : '') + '</span></div>';
+        }).join("") +
+        '<p class="lille" style="margin:4px 0 0;opacity:.7">Opdateres automatisk fra kampkalenderen</p></div>';
+      return;
+    }
     var e = kommende[0];
     var dd = e.dato.split("-");
-    m.innerHTML = "📅 " + (+dd[2]) + "/" + (+dd[1]) + (e.tid ? " kl. " + e.tid : "") + " · " + e.titel + " " + e.detalje;
+    m.innerHTML = "📅 " + (+dd[2]) + "/" + (+dd[1]) + (e.tid ? " kl. " + e.tid : "") + (e.sted ? " · " + e.sted : "") + " · " + e.titel + " " + e.detalje;
   }).catch(function(){});
 }
 

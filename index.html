@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
-<title>Team Oskar · SportsAInalytics</title>
+<title>Team Oskar · SportsAInalytics</title><link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="theme-color" content="#101B26">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -850,7 +850,7 @@ function grafVT(EN) {
   const rk = kron.map(function(k){
     let v;
     if (typeof k.facitVandt === "boolean") { v = k.facitVandt; }
-    else { const st = statistik(k); v = st.setsO > st.setsM; }
+    else { const st = statistik(k).st; v = st.setsO > st.setsM; }
     return { v: v, d: k.dato || "" };
   });
   const nk = function(s){ const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s || ""); return m ? m[3] + "-" + m[2] + "-" + m[1] : (s || ""); };

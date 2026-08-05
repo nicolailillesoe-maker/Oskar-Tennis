@@ -641,10 +641,52 @@ function trendRaekke(EN, label, vals, enhed, stigerGodt) {
     '<span style="color:' + nivFarve(godt) + ';font-weight:800;font-size:12px">' + pil + ' ' + (godt === 2 ? "✓" : godt === 0 ? "⚠" : "") + '</span></div>' + soejler +
     '<div style="font-size:10.5px;color:var(--daempet)">' + (EN ? "avg " : "snit ") + (Math.round(snitAlle*10)/10) + (enhed||"") + ' · ' + (EN ? "last 5 " : "sidste 5 ") + '<b style="color:'+(( stigerGodt ? snit5>=snitAlle : snit5<=snitAlle )?"var(--vundet)":"var(--tabt)")+'">' + (Math.round(snit5*10)/10) + (enhed||"") + '</b> · ' + (EN ? "latest " : "seneste ") + '<b style="color:var(--kridt)">' + b + (enhed||"") + '</b><br><span style="color:var(--vundet)">■</span> ' + (EN ? "better than own avg" : "bedre end eget snit") + ' · <span style="color:var(--tabt)">■</span> ' + (EN ? "worse" : "dårligere") + '</div></td></tr>';
 }
+
+function pulsKort(k, EN) {
+  if (!k.point || k.point.length < 8) return "";
+  var n = k.point.length, kum = [], lab = [], sgr = [], prevG = 0, prevH = 0, sum = 0;
+  for (var i = 0; i < n; i++) {
+    sum += k.point[i].r === "V" ? 1 : -1; kum.push(sum);
+    var sti = beregnStilling(k.point.slice(0, i + 1), k.oskarFirst, k.mtb, k.justeringer, k.saetTil, k.noAd);
+    var g = sti.gO + sti.gM, hh = sti.hist.length;
+    if (hh > prevH) { var hs = sti.hist[hh - 1]; lab.push([i, (EN ? "SET " : "SÆT ") + hs[0] + "-" + hs[1], 1]); sgr.push(i); prevH = hh; prevG = 0; }
+    else if (g > prevG) { lab.push([i, sti.gO + "-" + sti.gM, 0]); prevG = g; }
+  }
+  var W = 320, H = 108, padX = 8, padY = 12, maxAbs = 1;
+  for (var m = 0; m < n; m++) if (Math.abs(kum[m]) > maxAbs) maxAbs = Math.abs(kum[m]);
+  var px = function(i){ return padX + i * (W - 2 * padX) / Math.max(1, n - 1); };
+  var py = function(v){ return H / 2 - v * (H / 2 - padY) / maxAbs; };
+  var pts = kum.map(function(v, i){ return px(i).toFixed(1) + "," + py(v).toFixed(1); }).join(" ");
+  var nkey = (k.dato || "") + "|" + (k.modstander || "");
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + (H + 16) + '" style="width:100%;display:block" xmlns="http://www.w3.org/2000/svg">';
+  svg += '<line x1="' + padX + '" y1="' + (H / 2) + '" x2="' + (W - padX) + '" y2="' + (H / 2) + '" stroke="var(--guld)" stroke-width="1" opacity=".8"/>';
+  sgr.forEach(function(i){ svg += '<line x1="' + px(i).toFixed(1) + '" y1="' + padY + '" x2="' + px(i).toFixed(1) + '" y2="' + (H - 4) + '" stroke="var(--kant)" stroke-width="1" stroke-dasharray="3,3"/>'; });
+  svg += '<polyline points="' + pts + '" fill="none" stroke="var(--is)" stroke-width="2" stroke-linejoin="round"/>';
+  var hop = lab.length > 15 ? 2 : 1, lnr = 0;
+  lab.forEach(function(L){ if (!L[2]) { lnr++; if (hop > 1 && lnr % hop !== 0) return; } svg += '<text x="' + px(L[0]).toFixed(1) + '" y="' + (H + 12) + '" text-anchor="middle" font-size="' + (L[2] ? 7.5 : 7) + '" font-weight="' + (L[2] ? 800 : 600) + '" fill="' + (L[2] ? "var(--guld)" : "var(--daempet)") + '">' + L[1] + '</text>'; });
+  for (var t = 0; t < n; t++) svg += '<rect data-a="puls" data-v="' + esc(nkey) + '|' + t + '" x="' + (px(t) - (W - 2 * padX) / (2 * n)).toFixed(1) + '" y="0" width="' + ((W - 2 * padX) / n).toFixed(2) + '" height="' + H + '" fill="transparent" style="cursor:pointer"/>';
+  svg += '</svg>';
+  var cap = "";
+  if (S.puls && S.puls.indexOf(nkey + "|") === 0) {
+    var bi = parseInt(S.puls.slice(nkey.length + 1), 10);
+    if (bi >= 0 && bi < n) {
+      var p = k.point[bi];
+      var stc = beregnStilling(k.point.slice(0, bi + 1), k.oskarFirst, k.mtb, k.justeringer, k.saetTil, k.noAd);
+      var AA = EN ? { vinder: "winner", es: "service ace", uf: "free error", tvunget: "forced error", dobbelt: "double fault", returfejl: "return error", mod_vinder: "opponent winner", mod_es: "opponent ace", mod_uf: "opponent free error", mod_tvunget: "opponent pressed to error", mod_dobbelt: "opponent double fault" }
+                  : { vinder: "vinderslag", es: "serve-es", uf: "gratis fejl", tvunget: "presset til fejl", dobbelt: "dobbeltfejl", returfejl: "returfejl", mod_vinder: "modstander-vinder", mod_es: "modstander-es", mod_uf: "modstanderens gratis fejl", mod_tvunget: "modstander presset til fejl", mod_dobbelt: "modstander-dobbeltfejl" };
+      var zt = (p.r === "T" && p.z ? (EN ? [", net", ", long", ", wide"] : [", i nettet", ", ud lang", ", ud bred"])[p.z - 1] || "" : "");
+      var sd = stc.hist.map(function(h){ return h[0] + "-" + h[1]; }).join(" · ");
+      cap = '<p class="lille" style="margin:3px 0 0;color:var(--kridt)"><b>' + (EN ? "Ball " : "Bold ") + (bi + 1) + '</b> · ' + (sd ? sd + " · " : "") + (EN ? "games " : "partier ") + stc.gO + "-" + stc.gM + ' · <b style="color:' + (p.r === "V" ? "var(--vundet)" : "var(--tabt)") + '">' + (p.r === "V" ? (EN ? "won" : "vundet") : (EN ? "lost" : "tabt")) + '</b> · ' + (AA[p.å] || p.å) + zt + '</p>';
+    }
+  }
+  return '<div style="margin:8px 0 2px">' + emne(EN ? "THE MATCH PULSE — tap the curve" : "KAMPENS PULS — tryk på kurven") + svg + (cap || '<p class="lille" style="margin:3px 0 0">' + (EN ? "Point difference ball by ball — game scores along the axis. Tap a spot to see score and cause." : "Point-forskel bold for bold — parti-stillinger langs aksen. Tryk på kurven og se stilling og årsag.") + '</p>') + '</div>';
+}
+
 function statTabel(s, EN) {
   const diff = s.vindere - s.uf, nD = diff >= 0 ? 2 : diff >= -4 ? 1 : 0;
   const s1i = s.serve[1] ? s.s1pct : null, s1w = pctAf(s.s1), s2w = pctAf(s.s2), bpF = pctAf(s.bpFor), bpM = pctAf(s.bpMod), rt = pctAf(s.retur);
   let r = statRk(EN ? "Winners / gifts" : "Vindere / gaver", s.vindere + " / " + s.uf, null, null, nD, "🧊");
+  r += statRk(EN ? "Created vs given away" : "Skabt vs. foræret", (s.balance > 0 ? "+" : "") + s.balance + " (" + s.skabt + " / " + s.uf + ")", null, null, s.balance >= 0 ? 2 : s.balance >= -8 ? 1 : 0, "⚖️");
   const B = (typeof BENCHMARKS !== "undefined" && S && BENCHMARKS[S.benchmark]) ? BENCHMARKS[S.benchmark] : SINNER;
   r += statRk(EN ? "1st serve in" : "1. serv i spil", s1i === null ? "–" : s1i + " %", s1i, B.s1in, niv(s1i, 60, 45));
   r += statRk(EN ? "Won on 1st serve" : "Vundet på 1. serv", s1w === null ? "–" : s1w + " %", s1w, B.s1won, niv(s1w, 65, 50));
@@ -1052,7 +1094,7 @@ const rensKamp = (g) => {
   return { modstander: g.modstander || "Ukendt modstander", turnering: g.turnering || "",
     dato: g.dato || new Date().toISOString().slice(0,10),
     oskarFirst: typeof g.oskarFirst === "boolean" ? g.oskarFirst : true,
-    mtb: typeof g.mtb === "boolean" ? g.mtb : true, saetTil: g.saetTil === 4 ? 4 : 6, noAd: g.noAd === true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : undefined, resultat: g.resultat || "", analyse: g.analyse || "", justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
+    mtb: typeof g.mtb === "boolean" ? g.mtb : true, saetTil: g.saetTil === 4 ? 4 : 6, noAd: g.noAd === true, afsluttet: g.afsluttet === true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : undefined, resultat: g.resultat || "", analyse: g.analyse || "", justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
     point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1, l: [1,2,3].indexOf(q.l) >= 0 ? q.l : 0, z: [1,2,3].indexOf(q.z) >= 0 ? q.z : 0 })) };
 };
 try { const sp = lager.hent("oskar-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
@@ -1115,6 +1157,8 @@ function statistik(k) {
   const t = k.point.length - v;
   const uf = k.point.filter(p => p.r === "T" && (p.å === "uf" || p.å === "dobbelt" || p.å === "returfejl")).length;
   const vindere = k.point.filter(p => p.r === "V" && (p.å === "vinder" || p.å === "es")).length;
+  const modTv = k.point.filter(p => p.å === "mod_tvunget").length;
+  const modEs = k.point.filter(p => p.å === "mod_es").length;
   const idxServe = k.point.map((p,i)=>i).filter(i => F[i] && F[i].server === true);
   const oServe = idxServe.map(i => k.point[i]);
   const retur = k.point.filter((p,i) => F[i] && F[i].server === false);
@@ -1131,6 +1175,7 @@ function statistik(k) {
     if (p.r === "T" && (p.å === "uf" || p.å === "dobbelt" || p.å === "returfejl")) ps.uf += 1;
     if (p.r === "V" && (p.å === "vinder" || p.å === "es")) ps.vin += 1;
     if (p.å === "dobbelt") ps.df += 1;
+    if (p.å === "mod_tvunget") ps.mtv = (ps.mtv || 0) + 1;
     if (F[i] && F[i].server === true) {
       ps.sp += 1;
       if (p.f === 1) { ps.s1 += 1; if (p.r === "V") ps.s1v += 1; }
@@ -1141,7 +1186,7 @@ function statistik(k) {
   const budIVbrud = k.point.filter(p => p.l === 1 && p.r === "T" && (p.å === "uf" || p.å === "dobbelt" || p.å === "returfejl")).length;
   const oFejl = k.point.filter(p => p.r === "T" && (p.å === "uf" || p.å === "tvunget" || p.å === "returfejl"));
   const zN = oFejl.filter(p => p.z === 1).length, zL = oFejl.filter(p => p.z === 2).length, zB = oFejl.filter(p => p.z === 3).length;
-  return { st, v, t, uf, vindere, perSaet, zN, zL, zB, dK: dl(1), dM: dl(2), dL: dl(3), budIVbrud,
+  return { st, v, t, uf, vindere, perSaet, skabt: vindere + modTv, balance: vindere + modTv - uf, modEs, zN, zL, zB, dK: dl(1), dM: dl(2), dL: dl(3), budIVbrud,
     serve: [oServe.filter(p=>p.r==="V").length, oServe.length],
     retur: [retur.filter(p=>p.r==="V").length, retur.length],
     s1pct: oServe.length ? Math.round(oServe1.length / oServe.length * 100) : 0,
@@ -1160,6 +1205,7 @@ function lavEksport(k) {
     "Oskars serv: " + s.serve[0] + "/" + s.serve[1] + " · 1. serv i spil: " + s.s1pct + " % · vundet på 1. serv: " + s.s1[0] + "/" + s.s1[1] + " · på 2. serv: " + s.s2[0] + "/" + s.s2[1] + " · dobbeltfejl: " + s.df,
     "Retur: " + s.retur[0] + "/" + s.retur[1] + " · Breakbolde udnyttet: " + s.bpFor[0] + "/" + s.bpFor[1] + " · afværget: " + s.bpMod[0] + "/" + s.bpMod[1],
     "Vindere+es: " + s.vindere + " · Gratis fejl (inkl. df): " + s.uf,
+    "Skabt-balance: " + (s.balance > 0 ? "+" : "") + s.balance + " (skabt " + s.skabt + " · foræret " + s.uf + ")" + (s.modEs ? " · modstander-esser: " + s.modEs : ""),
     "Pr. sæt: " + s.perSaet.map((ps, si) => "S" + (si + 1) + " " + ps.v + "-" + ps.t + " (UE " + ps.uf + ", vindere " + ps.vin + (ps.sp ? ", 1.serv " + Math.round(ps.s1 / ps.sp * 100) + " %" : "") + ")").join(" · "),
     ((s.zN || 0) + (s.zL || 0) + (s.zB || 0) > 0 ? "Fejl-zoner (Oskars fejl): net " + s.zN + " · ud lang " + s.zL + " · ud bred " + s.zB : null),
     "Dueller (vundet/spillet): korte(1-4) " + s.dK[0] + "/" + s.dK[1] + " · mellem(5-8) " + s.dM[0] + "/" + s.dM[1] + " · lange(9+) " + s.dL[0] + "/" + s.dL[1] + " · Oskars gratis fejl i KORTE dueller (bud IV-brud): " + s.budIVbrud,
@@ -1373,11 +1419,12 @@ const A = {
     if (!S.aktiv) return;
     const st = beregnStilling(S.aktiv.point, S.aktiv.oskarFirst, S.aktiv.mtb, S.aktiv.justeringer, S.aktiv.saetTil, S.aktiv.noAd);
     const auto = st.hist.map(h => h[2] && h[2].indexOf("MTB") === 0 ? h[2].replace("MTB ","") : h[0]+"-"+h[1]).join(", ");
-    S.aktiv.resultat = S.resInput || auto; S.aktiv.afsluttet = true;
+    S.aktiv.resultat = S.resInput || auto; if (typeof S.aktiv.facitVandt !== "boolean") S.aktiv.facitVandt = st.setsO > st.setsM; S.aktiv.afsluttet = true;
     S.gemte.unshift(S.aktiv); gemAlle();
     S.aktiv = null; S.afventer = null; S.resInput = ""; gemAktiv();
     S.tab = "historik"; render();
   },
+  puls: (v) => { S.puls = S.puls === v ? null : v; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   eksport: (i) => { S.eksport = lavEksport(S.gemte[+i]); S._sf = S._sf || {}; S._sf["1"] = true; render();
     setTimeout(function(){ var b = document.getElementById("eksport-boks"); if (b) b.scrollIntoView({behavior:"smooth", block:"center"}); }, 60); },
   analyseAabn: (i) => { S.redigerA = S.redigerA === +i ? null : +i; S.aTekst = (S.gemte[+i] && S.gemte[+i].analyse) || ""; render(); },
@@ -1593,8 +1640,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           const liste = vundet
             ? (EN ? (st.server ? [["vinder","Winner"],["es","Service ace"],["mod_uf","Opp. unforced error"],["mod_tvunget","Opp. forced error"]] : [["vinder","Winner"],["mod_uf","Opp. unforced error"],["mod_tvunget","Opp. forced error"],["mod_dobbelt","Opp. double fault"]])
                   : (st.server ? [["vinder","Vinderslag"],["es","Serve-es"],["mod_uf","Modst. gratis fejl"],["mod_tvunget","Modst. presset til fejl"]] : [["vinder","Vinderslag"],["mod_uf","Modst. gratis fejl"],["mod_tvunget","Modst. presset til fejl"],["mod_dobbelt","Modst. dobbeltfejl"]]))
-            : (EN ? [["uf","Oskar unforced error"],["tvunget","Oskar forced error"],["mod_vinder","Opp. winner"]].concat(st.server ? [["dobbelt","Double fault"]] : [["returfejl","Return error"]])
-                  : [["uf","Oskar gratis fejl"],["tvunget","Oskar presset til fejl"],["mod_vinder","Modst. vinderslag"]].concat(st.server ? [["dobbelt","Dobbeltfejl"]] : [["returfejl","Returneringsfejl"]]));
+            : (EN ? [["uf","Oskar unforced error"],["tvunget","Oskar forced error"],["mod_vinder","Opp. winner (hold = ace)"]].concat(st.server ? [["dobbelt","Double fault"]] : [["returfejl","Return error"]])
+                  : [["uf","Oskar gratis fejl"],["tvunget","Oskar presset til fejl"],["mod_vinder","Modst. vinderslag (hold = es)"]].concat(st.server ? [["dobbelt","Dobbeltfejl"]] : [["returfejl","Returneringsfejl"]]));
           if (!S.aarsagValgt) {
             h += '<p class="lille">'+(EN?'How did the ball end?':'Hvordan endte bolden?')+'</p><div class="raekke" style="flex-wrap:wrap">' +
               liste.map(([id,l]) => '<button class="knap" style="flex:1 1 45%;padding:15px 6px;background:'+(vundet?"var(--vundet-dyb)":"var(--tabt-dyb)")+'" data-a="aarsag" data-v="'+id+'">'+l+'</button>').join("") + '</div>';
@@ -1927,7 +1974,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     h += S.gemte.map((k,i) => {
       const s = statistik(k);
       return '<div class="kort"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><b style="font-size:13.5px">vs '+esc(k.modstander)+(k.resultat?' <span style="color:var(--is)">· '+esc(k.resultat)+'</span>':'')+'</b><span style="font-size:11px;color:var(--daempet)">'+esc(k.dato)+'</span></div>' +
-        (k.turnering?'<p style="margin:2px 0 2px;font-size:11px;color:var(--daempet)">'+esc(k.turnering)+'</p>':'')+statTabel(s,EN)+saetTabel(s,EN)+
+        (k.turnering?'<p style="margin:2px 0 2px;font-size:11px;color:var(--daempet)">'+esc(k.turnering)+'</p>':'')+statTabel(s,EN)+saetTabel(s,EN)+pulsKort(k,EN)+
         (k.analyse && S.redigerA !== i ? '<div style="border:1.5px solid var(--guld);border-radius:10px;padding:10px 12px;margin:10px 0 4px"><b style="color:var(--guld);font-size:11px;letter-spacing:.06em">📝 ANALYSE</b><p class="lille" style="margin:6px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(k.analyse) + '</p></div>' : '') +
         '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px" data-a="eksport" data-v="'+i+'">📤 '+(EN?"Export to Claude":"Eksportér til Claude")+'</button>' +
         '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--guld);color:var(--guld);font-size:12px" data-a="analyseAabn" data-v="'+i+'">📝 '+(k.analyse?(EN?"Analysis ✓":"Analyse ✓"):(EN?"Analysis":"Analyse"))+'</button>' +
@@ -2114,7 +2161,11 @@ window.__oskarInit = function(){
   var rod = document.getElementById("app");
   if (!rod) return;
   window.__oskarInited = true;
-  rod.addEventListener("click", function(e){ var kn = e.target.closest("[data-a]"); if (kn && A[kn.dataset.a]) A[kn.dataset.a](kn.dataset.v); });
+  rod.addEventListener("toggle", function(e){ var d = e.target; if (d && d.matches && d.matches("details[data-sf]")) { S._sf = S._sf || {}; S._sf[d.dataset.sf] = d.open; } }, true);
+  var _lpT = null, _lpFired = false;
+  rod.addEventListener("pointerdown", function(e){ var kn = e.target.closest('[data-a][data-v="mod_vinder"]'); if (!kn) return; _lpFired = false; _lpT = setTimeout(function(){ _lpFired = true; if (A[kn.dataset.a]) A[kn.dataset.a]("mod_es"); }, 550); });
+  ["pointerup","pointercancel","pointerleave"].forEach(function(ev){ rod.addEventListener(ev, function(){ if (_lpT) { clearTimeout(_lpT); _lpT = null; } }, true); });
+  rod.addEventListener("click", function(e){ if (_lpFired) { _lpFired = false; e.preventDefault(); return; } var kn = e.target.closest("[data-a]"); if (kn && A[kn.dataset.a]) A[kn.dataset.a](kn.dataset.v); });
   rod.addEventListener("input", function(e){ var f = e.target.dataset.felt; if (f) S[f] = e.target.value; });
   rod.addEventListener("change", function(e){ if (e.target.dataset.felt === "nyMod") render(); });
   render();

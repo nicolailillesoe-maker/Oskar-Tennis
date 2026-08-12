@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head>
+<html><head>\n<!-- v3.0.5f · fysisk-registrering + trænernes fælles 1-10-skala · 10/8-2026 · far-version, meldes til CHANGELOG -->
 <meta charset="utf-8">
 <title>Team Oskar · SportsAInalytics</title><link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="theme-color" content="#101B26">
@@ -543,6 +543,24 @@ const FYSISK_EN = [
   ["🗓","The weekly rhythm (Claude's link to the season plan)","Weeks 29-30 are the season plan's training block — this programme's home: e.g. Session 1 Monday, Session 3 Wednesday, Session 2 Friday. Golden rule: speed work (Session 3) needs fresh legs — never the day after hard endurance. And on court alongside it: the wide serve from the ad side. Fitness builds the engine; the serve builds the weapon."],
 ];
 
+// ---------- Trænernes fælles skala (1-10, fra trænerplatformen — MÅ IKKE afvige) ----------
+const TSKALA = [
+  { min:1, max:2,  e:"\ud83d\udd34", f:"#FF5A63", da:"Stærkt utilfredsstillende", en:"Highly unsatisfactory" },
+  { min:3, max:4,  e:"\ud83d\udfe0", f:"#FF9046", da:"Utilfredsstillende", en:"Unsatisfactory" },
+  { min:5, max:6,  e:"\ud83d\udfe1", f:"#FFD24A", da:"Nogenlunde", en:"Fair" },
+  { min:7, max:8,  e:"\ud83d\udfe2", f:"#2FBF6B", da:"God indsats", en:"Good effort" },
+  { min:9, max:10, e:"\ud83d\udfe2", f:"#52E58F", da:"Meget stærk indsats", en:"Very strong effort" },
+];
+const tBaand = (k) => TSKALA.find((b) => k >= b.min && k <= b.max) || TSKALA[2];
+const skalaKnapper = (valgt, aktion) => {
+  const knap = (n) => '<button class="knap valg" style="padding:11px 2px' + (valgt === n ? ";background:" + tBaand(n).f + ";color:#10161f;font-weight:800" : "") + '" data-a="' + aktion + '" data-v="' + n + '">' + n + "</button>";
+  return '<div class="raekke">' + [1,2,3,4,5].map(knap).join("") + '</div><div class="raekke" style="margin-top:4px">' + [6,7,8,9,10].map(knap).join("") + "</div>";
+};
+const skalaLegende = (EN) => '<p class="lille" style="margin:4px 0 8px;opacity:.85;line-height:1.5">' + TSKALA.map((b) => b.e + " " + b.min + "-" + b.max + " " + (EN ? b.en : b.da)).join(" · ") + "</p>";
+const fysTekst = (e, EN) => e.p !== undefined
+  ? (EN ? "Session " : "Pas ") + (e.p + 1)
+  : e.m + " min · " + (e.t === 2 ? (EN ? "with coach" : "m. træner") : (EN ? "self" : "selv")) + (e.k ? " · " + tBaand(e.k).e + " " + e.k + "/10" : "") + (e.n ? " · " + e.n : "");
+
 // ---------- Fysisk trænings-tracker ----------
 const fysByg = (EN) => {
   const W = [
@@ -1079,7 +1097,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {"Kevin Le Li": "EKSEMPEL: Sådan vil analysen se ud mod UM-rivalen — her ses et mønster med for mange gaver i korte dueller og en 2. serv, der skal beskyttes. Efter jeres rigtige kampe står de ÆGTE tal her.", "Philip Hartvigsen Dianati": "EKSEMPEL: Mod feltets nr. 1 vil skemaet vise, om marginerne holder — her fortæller dummy-tallene en historie om netfejl og breakbolde, der skal veksles.", "Philip Tiedemann": "EKSEMPEL: Tætte kampe afgøres på returpoint — dummy-mønstret viser præcis den slags marginer, systemet fanger.", "Andreas Falch Midtgaard": "EKSEMPEL: Mod double-makkeren viser dummy-data en opskrift, der virker — server-dominans og tålmodighed.", "Emil Thøgersen": "EKSEMPEL: En stabil opskrift i dummy-tallene — 2. serv-niveau og ro på breakbolde."};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "venstre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "venstre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
 };
 const MEM = {};
@@ -1104,6 +1122,7 @@ try { if (lager.hent("oskar-zoner") === "1") S.zoner = true; } catch(e) {}
 try { const fa = lager.hent("oskar-fysisk-aktiv"); if (fa) S.fysAktiv = JSON.parse(fa); } catch(e) {}
 try { const fl = JSON.parse(lager.hent("oskar-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = fl; } catch(e) {}
 try { const tl = JSON.parse(lager.hent("oskar-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = tl; } catch(e) {}
+try { if (lager.hent("oskar-skala10") !== "1") { if (S.ttLog.length) { S.ttLog.forEach((e) => { if (e.k >= 1 && e.k <= 5) e.k = e.k * 2; }); lager.gem("oskar-tennis-log", JSON.stringify(S.ttLog)); } lager.gem("oskar-skala10", "1"); } } catch(e) {}
 try { const rå = JSON.parse(lager.hent("oskar-kampe") || "[]"); S.gemte = (Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean); } catch(e) {}
 try { const a = lager.hent("oskar-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.parse(a)); } catch(e) {}
 
@@ -1256,13 +1275,20 @@ const A = {
     const antal = [0, 0, 0]; nye.forEach((e) => { if (antal[e.p] !== undefined) antal[e.p] += 1; });
     const alt = [0, 0, 0]; S.fysLog.forEach((e) => { if (alt[e.p] !== undefined) alt[e.p] += 1; });
     S.fysEks = "FYSISK TRÆNING — Oskar (nyt siden sidste eksport)\n" +
-      nye.map((e) => e.d + " · Pas " + (e.p + 1)).join("\n") +
+      nye.map((e) => e.d + " · " + fysTekst(e, false)).join("\n") +
       "\nDelta: " + nye.length + " pas (Pas 1: " + antal[0] + " · Pas 2: " + antal[1] + " · Pas 3: " + antal[2] + ")" +
       "\nSamlet i appen: " + S.fysLog.length + " pas (Pas 1: " + alt[0] + " · Pas 2: " + alt[1] + " · Pas 3: " + alt[2] + ")";
     S.fysLog.forEach((e) => { e.x = 1; });
     lager.gem("oskar-fysisk-log", JSON.stringify(S.fysLog));
     render();
   },
+  fyMinJust: (v) => { S.fyMin = Math.max(10, Math.min(240, S.fyMin + (+v))); render(); },
+  fyKvalVaelg: (v) => { S.fyKval = +v; render(); },
+  fyTypeVaelg: (v) => { S.fyType = +v; render(); },
+  fyGem: () => { if (!S.fyKval || !S.fyType) return;
+    S.fysLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.fyMin, k: S.fyKval, t: S.fyType, n: S.fyNote || "" });
+    lager.gem("oskar-fysisk-log", JSON.stringify(S.fysLog));
+    S.fyKval = 0; S.fyNote = ""; render(); },
   ttMinJust: (v) => { S.ttMin = Math.max(15, Math.min(300, S.ttMin + (+v))); render(); },
   ttKvalVaelg: (v) => { S.ttKval = +v; render(); },
   ttTypeVaelg: (v) => { S.ttType = +v; render(); },
@@ -1342,7 +1368,7 @@ const A = {
     const dm = nye.reduce((a, e) => a + e.m, 0), dk = (nye.reduce((a, e) => a + e.k, 0) / nye.length).toFixed(1);
     const tm = S.ttLog.reduce((a, e) => a + e.m, 0), tk = (S.ttLog.reduce((a, e) => a + e.k, 0) / S.ttLog.length).toFixed(1);
     S.ttEks = "TENNISTRÆNING — Oskar (nyt siden sidste eksport)\n" +
-      nye.map((e) => e.d + " · " + e.m + " min · " + (e.t===1 ? "selv" : e.t===2 ? "m. træner" : "type uoplyst") + " · kvalitet " + e.k + "/5" + (e.n ? " · " + e.n : "")).join("\n") +
+      nye.map((e) => e.d + " · " + e.m + " min · " + (e.t===1 ? "selv" : e.t===2 ? "m. træner" : "type uoplyst") + " · kvalitet " + e.k + "/10" + (e.n ? " · " + e.n : "")).join("\n") +
       "\nDelta: " + nye.length + " træninger · " + (dm / 60).toFixed(1) + " timer · Ø " + dk + "/5 · " + nye.filter((e)=>e.t===2).length + " m. træner / " + nye.filter((e)=>e.t===1).length + " selv" +
       "\nSamlet i appen: " + S.ttLog.length + " træninger · " + (tm / 60).toFixed(1) + " timer · Ø " + tk + "/5";
     S.ttLog.forEach((e) => { e.x = 1; });
@@ -1824,7 +1850,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           : '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px;padding:8px" data-a="fysAfbrydSpoerg">'+(EN?"Abort session":"Afbryd passet")+'</button></div>') +
         '</div>';
     } else {
-      h += '<p class="lille">'+(EN?"The club's physical summer programme for Oskar — start a session below and the app tracks every step.":"Klubbens fysiske sommerprogram til Oskar — start et pas herunder, så holder appen styr på hvert trin.")+'</p>';
+      h += '<p class="lille">'+(EN?"Log physical training exactly like tennis training — with the coaches' 1-10 scale, so everything can be compared.":"Registrér fysisk træning på samme måde som tennistræningen — med trænernes 1-10-skala, så alt kan sammenlignes.")+'</p>';
       (function(){
         const m = ugeMaal(S.fysLog);
         const naaet = m.denneUge >= m.MAAL;
@@ -1837,14 +1863,25 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '<div style="position:relative;background:var(--dyb);border-radius:5px;height:10px"><div style="background:'+(naaet?'var(--vundet)':'var(--is)')+';height:100%;width:'+pct+'%;border-radius:5px"></div></div>' +
           (naaet ? '' : '<p class="lille" style="margin-top:6px">'+(EN?"The club programme = 3 runs a week. Every completed session counts.":"Klubbens program = 3 løbepas om ugen. Hvert gennemført pas tæller.")+'</p>') + '</div>';
       })();
-      h += '<h2 style="font-size:15px;color:var(--is);margin:6px 0 8px;text-transform:uppercase;letter-spacing:1px">▶ '+(EN?"Start a session":"Start et pas")+'</h2><div class="raekke">' +
-        fysByg(EN).map(function(p, i){ return '<button class="knap" style="background:var(--grus);padding:16px 6px;line-height:1.3" data-a="fysStart" data-v="'+i+'">'+(EN?"Session ":"Pas ")+(i+1)+'<br><span style="font-size:10.5px;opacity:.85">'+p.trin.length+' '+(EN?"steps":"trin")+'</span></button>'; }).join("") + '</div>';
+      h += '<h2 style="font-size:15px;color:var(--is);margin:6px 0 8px;text-transform:uppercase;letter-spacing:1px">💪 '+(EN?"Physical training log":"Fysisk træning — registrering")+'</h2>';
+      h += '<div class="kort">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="flex:1;font-size:12.5px">'+(EN?"Duration":"Varighed")+'</span><button class="knap" style="flex:none;padding:8px 16px" data-a="fyMinJust" data-v="-15">−</button><b style="width:64px;text-align:center;font-size:15px">'+S.fyMin+' min</b><button class="knap" style="flex:none;padding:8px 16px" data-a="fyMinJust" data-v="15">+</button></div>' +
+        '<p class="lille" style="margin:0 0 5px">'+(EN?"Oskar's own effort rating — the coaches' scale (required)":"Oskars egen indsats-bedømmelse — trænernes skala (skal vælges)")+'</p>' +
+        skalaKnapper(S.fyKval, "fyKvalVaelg") + skalaLegende(EN) +
+        '<p class="lille" style="margin:0 0 5px">'+(EN?"Type of session (required)":"Selv-træning eller med træner? (skal vælges)")+'</p>' +
+        '<div class="raekke" style="margin-bottom:8px">' +
+          '<button class="knap valg '+(S.fyType===1?"til":"")+'" style="padding:11px 2px" data-a="fyTypeVaelg" data-v="1">🏃 '+(EN?"Self-practice":"Selv-træning")+'</button>' +
+          '<button class="knap valg '+(S.fyType===2?"til":"")+'" style="padding:11px 2px" data-a="fyTypeVaelg" data-v="2">🧑‍🏫 '+(EN?"With coach":"Med træner")+'</button></div>' +
+        '<input placeholder="'+(EN?"Note (optional — e.g. \'intervals\' or \'strength\')":"Note (valgfri — fx \'intervaller\' eller \'styrke\')")+'" value="'+esc(S.fyNote)+'" data-felt="fyNote" style="margin-bottom:8px">' +
+        '<div class="raekke"><button class="knap" style="background:'+(S.fyKval&&S.fyType?"var(--grus)":"var(--flade)")+'" data-a="fyGem">💾 '+(EN?"Save session":"Gem passet")+'</button></div></div>';
+      h += '<details style="margin:4px 0 8px"><summary style="font-size:12px;color:var(--daempet);cursor:pointer">📖 '+(EN?"Inspiration — the running programme":"Inspiration — løbeprogrammet")+'</summary>' +
+        (EN?FYSISK_EN:FYSISK).map(function(k){ return '<div class="kort" style="margin-top:6px"><h3 style="font-size:13px">'+k[0]+' '+esc(k[1])+'</h3><p class="lille" style="line-height:1.5">'+esc(k[2])+'</p></div>'; }).join("") + '</details>';
       if (S.fysLog.length) {
-        const antal = [0,0,0]; S.fysLog.forEach(function(e){ if (antal[e.p] !== undefined) antal[e.p] += 1; });
+        const _fm = S.fysLog.reduce(function(a,e){ return a + (e.m || 0); }, 0); const _fkE = S.fysLog.filter(function(e){ return e.k; }); const _fk = _fkE.length ? (_fkE.reduce(function(a,e){ return a + e.k; }, 0) / _fkE.length).toFixed(1) : null;
         h += '<div class="kort" style="border-left:3px solid var(--vundet)"><h3>📓 '+(EN?"Completed sessions":"Gennemførte pas")+' — '+S.fysLog.length+' '+(EN?"total":"i alt")+'</h3>' +
-          '<p style="margin-bottom:6px">'+(EN?"Session 1":"Pas 1")+': '+antal[0]+' × · '+(EN?"Session 2":"Pas 2")+': '+antal[1]+' × · '+(EN?"Session 3":"Pas 3")+': '+antal[2]+' ×</p>' +
+          '<p style="margin-bottom:6px">'+(_fm ? (_fm/60).toFixed(1)+' '+(EN?"hours logged":"timer registreret") : (EN?"programme sessions":"program-pas"))+(_fk ? ' · '+(EN?"avg. effort":"Ø-indsats")+' '+_fk+'/10' : '')+'</p>' +
           S.fysLog.slice(0,8).map(function(e, i){
-            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+(EN?"Session ":"Pas ")+(e.p+1)+'</span>' +
+            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+fysTekst(e, EN)+'</span>' +
               (S.fysSletB === i
                 ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="fysSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="fysSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="fysSletSpoerg" data-v="'+i+'">🗑</button>') +
@@ -1857,9 +1894,9 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">🎾 '+(EN?"Tennis training log":"Tennistræning — registrering")+'</h2>';
       h += '<div class="kort">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="flex:1;font-size:12.5px">'+(EN?"Duration":"Varighed")+'</span><button class="knap" style="flex:none;padding:8px 16px" data-a="ttMinJust" data-v="-15">−</button><b style="width:64px;text-align:center;font-size:15px">'+S.ttMin+' min</b><button class="knap" style="flex:none;padding:8px 16px" data-a="ttMinJust" data-v="15">+</button></div>' +
-        '<p class="lille" style="margin:0 0 5px">'+(EN?"Oskar's own quality rating (required)":"Oskars egen kvalitetsbedømmelse (skal vælges)")+'</p>' +
-        '<div class="raekke">'+[1,2,3,4,5].map(function(n){ return '<button class="knap valg '+(S.ttKval===n?"til":"")+'" style="padding:11px 2px" data-a="ttKvalVaelg" data-v="'+n+'">'+n+'</button>'; }).join("")+'</div>' +
-        '<p class="lille" style="margin:2px 0 8px;opacity:.8">1 = '+(EN?"heavy day":"tung dag")+' · 3 = '+(EN?"solid work":"solidt arbejde")+' · 5 = '+(EN?"top session":"toptræning")+'</p>' +
+        '<p class="lille" style="margin:0 0 5px">'+(EN?"Oskar's own rating — the coaches' scale (required)":"Oskars egen bedømmelse — trænernes skala (skal vælges)")+'</p>' +
+        skalaKnapper(S.ttKval, "ttKvalVaelg") +
+        skalaLegende(EN) +
         '<p class="lille" style="margin:0 0 5px">'+(EN?"Type of session (required)":"Selv-træning eller med træner? (skal vælges)")+'</p>' +
         '<div class="raekke" style="margin-bottom:8px">' +
           '<button class="knap valg '+(S.ttType===1?"til":"")+'" style="padding:11px 2px" data-a="ttTypeVaelg" data-v="1">🎾 '+(EN?"Self-practice":"Selv-træning")+'</button>' +
@@ -1867,7 +1904,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         '<input placeholder="'+(EN?"Note (optional — e.g. \'wide serve drills\')":"Note (valgfri — fx \'wide-serv træning\')")+'" value="'+esc(S.ttNote)+'" data-felt="ttNote" style="margin-bottom:8px">' +
         '<div class="raekke"><button class="knap" style="background:'+(S.ttKval&&S.ttType?"var(--grus)":"var(--flade)")+'" data-a="ttGem">💾 '+(EN?"Save training":"Gem træningen")+'</button></div></div>';
       if (S.ttLog.length) {
-        h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(ttTot/60).toFixed(1)+' '+(EN?"hours":"timer")+' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+ttGk+'/5</h3>' +
+        h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(ttTot/60).toFixed(1)+' '+(EN?"hours":"timer")+' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+ttGk+'/10</h3>' +
           S.ttLog.slice(0,8).map(function(e, i){
             return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+e.m+' min · '+(e.t===1?'🎾 ':e.t===2?'🧑‍🏫 ':'')+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span>' +
               (S.ttSletB === i
@@ -1996,7 +2033,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     } else {
       var _tm = S.ttLog.reduce(function(a,e){ return a+e.m; }, 0);
       var _tk = (S.ttLog.reduce(function(a,e){ return a+e.k; }, 0) / S.ttLog.length).toFixed(1);
-      h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(_tm/60).toFixed(1)+' '+(EN?"hours":"timer")+' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+_tk+'/5</h3>' +
+      h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(_tm/60).toFixed(1)+' '+(EN?"hours":"timer")+' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+_tk+'/10</h3>' +
         S.ttLog.map(function(e){
           return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+e.d+' · '+e.m+' min · '+(e.t===1?'🎾 ':e.t===2?'🧑‍🏫 ':'')+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span></div>';
         }).join("") +

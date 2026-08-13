@@ -1098,7 +1098,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {"Kevin Le Li": "EKSEMPEL: Sådan vil analysen se ud mod UM-rivalen — her ses et mønster med for mange gaver i korte dueller og en 2. serv, der skal beskyttes. Efter jeres rigtige kampe står de ÆGTE tal her.", "Philip Hartvigsen Dianati": "EKSEMPEL: Mod feltets nr. 1 vil skemaet vise, om marginerne holder — her fortæller dummy-tallene en historie om netfejl og breakbolde, der skal veksles.", "Philip Tiedemann": "EKSEMPEL: Tætte kampe afgøres på returpoint — dummy-mønstret viser præcis den slags marginer, systemet fanger.", "Andreas Falch Midtgaard": "EKSEMPEL: Mod double-makkeren viser dummy-data en opskrift, der virker — server-dominans og tålmodighed.", "Emil Thøgersen": "EKSEMPEL: En stabil opskrift i dummy-tallene — 2. serv-niveau og ro på breakbolde."};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "venstre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "",
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "venstre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", kampAaben: {}, analyseAaben: {},
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
 };
 const MEM = {};
@@ -1489,6 +1489,8 @@ const A = {
     S.tab = "historik"; render();
   },
   puls: (v) => { S.puls = S.puls === v ? null : v; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
+  kampFold: (i) => { const n = +i; S.kampAaben[n] = !S.kampAaben[n]; render(); },
+  analyseFold: (i) => { const n = +i; S.analyseAaben[n] = !S.analyseAaben[n]; render(); },
   hentAnalyse: (i) => {
     const n = +i, k = S.gemte[n], EN = S.sprog === "en";
     if (!k) return;
@@ -2093,12 +2095,29 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     if (S.hentBesked && S.hentBesked.i === -1) h += '<p class="lille" style="color:var(--vundet)">'+esc(S.hentBesked.t)+'</p>';
     h += S.gemte.map((k,i) => {
       const s = statistik(k);
-      return '<div class="kort"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><b style="font-size:13.5px">vs '+esc(k.modstander)+(k.resultat?' <span style="color:var(--is)">· '+esc(k.resultat)+'</span>':'')+'</b><span style="font-size:11px;color:var(--daempet)">'+esc(k.dato)+'</span></div>' +
+      const aaben = !!S.kampAaben[i];
+      const aAaben = !!S.analyseAaben[i];
+      // Hovedet er knappen: hele linjen folder kampen ud og i.
+      const hoved = '<div data-a="kampFold" data-v="'+i+'" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;cursor:pointer">' +
+        '<b style="font-size:13.5px">'+(aaben?'▾':'▸')+' vs '+esc(k.modstander)+(k.resultat?' <span style="color:var(--is)">· '+esc(k.resultat)+'</span>':'')+'</b>' +
+        '<span style="font-size:11px;color:var(--daempet)">'+(k.analyse?'📝 ':'')+esc(k.dato)+'</span></div>';
+      if (!aaben) return '<div class="kort" style="padding-top:10px;padding-bottom:10px">' + hoved + '</div>';
+      return '<div class="kort">' + hoved +
         (k.turnering?'<p style="margin:2px 0 2px;font-size:11px;color:var(--daempet)">'+esc(k.turnering)+'</p>':'')+statTabel(s,EN)+saetTabel(s,EN)+pulsKort(k,EN)+
-        (k.analyse && S.redigerA !== i ? '<div style="border:1.5px solid var(--guld);border-radius:10px;padding:10px 12px;margin:10px 0 4px"><b style="color:var(--guld);font-size:11px;letter-spacing:.06em">📝 ANALYSE</b><p class="lille" style="margin:6px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(k.analyse) + '</p></div>' : '') +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px" data-a="eksport" data-v="'+i+'">📤 '+(EN?"Export to Claude":"Eksportér til Claude")+'</button>' +
+        (k.analyse && S.redigerA !== i
+          ? '<div style="border:1.5px solid var(--guld);border-radius:10px;padding:10px 12px;margin:10px 0 4px">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+              '<b data-a="analyseFold" data-v="'+i+'" style="color:var(--guld);font-size:11px;letter-spacing:.06em;cursor:pointer;flex:1">'+(aAaben?'▾':'▸')+' 📝 '+(EN?"ANALYSIS":"ANALYSE")+'</b>' +
+              '<span data-a="analyseAabn" data-v="'+i+'" title="'+(EN?"Edit or clear":"Ret eller ryd")+'" style="cursor:pointer;font-size:13px;opacity:.65">✏️</span>' +
+            '</div>' +
+            (aAaben
+              ? '<p class="lille" style="margin:8px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(k.analyse) + '</p>'
+              : '<p class="lille" style="margin:6px 0 0;color:var(--daempet)">' + esc(k.analyse.replace(/\s+/g," ").slice(0,90)) + '…</p>') +
+            '</div>'
+          : '') +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
         '<button class="knap" style="flex:none;padding:8px 14px;background:var(--grus);font-size:12px'+(S.henter!==null&&S.henter!==i?';opacity:.45':'')+'" data-a="hentAnalyse" data-v="'+i+'">'+(S.henter===i?(EN?"⏳ Fetching…":"⏳ Henter…"):(EN?"🧠 Get analysis":"🧠 Hent analyse"))+'</button>' +
-        '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--guld);color:var(--guld);font-size:12px" data-a="analyseAabn" data-v="'+i+'">📝 '+(k.analyse?(EN?"Analysis ✓":"Analyse ✓"):(EN?"Analysis":"Analyse"))+'</button>' +
+
         (S.sletBekraeft === i
           ? '<button class="knap" style="flex:none;padding:8px 14px;background:var(--tabt);font-size:12px" data-a="slet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet);font-size:12px" data-a="sletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
           : '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--tabt);color:var(--tabt);font-size:12px" data-a="sletSpoerg" data-v="'+i+'">🗑 '+(EN?"Delete":"Slet")+'</button>') +

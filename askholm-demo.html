@@ -274,7 +274,7 @@ const RUTINER = [
 const GUIDE = [
   ["1 · Start kampen","Skriv modstander og turnering, vælg hvem der server først, og om 3. sæt er match-tiebreak til 10 (DTF-standard). Tryk START KAMP."],
   ["2 · Registrér serven","Appen viser selv, hvem der server. Fejles førsteserven: tryk '2. serv', inden bolden registreres."],
-  ["3 · Registrér bolden — tre tryk","OSKAR VANDT eller TABT → hvordan endte bolden → duellens længde (kort 1-4 / mellem 5-8 / lang 9+). Scoreboardet regner selv stillingen — og duel-tallene afslører, om bud IV holder."],
+  ["3 · Registrér bolden — tre tryk","ASKHOLM VANDT eller TABT → hvordan endte bolden → duellens længde (kort 1-4 / mellem 5-8 / lang 9+). Scoreboardet regner selv stillingen — og duel-tallene afslører, om bud IV holder."],
   ["4 · Fortryd og alarmer","FORTRYD ruller seneste registrering tilbage. Appen advarer ved store point og efter tre gratis fejl i træk."],
   ["5 · Afslut og analysér","'Afslut & gem' → kampen lander i Historik. '📤 Eksportér til Claude' → kopiér teksten og send den til Nicolai/Claude for analyse."],
   ["📲 Føj til hjemmeskærm","iPhone: Åbn filen i Safari → del-knappen → 'Føj til hjemmeskærm' — så ligger appen som ikon. Data gemmes lokalt på DENNE enhed; eksport-teksten i familiegruppen er jeres fælles database."],
@@ -283,8 +283,8 @@ const GUIDE = [
 ];
 const MODSTANDERE = [
   ["Elias Vinter [2]","412 ranglistepoint · slog Askholm 6-0, 6-0 ved UM","Ingen gratis point (bud IV), servér på kroppen, gør hver duel til minimum 4 bolde. Målet første gang: 3+ partier og dueller på egne præmisser."],
-  ["Emil Hays Nørlund","To match-tiebreaks på én uge: 11-9 (EHT, double) og 10-8 (OSKAR, UM-finalen)","Jævnbyrdigt til stregen. Varier returpositionen og brug bud III — han knækker på lange cross-dueller."],
-  ["Zhenyu Leo Yuan","Nr. 12 på ranglisten","Udfyldes efter næste møde — send observationer til Claude."],
+  ["Malte Nørlund","To match-tiebreaks på én uge: 11-9 (MN, double) og 10-8 (ASKHOLM, UM-finalen)","Jævnbyrdigt til stregen. Varier returpositionen og brug bud III — han knækker på lange cross-dueller."],
+  ["Leo Marchetti","Nr. 12 på ranglisten","Udfyldes efter næste møde — send observationer til Claude."],
 ];
 
 const BASELINE = {
@@ -294,13 +294,13 @@ const BASELINE = {
     ["UM / kat. A","UM Inde 2026: 9/16 · UM Ude 2026: 9/16 i single + 🥇 MIXGULD","Solid A-niveau i single (10 pt begge gange) — og mixguldet viser, at det STORE kan vindes, når hovedet er koldt i afgørelserne."],
   ],
   kendteKampe: [
-    ["V","O. W. Lomholt [Q] · UM Ude, 1. runde","7-5, 6-2"],
+    ["V","O. W. Krog [Q] · UM Ude, 1. runde","7-5, 6-2"],
     ["T","Elias Vinter [2] · UM Ude, 1/8","0-6, 0-6"],
-    ["T","Nørlund/Yuan [4] (double) · UM, 1. rd.","5-7, 6-2, 9-11"],
+    ["T","Nørlund/Marchetti [4] (double) · UM, 1. rd.","5-7, 6-2, 9-11"],
     ["V","Shave/Moadeli (mix) · UM, 1. runde","vundet"],
-    ["V","Skovgaard/Bogdanova [1] (mix) · UM, KF","7-5, 6-4"],
-    ["V","Enevold/Lynge Olsen [3] (mix) · UM, SF","2-6, 6-3, 10-5"],
-    ["V","Nørlund/Kastoft (mix) · UM, FINALE 🥇","1-6, 6-2, 10-8"],
+    ["V","Skovgaard/Lindqvist [1] (mix) · UM, KF","7-5, 6-4"],
+    ["V","Enevold/Lund Iversen [3] (mix) · UM, SF","2-6, 6-3, 10-5"],
+    ["V","Nørlund/Foss (mix) · UM, FINALE 🥇","1-6, 6-2, 10-8"],
   ],
   noegletal: [
     "Match-tiebreaks 2026 (kendte): 2-1 — begge sejre i UM-slutspillet, nederlaget med mindste margin (9-11)",
@@ -310,7 +310,7 @@ const BASELINE = {
 };
 
 const SINGLE26 = [
-  ["UM Ude (kat. A)",28,"9/16 — slog Lomholt 7-5, 6-2; tabte 0-6, 0-6 til Vinter [2]","~10,0"],
+  ["UM Ude (kat. A)",28,"9/16 — slog Krog 7-5, 6-2; tabte 0-6, 0-6 til Vinter [2]","~10,0"],
   ["AL Sydbank Furesø Open (kat. G)",27,"5/8","7,5"],
   ["Head & Joma Cup (kat. 1)",26,"9/16","0"],
   ["HVT Cup (kat. 1)",24,"9/16","0"],
@@ -322,11 +322,11 @@ const SINGLE26 = [
   ["UM Inde (kat. A)",14,"9/16","10,0"],
   ["Tennis Øst HRT 7 (kat. G)",7,"5/8","7,5"],
 ];
-const DOUBLE26 = [["UM Ude (m. Jepsen)",28,"1. runde: 5-7, 6-2, 9-11 mod Nørlund/Yuan [4] — to bolde fra sejr","—"]];
+const DOUBLE26 = [["UM Ude (m. Bæk)",28,"1. runde: 5-7, 6-2, 9-11 mod Nørlund/Marchetti [4] — to bolde fra sejr","—"]];
 const MIX26 = [
-  ["UM Ude — FINALE (m. Jakobsen)",28,"🥇 GULD! 1-6, 6-2, 10-8 over Nørlund/Kastoft","—"],
-  ["UM Ude — semifinale",28,"2-6, 6-3, 10-5 over Enevold/Lynge Olsen [3]","—"],
-  ["UM Ude — kvartfinale",28,"7-5, 6-4 over topseedede Skovgaard/Bogdanova [1]","—"],
+  ["UM Ude — FINALE (m. Søby)",28,"🥇 GULD! 1-6, 6-2, 10-8 over Nørlund/Foss","—"],
+  ["UM Ude — semifinale",28,"2-6, 6-3, 10-5 over Enevold/Lund Iversen [3]","—"],
+  ["UM Ude — kvartfinale",28,"7-5, 6-4 over topseedede Skovgaard/Lindqvist [1]","—"],
   ["UM Ude — 1. runde",28,"Sejr over Shave/Moadeli","—"],
 ];
 const STAT26 = [
@@ -338,7 +338,7 @@ const STAT26 = [
 ];
 
 const PROFIL = { u14rang: 15, u14af: 191, u14pt: "81,5", seniorrang: 368, wtn: "29,6",
-  fordeling: "73,50 individuelt + 6,00 hold + 2,00 TE", bagved: "Milan Ravn (16.) med 74,4", foran: "Reinholdt E. B. Schultz (14.) med 123,3" };
+  fordeling: "73,50 individuelt + 6,00 hold + 2,00 TE", bagved: "Milan Ravn (16.) med 74,4", foran: "Rasmus E. B. Dam (14.) med 123,3" };
 const TAELLENDE = [
   ["Sjællandsmesterskaberne ude 2026 — VANDT kat. 1!","10,0","2027-22",false],
   ["UM Inde 2026 (9/16)","10,0","2027-14",false],
@@ -419,7 +419,7 @@ const RUTINER_EN = [
 const GUIDE_EN = [
   ["1 · Start the match","Enter opponent and tournament, choose who serves first, and whether the 3rd set is a match tiebreak to 10 (Danish U14 standard). Tap START MATCH."],
   ["2 · Register the serve","The app shows who is serving. If the first serve misses: tap '2nd serve' before registering the ball."],
-  ["3 · Register the ball — three taps","OSKAR WON or LOST → how the ball ended → rally length (short 1-4 / medium 5-8 / long 9+). The scoreboard computes the score by itself — and the rally numbers reveal whether rule IV holds."],
+  ["3 · Register the ball — three taps","ASKHOLM WON or LOST → how the ball ended → rally length (short 1-4 / medium 5-8 / long 9+). The scoreboard computes the score by itself — and the rally numbers reveal whether rule IV holds."],
   ["4 · Undo and alerts","UNDO rolls back the last entry. The app warns on big points and after three free errors in a row."],
   ["5 · Finish and analyse","'Finish & save' → the match lands in History. '📤 Export to Claude' → copy the text and send it to Nicolai/Claude for analysis."],
   ["📲 Add to home screen","iPhone: open this link in Safari → share button → 'Add to Home Screen'. Data is stored locally on THIS device; the export text in the family chat is the shared database."],
@@ -428,8 +428,8 @@ const GUIDE_EN = [
 ];
 const MODSTANDERE_EN = [
   ["Elias Vinter [2]","412 ranking points · beat Askholm 6-0, 6-0 at the Nationals","No free points (rule IV), serve at the body, make every rally at least 4 balls. First-time goal: 3+ games and rallies on his own terms."],
-  ["Emil Hays Nørlund","Two match tiebreaks in one week: 11-9 (EHT, doubles) and 10-8 (OSKAR, Nationals mixed final)","Even to the wire. Vary the return position and trust rule III — he cracks in long cross-court rallies."],
-  ["Zhenyu Leo Yuan","No. 12 in the rankings","To be filled in after the next meeting — send observations to Claude."],
+  ["Malte Nørlund","Two match tiebreaks in one week: 11-9 (MN, doubles) and 10-8 (ASKHOLM, Nationals mixed final)","Even to the wire. Vary the return position and trust rule III — he cracks in long cross-court rallies."],
+  ["Leo Marchetti","No. 12 in the rankings","To be filled in after the next meeting — send observations to Claude."],
 ];
 const STAT26_EN = [
   "🎯 The Cat. G pattern: quarterfinal-round exit (5/8) in ALL three G events — rock solid against the best fields. The next level is ONE round more.",
@@ -439,7 +439,7 @@ const STAT26_EN = [
   "📊 Nationals singles: 9/16 both indoor and outdoor — steady, but both exits against top seeds. The way past runs through the Style tab.",
 ];
 const SINGLE26_EN = [
-  ["Nationals Outdoor (Cat. A)",28,"9/16 — beat Lomholt 7-5, 6-2; lost 0-6, 0-6 to Vinter [2]","~10.0"],
+  ["Nationals Outdoor (Cat. A)",28,"9/16 — beat Krog 7-5, 6-2; lost 0-6, 0-6 to Vinter [2]","~10.0"],
   ["AL Sydbank Furesø Open (Cat. G)",27,"5/8","7.5"],
   ["Head & Joma Cup (Cat. 1)",26,"9/16","0"],
   ["HVT Cup (Cat. 1)",24,"9/16","0"],
@@ -451,11 +451,11 @@ const SINGLE26_EN = [
   ["Nationals Indoor (Cat. A)",14,"9/16","10.0"],
   ["Tennis Øst HRT 7 (Cat. G)",7,"5/8","7.5"],
 ];
-const DOUBLE26_EN = [["Nationals Outdoor (w. Jepsen)",28,"1st round: 5-7, 6-2, 9-11 vs Nørlund/Yuan [4] — two points from victory","—"]];
+const DOUBLE26_EN = [["Nationals Outdoor (w. Bæk)",28,"1st round: 5-7, 6-2, 9-11 vs Nørlund/Marchetti [4] — two points from victory","—"]];
 const MIX26_EN = [
-  ["Nationals Outdoor — FINAL (w. Jakobsen)",28,"🥇 GOLD! 1-6, 6-2, 10-8 over Nørlund/Kastoft","—"],
-  ["Nationals Outdoor — semifinal",28,"2-6, 6-3, 10-5 over Enevold/Lynge Olsen [3]","—"],
-  ["Nationals Outdoor — quarterfinal",28,"7-5, 6-4 over top seeds Skovgaard/Bogdanova [1]","—"],
+  ["Nationals Outdoor — FINAL (w. Søby)",28,"🥇 GOLD! 1-6, 6-2, 10-8 over Nørlund/Foss","—"],
+  ["Nationals Outdoor — semifinal",28,"2-6, 6-3, 10-5 over Enevold/Lund Iversen [3]","—"],
+  ["Nationals Outdoor — quarterfinal",28,"7-5, 6-4 over top seeds Skovgaard/Lindqvist [1]","—"],
   ["Nationals Outdoor — 1st round",28,"Win over Shave/Moadeli","—"],
 ];
 const TAELLENDE_EN = [
@@ -519,7 +519,7 @@ const REGLER_EN = [
   "Only ONE tournament per window. Withdrawal at least 3 days before, or points are deducted.",
   "Indoor fields are selected by ranking — late-summer points are the entry ticket.",
 ];
-const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved: "Milan Ravn (16th) with 74.4", foran: "Reinholdt E. B. Schultz (14th) with 123.3" };
+const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved: "Milan Ravn (16th) with 74.4", foran: "Rasmus E. B. Dam (14th) with 123.3" };
 
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 const KODEHASH = 1187643301;
@@ -1147,8 +1147,8 @@ function karriereKort(EN) {
       ? "Grand Slam: 3× QF (RG ’22 + ’23, Wimbledon ’23) · vs. Top 10: 20-24 · 2025 season: 36-22 · career high in prize money $15.2M"
       : "Grand Slam: 3× kvartfinale (RG ’22 + ’23, Wimbledon ’23) · mod Top 10: 20-24 · 2025-sæsonen: 36-22 · præmiepenge $15,2 mio.") + '</p>' +
     '<p style="font-size:10.5px;margin:7px 0 0;opacity:.55">' + (EN
-      ? "1.88 m · coaches: Kenneth Carlsen & Lars Christensen · the 20 charted matches below are career highlights 2022-2025 — the engine reads every point."
-      : "1,88 m · trænere: Kenneth Carlsen & Lars Christensen · de 20 chartede kampe herunder er karriere-højdepunkter 2022-2025 — motoren læser hvert point.") + '</p></div>';
+      ? "the 20 charted matches below are career highlights 2022-2025 — the engine reads every point."
+      : "de 20 chartede kampe herunder er karriere-højdepunkter 2022-2025 — motoren læser hvert point.") + '</p></div>';
 }
 Object.assign(OSKARFOKUS, {"Luca Ferretti": "2-1 på papiret — men begge sejre kom ved afbrud, og spillet fortæller, hvorfor duellen er hård: 35 gratis fejl pr. kamp, og 88 af fejlene dør i NETTET — Ferrettis tempo presser marginen væk. Fokus: mere højde/spin, beskyt 2. serven (kun 45 % vundet) og gør bud IV til kampens lov — 68 brud er billetten, han ikke skal have.", "Mateo Vidal": "✅ Opskriften FINDES — Barcelona-finalen: 72 % førsteserv, 3/3 breakbolde udnyttet og flere vindere (29) end fejl (24). Skabelonen mod Vidal: servér højt, tag initiativet FØRST, og lad ham løbe.", "Lukas Brandt": "0-2 i to tætte kampe. Sprækken: 2. serven (49 %) er byttet, Brandt lever af, og 40 netfejl = for lav margin. Fokus: kropsserv som 2. serv, net-højde op, og breakboldene (2/6) SKAL veksles.", "Pavel Zorin": "✅ 2-0 og en opskrift, der bare virker: 73/67 % på 1./2. serv — server-dominans + tålmodighed i de lange dueller. Gentag planen; ingen grund til opfindelser.", "Tyler Monroe": "1-2 og kampene afgøres på ÉN ting: breakboldene (2/10!). Returen skal ind på de store bolde — resten af regnskabet er lige. Fejlene deler sig net/lang: spil med større margin mod hans tempo.", "Henrik Bergström": "✅ 2-0. Solidt: 63 % vundet på 2. serven og BP-ro (8/10 afværget). Nordiske dueller vindes på tålmodighed — fortsæt.", "Andrei Volkov": "1-1 og alarmen hedder FØRSTESERV: kun 53 % i spil — under 60 % bliver returen Volkovs våben. 50 netfejl viser presset. Fokus: serv-rytme før alt andet.", "Stefan Kovac": "1-1 inkl. Paris-FINALEN 2022 — Masters-titlen! Vinder-festival (48 pr. kamp) bar sejren, men 2. serven (44 %) er sprækken, Novak borer i. Fokus: hold fejlene (33) nede, når vinderne ikke falder.", "Oliver Hayes": "0-1 fra IW-finalen: 2. serven kollapsede (39 %) og vinderne forsvandt (17). Mod venstrehåndspresset: servér modigere og stå tættere på baglinjen — afvent ikke.", "Nikos Vlahos": "✅ Renest af alle kampe: kun 14 fejl og 22 vindere. Skabelonen for kontrolleret angreb — enkelthåndsbaghånden blev fundet igen og igen.", "Enzo Barone": "0-1 — kampen på Queen's blev afbrudt før tid, så tallene dækker kun det spillede: variationen fandt enkelthåndsbaghånden, og fejlregnskabet var i balance. Ingen konklusioner på et halvt datasæt."});
 

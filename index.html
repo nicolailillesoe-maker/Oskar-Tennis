@@ -1098,7 +1098,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {"Kevin Le Li": "EKSEMPEL: Sådan vil analysen se ud mod UM-rivalen — her ses et mønster med for mange gaver i korte dueller og en 2. serv, der skal beskyttes. Efter jeres rigtige kampe står de ÆGTE tal her.", "Philip Hartvigsen Dianati": "EKSEMPEL: Mod feltets nr. 1 vil skemaet vise, om marginerne holder — her fortæller dummy-tallene en historie om netfejl og breakbolde, der skal veksles.", "Philip Tiedemann": "EKSEMPEL: Tætte kampe afgøres på returpoint — dummy-mønstret viser præcis den slags marginer, systemet fanger.", "Andreas Falch Midtgaard": "EKSEMPEL: Mod double-makkeren viser dummy-data en opskrift, der virker — server-dominans og tålmodighed.", "Emil Thøgersen": "EKSEMPEL: En stabil opskrift i dummy-tallene — 2. serv-niveau og ro på breakbolde."};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "venstre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "venstre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "",
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
 };
 const MEM = {};
@@ -1126,6 +1126,43 @@ try { const tl = JSON.parse(lager.hent("oskar-tennis-log") || "[]"); if (Array.i
 try { if (lager.hent("oskar-skala10") !== "1") { if (S.ttLog.length) { S.ttLog.forEach((e) => { if (e.k >= 1 && e.k <= 5) e.k = e.k * 2; }); lager.gem("oskar-tennis-log", JSON.stringify(S.ttLog)); } lager.gem("oskar-skala10", "1"); } } catch(e) {}
 try { const rå = JSON.parse(lager.hent("oskar-kampe") || "[]"); S.gemte = (Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean); } catch(e) {}
 try { const a = lager.hent("oskar-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.parse(a)); } catch(e) {}
+try { const kk = lager.hent("oskar-klubkode"); if (kk) S.klubKode = kk; } catch(e) {}
+
+// ─────────────────────────────────────── ANALYSETJENESTEN (backlog #29)
+// Klubkoden bor KUN i denne enheds lager — aldrig i kildekoden, fordi repoet
+// er offentligt. Payloaden bygges af en hvidliste, der spejler vagten i
+// Edge Functionen: kommer der nogensinde et noter-felt ind i datamodellen,
+// bliver det ikke sendt herfra og ville blive afvist med 422 alligevel.
+const ANALYSE_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-kamp";
+const KAMP_HVIDLISTE = ["dato","spiller","modstander","turnering","sted","resultat","oskarFirst","mtb","saetTil","noAd","facitVandt","afsluttet","justeringer","point"];
+const POINT_HVIDLISTE = ["r","\u00e5","f","l","z","s"];
+
+function byggAnalysePayload(k) {
+  const ud = {};
+  KAMP_HVIDLISTE.forEach(function(f) {
+    if (f === "point") return;
+    var v = k[f];
+    if (v === undefined || v === null || v === "") return;
+    if (typeof v === "string") v = v.slice(0, 60);
+    ud[f] = v;
+  });
+  if (!ud.spiller) ud.spiller = "Oskar";
+  ud.point = (k.point || []).map(function(p) {
+    var r = {};
+    POINT_HVIDLISTE.forEach(function(f) { if (p[f] !== undefined) r[f] = p[f]; });
+    return r;
+  });
+  return ud;
+}
+
+function analyseFejltekst(kode, status, EN) {
+  if (kode === "adgang" || status === 401) return EN ? "The club code was not accepted. Check it under \u2699 Club code." : "Klubkoden blev ikke godkendt. Tjek den under \u2699 Klubkode.";
+  if (kode === "loft" || status === 429) return EN ? "Too many analyses in a short time. Try again in a little while." : "For mange analyser p\u00e5 kort tid. Pr\u00f8v igen om lidt.";
+  if (kode === "validering" || status === 422) return EN ? "The match data was rejected by the safety check." : "Kampdata blev afvist af sikkerhedsvagten.";
+  if (status === 502 || kode === "opstroem" || kode === "tom") return EN ? "The analysis could not be fetched right now. Try again." : "Analysen kunne ikke hentes lige nu. Pr\u00f8v igen.";
+  if (status === 0) return EN ? "No connection. Check the network and try again." : "Ingen forbindelse. Tjek netv\u00e6rket og pr\u00f8v igen.";
+  return EN ? "Something went wrong. Try again." : "Noget gik galt. Pr\u00f8v igen.";
+}
 
 const gemAlle = () => lager.gem("oskar-kampe", JSON.stringify(S.gemte));
 S.scout = JSON.parse(lager.hent("oskar-scout") || "{}");
@@ -1452,6 +1489,42 @@ const A = {
     S.tab = "historik"; render();
   },
   puls: (v) => { S.puls = S.puls === v ? null : v; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
+  hentAnalyse: (i) => {
+    const n = +i, k = S.gemte[n], EN = S.sprog === "en";
+    if (!k) return;
+    if (!S.klubKode) { S.kodeAaben = true; S.kodeUdkast = ""; S.hentBesked = { i: n, fejl: true, t: EN ? "Enter the club code first \u2014 you only do this once on this device." : "Indtast klubkoden f\u00f8rst \u2014 det g\u00f8res kun \u00e9n gang p\u00e5 denne enhed." }; render(); return; }
+    if (S.henter !== null) return;
+    S.henter = n; S.hentBesked = null; render();
+    const styring = new AbortController();
+    const ur = setTimeout(function(){ styring.abort(); }, 120000);
+    fetch(ANALYSE_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-klub-noegle": S.klubKode },
+      body: JSON.stringify({ sprog: EN ? "en" : "da", kamp: byggAnalysePayload(k) }),
+      signal: styring.signal
+    }).then(function(r) {
+      return r.json().catch(function(){ return {}; }).then(function(d) { return { s: r.status, ok: r.ok, d: d }; });
+    }).then(function(sv) {
+      clearTimeout(ur);
+      if (sv.ok && sv.d && sv.d.analyse) {
+        if (S.gemte[n]) { S.gemte[n].analyse = sv.d.analyse; gemAlle(); }
+        S.henter = null;
+        S.hentBesked = { i: n, fejl: false, t: EN ? "Analysis fetched and saved to the match." : "Analysen er hentet og gemt p\u00e5 kampen." };
+      } else {
+        S.henter = null;
+        S.hentBesked = { i: n, fejl: true, t: analyseFejltekst(sv.d && sv.d.kode, sv.s, EN) };
+      }
+      render();
+    }).catch(function() {
+      clearTimeout(ur);
+      S.henter = null;
+      S.hentBesked = { i: n, fejl: true, t: analyseFejltekst(null, 0, EN) };
+      render();
+    });
+  },
+  klubKodeAabn: () => { S.kodeAaben = !S.kodeAaben; S.kodeUdkast = ""; S.hentBesked = null; render(); },
+  klubKodeGem: () => { const v = (S.kodeUdkast || "").trim(); if (!v) return; S.klubKode = v; lager.gem("oskar-klubkode", v); S.kodeAaben = false; S.kodeUdkast = ""; S.hentBesked = { i: -1, fejl: false, t: S.sprog === "en" ? "Club code saved on this device." : "Klubkoden er gemt p\u00e5 denne enhed." }; render(); },
+  klubKodeRyd: () => { S.klubKode = ""; lager.gem("oskar-klubkode", ""); S.kodeAaben = false; S.kodeUdkast = ""; render(); },
   eksport: (i) => { S.eksport = lavEksport(S.gemte[+i]); S._sf = S._sf || {}; S._sf["1"] = true; render();
     setTimeout(function(){ var b = document.getElementById("eksport-boks"); if (b) b.scrollIntoView({behavior:"smooth", block:"center"}); }, 60); },
   analyseAabn: (i) => { S.redigerA = S.redigerA === +i ? null : +i; S.aTekst = (S.gemte[+i] && S.gemte[+i].analyse) || ""; render(); },
@@ -2009,17 +2082,29 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         '<p style="font-size:11px;color:var(--daempet);margin-top:6px">'+(harData?(EN?"Oskar = all "+kilder.length+" registered matches (set columns = sums across matches). ":"Oskar = alle "+kilder.length+" registrerede kampe (sæt-kolonner = summeret på tværs). "):(EN?"⚠ The whole table is the example match until the first real match is saved. ":"⚠ Hele tabellen er eksempel-kampen, indtil første rigtige kamp gemmes. "))+(EN?((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner")+" = ATP 2025/26 (rounded). Benchmarks, not verdicts — the DIRECTION counts. Set 1 vs set 2 reveals whether the level holds when the match gets long.":((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner")+" = ATP 2025/26 (afrundet). Pejlemærker, ikke facit — det er RETNINGEN, der tæller. Sæt 1 mod sæt 2 afslører, om niveauet holder, når kampen bliver lang.")+'</p></div>';
     })();
     if (!S.gemte.length) h += '<p style="font-size:13px;color:var(--daempet)">'+(EN?'New matches with point-by-point data are recorded under 🎾 Match and collected here: per-match statistics and development over time.':'Nye kampe med point-for-point data registreres under 🎾 Kamp og lander her under baselinen.')+'</p>';
+    h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px">' +
+      '<button class="knap" style="flex:none;padding:6px 10px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="klubKodeAabn">⚙ '+(EN?"Club code":"Klubkode")+' '+(S.klubKode?'✓':'—')+'</button>' +
+      '<span class="lille" style="margin:0">'+(S.klubKode?(EN?"Analyses can be fetched on this device.":"Analyser kan hentes på denne enhed."):(EN?"Needed once to fetch analyses.":"Skal indtastes én gang for at hente analyser."))+'</span></div>';
+    if (S.kodeAaben) {
+      h += '<div class="kort" style="border-color:var(--guld)"><p class="lille" style="margin:0 0 6px">'+(EN?"The code is stored only on this device and never leaves it.":"Koden gemmes kun på denne enhed og forlader den aldrig.")+'</p>';
+      h += '<input type="password" autocomplete="off" data-felt="kodeUdkast" placeholder="'+(EN?'Club code':'Klubkode')+'" value="'+esc(S.kodeUdkast)+'">';
+      h += '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="klubKodeGem">💾 '+(EN?"Save":"Gem")+'</button>'+(S.klubKode?'<button class="knap" data-a="klubKodeRyd">'+(EN?"Remove":"Fjern")+'</button>':'')+'</div></div>';
+    }
+    if (S.hentBesked && S.hentBesked.i === -1) h += '<p class="lille" style="color:var(--vundet)">'+esc(S.hentBesked.t)+'</p>';
     h += S.gemte.map((k,i) => {
       const s = statistik(k);
       return '<div class="kort"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><b style="font-size:13.5px">vs '+esc(k.modstander)+(k.resultat?' <span style="color:var(--is)">· '+esc(k.resultat)+'</span>':'')+'</b><span style="font-size:11px;color:var(--daempet)">'+esc(k.dato)+'</span></div>' +
         (k.turnering?'<p style="margin:2px 0 2px;font-size:11px;color:var(--daempet)">'+esc(k.turnering)+'</p>':'')+statTabel(s,EN)+saetTabel(s,EN)+pulsKort(k,EN)+
         (k.analyse && S.redigerA !== i ? '<div style="border:1.5px solid var(--guld);border-radius:10px;padding:10px 12px;margin:10px 0 4px"><b style="color:var(--guld);font-size:11px;letter-spacing:.06em">📝 ANALYSE</b><p class="lille" style="margin:6px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(k.analyse) + '</p></div>' : '') +
         '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px" data-a="eksport" data-v="'+i+'">📤 '+(EN?"Export to Claude":"Eksportér til Claude")+'</button>' +
+        '<button class="knap" style="flex:none;padding:8px 14px;background:var(--grus);font-size:12px'+(S.henter!==null&&S.henter!==i?';opacity:.45':'')+'" data-a="hentAnalyse" data-v="'+i+'">'+(S.henter===i?(EN?"⏳ Fetching…":"⏳ Henter…"):(EN?"🧠 Get analysis":"🧠 Hent analyse"))+'</button>' +
         '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--guld);color:var(--guld);font-size:12px" data-a="analyseAabn" data-v="'+i+'">📝 '+(k.analyse?(EN?"Analysis ✓":"Analyse ✓"):(EN?"Analysis":"Analyse"))+'</button>' +
         (S.sletBekraeft === i
           ? '<button class="knap" style="flex:none;padding:8px 14px;background:var(--tabt);font-size:12px" data-a="slet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet);font-size:12px" data-a="sletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
           : '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--tabt);color:var(--tabt);font-size:12px" data-a="sletSpoerg" data-v="'+i+'">🗑 '+(EN?"Delete":"Slet")+'</button>') +
-        '</div></div>';
+        '</div>' +
+        (S.hentBesked && S.hentBesked.i === i ? '<p class="lille" style="margin:8px 0 0;color:'+(S.hentBesked.fejl?'var(--tabt)':'var(--vundet)')+'">'+esc(S.hentBesked.t)+'</p>' : '') +
+        '</div>';
     }).join("");
     if (S.redigerA !== null && S.gemte[S.redigerA]) {
       h += '<p class="lille" style="margin-top:10px">'+(EN?"Claude\'s analysis of the match vs ":"Claudes analyse af kampen mod ")+esc(S.gemte[S.redigerA].modstander)+(EN?" — paste from the chat:":" — indsæt fra chatten:")+'</p>';

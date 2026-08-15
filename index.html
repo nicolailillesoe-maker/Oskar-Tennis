@@ -1103,7 +1103,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {"Kevin Le Li": "EKSEMPEL: Sådan vil analysen se ud mod UM-rivalen — her ses et mønster med for mange gaver i korte dueller og en 2. serv, der skal beskyttes. Efter jeres rigtige kampe står de ÆGTE tal her.", "Philip Hartvigsen Dianati": "EKSEMPEL: Mod feltets nr. 1 vil skemaet vise, om marginerne holder — her fortæller dummy-tallene en historie om netfejl og breakbolde, der skal veksles.", "Philip Tiedemann": "EKSEMPEL: Tætte kampe afgøres på returpoint — dummy-mønstret viser præcis den slags marginer, systemet fanger.", "Andreas Falch Midtgaard": "EKSEMPEL: Mod double-makkeren viser dummy-data en opskrift, der virker — server-dominans og tålmodighed.", "Emil Thøgersen": "EKSEMPEL: En stabil opskrift i dummy-tallene — 2. serv-niveau og ro på breakbolde."};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "venstre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", kampAaben: {}, analyseAaben: {}, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "venstre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
 };
 const MEM = {};
@@ -1132,6 +1132,10 @@ try { if (lager.hent("oskar-skala10") !== "1") { if (S.ttLog.length) { S.ttLog.f
 try { const rå = JSON.parse(lager.hent("oskar-kampe") || "[]"); S.gemte = (Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean); } catch(e) {}
 try { const a = lager.hent("oskar-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.parse(a)); } catch(e) {}
 try { const kk = lager.hent("oskar-klubkode"); if (kk) S.klubKode = kk; } catch(e) {}
+try { const sn = lager.hent("oskar-spillernoegle"); if (sn) S.spillerNoegle = sn; } catch(e) {}
+try { const td = JSON.parse(lager.hent("oskar-traenerdata") || "null"); if (td) S.traenerData = td; } catch(e) {}
+try { const fk = lager.hent("oskar-foelgekode"); if (fk) S.foelgekode = fk; } catch(e) {}
+try { S.liveAktiv = lager.hent("oskar-liveaktiv") === "1"; } catch(e) {}
 try { const ra = JSON.parse(lager.hent("oskar-rivalanalyser") || "{}"); if (ra && typeof ra === "object") S.rivalAnalyser = ra; } catch(e) {}
 
 // ─────────────────────────────────────── ANALYSETJENESTEN (backlog #29)
@@ -1141,6 +1145,113 @@ try { const ra = JSON.parse(lager.hent("oskar-rivalanalyser") || "{}"); if (ra &
 // bliver det ikke sendt herfra og ville blive afvist med 422 alligevel.
 const ANALYSE_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-kamp";
 const RIVAL_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-rival";
+const SYNC_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/spiller-sync";
+
+// ══════════════════════════════════════════════════════════════════════
+// LIVE-FØLG · "følg fra sofaen"
+//
+// Familien deler en KODE, ikke et login. Koden giver adgang til den ene
+// igangværende kamp og intet andet — ikke historik, ikke analyser, ikke
+// andre kampe. Afsluttes kampen, dør koden.
+//
+// Modstanderens navn er FAMILIENS EGET VALG. Sender vi det ikke med,
+// står der bare "modspiller" hos dem, der følger med.
+// ══════════════════════════════════════════════════════════════════════
+
+// Kort og læsbar, så den kan siges i telefonen: "OSKAR-4F2A"
+function nyFoelgekode(navn) {
+  const rent = String(navn || "SAI").toUpperCase().replace(/[^A-ZÆØÅ]/g, "").slice(0, 8) || "SAI";
+  const tegn = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";   // ingen I/O/0/1 — de forveksles
+  let h = "";
+  for (let i = 0; i < 4; i++) h += tegn[Math.floor(Math.random() * tegn.length)];
+  return rent + "-" + h;
+}
+
+// Stillingen som fem tal. Ingen tekst om nogen.
+function liveStilling() {
+  const k = S.aktiv; if (!k) return {};
+  const p = k.point || [];
+  const st = beregnStilling(p, k.oskarFirst, k.mtb, k.justeringer || [], k.saetTil, k.noAd);
+  const c = function(r, a){ return p.filter(function(x){ return x.r === r && x["\u00e5"] === a; }).length; };
+  const skabt = c("V","vinder") + c("V","es") + c("V","mod_tvunget");
+  const foraeret = c("T","uf") + c("T","dobbelt") + c("T","returfejl");
+  // Feltnavnene kommer fra beregnStilling — MÅLT i koden, ikke gættet:
+  // { setsO, setsM, hist, gO, gM, pO, pM, tb, tbTo, server, done, vinderOskar, flags }
+  return {
+    saetSpiller: st.setsO || 0, saetModstander: st.setsM || 0,
+    partierSpiller: st.gO || 0, partierModstander: st.gM || 0,
+    pointSpiller: st.pO || 0, pointModstander: st.pM || 0,
+    spillerServer: !!st.server, tiebreak: !!st.tb,
+    bolde: p.length, balance: skabt - foraeret,
+    // hist er [[gO, gM, note], ...] — gøres til "6-4" så det kan læses direkte
+    saetHistorik: (st.hist || []).slice(0, 5).map(function(x){
+      return Array.isArray(x) ? (x[0] + "-" + x[1]) : String(x).slice(0, 8); }),
+  };
+}
+
+// Forløbet: kun r og a. Der findes ikke et felt, tekst kan ligge i.
+function liveForloeb() {
+  return ((S.aktiv && S.aktiv.point) || []).slice(-1200)
+    .map(function(p){ return { r: p.r, a: p["\u00e5"] }; });
+}
+
+// Sendes efter hvert point, men højst hvert 4. sekund — en tennis-kamp
+// har ikke brug for mere, og det holder forbruget nede.
+let _liveSidst = 0, _liveVenter = null;
+function liveSend(nu) {
+  if (!S.liveAktiv || !S.foelgekode || !S.aktiv) return;
+  const gaa = function(){
+    _liveSidst = Date.now(); _liveVenter = null;
+    sync("live-gem", {
+      foelgekode: S.foelgekode,
+      spiller: "Oskar",
+      modstander: S.aktiv.modstander || null,
+      turnering: S.aktiv.turnering || null,
+      stilling: liveStilling(),
+      forloeb: liveForloeb(),
+    }).then(function(r){
+      if (r && r.fejl) { S.liveBesked = { fejl: true, t: (S.sprog === "en" ? "Live paused — no connection." : "Live sat på pause — ingen forbindelse.") }; render(); }
+    });
+  };
+  const siden = Date.now() - _liveSidst;
+  if (nu || siden > 4000) gaa();
+  else if (!_liveVenter) _liveVenter = setTimeout(gaa, 4000 - siden);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// DET DELTE LAG · spillerens side
+// Sender et kamp-RESUMÉ op — fem tal pr. kamp, aldrig boldene — og henter
+// trænerens vurderinger og fokuspunkter ned.
+// ══════════════════════════════════════════════════════════════════════
+async function sync(handling, krop) {
+  if (!S.klubKode) return { fejl: "mangler-klubkode" };
+  if (!S.spillerNoegle) return { fejl: "mangler-spillernoegle" };
+  const st = new AbortController(); const ur = setTimeout(() => st.abort(), 20000);
+  try {
+    const r = await fetch(SYNC_URL, { method: "POST", signal: st.signal,
+      headers: { "content-type": "application/json",
+                 "x-klub-noegle": S.klubKode, "x-spiller-noegle": S.spillerNoegle },
+      body: JSON.stringify({ handling, ...krop }) });
+    clearTimeout(ur);
+    const d = await r.json().catch(function(){ return {}; });
+    return r.ok ? d : { fejl: d.kode || "netvaerk", status: r.status, detaljer: d.detaljer };
+  } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+}
+
+// Fem tal pr. kamp. Boldene bliver på enheden — det er hele pointen.
+function kampResume() {
+  return (S.gemte || []).slice(0, 200).map(function(k){
+    const p = k.point || [];
+    const c = function(r, a){ return p.filter(function(x){ return x.r === r && x["\u00e5"] === a; }).length; };
+    const skabt = c("V","vinder") + c("V","es") + c("V","mod_tvunget");
+    const foraeret = c("T","uf") + c("T","dobbelt") + c("T","returfejl");
+    const V = p.filter(function(x){ return x.r === "V"; }).length;
+    return { d: String(k.dato || "").slice(0,12), res: String(k.resultat || "").slice(0,24),
+             turnering: String(k.turnering || "").slice(0,40),
+             bolde: p.length, balance: skabt - foraeret,
+             vundet: k.facitVandt !== undefined ? !!k.facitVandt : V > p.length - V };
+  });
+}
 // Nøglen indeholder ANTAL KAMPE. Kommer der en ny kamp mod samme modstander,
 // er den gemte plan forældet, nøglen skifter, og den hentes automatisk igen.
 function rivalNoegle(navne, grupper) {
@@ -1466,6 +1577,7 @@ const A = {
         S.aarsagValgt = id; S.laengdeValgt = 0; render(); return;
       }
       S.aktiv.point.push({ r: S.afventer === "vundet" ? "V" : "T", å: id, f: S.serv, l: 0, z: 0 });
+      liveSend();
       S.afventer = null; S.serv = 1; gemAktiv(); render(); return;
     }
     S.aarsagValgt = id; render();
@@ -1477,11 +1589,13 @@ const A = {
       S.laengdeValgt = l; render(); return;
     }
     S.aktiv.point.push({ r: S.afventer === "vundet" ? "V" : "T", å: S.aarsagValgt, f: S.serv, l: l, z: 0 });
+      liveSend();
     S.afventer = null; S.aarsagValgt = null; S.serv = 1; gemAktiv(); render();
   },
   zone: (v) => {
     if (!S.aktiv || !S.afventer || !S.aarsagValgt || S.laengdeValgt === null) return;
     S.aktiv.point.push({ r: "T", å: S.aarsagValgt, f: S.serv, l: S.laengdeValgt, z: [1,2,3].indexOf(+v) >= 0 ? +v : 0 });
+      liveSend();
     S.afventer = null; S.aarsagValgt = null; S.laengdeValgt = null; S.serv = 1; gemAktiv(); render();
   },
   fortryd: () => {
@@ -1504,6 +1618,75 @@ const A = {
   puls: (v) => { S.puls = S.puls === v ? null : v; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   kampFold: (i) => { const n = +i; S.kampAaben[n] = !S.kampAaben[n]; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   analyseFold: (i) => { const n = +i; S.analyseAaben[n] = !S.analyseAaben[n]; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
+  delAabn: () => { S.delAaben = !S.delAaben; S.liveBesked = null; render(); },
+  liveStart: async () => {
+    const EN = S.sprog === "en";
+    if (!S.klubKode) { S.kodeAaben = true; render(); return; }
+    if (!S.foelgekode) {
+      S.foelgekode = nyFoelgekode("Oskar");
+      lager.gem("oskar-foelgekode", S.foelgekode);
+    }
+    S.liveAktiv = true; lager.gem("oskar-liveaktiv", "1");
+    S.liveBesked = { fejl: false, t: EN ? "Sharing…" : "Deler…" }; render();
+    const r = await sync("live-gem", {
+      foelgekode: S.foelgekode, spiller: "Oskar",
+      modstander: S.aktiv && S.aktiv.modstander || null,
+      turnering: S.aktiv && S.aktiv.turnering || null,
+      stilling: liveStilling(), forloeb: liveForloeb(),
+    });
+    S.liveBesked = r.fejl
+      ? { fejl: true, t: r.fejl === "mangler-spillernoegle" ? (EN?"Player key missing.":"Spillernøgle mangler.")
+          : r.fejl === "adgang" ? (EN?"The key was rejected.":"Nøglen blev afvist.")
+          : (EN?"No connection — try again.":"Ingen forbindelse — prøv igen.") }
+      : { fejl: false, t: EN ? "The match is live ✓" : "Kampen er live ✓" };
+    if (r.fejl) { S.liveAktiv = false; lager.gem("oskar-liveaktiv", "0"); }
+    render();
+  },
+  liveStop: async () => {
+    const EN = S.sprog === "en";
+    S.liveAktiv = false; lager.gem("oskar-liveaktiv", "0");
+    S.liveBesked = { fejl: false, t: EN ? "Sharing stopped." : "Delingen er stoppet." }; render();
+    if (S.foelgekode) await sync("live-slut", { foelgekode: S.foelgekode });
+    S.foelgekode = ""; lager.gem("oskar-foelgekode", "");
+    render();
+  },
+  liveKopier: () => {
+    const EN = S.sprog === "en";
+    const l = location.origin + location.pathname + "?foelg=" + S.foelgekode;
+    try { navigator.clipboard.writeText(l);
+      S.liveBesked = { fejl: false, t: EN ? "Link copied ✓" : "Link kopieret ✓" }; }
+    catch (e) { S.liveBesked = { fejl: false, t: l }; }
+    render();
+  },
+  noegleAabn: () => { S.noegleAaben = !S.noegleAaben; S.noegleUdkast = S.spillerNoegle || ""; render(); },
+  noegleGem: () => {
+    S.spillerNoegle = (S.noegleUdkast || "").trim();
+    lager.gem("oskar-spillernoegle", S.spillerNoegle);
+    S.noegleAaben = false; render();
+    if (S.spillerNoegle) A.synkroniser();
+  },
+  synkroniser: async () => {
+    const EN = S.sprog === "en";
+    if (S.syncHenter) return;
+    if (!S.klubKode) { S.kodeAaben = true; render(); return; }
+    if (!S.spillerNoegle) { S.noegleAaben = true; render(); return; }
+    S.syncHenter = true; S.syncBesked = null; render();
+    const op  = await sync("gem", { fornavn: "Oskar", kampresume: kampResume() });
+    const ned = op.fejl ? op : await sync("hent", {});
+    S.syncHenter = false;
+    if (ned.fejl) {
+      S.syncBesked = { fejl: true, t:
+        ned.fejl === "mangler-klubkode" ? (EN?"Enter the club code first.":"Indtast klubkoden f\u00f8rst.") :
+        ned.fejl === "adgang" ? (EN?"The key was rejected.":"N\u00f8glen blev afvist.") :
+        ned.fejl === "validering" ? (EN?"Rejected by the guard.":"Afvist af sikkerhedsvagten.") :
+        (EN?"No connection \u2014 try again.":"Ingen forbindelse \u2014 pr\u00f8v igen.") };
+    } else {
+      S.traenerData = { spiller: ned.spiller || null, ugefokus: ned.ugefokus || [], hentet: new Date().toISOString() };
+      lager.gem("oskar-traenerdata", JSON.stringify(S.traenerData));
+      S.syncBesked = { fejl: false, t: EN ? "Synced with the coach \u2713" : "Synkroniseret med tr\u00e6neren \u2713" };
+    }
+    render();
+  },
   hentRival: (arg) => {
     const EN = S.sprog === "en";
     const navne = String(arg).split("~~").filter(Boolean);
@@ -1641,7 +1824,111 @@ function bundNav(){
     '</nav>';
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// FØLGE-VISNINGEN · det Signe ser i sofaen
+//
+// Åbnes med ?foelg=KODE. Ingen app, intet login, ingen adgang til andet
+// end den ene kamp. Henter hvert 10. sekund — en tenniskamp har ikke
+// brug for mere, og batteriet skal holde et sæt.
+// ══════════════════════════════════════════════════════════════════════
+const FOELG_KODE = (function(){
+  try { const p = new URLSearchParams(location.search).get("foelg");
+    return p ? p.trim().toUpperCase() : null; } catch (e) { return null; }
+})();
+let _foelgData = null, _foelgFejl = null, _foelgTimer = null;
+
+async function foelgHent() {
+  try {
+    const r = await fetch(SYNC_URL, { method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ handling: "live-hent", foelgekode: FOELG_KODE }) });
+    const d = await r.json().catch(function(){ return {}; });
+    if (r.ok && d.kamp) { _foelgData = d.kamp; _foelgFejl = null; }
+    else _foelgFejl = r.status === 404 ? "ukendt" : "netvaerk";
+  } catch (e) { _foelgFejl = "netvaerk"; }
+  foelgTegn();
+}
+
+function foelgTegn() {
+  const EN = S.sprog === "en";
+  const el = document.getElementById("app");
+  const k = _foelgData;
+  const P = ["0","15","30","40"];
+  let h = '<div class="topbar"><span class="brand"><b>SportsAInalytics</b></span></div>';
+
+  if (_foelgFejl === "ukendt") {
+    h += '<div class="kort" style="text-align:center;padding:28px 16px">' +
+      '<div style="font-size:34px;margin-bottom:8px">🎾</div>' +
+      '<h2 style="margin:0 0 6px;font-size:18px">' + (EN?"The match is over":"Kampen er slut") + '</h2>' +
+      '<p class="lille" style="margin:0">' + (EN
+        ? "This code no longer works. Ask the family for a new one next time."
+        : "Denne kode virker ikke længere. Spørg familien om en ny næste gang.") + '</p></div>';
+  } else if (!k) {
+    h += '<div class="kort" style="text-align:center;padding:28px 16px">' +
+      '<p class="lille" style="margin:0">' + (EN?"Connecting…":"Forbinder…") + '</p></div>';
+  } else {
+    const st = k.stilling || {};
+    const modst = k.modstander || (EN?"opponent":"modspiller");
+    const tb = st.tiebreak;
+    const pv = function(a, b){
+      if (tb) return String(a || 0);
+      if ((a||0) >= 3 && (b||0) >= 3) return a === b ? "40" : (a > b ? "A" : "–");
+      return P[a || 0] || "40";
+    };
+    h += '<div class="kort" style="border-left:3px solid var(--tabt)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<span style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--tabt)">' +
+          (k.aktiv ? "🔴 LIVE" : "⏹ " + (EN?"ENDED":"SLUT")) + '</span>' +
+        '<span class="lille">' + esc(k.turnering || "") + '</span></div>' +
+      '<h2 style="margin:6px 0 2px;font-size:19px">' + esc(k.spiller) + ' <span style="color:var(--daempet);font-weight:400">' +
+        (EN?"vs":"mod") + '</span> ' + esc(modst) + '</h2>';
+
+    // stillingen — det man kigger efter først
+    h += '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center;margin:12px 0 4px;font-size:15px">' +
+      '<span style="font-weight:700">' + esc(k.spiller) + (st.spillerServer ? ' <span style="color:var(--guld)">●</span>' : '') + '</span>' +
+      (st.saetHistorik || []).map(function(x){ return '<span style="color:var(--daempet);font-size:13px">' + esc(String(x).split("-")[0]) + '</span>'; }).join("") +
+      '<b style="font-size:20px">' + (st.partierSpiller || 0) + '</b>' +
+      '<b style="font-size:20px;color:var(--guld);min-width:34px;text-align:right">' + pv(st.pointSpiller, st.pointModstander) + '</b>' +
+      '<span style="font-weight:700">' + esc(modst) + (st.spillerServer === false ? ' <span style="color:var(--guld)">●</span>' : '') + '</span>' +
+      (st.saetHistorik || []).map(function(x){ return '<span style="color:var(--daempet);font-size:13px">' + esc(String(x).split("-")[1] || "") + '</span>'; }).join("") +
+      '<b style="font-size:20px">' + (st.partierModstander || 0) + '</b>' +
+      '<b style="font-size:20px;color:var(--guld);min-width:34px;text-align:right">' + pv(st.pointModstander, st.pointSpiller) + '</b>' +
+      '</div>';
+    if (tb) h += '<p class="lille" style="margin:2px 0 0;color:var(--guld)">TIEBREAK</p>';
+    h += '</div>';
+
+    // de seneste bolde — det der gør det levende
+    const f = (k.forloeb || []).slice(-24).reverse();
+    const NAVN = { vinder:[EN?"Winner":"Vinderslag",1], es:[EN?"Ace":"Es",1],
+      mod_tvunget:[EN?"Forced error":"Presset fejl frem",1], mod_uf:[EN?"Opponent error":"Modstanderfejl",1],
+      mod_dobbelt:[EN?"Double fault":"Dobbeltfejl",1], mod_vinder:[EN?"Winner against":"Vinderslag imod",0],
+      uf:[EN?"Unforced error":"Gratis fejl",0], dobbelt:[EN?"Double fault":"Dobbeltfejl",0],
+      returfejl:[EN?"Return error":"Returfejl",0], tvunget:[EN?"Forced into error":"Presset til fejl",0] };
+    if (f.length) {
+      h += '<div class="kort"><div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' +
+        (EN?"LAST BALLS":"SENESTE BOLDE") + '</div>';
+      f.forEach(function(p){
+        const n = NAVN[p.a] || [p.a, p.r === "V" ? 1 : 0];
+        h += '<div style="display:flex;gap:8px;align-items:center;padding:4px 0;border-top:1px solid var(--kant)">' +
+          '<span style="color:' + (p.r === "V" ? "var(--vundet)" : "var(--tabt)") + ';font-weight:800;width:14px">' +
+          (p.r === "V" ? "●" : "○") + '</span><span style="font-size:12.5px">' + esc(n[0]) + '</span></div>';
+      });
+      h += '</div>';
+    }
+    h += '<p class="lille" style="text-align:center;margin:10px 0 0">' +
+      (st.bolde || 0) + (EN?" balls · updates automatically":" bolde · opdateres automatisk") + '</p>';
+  }
+  if (_foelgFejl === "netvaerk") h += '<p class="lille" style="text-align:center;color:var(--tabt)">' +
+    (EN?"No connection — trying again…":"Ingen forbindelse — prøver igen…") + '</p>';
+  el.innerHTML = h;
+}
+
 function render() {
+  // Følges en kamp, vises KUN den. Ingen af appens egne data er tilgængelige.
+  if (FOELG_KODE) {
+    if (!_foelgTimer) { foelgHent(); _foelgTimer = setInterval(foelgHent, 10000); }
+    return foelgTegn();
+  }
   const EN = S.sprog === "en";
   const el = document.getElementById("app");
     let h = '<div class="topbar"><span class="brand"><img class="brandlogo" src="data:image/png;base64,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" alt="SportsAInalytics"><span class="brandtxt"><span class="wordmark">TEAM OSKAR</span><span class="brandby">Sports<b>AI</b>nalytics</span></span></span><button class="sprogknap" data-a="sprog">'+(EN?"\u{1F310} Dansk":"\u{1F310} English")+'</button></div>';
@@ -1665,8 +1952,66 @@ function render() {
     };
     if (S.tab === "hjem") {
       const _dsc = Math.max(0, Math.ceil((new Date("2026-07-30") - new Date())/86400000));
+
+
       h += '<div style="margin:16px 2px 6px;display:flex;align-items:center;gap:12px">' + avat("Oskar",46) + '<div><h2 style="margin:0;font-size:23px">' + (EN?"Hi Oskar":"Hej Oskar") + '</h2>' +
         '<p style="margin:5px 0 0;font-size:12.5px;color:var(--daempet)">' + S.gemte.length + (EN?" matches":" kampe") + ' · ' + S.ttLog.length + (EN?" sessions":" træninger") + (_dsc>0 ? ' · <b style="color:var(--guld)">' + _dsc + (EN?" days to Sommer Cup":" dage til Sommer Cup") + '</b>' : '') + '</p><p id="dev-kal" style="margin:4px 0 0;font-size:12px;color:var(--is)"></p></div></div>';
+      // ══════════════════════════════════════════════════════════════
+      // DIN TRÆNER · det delte lag set fra spillerens side
+      // Trænerens seneste vurdering pr. område ved siden af din egen.
+      // Forskellen mellem de to tal ER samtalen — det var Carstens pointe.
+      // ══════════════════════════════════════════════════════════════
+      (function(){
+        const td = S.traenerData, tsp = td && td.spiller;
+        const OMR = { fysisk:  { n: EN?"Physical training":"Den fysiske træning", i:"💪" },
+                      traener: { n: EN?"The coach's court":"Trænerens bane",       i:"🎾" },
+                      selv:    { n: EN?"Play-yourself court":"Spil-selv-banen",    i:"🏓" } };
+        const FV = function(x){ return x<=2?"#EB4452":x<=4?"#FA932E":x<=6?"#E7D24D":"#53AB7F"; };
+        h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+            '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">🧑‍🏫 ' +
+            (EN?"YOUR COACH":"DIN TRÆNER") + '</div>' +
+            '<span data-a="noegleAabn" title="' + (EN?"Player key":"Spillernøgle") +
+            '" style="cursor:pointer;font-size:13px;opacity:.6">⚙️</span></div>';
+
+        if (S.noegleAaben) {
+          h += '<p class="lille" style="margin:8px 0 4px">' + (EN
+            ? "Enter the player key you got from the club. Once per device."
+            : "Indtast spillernøglen, du har fået af klubben. Kun én gang på denne enhed.") + '</p>' +
+            '<input class="felt" data-felt="noegleUdkast" value="' + esc(S.noegleUdkast || "") +
+            '" placeholder="' + (EN?"player key":"spillernøgle") + '" autocapitalize="off" spellcheck="false">' +
+            '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="noegleGem">' +
+            (EN?"Save":"Gem") + '</button></div>';
+        } else if (!tsp || !((tsp.vurderinger||[]).length)) {
+          h += '<p class="lille" style="margin:6px 0 8px">' + (EN
+            ? "No assessments yet. Tap below to check with the coach."
+            : "Ingen vurderinger endnu. Tryk herunder for at tjekke hos træneren.") + '</p>';
+        } else {
+          const uf = (td.ugefokus||[]).slice(-1)[0];
+          if (uf) h += '<p class="lille" style="margin:6px 0 8px">' + (EN?"This week's focus: ":"Ugens fokus: ") +
+            '<b style="color:var(--guld)">' + esc(uf.omraade) + '</b></p>';
+          ["fysisk","traener","selv"].forEach(function(o){
+            const tv = (tsp.vurderinger||[]).filter(function(x){ return x.o===o; }).slice(-1)[0];
+            const sv = (tsp.selvvurderinger||[]).filter(function(x){ return x.o===o; }).slice(-1)[0];
+            if (!tv && !sv) return;
+            h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--kant)">' +
+              '<span style="font-size:12.5px">' + OMR[o].i + ' ' + OMR[o].n + '</span>' +
+              '<span style="display:flex;gap:10px;align-items:center">' +
+                (tv ? '<b style="font-size:15px;color:'+FV(tv.s)+'">'+tv.s+'</b>' : '<span style="color:var(--daempet)">–</span>') +
+                (sv ? '<span class="lille" style="opacity:.7">' + (EN?"you ":"dig ") + sv.s + '</span>' : '') +
+              '</span></div>';
+          });
+          if ((tsp.fokuspunkter||[]).length) h += '<p class="lille" style="margin:8px 0 0">🎯 ' +
+            (EN?"Focus: ":"Fokus: ") + tsp.fokuspunkter.map(esc).join(" · ") + '</p>';
+        }
+
+        h += '<div class="raekke" style="margin-top:8px"><button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px' +
+          (S.syncHenter?';opacity:.6':'') + '" data-a="synkroniser">' +
+          (S.syncHenter ? (EN?"⏳ Syncing…":"⏳ Synkroniserer…") : (EN?"🔄 Check with the coach":"🔄 Tjek hos træneren")) + '</button></div>';
+        if (S.syncBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
+          (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
+        h += '</div>';
+      })();
       h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"START MATCH":"START KAMP") + '</b><br><small id="hero-sub">' + (EN?"register points live from the court":"registrér point live fra banen") + '</small></span><span class="dev-pil">→</span></button>';
       h += '<div class="dev-grid">' +
         _flise("tab","fysisk","💪",(EN?"Train":"Træn"),(EN?"todays session & running":"dagens pas & løb"),"dev-kant-staal") +
@@ -1827,6 +2172,38 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '<b style="font-size:15px">' + saetVis + ' · vs ' + esc(S.aktiv.modstander) + '</b>' +
           '<p class="lille" style="margin:6px 0 0">' + (EN?"The engine says the match is over — summary and analysis are ready below. Save to move it to Statistics.":"Motoren siger kampen er slut — resumé og analyse står klar nedenfor. Gem kampen, så flytter den til Statistik.") + '</p>' + turneringsKontekst(EN) + '</div>';
       }
+      // ══════════════════════════════════════════════════════════════
+      // FØLG FRA SOFAEN · familien deler kampen mens den spilles
+      // Koden giver adgang til DENNE kamp og intet andet. Stoppes delingen,
+      // slettes kampen hos os, og koden virker ikke længere.
+      // ══════════════════════════════════════════════════════════════
+      h += '<div class="kort" style="border-left:3px solid ' + (S.liveAktiv ? 'var(--vundet)' : 'var(--kant)') + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">' +
+            (S.liveAktiv ? '🔴 ' + (EN?"LIVE — SHARED":"LIVE — DELES") : '📡 ' + (EN?"FOLLOW FROM THE SOFA":"FØLG FRA SOFAEN")) + '</div>' +
+          '<span data-a="delAabn" style="cursor:pointer;font-size:13px;opacity:.6">' + (S.delAaben?'✕':'▾') + '</span></div>';
+      if (S.liveAktiv) {
+        h += '<p class="lille" style="margin:6px 0 8px">' + (EN
+          ? "Anyone with the code can follow the match ball by ball. Nothing else is shared."
+          : "Alle med koden kan følge kampen bold for bold. Intet andet deles.") + '</p>' +
+          '<div style="background:var(--dyb);border-radius:10px;padding:10px;text-align:center;margin-bottom:8px">' +
+            '<div style="font-size:19px;font-weight:800;letter-spacing:2px;color:var(--guld)">' + esc(S.foelgekode) + '</div>' +
+          '</div>' +
+          '<div class="raekke">' +
+            '<button class="knap valg" style="flex:1;padding:9px" data-a="liveKopier">🔗 ' + (EN?"Copy link":"Kopiér link") + '</button>' +
+            '<button class="knap valg" style="flex:none;padding:9px 14px" data-a="liveStop">■ ' + (EN?"Stop":"Stop") + '</button>' +
+          '</div>';
+      } else if (S.delAaben) {
+        h += '<p class="lille" style="margin:6px 0 8px">' + (EN
+          ? "Share a code so family and teammates can follow live. The code only opens this match, and it dies when you stop."
+          : "Del en kode, så familie og holdkammerater kan følge med live. Koden åbner kun denne kamp, og den dør, når du stopper.") + '</p>' +
+          '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="liveStart">📡 ' +
+          (EN?"Share the match":"Del kampen") + '</button></div>';
+      }
+      if (S.liveBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
+        (S.liveBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.liveBesked.t) + '</p>';
+      h += '</div>';
+
       h += '<div class="raekke"><button class="knap" data-a="fortryd">'+(EN?"↶ Undo last":"↶ Fortryd seneste")+'</button><button class="knap valg" data-a="justToggle">⚙ '+(EN?"Adjust score":"Justér stillingen")+'</button><button class="knap valg" style="border:1.5px solid var(--guld)" data-a="livToggle"><span class="badge-ai">AI</span> '+(EN?"Analysis":"Analyse")+'</button></div>' +
       (S.livAaben ? livAnalyse(EN) : "") +
       (S.justAaben && S.j ? '<div class="kort" style="border:1.5px solid var(--is)">' +

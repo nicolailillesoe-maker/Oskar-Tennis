@@ -193,7 +193,40 @@ let S = {
   // er hele pilotens vurderinger vaek. Eksporten er ikke kun en backup: den er
   // migreringsformatet til fase 2, hvor data flytter til det delte lag.
   bkAaben: false, bkTekst: "", gendanUdkast: "", gendanBekraeft: false,
+  // Traenerens egen trup. Er den tom, vises eksempeldata. Skriver traeneren
+  // bare EN spiller ind, forsvinder eksemplerne helt. Kun FORNAVNE gemmes —
+  // et efternavn paa et barn har intet at goere i et lager, vi ikke ejer (princip 17).
+  truppen: lager.hent("truppen", []),
+  trupAaben: false, trupNavn: "", trupGruppe: "", trupNoegle: "", trupSlet: null,
 };
+
+// ── TRUPPEN erstatter eksempeldata, saa snart traeneren har skrevet en spiller ind.
+function nySpiller(navn, gruppe){
+  return { navn:navn, rang:null, klub:(typeof KONFIG!=="undefined"?KONFIG.klub:"")||"", wtn:null,
+    erBruger:false, gruppe:gruppe, fysStreak:0, tennisStreak:0, vurdering:{}, kampe:0, sejre:0,
+    sidsteTraening:"\u2014", traeningerKvartal:0, kampliste:[], statistik:null, rivaler:[] };
+}
+function byggTrup(){
+  if (!S.truppen || !S.truppen.length) return;   // tom trup = behold eksemplerne
+  var grupper = {}, spillere = {}, raekke = [];
+  S.truppen.forEach(function(p){
+    var gr = (p.gruppe||"Mit hold").trim() || "Mit hold";
+    if (!grupper[gr]) { grupper[gr] = { aargang: gr, spillere: [] }; raekke.push(gr); }
+    if (spillere[p.navn]) return;
+    grupper[gr].spillere.push(p.navn);
+    spillere[p.navn] = nySpiller(p.navn, gr);
+    if (p.noegle) { S.noegler = S.noegler || {}; S.noegler[p.navn] = p.noegle; }
+  });
+  DATA.grupper = grupper; DATA.spillere = spillere;
+  if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].grupper = raekke;
+  if (DATA.traenere && DATA.traenere[1]) DATA.traenere[1].grupper = [];
+  S.spiller = raekke.length ? grupper[raekke[0]].spillere[0] : S.spiller;
+  Object.keys(S.evalueringer||{}).forEach(function(navn){
+    var d2 = DATA.spillere[navn];
+    if (d2 && S.evalueringer[navn] && S.evalueringer[navn].tekst) { d2.evalSendt = S.evalueringer[navn].tekst; d2.evalNy = true; }
+  });
+}
+byggTrup();
 
 // Læg de gemte evalueringer tilbage i DATA, så visningen er uændret.
 Object.keys(S.evalueringer || {}).forEach(function(navn){
@@ -265,7 +298,11 @@ function renderTraener(){
   const t = DATA.traenere.find(x=>x.navn===S.traener);
   let h = LOGO + '<div class="top"><div class="avatar">'+init(t.navn)+'</div>' +
     '<div style="flex:1"><div class="eyebrow">'+esc(KONFIG.klub)+' · TRÆNER</div><h1>'+esc(t.navn)+'</h1></div></div>';
-  h += '<div class="proto-note">⚡ PROTOTYPE — fake data. 💡 <b>Prøv loopet:</b> giv Oskar en score under ⚡ Vurdér træning — skift så til 🎾 Spiller og se den lande.</div>';
+  // Prototype-banneret gaelder kun eksempeldata. Har traeneren skrevet sin egen
+  // trup ind, er det hans rigtige spillere — og saa maa der ikke staa "fake data".
+  if (!(S.truppen||[]).length) {
+    h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> Skriv din egen trup ind under 👥 MIN TRUP — så forsvinder eksemplerne. 💡 Prøv loopet imens: giv en spiller en score under ⚡ Vurdér træning, og skift så til 🎾 Spiller og se den lande.</div>';
+  }
   if (S.tab==="hjem") {
     h += '<div style="margin:14px 2px 2px"><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:40px;height:40px;font-size:16px">'+init(t.navn)+'</div><h2 style="margin:0;font-size:21px">Hej '+esc(t.navn.split(" ")[0])+' 👋</h2></div>' +
       '<p style="margin:4px 0 0;font-size:12.5px;color:var(--daempet)">Vælg, hvad du vil i gang med</p></div>';
@@ -303,6 +340,37 @@ function renderTraener(){
       }
       h += '</div>';
     }
+    h += '</div>';   // FORBINDELSE-kortet lukkes her, saa MIN TRUP staar for sig selv
+    // ── MIN TRUP
+    {
+      const egen = (S.truppen||[]).length;
+      const antG = egen ? Object.keys(DATA.grupper).length : 0;
+      const medN = (S.truppen||[]).filter(function(x){return x.noegle;}).length;
+      h += '<div class="kort" style="border-left:3px solid ' + (egen ? 'var(--vundet)' : 'var(--guld)') + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83d\udc65 MIN TRUP</div>' +
+          '<span data-act="trup-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.trupAaben?'\u2715':'\u270f\ufe0f') + '</span></div>' +
+        '<p class="lille" style="margin:6px 0 0">' + (egen
+          ? egen + ' spiller' + (egen===1?'':'e') + ' i ' + antG + ' gruppe' + (antG===1?'':'r') + ' \u00b7 ' + medN + ' med n\u00f8gle'
+          : '\u26a1 Du ser <b>eksempeldata</b>. Skriv din f\u00f8rste spiller ind \u2014 s\u00e5 forsvinder eksemplerne.') + '</p>';
+      if (S.trupAaben) {
+        if (egen) {
+          h += '<div style="margin-top:9px">';
+          (S.truppen||[]).forEach(function(p, i){
+            h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:8px 0">' +
+              '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+esc(p.navn)+'</div>' +
+              '<div class="lille">'+esc(p.gruppe||'\u2014')+(p.noegle?' \u00b7 \ud83d\udd11 koblet':' \u00b7 ingen n\u00f8gle')+'</div></div>' +
+              '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px;'+(S.trupSlet===i?'background:var(--tabt);color:#fff':'')+'" data-act="trup-slet" data-v="'+i+'">'+(S.trupSlet===i?'Slet?':'\ud83d\uddd1')+'</button></div>';
+          });
+          h += '</div>';
+        }
+        h += '<input class="felt" style="margin-top:9px" data-felt="trupNavn" value="'+esc(S.trupNavn||'')+'" placeholder="fornavn" autocapitalize="words">' +
+          '<input class="felt" style="margin-top:6px" data-felt="trupGruppe" value="'+esc(S.trupGruppe||'')+'" placeholder="gruppe, fx U14 Elite" autocapitalize="words">' +
+          '<input class="felt" style="margin-top:6px" data-felt="trupNoegle" value="'+esc(S.trupNoegle||'')+'" placeholder="spillern\u00f8gle (kan udfyldes senere)" autocapitalize="off" spellcheck="false">' +
+          '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="trup-tilfoej">+ Tilf\u00f8j spiller</button></div>' +
+          '<p class="lille" style="margin:8px 0 0;font-style:italic">Kun fornavn \u2014 efternavne p\u00e5 b\u00f8rn gemmes ikke. N\u00f8glen udleveres af klubben sammen med familiens egen.</p>';
+      }
+    }
     if (S.syncBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
       (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
     h += '</div>';
@@ -336,7 +404,7 @@ function traenerGrupper(t){
       h += '<div class="spiller-rk" data-act="spiller-detalje" data-v="'+esc(s.navn)+'">' +
         '<div class="avatar" style="width:32px;height:32px;font-size:13px;'+(s.erBruger?'background:var(--is);color:var(--nat)':'')+'">'+init(s.navn)+'</div>' +
         '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">'+esc(s.navn)+(s.erBruger?' ⭐':'')+'</div>' +
-        '<div class="lille">DTF #'+s.rang+' · '+s.kampe+' kampe · sidst: '+s.sidsteTraening+'</div></div>' +
+        '<div class="lille">'+(s.rang?'DTF #'+s.rang+' · ':'')+s.kampe+' kampe · sidst: '+s.sidsteTraening+'</div></div>' +
         '<div style="display:flex;align-items:center;gap:6px"><span style="width:11px;height:11px;border-radius:50%;background:'+b.farve+';display:inline-block"></span><b style="font-size:13px">'+sn.toFixed(1)+'</b></div>' +
         '<span style="color:var(--daempet)">›</span></div>';
     });
@@ -350,7 +418,7 @@ function spillerDetalje(navn){
   let h = '<button class="knap valg" style="margin-bottom:12px;flex:none;padding:8px 14px" data-act="luk-spiller">‹ Tilbage</button>';
   h += '<div class="kort"><div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">' +
     '<div class="avatar" style="width:48px;height:48px;font-size:19px">'+init(navn)+'</div>' +
-    '<div><h1 style="margin:0;font-size:19px">'+esc(navn)+'</h1><p class="lille">'+esc(s.gruppe)+' · DTF #'+s.rang+' · WTN '+s.wtn+'</p></div></div>';
+    '<div><h1 style="margin:0;font-size:19px">'+esc(navn)+'</h1><p class="lille">'+esc(s.gruppe)+(s.rang?' · DTF #'+s.rang:'')+(s.wtn?' · WTN '+s.wtn:'')+'</p></div></div>';
   h += '<div class="grid2" style="margin-top:8px">' +
     mini("Kampe", s.kampe) + mini("Sejrsrate", (s.kampe?Math.round(s.sejre/s.kampe*100):0)+"%") +
     mini("🔥 Fys-streak", s.fysStreak+" uger") + mini("🎾 Træninger", s.traeningerKvartal) + '</div></div>';
@@ -598,7 +666,9 @@ function renderSpiller(){
   const s = DATA.spillere[S.spiller];
   let h = LOGO + '<div class="top"><div class="avatar" style="background:var(--is);color:var(--nat)">'+init(S.spiller)+'</div>' +
     '<div style="flex:1"><div class="eyebrow">'+esc(KONFIG.klub)+' · '+esc(s.gruppe)+'</div><h1>'+esc(S.spiller.split(" ")[0])+'</h1></div></div>';
-  h += '<div class="proto-note">⚡ PROTOTYPE — fake data. Streaks og venner deles mellem spillere når backend er på plads.</div>';
+  if (!(S.truppen||[]).length) {
+    h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> Streaks og venner deles mellem spillere, når det delte lag er på plads.</div>';
+  }
   if (S.tab==="hjem") {
     h += '<div style="margin:14px 2px 2px"><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:40px;height:40px;font-size:16px">'+init(S.spiller)+'</div><h2 style="margin:0;font-size:21px">Hej '+esc(S.spiller.split(" ")[0])+' 👋</h2></div>' +
       '<p style="margin:4px 0 0;font-size:12.5px;color:var(--daempet)">Din side i klubben</p></div>';
@@ -736,11 +806,38 @@ document.addEventListener("click", function(e){
   else if (act==="kvartal-gen"){ S.kvartalUdkast=v; render(); }
   else if (act==="luk-kvartal"){ S.kvartalUdkast=null; render(); }
   else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekst=(ta&&ta.value)||S.kvartalTekst||""; const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } S.evalueringer=S.evalueringer||{}; S.evalueringer[n]={tekst:tekst,dato:new Date().toISOString().slice(0,10)}; lager.gem("evalueringer", S.evalueringer); alert("\u2713 Evaluering sendt til "+n.split(" ")[0]+"!\n\nSkift til \ud83c\udfbe Spiller-rollen og se den lande under \u0027Din evaluering\u0027."); S.kvartalUdkast=null; render(); }
+  else if (act==="trup-aabn"){ S.trupAaben = !S.trupAaben; S.trupSlet = null; render(); }
+  else if (act==="trup-tilfoej"){
+    var nv = (S.trupNavn||"").trim();
+    if (!nv) { S.syncBesked={fejl:true,t:"Skriv spillerens fornavn."}; render(); return; }
+    if (nv.indexOf(" ") > -1) nv = nv.split(" ")[0];
+    S.truppen = S.truppen || [];
+    if (S.truppen.some(function(x){return x.navn.toLowerCase()===nv.toLowerCase();})) {
+      S.syncBesked={fejl:true,t:nv+" er der allerede."}; render(); return; }
+    S.truppen.push({ navn:nv, gruppe:(S.trupGruppe||"Mit hold").trim()||"Mit hold", noegle:(S.trupNoegle||"").trim() });
+    lager.gem("truppen", S.truppen);
+    S.trupNavn = ""; S.trupNoegle = "";   // gruppen bliver staaende, saa naeste spiller gaar hurtigt
+    byggTrup();
+    if (S.noegler) lager.gem("noegler", S.noegler);
+    S.syncBesked={fejl:false,t:nv+" er tilf\u00f8jet \u2713"}; render();
+    var sidst = S.truppen[S.truppen.length-1];
+    if (sidst && sidst.noegle) sendVurdering(sidst.navn); }
+  else if (act==="trup-slet"){
+    var ix = +v;
+    if (S.trupSlet !== ix) { S.trupSlet = ix;
+      S.syncBesked={fejl:true,t:"Tryk igen for at fjerne "+((S.truppen[ix]||{}).navn||"spilleren")+"."}; render(); return; }
+    var fjernet = (S.truppen[ix]||{}).navn;
+    S.truppen.splice(ix,1); lager.gem("truppen", S.truppen);
+    if (fjernet && S.noegler) { delete S.noegler[fjernet]; lager.gem("noegler", S.noegler); }
+    S.trupSlet = null;
+    if (!S.truppen.length) { S.syncBesked={fejl:false,t:"Truppen er tom \u2014 eksempeldata vises igen ved genindl\u00e6sning."}; }
+    else { byggTrup(); S.syncBesked={fejl:false,t:fjernet+" er fjernet."}; }
+    render(); }
   else if (act==="bk-lav"){
     S.bkTekst = JSON.stringify({ format:"SAI-TRAENER-BACKUP", version:1,
       dato:new Date().toISOString().slice(0,10), traener:S.traener||"",
       vurderinger:S.vurderinger||[], ugefokus:S.ugefokus||{},
-      fokuspunkter:S.fokuspunkter||{}, noegler:S.noegler||{},
+      fokuspunkter:S.fokuspunkter||{}, noegler:S.noegler||{}, truppen:S.truppen||[],
       evalueringer:S.evalueringer||{} });
     S.bkAaben = false; render(); }
   else if (act==="bk-kopier" || act==="bk-del"){
@@ -761,6 +858,8 @@ document.addEventListener("click", function(e){
     S.vurderinger = Array.isArray(d.vurderinger) ? d.vurderinger : [];
     S.ugefokus = d.ugefokus || {}; S.fokuspunkter = d.fokuspunkter || {};
     S.noegler = d.noegler || {}; S.evalueringer = d.evalueringer || {};
+    S.truppen = Array.isArray(d.truppen) ? d.truppen : [];
+    lager.gem("truppen", S.truppen); byggTrup();
     lager.gem("vurderinger", S.vurderinger); lager.gem("ugefokus", S.ugefokus);
     lager.gem("fokuspunkter", S.fokuspunkter); lager.gem("noegler", S.noegler);
     lager.gem("evalueringer", S.evalueringer);

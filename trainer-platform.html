@@ -189,6 +189,10 @@ let S = {
   // forsvandt ved reload. Teksten bliver på trænerens enhed — den sendes
   // aldrig med i et analyse-kald og aldrig gennem spiller-sync (princip 17+19).
   evalueringer: lager.hent("evalueringer", {}),
+  // Sikkerhedskopi. Traenerens data bor i EN browser paa EN enhed — ryddes den,
+  // er hele pilotens vurderinger vaek. Eksporten er ikke kun en backup: den er
+  // migreringsformatet til fase 2, hvor data flytter til det delte lag.
+  bkAaben: false, bkTekst: "", gendanUdkast: "", gendanBekraeft: false,
 };
 
 // Læg de gemte evalueringer tilbage i DATA, så visningen er uændret.
@@ -280,6 +284,24 @@ function renderTraener(){
         '" placeholder="klubkode" autocapitalize="off" spellcheck="false">' +
         '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="ops-gem">Gem</button></div>' +
         '<p class="lille" style="margin:8px 0 0;font-style:italic">Koden gemmes kun på denne enhed og står ingen steder i koden.</p>';
+      // ── SIKKERHEDSKOPI
+      h += '<div style="border-top:1px solid var(--kant);margin-top:12px;padding-top:10px">' +
+        '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83d\udcbe SIKKERHEDSKOPI</div>' +
+        '<p class="lille" style="margin:6px 0 8px">Dine vurderinger og evalueringer ligger kun i denne browser. Ryddes den, er de væk. Tag en kopi jævnligt.</p>' +
+        '<div class="raekke"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-lav">\ud83d\udcbe Lav kopi</button>' +
+        '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-gendan-aabn">\u267b\ufe0f Gendan</button></div>';
+      if (S.bkTekst) {
+        h += '<textarea rows="5" readonly style="margin-top:8px;font-size:11px">'+esc(S.bkTekst)+'</textarea>' +
+          '<div class="raekke" style="margin-top:6px"><button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px" data-act="bk-kopier">\ud83d\udccb Kopiér</button>' +
+          '<button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px" data-act="bk-del">\ud83d\udce4 Del\u2026</button></div>' +
+          '<p class="lille" style="margin:6px 0 0;font-style:italic">Kopien indeholder trænerens tekst om spillerne. Gem den et sikkert sted \u2014 klubkoden er IKKE med.</p>';
+      }
+      if (S.bkAaben) {
+        h += '<textarea rows="4" data-felt="gendanUdkast" placeholder="Indsæt en sikkerhedskopi her" style="margin-top:8px;font-size:11px">'+esc(S.gendanUdkast||'')+'</textarea>' +
+          '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:'+(S.gendanBekraeft?'var(--tabt)':'var(--grus)')+'" data-act="bk-gendan">' +
+          (S.gendanBekraeft ? '\u26a0\ufe0f Tryk igen \u2014 ERSTATTER alt' : '\u267b\ufe0f Gendan') + '</button></div>';
+      }
+      h += '</div>';
     }
     if (S.syncBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
       (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
@@ -714,6 +736,39 @@ document.addEventListener("click", function(e){
   else if (act==="kvartal-gen"){ S.kvartalUdkast=v; render(); }
   else if (act==="luk-kvartal"){ S.kvartalUdkast=null; render(); }
   else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekst=(ta&&ta.value)||S.kvartalTekst||""; const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } S.evalueringer=S.evalueringer||{}; S.evalueringer[n]={tekst:tekst,dato:new Date().toISOString().slice(0,10)}; lager.gem("evalueringer", S.evalueringer); alert("\u2713 Evaluering sendt til "+n.split(" ")[0]+"!\n\nSkift til \ud83c\udfbe Spiller-rollen og se den lande under \u0027Din evaluering\u0027."); S.kvartalUdkast=null; render(); }
+  else if (act==="bk-lav"){
+    S.bkTekst = JSON.stringify({ format:"SAI-TRAENER-BACKUP", version:1,
+      dato:new Date().toISOString().slice(0,10), traener:S.traener||"",
+      vurderinger:S.vurderinger||[], ugefokus:S.ugefokus||{},
+      fokuspunkter:S.fokuspunkter||{}, noegler:S.noegler||{},
+      evalueringer:S.evalueringer||{} });
+    S.bkAaben = false; render(); }
+  else if (act==="bk-kopier" || act==="bk-del"){
+    var bt = S.bkTekst; if (!bt) return;
+    if (act==="bk-del" && navigator.share) { navigator.share({ text: bt }).catch(function(){}); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(bt).then(function(){ S.syncBesked={fejl:false,t:"Sikkerhedskopien er kopieret \u2713"}; render(); })
+        .catch(function(){ S.syncBesked={fejl:true,t:"Kunne ikke kopiere \u2014 marker teksten manuelt."}; render(); }); }
+    else { S.syncBesked={fejl:true,t:"Kopiering kr\u00e6ver en nyere browser."}; render(); } }
+  else if (act==="bk-gendan-aabn"){ S.bkAaben = !S.bkAaben; S.gendanBekraeft = false; S.bkTekst = ""; render(); }
+  else if (act==="bk-gendan"){
+    var raa = (S.gendanUdkast||"").trim();
+    if (!raa) { S.syncBesked={fejl:true,t:"Indsæt en sikkerhedskopi først."}; render(); return; }
+    var d; try { d = JSON.parse(raa); } catch(e2) { S.syncBesked={fejl:true,t:"Teksten er ikke en gyldig sikkerhedskopi."}; S.gendanBekraeft=false; render(); return; }
+    if (!d || d.format !== "SAI-TRAENER-BACKUP") { S.syncBesked={fejl:true,t:"Det er ikke en tr\u00e6ner-sikkerhedskopi."}; S.gendanBekraeft=false; render(); return; }
+    if (!S.gendanBekraeft) { S.gendanBekraeft = true;
+      S.syncBesked={fejl:true,t:"Dette ERSTATTER alt p\u00e5 denne enhed. Tryk igen for at bekr\u00e6fte."}; render(); return; }
+    S.vurderinger = Array.isArray(d.vurderinger) ? d.vurderinger : [];
+    S.ugefokus = d.ugefokus || {}; S.fokuspunkter = d.fokuspunkter || {};
+    S.noegler = d.noegler || {}; S.evalueringer = d.evalueringer || {};
+    lager.gem("vurderinger", S.vurderinger); lager.gem("ugefokus", S.ugefokus);
+    lager.gem("fokuspunkter", S.fokuspunkter); lager.gem("noegler", S.noegler);
+    lager.gem("evalueringer", S.evalueringer);
+    Object.keys(S.evalueringer).forEach(function(navn){ var sp = DATA.spillere[navn];
+      if (sp && S.evalueringer[navn] && S.evalueringer[navn].tekst) { sp.evalSendt = S.evalueringer[navn].tekst; sp.evalNy = true; } });
+    S.gendanBekraeft = false; S.bkAaben = false; S.gendanUdkast = "";
+    S.syncBesked = { fejl:false, t:"Gendannet \u2713 " + S.vurderinger.length + " vurderinger \u00b7 " + Object.keys(S.evalueringer).length + " evalueringer" };
+    render(); }
   else if (act==="eval-del"){
     var ev = (S.evalueringer||{})[v]; if (!ev || !ev.tekst) return;
     var txt = ev.tekst;

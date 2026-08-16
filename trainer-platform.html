@@ -61,6 +61,18 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 .dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
 .dev-flise{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:16px 14px 14px;border-radius:18px;border:1px solid var(--kant);background:var(--kort);color:var(--kridt);cursor:pointer;text-align:left;min-height:96px;font-family:inherit;backdrop-filter:blur(8px)}
 .dev-flise .ik{font-size:24px;margin-bottom:4px}
+/* ── FLISER som standard for valg-lister. Erstatter stablede piller. */
+.flise-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.flise-valg{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;
+  min-height:60px;padding:12px 11px;border-radius:16px;border:1px solid var(--kant);
+  background:var(--kort);color:var(--tekst2);font-family:inherit;font-size:11.8px;
+  font-weight:600;line-height:1.32;cursor:pointer;transition:border-color .12s,background .12s}
+.flise-valg:active{transform:translateY(1px)}
+.flise-valg.til{background:rgba(159,216,232,.13);border-color:var(--is);color:var(--is);font-weight:700}
+.flise-valg.til::after{content:"\2713";position:absolute;top:6px;right:8px;font-size:10px;
+  line-height:1;color:var(--is);opacity:.85}
+.flise-omr{display:flex;align-items:center;gap:6px;margin:14px 0 2px;font-size:11px;
+  font-weight:800;letter-spacing:1.2px;color:var(--daempet);text-transform:uppercase}
 /* Ugefokus-fliserne: lavere end hovedfliserne, fire på række i 2x2.
    Valgt flise markeres i guld — samme sprog som resten af appen. */
 .fokus-flise{min-height:74px;padding:13px 13px 11px}
@@ -194,10 +206,15 @@ let S = {
   // migreringsformatet til fase 2, hvor data flytter til det delte lag.
   bkAaben: false, bkTekst: "", gendanUdkast: "", gendanBekraeft: false,
   // Traenerens egen trup. Er den tom, vises eksempeldata. Skriver traeneren
-  // bare EN spiller ind, forsvinder eksemplerne helt. Kun FORNAVNE gemmes —
-  // et efternavn paa et barn har intet at goere i et lager, vi ikke ejer (princip 17).
+  // bare EN spiller ind, forsvinder eksemplerne helt.
+  // NAVNET ER KLUBBENS VALG (Nicolai, 16/8): "De maa kalde det praecist hvad vi vil.
+  // Det er klubbens data — vi har bare leveret en platform." Samme regel som
+  // modstandernavne 13/8: fuldt navn TILLADT, aldrig paakraevet.
   truppen: lager.hent("truppen", []),
   trupAaben: false, trupNavn: "", trupGruppe: "", trupNoegle: "", trupSlet: null,
+  // Tilmeldinger fra det delte lag. Holdes ADSKILT fra truppen med vilje:
+  // truppen er dem, traeneren vurderer — tilmeldingerne er dem, der venter paa svar.
+  tilmeldinger: [], tilmHenter: false, tilmHentet: null,
 };
 
 // ── TRUPPEN erstatter eksempeldata, saa snart traeneren har skrevet en spiller ind.
@@ -243,31 +260,33 @@ const UGEOMRAADER = [
 ];
 
 // ── FOKUSPUNKTER · faste kategorier, aldrig fritekst
-// ⚠️ PLADSHOLDERE. Carsten skylder de rigtige lister. Udskift indholdet her —
-//    resten af koden læser fra denne konstant og skal ikke ændres.
+// Carstens egne 15 punkter, mail 16/8-2026. Hans formuleringer, kun renset for
+// tastefejl. Id'erne foelger spiller-sync's regel: /^[a-z0-9-]{2,30}$/ — et id
+// kan ikke rumme en saetning om et barn (princip 17).
+// ⚠️ Retter Carsten sin liste, rettes KUN her. Resten af koden laeser herfra.
 const KATEGORIER = {
   teknisk: [
-    { id: "hoejde-net",   navn: "Højde over nettet" },
-    { id: "inside-out",   navn: "Inside out-forhånd" },
-    { id: "anden-serv",   navn: "2. serven — spin og højde" },
-    { id: "retur-dybde",  navn: "Returens dybde" },
-    { id: "baglaens",     navn: "Baglæns arbejde efter dyb bold" },
+    { id: "skab-plads",         navn: "Skab plads til at slå slaget" },
+    { id: "afstand-traefpunkt", navn: "Afstand til træfpunkt (benstilling)" },
+    { id: "knaek-baghaand",     navn: "Knæk i baghånden før træfpunkt" },
+    { id: "hammergreb",         navn: "Hammergreb — grebsskiftet" },
   ],
   taktisk: [
-    { id: "cross-standard", navn: "Cross som standard" },
-    { id: "vaelg-side",     navn: "Vælg serveside før opkast" },
-    { id: "skridt-frem",    navn: "Skridt frem på modstanderens 2. serv" },
-    { id: "store-point",    navn: "Mønster på de store point" },
+    { id: "bue-hoejde",         navn: "Bue og højde på bolden" },
+    { id: "longline-forkert",   navn: "Long line på den forkerte bold" },
+    { id: "mere-kryds",         navn: "Spille flere krydsbolde" },
+    { id: "approach-longline",  navn: "Angrib og approach long line" },
   ],
   fysisk: [
-    { id: "benarbejde",  navn: "Benarbejde mellem slag" },
-    { id: "genrejsning", navn: "Genrejsning efter lang duel" },
-    { id: "udholdenhed", navn: "Udholdenhed i tredje sæt" },
+    { id: "ned-i-benene",       navn: "Ned i benene" },
+    { id: "op-paa-forfoden",    navn: "Op på tæerne og forfoden" },
+    { id: "krydsover",          navn: "Krydsover på tilbageløb" },
   ],
   mentalt: [
-    { id: "taalmodighed", navn: "Tålmodighed ved lige stilling" },
-    { id: "efter-fejl",   navn: "Reaktion efter egen fejl" },
-    { id: "rutine",       navn: "Rutine mellem point" },
+    { id: "justerer-ved-fejl",  navn: "Justerer ved fejl" },
+    { id: "godt-spillet",       navn: "Sige godt spillet til modstanderen" },
+    { id: "acceptere-fejl",     navn: "Acceptere fejl og få justeret" },
+    { id: "finde-loesninger",   navn: "Acceptere og finde løsninger" },
   ],
 };
 
@@ -341,6 +360,31 @@ function renderTraener(){
       h += '</div>';
     }
     h += '</div>';   // FORBINDELSE-kortet lukkes her, saa MIN TRUP staar for sig selv
+    // ── NYE TILMELDINGER · familier, der har oprettet sig og venter paa klubben
+    {
+      const afv = (S.tilmeldinger||[]).filter(function(x){ return x.status === "afventer"; });
+      h += '<div class="kort" style="border-left:3px solid ' + (afv.length ? 'var(--guld)' : 'var(--kant)') + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83d\udce5 NYE TILMELDINGER' +
+          (afv.length ? ' <span style="background:var(--guld);color:var(--nat);padding:1px 6px;border-radius:7px;margin-left:5px">'+afv.length+'</span>' : '') + '</div>' +
+          '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="tilm-hent">' +
+          (S.tilmHenter ? '\u2026' : (S.tilmHentet ? 'Opdatér' : 'Tjek')) + '</button></div>';
+      if (!S.tilmHentet) {
+        h += '<p class="lille" style="margin:6px 0 0">Tryk Tjek for at se, om nogen familier har oprettet sig.</p>';
+      } else if (!afv.length) {
+        h += '<p class="lille" style="margin:6px 0 0">Ingen venter på svar lige nu.</p>';
+      } else {
+        afv.forEach(function(t2){
+          h += '<div style="border-top:1px solid var(--kant);padding:9px 0">' +
+            '<div style="font-size:13px;font-weight:700">'+esc(t2.fornavn||'Spiller')+'</div>' +
+            '<div class="lille" style="margin-bottom:7px">'+esc(t2.spillernoegle||'')+(t2.hold?' \u00b7 '+esc(t2.hold):'')+'</div>' +
+            '<div class="raekke"><button class="knap" style="background:var(--vundet)" data-act="tilm-svar" data-v="'+esc(t2.spillernoegle)+'~~godkendt">\u2713 Godkend</button>' +
+            '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-act="tilm-svar" data-v="'+esc(t2.spillernoegle)+'~~afvist">Afvis</button></div></div>';
+        });
+        h += '<p class="lille" style="margin:8px 0 0;font-style:italic">Godkendte spillere lægges automatisk i din trup med deres nøgle.</p>';
+      }
+      h += '</div>';
+    }
     // ── MIN TRUP
     {
       const egen = (S.truppen||[]).length;
@@ -364,11 +408,11 @@ function renderTraener(){
           });
           h += '</div>';
         }
-        h += '<input class="felt" style="margin-top:9px" data-felt="trupNavn" value="'+esc(S.trupNavn||'')+'" placeholder="fornavn" autocapitalize="words">' +
+        h += '<input class="felt" style="margin-top:9px" data-felt="trupNavn" value="'+esc(S.trupNavn||'')+'" placeholder="navn, som klubben vil vise det" autocapitalize="words">' +
           '<input class="felt" style="margin-top:6px" data-felt="trupGruppe" value="'+esc(S.trupGruppe||'')+'" placeholder="gruppe, fx U14 Elite" autocapitalize="words">' +
           '<input class="felt" style="margin-top:6px" data-felt="trupNoegle" value="'+esc(S.trupNoegle||'')+'" placeholder="spillern\u00f8gle (kan udfyldes senere)" autocapitalize="off" spellcheck="false">' +
           '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="trup-tilfoej">+ Tilf\u00f8j spiller</button></div>' +
-          '<p class="lille" style="margin:8px 0 0;font-style:italic">Kun fornavn \u2014 efternavne p\u00e5 b\u00f8rn gemmes ikke. N\u00f8glen udleveres af klubben sammen med familiens egen.</p>';
+          '<p class="lille" style="margin:8px 0 0;font-style:italic">Skriv navnet, som klubben vil have det vist \u2014 fornavn, fornavn og initial, eller fuldt navn. N\u00f8glen udleveres af klubben sammen med familiens egen.</p>';
       }
     }
     if (S.syncBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
@@ -458,19 +502,22 @@ function spillerDetalje(navn){
       (S.fpAaben===navn ? 'Færdig' : (mine.length ? 'Ret' : 'Vælg')) + '</button></div>';
   if (S.fpAaben !== navn) {
     h += mine.length
-      ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' +
-        mine.map(id => '<span class="knap valg til" style="flex:none;padding:6px 11px;font-size:11.5px;cursor:default">'+esc(navnPaa(id))+'</span>').join('') + '</div>'
-      : '<p class="lille" style="margin:6px 0 0">Ingen valgt endnu. De følger spilleren, hvis træneren skifter.</p>';
+      ? '<div class="flise-grid">' +
+        mine.map(id => '<span class="flise-valg til" style="cursor:default">'+esc(navnPaa(id))+'</span>').join('') + '</div>'
+      : '<p class="lille" style="margin:6px 0 0">Ingen valgt endnu. Vælg op til tre — de følger spilleren, hvis træneren skifter.</p>';
   } else {
     alle.forEach(([omr, liste]) => {
       const o = UGEOMRAADER.find(x=>x.id===omr);
-      h += '<p class="lille" style="margin:10px 0 4px;font-weight:700;color:var(--kridt)">'+o.ikon+' '+o.navn+'</p>' +
-        '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
-        liste.map(k => '<button class="knap valg'+(mine.includes(k.id)?' til':'')+
-          '" style="flex:none;padding:6px 11px;font-size:11.5px" data-act="fp-slaa" data-sp="'+esc(navn)+'" data-v="'+k.id+'">'+
+      h += '<div class="flise-omr">'+o.ikon+' '+o.navn+'</div>' +
+        '<div class="flise-grid">' +
+        liste.map(k => '<button class="flise-valg'+(mine.includes(k.id)?' til':'')+
+          '" data-act="fp-slaa" data-sp="'+esc(navn)+'" data-v="'+k.id+'">'+
           esc(k.navn)+'</button>').join('') + '</div>';
     });
-    h += '<p class="lille" style="margin:10px 0 0;font-style:italic">Faste valg, ingen fritekst — hurtigere på banen, og analysen kan regne på dem.</p>';
+    h += '<p class="lille" style="margin:10px 0 0;'+(mine.length>3?'color:var(--guld);font-weight:700':'font-style:italic')+'">' +
+      (mine.length>3
+        ? '\u26a0\ufe0f ' + mine.length + ' valgt. Tre er det, en spiller kan huske på vej ind til kampen \u2014 \u00e9n pr. farve.'
+        : mine.length + ' af 3 valgt \u00b7 faste valg, ingen fritekst \u2014 hurtigere p\u00e5 banen, og analysen kan regne p\u00e5 dem.') + '</p>';
   }
   h += '</div>';
   h += faellesLag(s);
@@ -806,11 +853,47 @@ document.addEventListener("click", function(e){
   else if (act==="kvartal-gen"){ S.kvartalUdkast=v; render(); }
   else if (act==="luk-kvartal"){ S.kvartalUdkast=null; render(); }
   else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekst=(ta&&ta.value)||S.kvartalTekst||""; const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } S.evalueringer=S.evalueringer||{}; S.evalueringer[n]={tekst:tekst,dato:new Date().toISOString().slice(0,10)}; lager.gem("evalueringer", S.evalueringer); alert("\u2713 Evaluering sendt til "+n.split(" ")[0]+"!\n\nSkift til \ud83c\udfbe Spiller-rollen og se den lande under \u0027Din evaluering\u0027."); S.kvartalUdkast=null; render(); }
+  else if (act==="tilm-hent"){
+    if (S.tilmHenter) return;
+    if (!lager.hent("klubkode","")) { S.syncBesked={fejl:true,t:"Indtast klubkoden f\u00f8rst."}; render(); return; }
+    S.tilmHenter = true; S.syncBesked = null; render();
+    sync("hent-hold", {}).then(function(r){
+      S.tilmHenter = false;
+      if (r && r.fejl) { S.syncBesked={fejl:true,t:"Kunne ikke hente: "+r.fejl}; render(); return; }
+      S.tilmeldinger = (r && r.hold) || [];   // maalt: hent-hold svarer { hold: [...] }
+      S.tilmHentet = new Date().toISOString();
+      var afv = S.tilmeldinger.filter(function(x){ return x.status === "afventer"; }).length;
+      S.syncBesked = { fejl:false, t: afv ? afv + " ny" + (afv===1?"":"e") + " tilmelding" + (afv===1?"":"er") + " \u2713"
+                                        : "Ingen nye tilmeldinger \u2713" };
+      render();
+    }).catch(function(){ S.tilmHenter=false; S.syncBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
+  else if (act==="tilm-svar"){
+    var dele = String(v).split("~~"), noegle = dele[0], nyStatus = dele[1];
+    var post = (S.tilmeldinger||[]).filter(function(x){ return x.spillernoegle === noegle; })[0];
+    sync("godkend", { spillernoegle: noegle, status: nyStatus }).then(function(r){
+      if (r && r.fejl) { S.syncBesked={fejl:true,t:"Afvist: "+r.fejl}; render(); return; }
+      if (post) post.status = nyStatus;
+      // Godkendt spiller foejes til truppen, saa traeneren kan vurdere med det samme.
+      if (nyStatus === "godkendt" && post) {
+        S.truppen = S.truppen || [];
+        if (!S.truppen.some(function(x){ return x.noegle === noegle || x.navn === post.fornavn; })) {
+          S.truppen.push({ navn: post.fornavn || "Spiller", gruppe: post.hold || "Mit hold", noegle: noegle });
+          lager.gem("truppen", S.truppen);
+          S.noegler = S.noegler || {}; S.noegler[post.fornavn] = noegle; lager.gem("noegler", S.noegler);
+          byggTrup();
+        }
+      }
+      S.syncBesked = { fejl:false, t: (post && post.fornavn ? post.fornavn : "Spilleren") +
+        (nyStatus === "godkendt" ? " er godkendt og lagt i truppen \u2713" : " er sat som ikke aktiv.") };
+      render();
+    }).catch(function(){ S.syncBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
   else if (act==="trup-aabn"){ S.trupAaben = !S.trupAaben; S.trupSlet = null; render(); }
   else if (act==="trup-tilfoej"){
     var nv = (S.trupNavn||"").trim();
+    // Backend: navnefeltet er hoejst 40 tegn (spillerdata-skemaet). Over det ville
+    // spiller-sync svare 422, og traeneren ville intet se. Vi stopper det her.
+    if (nv.length > 40) { S.syncBesked={fejl:true,t:"Navnet må højst være 40 tegn."}; render(); return; }
     if (!nv) { S.syncBesked={fejl:true,t:"Skriv spillerens fornavn."}; render(); return; }
-    if (nv.indexOf(" ") > -1) nv = nv.split(" ")[0];
     S.truppen = S.truppen || [];
     if (S.truppen.some(function(x){return x.navn.toLowerCase()===nv.toLowerCase();})) {
       S.syncBesked={fejl:true,t:nv+" er der allerede."}; render(); return; }

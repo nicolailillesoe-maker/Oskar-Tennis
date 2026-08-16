@@ -1586,7 +1586,9 @@ const A = {
     S.rivalBesked = null; render();
   },
   spillerGem: () => {
-    const v = (S.navnUdkast || "").trim().slice(0, 24);
+    // 40 tegn = databasens graense for navnefeltet. Navnet er familiens eget valg
+    // (beslutning 16/8): fornavn, fornavn og initial, eller fuldt navn.
+    const v = (S.navnUdkast || "").trim().slice(0, 40);
     if (!v) return;
     SPILLER = v; lager.gem("sai-spiller", v);
     const k = (S.klubUdkast || "").trim().slice(0, 40);
@@ -1959,11 +1961,34 @@ function render() {
             '" placeholder="' + (EN?"player key":"spillernøgle") + '" autocapitalize="off" spellcheck="false">' +
             '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="noegleGem">' +
             (EN?"Save":"Gem") + '</button></div>';
+        } else if (tsp && tsp.status === "afventer") {
+          // Tilmeldingen er sendt, men klubben har ikke godkendt endnu.
+          h += '<div style="border-top:1px solid var(--kant);margin-top:8px;padding-top:9px">' +
+            '<div style="display:flex;align-items:center;gap:7px">' +
+            '<span style="width:9px;height:9px;border-radius:50%;background:#FA932E;flex:none"></span>' +
+            '<b style="font-size:12.5px;color:#FA932E">' + (EN?"Awaiting the club":"Afventer klubben") + '</b></div>' +
+            '<p class="lille" style="margin:5px 0 0">' + (EN
+              ? "Your registration is sent. The club approves it, and then the coach's assessments show up here."
+              : "Jeres tilmelding er sendt. Klubben godkender den, og så dukker trænerens vurderinger op her.") + '</p></div>';
+        } else if (tsp && tsp.status === "afvist") {
+          h += '<div style="border-top:1px solid var(--kant);margin-top:8px;padding-top:9px">' +
+            '<div style="display:flex;align-items:center;gap:7px">' +
+            '<span style="width:9px;height:9px;border-radius:50%;background:var(--tabt);flex:none"></span>' +
+            '<b style="font-size:12.5px;color:var(--tabt)">' + (EN?"Not active":"Ikke aktiv") + '</b></div>' +
+            '<p class="lille" style="margin:5px 0 0">' + (EN
+              ? "The club has not activated this key. Contact your coach."
+              : "Klubben har ikke aktiveret denne nøgle. Tal med jeres træner.") + '</p></div>';
         } else if (!tsp || !((tsp.vurderinger||[]).length)) {
-          h += '<p class="lille" style="margin:6px 0 8px">' + (EN
+          h += '<p class="lille" style="margin:6px 0 8px">' +
+            (tsp && tsp.status === "godkendt"
+              ? '<span style="color:var(--vundet)">\u2713 ' + (EN?"Approved by the club. ":"Godkendt af klubben. ") + '</span>'
+              : '') + (EN
             ? "No assessments yet. Tap below to check with the coach."
             : "Ingen vurderinger endnu. Tryk herunder for at tjekke hos træneren.") + '</p>';
         } else {
+          if (tsp.hold || tsp.traeningshold) h += '<p class="lille" style="margin:6px 0 0">' +
+            (tsp.hold ? '<b>' + esc(tsp.hold) + '</b>' : '') +
+            (tsp.traeningshold ? (tsp.hold ? ' \u00b7 ' : '') + esc(tsp.traeningshold) : '') + '</p>';
           const uf = (td.ugefokus||[]).slice(-1)[0];
           if (uf) h += '<p class="lille" style="margin:6px 0 8px">' + (EN?"This week's focus: ":"Ugens fokus: ") +
             '<b style="color:var(--guld)">' + esc(uf.omraade) + '</b></p>';

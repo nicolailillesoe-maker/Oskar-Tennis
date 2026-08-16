@@ -1854,7 +1854,12 @@ function foelgTegn() {
   const el = document.getElementById("app");
   const k = _foelgData;
   const P = ["0","15","30","40"];
-  let h = '<div class="topbar"><span class="brand"><b>SportsAInalytics</b></span></div>';
+  let h = '<div style="display:flex;align-items:center;gap:10px;padding:6px 2px 14px">' +
+    '<div style="width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#F7E39A,#E6B045 55%,#8a6420);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#332B12;box-shadow:0 0 12px rgba(240,207,97,.35)">AI</div>' +
+    '<div style="line-height:1.15"><b style="letter-spacing:3px;color:var(--guld);font-size:14px;font-weight:800">' + (k ? esc((k.spiller||"").toUpperCase()) : "LIVE") + '</b>' +
+    '<span style="display:block;font-size:10px;color:var(--kridt);font-weight:700">Sports<i style="color:var(--is);font-style:normal">AI</i>nalytics</span></div>' +
+    (k && k.aktiv ? '<div style="margin-left:auto;display:flex;align-items:center;gap:6px;background:rgba(210,72,78,.12);border:1px solid rgba(210,72,78,.45);border-radius:999px;padding:5px 11px;font-size:11px;font-weight:800;letter-spacing:1.5px;color:#F3A7AA"><span style="width:8px;height:8px;border-radius:50%;background:var(--tabt);box-shadow:0 0 10px var(--tabt)"></span>LIVE</div>' : '') +
+    '</div>';
 
   if (_foelgFejl === "ukendt") {
     h += '<div class="kort" style="text-align:center;padding:28px 16px">' +
@@ -1875,48 +1880,97 @@ function foelgTegn() {
       if ((a||0) >= 3 && (b||0) >= 3) return a === b ? "40" : (a > b ? "A" : "–");
       return P[a || 0] || "40";
     };
-    h += '<div class="kort" style="border-left:3px solid var(--tabt)">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center">' +
-        '<span style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--tabt)">' +
-          (k.aktiv ? "🔴 LIVE" : "⏹ " + (EN?"ENDED":"SLUT")) + '</span>' +
-        '<span class="lille">' + esc(k.turnering || "") + '</span></div>' +
-      '<h2 style="margin:6px 0 2px;font-size:19px">' + esc(k.spiller) + ' <span style="color:var(--daempet);font-weight:400">' +
-        (EN?"vs":"mod") + '</span> ' + esc(modst) + '</h2>';
+    const sh = st.saetHistorik || [];
+    const saetS = (st.saetSpiller !== undefined) ? st.saetSpiller : sh.filter(function(x){ var p = String(x).split("-"); return +p[0] > +p[1]; }).length;
+    const saetM = (st.saetModstander !== undefined) ? st.saetModstander : sh.filter(function(x){ var p = String(x).split("-"); return +p[1] > +p[0]; }).length;
+    const hdr = function(t){ return '<span style="font-size:9px;letter-spacing:1.2px;color:var(--fod);text-transform:uppercase;text-align:center;font-weight:700">' + t + '</span>'; };
+    const navnC = 'font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    const talC  = 'text-align:center;font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;';
+    const serv  = ' <span style="width:8px;height:8px;border-radius:50%;background:var(--guld);box-shadow:0 0 9px var(--guld);flex:none;display:inline-block"></span>';
 
-    // stillingen — det man kigger efter først
-    h += '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center;margin:12px 0 4px;font-size:15px">' +
-      '<span style="font-weight:700">' + esc(k.spiller) + (st.spillerServer ? ' <span style="color:var(--guld)">●</span>' : '') + '</span>' +
-      (st.saetHistorik || []).map(function(x){ return '<span style="color:var(--daempet);font-size:13px">' + esc(String(x).split("-")[0]) + '</span>'; }).join("") +
-      '<b style="font-size:20px">' + (st.partierSpiller || 0) + '</b>' +
-      '<b style="font-size:20px;color:var(--guld);min-width:34px;text-align:right">' + pv(st.pointSpiller, st.pointModstander) + '</b>' +
-      '<span style="font-weight:700">' + esc(modst) + (st.spillerServer === false ? ' <span style="color:var(--guld)">●</span>' : '') + '</span>' +
-      (st.saetHistorik || []).map(function(x){ return '<span style="color:var(--daempet);font-size:13px">' + esc(String(x).split("-")[1] || "") + '</span>'; }).join("") +
-      '<b style="font-size:20px">' + (st.partierModstander || 0) + '</b>' +
-      '<b style="font-size:20px;color:var(--guld);min-width:34px;text-align:right">' + pv(st.pointModstander, st.pointSpiller) + '</b>' +
+    // BROADCAST-SCOREBOARDET — samme grid for begge rækker, så alt flugter
+    h += '<div style="background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border:1px solid var(--kant2);border-radius:18px;padding:16px 16px 12px;box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08);margin-bottom:12px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">' +
+        '<span style="font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--daempet);font-weight:700">' + esc(k.turnering || (EN?"Live match":"Livekamp")) + '</span>' +
+        '<span style="font-size:10.5px;letter-spacing:1.5px;color:var(--is);font-weight:800">' + (tb ? "TIEBREAK" : ((sh.length + 1) + ". " + (EN?"SET":"SÆT"))) + '</span></div>' +
+      '<div style="display:grid;grid-template-columns:1fr 40px 40px 66px;gap:10px 4px;align-items:center">' +
+        '<span></span>' + hdr(EN?"Sets":"Sæt") + hdr(EN?"Games":"Parti") + hdr("Point") +
+        '<div style="' + navnC + '">' + esc(k.spiller) + (st.spillerServer ? serv : '') + '</div>' +
+        '<div style="' + talC + 'color:var(--kridt)">' + saetS + '</div>' +
+        '<div style="' + talC + 'color:var(--kridt)">' + (st.partierSpiller || 0) + '</div>' +
+        '<div style="text-align:center;font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--is)">' + pv(st.pointSpiller, st.pointModstander) + '</div>' +
+        '<div style="' + navnC + 'color:var(--tekst2);font-weight:600">' + esc(modst) + (st.spillerServer === false ? serv : '') + '</div>' +
+        '<div style="' + talC + 'color:var(--tekst2)">' + saetM + '</div>' +
+        '<div style="' + talC + 'color:var(--tekst2)">' + (st.partierModstander || 0) + '</div>' +
+        '<div style="text-align:center;font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--tekst2)">' + pv(st.pointModstander, st.pointSpiller) + '</div>' +
+      '</div>' +
+      '<div style="margin-top:12px;border-top:1px solid var(--kant);padding-top:9px;display:flex;justify-content:space-between;font-size:9.5px;letter-spacing:1.5px;color:var(--daempet);text-transform:uppercase;font-weight:700">' +
+        '<span>' + (st.spillerServer === false ? esc(modst) : esc(k.spiller)) + ' ' + (EN?"serving":"server") + '</span>' +
+        '<span><b style="color:var(--guld)">' + (st.bolde || (k.forloeb||[]).length) + ' ' + (EN?"balls":"bolde") + '</b>' +
+        (st.balance !== undefined ? ' · balance ' + (st.balance >= 0 ? "+" : "") + st.balance : '') + '</span></div>' +
       '</div>';
-    if (tb) h += '<p class="lille" style="margin:2px 0 0;color:var(--guld)">TIEBREAK</p>';
-    h += '</div>';
 
-    // de seneste bolde — det der gør det levende
-    const f = (k.forloeb || []).slice(-24).reverse();
+    const fl = k.forloeb || [];
+
+    // KAMPENS FODSPOR — vundne over stregen (position + fyldt/hul, aldrig kun farve)
+    if (fl.length >= 3) {
+      const seneste = fl.slice(-22);
+      const bredde = 360, step = bredde / (seneste.length + 1);
+      let dots = '';
+      seneste.forEach(function(p, i){
+        const x = Math.round(step * (i + 1));
+        dots += p.r === "V"
+          ? '<circle cx="' + x + '" cy="16" r="4.5" fill="var(--vundet)"/>'
+          : '<circle cx="' + x + '" cy="38" r="4.5" fill="none" stroke="var(--tabt)" stroke-width="2.5"/>';
+      });
+      h += '<div class="kort"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">' +
+        '<span style="font-size:10px;font-weight:800;letter-spacing:2px;color:var(--daempet);text-transform:uppercase">' + (EN?"Match footprints":"Kampens fodspor") + '</span>' +
+        '<span class="lille">' + (EN?"won above the line":"vundne over stregen") + '</span></div>' +
+        '<svg viewBox="0 0 360 54" style="display:block;width:100%"><line x1="4" y1="27" x2="356" y2="27" stroke="var(--fod)" stroke-width="1"/>' + dots + '</svg></div>';
+    }
+
+    // KAMPENS PULS — kumulativ pointforskel, guldkurven fra kamp-kortene
+    if (fl.length >= 5) {
+      let diff = 0, serie = [0];
+      fl.forEach(function(p){ diff += (p.r === "V" ? 1 : -1); serie.push(diff); });
+      const mx = Math.max.apply(null, serie.map(Math.abs).concat([1]));
+      const W = 352, H0 = 58, midt = 32;
+      const pts = serie.map(function(v, i){
+        return (4 + Math.round(i / (serie.length - 1) * W)) + "," + Math.round(midt - v / mx * 26);
+      });
+      const sidste = pts[pts.length - 1].split(",");
+      h += '<div class="kort"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">' +
+        '<span style="font-size:10px;font-weight:800;letter-spacing:2px;color:var(--daempet);text-transform:uppercase">' + (EN?"Match pulse":"Kampens puls") + '</span>' +
+        '<span style="font-size:13px;font-weight:800;color:var(--guld)">' + (diff >= 0 ? "+" : "") + diff + '</span></div>' +
+        '<svg viewBox="0 0 360 ' + H0 + '" style="display:block;width:100%">' +
+        '<line x1="4" y1="' + midt + '" x2="356" y2="' + midt + '" stroke="var(--fod)" stroke-width="1" stroke-dasharray="3 4"/>' +
+        '<polyline points="' + pts.join(" ") + '" fill="none" stroke="var(--guld)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '<circle cx="' + sidste[0] + '" cy="' + sidste[1] + '" r="4" fill="var(--guld)"/></svg></div>';
+    }
+
+    // DE SENESTE BOLDE — inkl. mod_es (v3.0.5 #19)
+    const f = fl.slice(-24).reverse();
     const NAVN = { vinder:[EN?"Winner":"Vinderslag",1], es:[EN?"Ace":"Es",1],
       mod_tvunget:[EN?"Forced error":"Presset fejl frem",1], mod_uf:[EN?"Opponent error":"Modstanderfejl",1],
       mod_dobbelt:[EN?"Double fault":"Dobbeltfejl",1], mod_vinder:[EN?"Winner against":"Vinderslag imod",0],
+      mod_es:[EN?"Ace against":"Es imod",0],
       uf:[EN?"Unforced error":"Gratis fejl",0], dobbelt:[EN?"Double fault":"Dobbeltfejl",0],
       returfejl:[EN?"Return error":"Returfejl",0], tvunget:[EN?"Forced into error":"Presset til fejl",0] };
     if (f.length) {
-      h += '<div class="kort"><div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' +
-        (EN?"LAST BALLS":"SENESTE BOLDE") + '</div>';
+      h += '<div class="kort"><div style="font-size:10px;font-weight:800;letter-spacing:2px;color:var(--daempet);text-transform:uppercase;margin-bottom:6px">' +
+        (EN?"Last balls":"Seneste bolde") + '</div>';
       f.forEach(function(p){
         const n = NAVN[p.a] || [p.a, p.r === "V" ? 1 : 0];
-        h += '<div style="display:flex;gap:8px;align-items:center;padding:4px 0;border-top:1px solid var(--kant)">' +
-          '<span style="color:' + (p.r === "V" ? "var(--vundet)" : "var(--tabt)") + ';font-weight:800;width:14px">' +
-          (p.r === "V" ? "●" : "○") + '</span><span style="font-size:12.5px">' + esc(n[0]) + '</span></div>';
+        h += '<div style="display:flex;gap:10px;align-items:center;padding:5px 0;border-top:1px solid var(--kant)">' +
+          (p.r === "V"
+            ? '<span style="width:9px;height:9px;border-radius:50%;background:var(--vundet);flex:none"></span>'
+            : '<span style="width:9px;height:9px;border-radius:50%;border:2px solid var(--tabt);background:transparent;flex:none;box-sizing:border-box"></span>') +
+          '<span style="font-size:13px">' + esc(n[0]) + '</span></div>';
       });
       h += '</div>';
     }
     h += '<p class="lille" style="text-align:center;margin:10px 0 0">' +
-      (st.bolde || 0) + (EN?" balls · updates automatically":" bolde · opdateres automatisk") + '</p>';
+      (st.bolde || fl.length) + (EN?" balls · updates automatically":" bolde · opdateres automatisk") + '</p>';
   }
   if (_foelgFejl === "netvaerk") h += '<p class="lille" style="text-align:center;color:var(--tabt)">' +
     (EN?"No connection — trying again…":"Ingen forbindelse — prøver igen…") + '</p>';

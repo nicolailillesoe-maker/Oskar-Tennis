@@ -185,7 +185,17 @@ let S = {
   noegler: lager.hent("noegler", {}),
   syncBesked: null, syncHenter: false,
   opsAaben: false, kkUdkast: "", noegleFor: null, noegleUdkast: "",
+  // Godkendte evalueringer. Fritekst, som FØR kun levede i hukommelsen og
+  // forsvandt ved reload. Teksten bliver på trænerens enhed — den sendes
+  // aldrig med i et analyse-kald og aldrig gennem spiller-sync (princip 17+19).
+  evalueringer: lager.hent("evalueringer", {}),
 };
+
+// Læg de gemte evalueringer tilbage i DATA, så visningen er uændret.
+Object.keys(S.evalueringer || {}).forEach(function(navn){
+  var d = DATA.spillere[navn];
+  if (d && S.evalueringer[navn] && S.evalueringer[navn].tekst) { d.evalSendt = S.evalueringer[navn].tekst; d.evalNy = true; }
+});
 
 // ── UGEFOKUS · Carstens fire områder (referat 11/8, punkt 1)
 const UGEOMRAADER = [
@@ -538,7 +548,9 @@ function traenerKvartal(t){
       h += '<div class="kort" style="display:flex;align-items:center;gap:10px">' +
         '<div class="avatar" style="width:30px;height:30px;font-size:12px;'+(s.erBruger?'background:var(--is);color:var(--nat)':'')+'">'+init(n)+'</div>' +
         '<div style="flex:1"><div style="font-size:13.5px;font-weight:700">'+esc(n)+'</div><div class="lille">'+s.traeningerKvartal+' træninger · '+s.kampe+' kampe</div></div>' +
-        '<button class="knap" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="kvartal-gen" data-v="'+esc(n)+'"><span class="badge-ai">AI</span> Generér</button></div>';
+        '<button class="knap" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="kvartal-gen" data-v="'+esc(n)+'"><span class="badge-ai">AI</span> '+(((S.evalueringer||{})[n])?'Ny':'Generér')+'</button>' +
+        (((S.evalueringer||{})[n]) ? '<button class="knap valg" style="flex:none;padding:8px 10px;font-size:12.5px" data-act="eval-del" data-v="'+esc(n)+'">\ud83d\udce4</button>' : '') +
+        '</div>';
     });
     return h;
   }
@@ -653,6 +665,7 @@ function spillerVenner(s){
 }
 
 // ---------- EVENTS ----------
+document.addEventListener("input", function(e){ var f = e.target.dataset && e.target.dataset.felt; if (f) S[f] = e.target.value; });
 document.addEventListener("click", function(e){
   const t = e.target.closest("[data-act]"); if (!t) return;
   const act = t.dataset.act, v = t.dataset.v;
@@ -700,7 +713,15 @@ document.addEventListener("click", function(e){
     sendVurdering(sp); }
   else if (act==="kvartal-gen"){ S.kvartalUdkast=v; render(); }
   else if (act==="luk-kvartal"){ S.kvartalUdkast=null; render(); }
-  else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekst=(ta&&ta.value)||S.kvartalTekst||""; const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } alert("\u2713 Evaluering sendt til "+n.split(" ")[0]+"!\n\nSkift til \ud83c\udfbe Spiller-rollen og se den lande under \u0027Din evaluering\u0027."); S.kvartalUdkast=null; render(); }
+  else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekst=(ta&&ta.value)||S.kvartalTekst||""; const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } S.evalueringer=S.evalueringer||{}; S.evalueringer[n]={tekst:tekst,dato:new Date().toISOString().slice(0,10)}; lager.gem("evalueringer", S.evalueringer); alert("\u2713 Evaluering sendt til "+n.split(" ")[0]+"!\n\nSkift til \ud83c\udfbe Spiller-rollen og se den lande under \u0027Din evaluering\u0027."); S.kvartalUdkast=null; render(); }
+  else if (act==="eval-del"){
+    var ev = (S.evalueringer||{})[v]; if (!ev || !ev.tekst) return;
+    var txt = ev.tekst;
+    if (navigator.share) { navigator.share({ text: txt }).catch(function(){}); }
+    else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function(){ S.syncBesked={fejl:false,t:"Evalueringen er kopieret \u2713"}; render(); })
+        .catch(function(){ S.syncBesked={fejl:true,t:"Kunne ikke kopiere \u2014 marker teksten manuelt."}; render(); }); }
+    else { S.syncBesked={fejl:true,t:"Deling kr\u00e6ver en nyere browser."}; render(); } }
   else if (act==="add-ven"){ alert("👋 Venneanmodning sendt til "+v.split(" ")[0]+"!"); }
 });
 window.__oskarInit = function(){

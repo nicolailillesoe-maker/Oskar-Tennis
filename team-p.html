@@ -594,8 +594,8 @@ function pulsKort(k, EN) {
     if (bi >= 0 && bi < n) {
       var p = k.point[bi];
       var stc = beregnStilling(k.point.slice(0, bi + 1), k.oskarFirst, k.mtb, k.justeringer, k.saetTil, k.noAd);
-      var AA = EN ? { vinder: "winner", es: "service ace", uf: "free error", tvunget: "forced error", dobbelt: "double fault", returfejl: "return error", mod_vinder: "opponent winner", mod_es: "opponent ace", mod_uf: "opponent free error", mod_tvunget: "opponent pressed to error", mod_dobbelt: "opponent double fault" }
-                  : { vinder: "vinderslag", es: "serve-es", uf: "gratis fejl", tvunget: "presset til fejl", dobbelt: "dobbeltfejl", returfejl: "returfejl", mod_vinder: "modstander-vinder", mod_es: "modstander-es", mod_uf: "modstanderens gratis fejl", mod_tvunget: "modstander presset til fejl", mod_dobbelt: "modstander-dobbeltfejl" };
+      var AA = EN ? { vinder: "winner", es: "service ace", uf: "free error", tvunget: "forced error", dobbelt: "double fault", returfejl: "return error", mod_vinder: "opponent winner", mod_es: "opponent ace", mod_returfejl: "opponent return error", mod_uf: "opponent free error", mod_tvunget: "opponent pressed to error", mod_dobbelt: "opponent double fault" }
+                  : { vinder: "vinderslag", es: "serve-es", uf: "gratis fejl", tvunget: "presset til fejl", dobbelt: "dobbeltfejl", returfejl: "returfejl", mod_vinder: "modstander-vinder", mod_es: "modstander-es", mod_returfejl: "modstanderens returfejl", mod_uf: "modstanderens gratis fejl", mod_tvunget: "modstander presset til fejl", mod_dobbelt: "modstander-dobbeltfejl" };
       var zt = (p.r === "T" && p.z ? (EN ? [", net", ", long", ", wide"] : [", i nettet", ", ud lang", ", ud bred"])[p.z - 1] || "" : "");
       var sd = stc.hist.map(function(h){ return h[0] + "-" + h[1]; }).join(" · ");
       cap = '<p class="lille" style="margin:3px 0 0;color:var(--kridt)"><b>' + (EN ? "Ball " : "Bold ") + (bi + 1) + '</b> · ' + (sd ? sd + " · " : "") + (EN ? "games " : "partier ") + stc.gO + "-" + stc.gM + ' · <b style="color:' + (p.r === "V" ? "var(--vundet)" : "var(--tabt)") + '">' + (p.r === "V" ? (EN ? "won" : "vundet") : (EN ? "lost" : "tabt")) + '</b> · ' + (AA[p.å] || p.å) + zt + '</p>';
@@ -1550,6 +1550,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         (S.aktiv.point.length ? S.aktiv.point.slice(-14).map(p => '<span class="prik" style="background:'+(p.r==="V"?"var(--vundet)":"var(--tabt)")+';margin-top:'+(p.r==="V"?0:10)+'px"></span>').join("")
         : '<span style="font-size:11px;color:var(--kridt);opacity:.85">'+(EN?'The match footprints — won above the line, lost below':'Kampens fodspor — vundne over stregen, tabte under')+'</span>') + '</div></div>';
 
+      if (S._kvit) h += '<div class="banner guld">🎾 <b>'+(S._kvit==="mod_returfejl"?(EN?"Registered: opponent RETURN ERROR":"Registreret: modstander-RETURFEJL"):(EN?"Registered: opponent ACE":"Registreret: modstander-ES"))+'</b></div>';
       const sidste3 = S.aktiv.point.slice(-3);
       if (sidste3.length === 3 && sidste3.every(p => p.r==="T" && (p.å==="uf"||p.å==="dobbelt"||p.å==="returfejl")))
         h += '<div class="banner is">🧊 <b>'+(EN?'Three free errors in a row — reset:':'Tre gratis fejl i træk — nulstilling:')+'</b> '+(EN?'strings → breathing → keyword. Next rally 100 % percentage tennis.':'strenge → vejrtrækning → nøgleord. Næste duel 100 % procentuel.')+'</div>';
@@ -1564,13 +1565,13 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         } else {
           const vundet = S.afventer === "vundet";
           const liste = vundet
-            ? (EN ? (st.server ? [["vinder","Winner"],["es","Service ace"],["mod_uf","Opp. unforced error"],["mod_tvunget","Opp. forced error"]] : [["vinder","Winner"],["mod_uf","Opp. unforced error"],["mod_tvunget","Opp. forced error"],["mod_dobbelt","Opp. double fault"]])
-                  : (st.server ? [["vinder","Vinderslag"],["es","Serve-es"],["mod_uf","Modst. gratis fejl"],["mod_tvunget","Modst. presset til fejl"]] : [["vinder","Vinderslag"],["mod_uf","Modst. gratis fejl"],["mod_tvunget","Modst. presset til fejl"],["mod_dobbelt","Modst. dobbeltfejl"]]))
-            : (EN ? [["uf",SPILLER+" unforced error"],["tvunget",SPILLER+" forced error"],["mod_vinder","Opp. winner (hold = ace)"]].concat(st.server ? [["dobbelt","Double fault"]] : [["returfejl","Return error"]])
-                  : [["uf",SPILLER+" gratis fejl"],["tvunget",SPILLER+" presset til fejl"],["mod_vinder","Modst. vinderslag (hold = es)"]].concat(st.server ? [["dobbelt","Dobbeltfejl"]] : [["returfejl","Returneringsfejl"]]));
+            ? (EN ? (st.server ? [["vinder","Winner"],["es","Service ace"],["mod_uf","Opp. unforced error"],["mod_tvunget","Opp. forced error"+'<br><span style="font-size:10.5px;opacity:.7">hold = return error</span>',"mod_returfejl"]] : [["vinder","Winner"],["mod_uf","Opp. unforced error"],["mod_tvunget","Opp. forced error"],["mod_dobbelt","Opp. double fault"]])
+                  : (st.server ? [["vinder","Vinderslag"],["es","Serve-es"],["mod_uf","Modst. gratis fejl"],["mod_tvunget","Modst. presset til fejl"+'<br><span style="font-size:10.5px;opacity:.7">hold = returfejl</span>',"mod_returfejl"]] : [["vinder","Vinderslag"],["mod_uf","Modst. gratis fejl"],["mod_tvunget","Modst. presset til fejl"],["mod_dobbelt","Modst. dobbeltfejl"]]))
+            : (EN ? [["uf",SPILLER+" unforced error"],["tvunget",SPILLER+" forced error"],["mod_vinder","Opp. winner"+(st.server?"":'<br><span style="font-size:10.5px;opacity:.7">hold = ace</span>'),st.server?"":"mod_es"]].concat(st.server ? [["dobbelt","Double fault"]] : [["returfejl","Return error"]])
+                  : [["uf",SPILLER+" gratis fejl"],["tvunget",SPILLER+" presset til fejl"],["mod_vinder","Modst. vinderslag"+(st.server?"":'<br><span style="font-size:10.5px;opacity:.7">hold = es</span>'),st.server?"":"mod_es"]].concat(st.server ? [["dobbelt","Dobbeltfejl"]] : [["returfejl","Returneringsfejl"]]));
           if (!S.aarsagValgt) {
             h += '<p class="lille">'+(EN?'How did the ball end?':'Hvordan endte bolden?')+'</p><div class="raekke" style="flex-wrap:wrap">' +
-              liste.map(([id,l]) => '<button class="knap" style="flex:1 1 45%;padding:15px 6px;background:'+(vundet?"var(--vundet-dyb)":"var(--tabt-dyb)")+'" data-a="aarsag" data-v="'+id+'">'+l+'</button>').join("") + '</div>';
+              liste.map(([id,l,lp]) => '<button class="knap" style="flex:1 1 45%;padding:15px 6px;background:'+(vundet?"var(--vundet-dyb)":"var(--tabt-dyb)")+'" data-a="aarsag" data-v="'+id+'"'+(lp?' data-lp="'+lp+'"':"")+'>'+l+'</button>').join("") + '</div>';
           } else if (S.laengdeValgt !== null) {
             h += '<p class="lille">'+(EN?'Where did the ball go?':'Hvor røg bolden?')+'</p><div class="raekke">' +
               '<button class="knap" style="padding:15px 6px;background:var(--flade)" data-a="zone" data-v="1">🥅<br>'+(EN?'Net':'Net')+'</button>' +
@@ -1688,7 +1689,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         }
         h += '</div>';
       }
-      h += '<div class="kort" style="border-left:3px solid var(--grus)"><h3>🆚 '+(EN?"Opponent analyses":"Modstander-analyser")+(vl.dummy?dummyBadge():'')+'</h3><p class="lille" style="margin:0">'+(vl.dummy?(EN?"Example data — replaced automatically by real matches.":"Eksempeldata i Rune-demoens format — erstattes automatisk af rigtige kampe, som de registreres."):(EN?"Computed from registered matches.":"Regnet direkte fra de registrerede kampe."))+'</p></div>';
+      // 16/8-2026: overskrifts-kortet fjernet efter Nicolais ønske.
       const gr = {};
       vl.liste.forEach(function(k){ (gr[k.modstander] = gr[k.modstander] || []).push(k); });
       h += '<div class="dev-grid" style="margin-top:8px">';
@@ -2121,7 +2122,11 @@ window.__oskarInit = function(){
   window.__oskarInited = true;
   rod.addEventListener("toggle", function(e){ var d = e.target; if (d && d.matches && d.matches("details[data-sf]")) { S._sf = S._sf || {}; S._sf[d.dataset.sf] = d.open; } }, true);
   var _lpT = null, _lpFired = false;
-  rod.addEventListener("pointerdown", function(e){ var kn = e.target.closest('[data-a][data-v="mod_vinder"]'); if (!kn) return; _lpFired = false; _lpT = setTimeout(function(){ _lpFired = true; if (A[kn.dataset.a]) A[kn.dataset.a]("mod_es"); }, 550); });
+  // v3.0.5k (16/8-2026): langt tryk styres af data-lp, som KUN sættes, hvor det giver
+  // mening. Server spilleren selv, kan modstanderen ikke slå et es — og en returfejl
+  // kan kun laves af den, der modtager. Kvittering: haptik + guld-banner.
+  var _kvitT = null;
+  rod.addEventListener("pointerdown", function(e){ var kn = e.target.closest('[data-a][data-lp]'); if (!kn) return; _lpFired = false; _lpT = setTimeout(function(){ _lpFired = true; try { if (navigator.vibrate) navigator.vibrate(35); } catch (e2) {} S._kvit = kn.dataset.lp; if (_kvitT) clearTimeout(_kvitT); _kvitT = setTimeout(function(){ S._kvit = ""; render(); }, 2600); if (A[kn.dataset.a]) A[kn.dataset.a](kn.dataset.lp); }, 550); });
   ["pointerup","pointercancel","pointerleave"].forEach(function(ev){ rod.addEventListener(ev, function(){ if (_lpT) { clearTimeout(_lpT); _lpT = null; } }, true); });
   rod.addEventListener("click", function(e){ if (_lpFired) { _lpFired = false; e.preventDefault(); return; } var kn = e.target.closest("[data-a]"); if (kn && A[kn.dataset.a]) A[kn.dataset.a](kn.dataset.v); });
   rod.addEventListener("input", function(e){ var f = e.target.dataset.felt; if (f) S[f] = e.target.value; });

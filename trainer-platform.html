@@ -36,12 +36,15 @@ h3{font-size:14px;margin:0 0 6px}
 .knap:active{transform:translateY(1px)}
 .knap.til{background:var(--is);color:#0B1220}
 .knap.valg{background:transparent;border:1px solid var(--kant);color:var(--daempet)}
+/* Gulvet gaelder ogsaa de smaa knapper i kort-hjoerner. */
+.knap{min-height:44px}
 .knap.valg.til{background:rgba(159,216,232,.1);border-color:var(--is);color:var(--is)}
 .top{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--kant)}
 .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#9FD8E8,#4B17B6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex:none;color:#0B1220}
 .rolle-skift{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;width:min(492px,calc(100% - 28px));background:rgba(13,20,38,.85);border:1px solid var(--kant);border-radius:999px;padding:8px 10px calc(8px + env(safe-area-inset-bottom)/2);backdrop-filter:blur(14px);z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .rolle-skift .inner{display:flex;gap:8px}
-.rolle-skift .knap{border-radius:999px;padding:10px;font-size:13px}
+/* Apple HIG: mindst 44px beroeringsflade. */
+.rolle-skift .knap{border-radius:999px;padding:12px 10px;font-size:13px;min-height:44px}
 .fane-rk{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
 .fane-rk button{flex:none;padding:8px 13px;border:1px solid var(--kant);border-radius:10px;background:transparent;color:var(--daempet);font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .fane-rk button.aktiv{background:rgba(159,216,232,.1);color:var(--is);border-color:var(--is)}
@@ -58,7 +61,9 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 .skala-band{display:flex;align-items:center;gap:9px;padding:6px 0;font-size:12.5px}
 .skala-cirkel{width:15px;height:15px;border-radius:50%;flex:none;box-shadow:0 0 10px -2px currentColor}
 .logo-rk{display:flex;align-items:center;gap:9px;margin-bottom:12px}
-.dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+/* Designstandard v1.0 regel 3: alle fliser lige store. grid-auto-rows:1fr
+   goer raekkerne ens uanset tekstlaengde — ingen manuel hoejde. */
+.dev-grid{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:12px;margin-top:12px}
 .dev-flise{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:16px 14px 14px;border-radius:18px;border:1px solid var(--kant);background:var(--kort);color:var(--kridt);cursor:pointer;text-align:left;min-height:96px;font-family:inherit;backdrop-filter:blur(8px)}
 .dev-flise .ik{font-size:24px;margin-bottom:4px}
 /* ── FLISER som standard for valg-lister. Erstatter stablede piller. */
@@ -83,7 +88,7 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 .fokus-flise.valgt b{color:var(--guld)}
 .fokus-flise.valgt small{color:var(--guld);opacity:.8}
 .dev-flise b{font-size:13.5px;letter-spacing:.02em}
-.dev-flise small{font-size:10.5px;color:var(--daempet);line-height:1.3}
+.dev-flise small{font-size:11px;color:var(--daempet);line-height:1.32}
 .dev-kant-guld{box-shadow:inset 0 0 0 1px rgba(240,207,97,.35),inset 0 22px 44px -30px rgba(240,207,97,.5)}
 .dev-kant-is{box-shadow:inset 0 0 0 1px rgba(159,216,232,.3),inset 0 22px 44px -30px rgba(159,216,232,.5)}
 .dev-kant-grus{box-shadow:inset 0 0 0 1px rgba(123,155,255,.4),inset 0 22px 44px -30px rgba(123,155,255,.55)}
@@ -325,47 +330,12 @@ function renderTraener(){
   if (S.tab==="hjem") {
     h += '<div style="margin:14px 2px 2px"><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:40px;height:40px;font-size:16px">'+init(t.navn)+'</div><h2 style="margin:0;font-size:21px">Hej '+esc(t.navn.split(" ")[0])+' 👋</h2></div>' +
       '<p style="margin:4px 0 0;font-size:12.5px;color:var(--daempet)">Vælg, hvad du vil i gang med</p></div>';
-    // ── OPSÆTNING · klubkoden bor på enheden, aldrig i koden
-    const kk = lager.hent("klubkode","");
-    const antalN = Object.keys(S.noegler||{}).length;
-    h += '<div class="kort" style="border-left:3px solid ' + (kk ? 'var(--vundet)' : 'var(--guld)') + '">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-        '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">⚙️ FORBINDELSE</div>' +
-        '<span data-act="ops-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.opsAaben?'✕':'✏️') + '</span></div>' +
-      '<p class="lille" style="margin:6px 0 0">' + (kk
-        ? 'Klubkode gemt · ' + antalN + ' spiller' + (antalN===1?'':'e') + ' koblet til en nøgle. Vurderinger sendes automatisk.'
-        : 'Indtast klubkoden for at sende vurderinger videre til spillerne.') + '</p>';
-    if (S.opsAaben) {
-      h += '<input class="felt" style="margin-top:8px" data-felt="kkUdkast" value="' + esc(S.kkUdkast||'') +
-        '" placeholder="klubkode" autocapitalize="off" spellcheck="false">' +
-        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="ops-gem">Gem</button></div>' +
-        '<p class="lille" style="margin:8px 0 0;font-style:italic">Koden gemmes kun på denne enhed og står ingen steder i koden.</p>';
-      // ── SIKKERHEDSKOPI
-      h += '<div style="border-top:1px solid var(--kant);margin-top:12px;padding-top:10px">' +
-        '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83d\udcbe SIKKERHEDSKOPI</div>' +
-        '<p class="lille" style="margin:6px 0 8px">Dine vurderinger og evalueringer ligger kun i denne browser. Ryddes den, er de væk. Tag en kopi jævnligt.</p>' +
-        '<div class="raekke"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-lav">\ud83d\udcbe Lav kopi</button>' +
-        '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-gendan-aabn">\u267b\ufe0f Gendan</button></div>';
-      if (S.bkTekst) {
-        h += '<textarea rows="5" readonly style="margin-top:8px;font-size:11px">'+esc(S.bkTekst)+'</textarea>' +
-          '<div class="raekke" style="margin-top:6px"><button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px" data-act="bk-kopier">\ud83d\udccb Kopiér</button>' +
-          '<button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px" data-act="bk-del">\ud83d\udce4 Del\u2026</button></div>' +
-          '<p class="lille" style="margin:6px 0 0;font-style:italic">Kopien indeholder trænerens tekst om spillerne. Gem den et sikkert sted \u2014 klubkoden er IKKE med.</p>';
-      }
-      if (S.bkAaben) {
-        h += '<textarea rows="4" data-felt="gendanUdkast" placeholder="Indsæt en sikkerhedskopi her" style="margin-top:8px;font-size:11px">'+esc(S.gendanUdkast||'')+'</textarea>' +
-          '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:'+(S.gendanBekraeft?'var(--tabt)':'var(--grus)')+'" data-act="bk-gendan">' +
-          (S.gendanBekraeft ? '\u26a0\ufe0f Tryk igen \u2014 ERSTATTER alt' : '\u267b\ufe0f Gendan') + '</button></div>';
-      }
-      h += '</div>';
-    }
-    h += '</div>';   // FORBINDELSE-kortet lukkes her, saa MIN TRUP staar for sig selv
     // ── NYE TILMELDINGER · familier, der har oprettet sig og venter paa klubben
     {
       const afv = (S.tilmeldinger||[]).filter(function(x){ return x.status === "afventer"; });
       h += '<div class="kort" style="border-left:3px solid ' + (afv.length ? 'var(--guld)' : 'var(--kant)') + '">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83d\udce5 NYE TILMELDINGER' +
+          '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udce5 NYE TILMELDINGER' +
           (afv.length ? ' <span style="background:var(--guld);color:var(--nat);padding:1px 6px;border-radius:7px;margin-left:5px">'+afv.length+'</span>' : '') + '</div>' +
           '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="tilm-hent">' +
           (S.tilmHenter ? '\u2026' : (S.tilmHentet ? 'Opdatér' : 'Tjek')) + '</button></div>';
@@ -385,36 +355,6 @@ function renderTraener(){
       }
       h += '</div>';
     }
-    // ── MIN TRUP
-    {
-      const egen = (S.truppen||[]).length;
-      const antG = egen ? Object.keys(DATA.grupper).length : 0;
-      const medN = (S.truppen||[]).filter(function(x){return x.noegle;}).length;
-      h += '<div class="kort" style="border-left:3px solid ' + (egen ? 'var(--vundet)' : 'var(--guld)') + '">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83d\udc65 MIN TRUP</div>' +
-          '<span data-act="trup-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.trupAaben?'\u2715':'\u270f\ufe0f') + '</span></div>' +
-        '<p class="lille" style="margin:6px 0 0">' + (egen
-          ? egen + ' spiller' + (egen===1?'':'e') + ' i ' + antG + ' gruppe' + (antG===1?'':'r') + ' \u00b7 ' + medN + ' med n\u00f8gle'
-          : '\u26a1 Du ser <b>eksempeldata</b>. Skriv din f\u00f8rste spiller ind \u2014 s\u00e5 forsvinder eksemplerne.') + '</p>';
-      if (S.trupAaben) {
-        if (egen) {
-          h += '<div style="margin-top:9px">';
-          (S.truppen||[]).forEach(function(p, i){
-            h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:8px 0">' +
-              '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+esc(p.navn)+'</div>' +
-              '<div class="lille">'+esc(p.gruppe||'\u2014')+(p.noegle?' \u00b7 \ud83d\udd11 koblet':' \u00b7 ingen n\u00f8gle')+'</div></div>' +
-              '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px;'+(S.trupSlet===i?'background:var(--tabt);color:#fff':'')+'" data-act="trup-slet" data-v="'+i+'">'+(S.trupSlet===i?'Slet?':'\ud83d\uddd1')+'</button></div>';
-          });
-          h += '</div>';
-        }
-        h += '<input class="felt" style="margin-top:9px" data-felt="trupNavn" value="'+esc(S.trupNavn||'')+'" placeholder="navn, som klubben vil vise det" autocapitalize="words">' +
-          '<input class="felt" style="margin-top:6px" data-felt="trupGruppe" value="'+esc(S.trupGruppe||'')+'" placeholder="gruppe, fx U14 Elite" autocapitalize="words">' +
-          '<input class="felt" style="margin-top:6px" data-felt="trupNoegle" value="'+esc(S.trupNoegle||'')+'" placeholder="spillern\u00f8gle (kan udfyldes senere)" autocapitalize="off" spellcheck="false">' +
-          '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="trup-tilfoej">+ Tilf\u00f8j spiller</button></div>' +
-          '<p class="lille" style="margin:8px 0 0;font-style:italic">Skriv navnet, som klubben vil have det vist \u2014 fornavn, fornavn og initial, eller fuldt navn. N\u00f8glen udleveres af klubben sammen med familiens egen.</p>';
-      }
-    }
     if (S.syncBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
       (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
     h += '</div>';
@@ -423,16 +363,96 @@ function renderTraener(){
       '<button class="dev-flise dev-kant-is" data-act="tab" data-v="grupper"><span class="ik">👥</span><b>GRUPPER</b><small>hold, spillere & udvikling</small></button>' +
       '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="vurder"><span class="ik">⚡</span><b>VURDÉR TRÆNING</b><small>hele holdet på under 20 sek.</small></button>' +
       '<button class="dev-flise dev-kant-gron" data-act="tab" data-v="kvartal"><span class="ik">📋</span><b>EVALUERING</b><small>AI-udkast — du godkender alt</small></button>' +
+      '<button class="dev-flise" data-act="tab" data-v="indst"><span class="ik">⚙️</span><b>INDSTILLINGER</b><small>klubkode, trup & kopi</small></button>' +
       '</div>';
   } else {
     h += '<button class="dev-pilknap" data-act="tab" data-v="hjem">←</button>';
     if (S.tab==="grupper") h += traenerGrupper(t);
     else if (S.tab==="vurder") h += traenerVurder(t);
     else if (S.tab==="kvartal") h += traenerKvartal(t);
+    else if (S.tab==="indst") h += traenerIndstillinger();
   }
   return h;
 }
 function faneKnap(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'" data-act="tab" data-v="'+id+'">'+label+'</button>'; }
+
+
+// ═══════════════════════════════════════════════════════
+// INDSTILLINGER · designstandard v1.0, regel 2: alt der kun saettes op
+// EN gang bor her — ikke som kort paa forsiden. Klubkode, trup, kopi.
+// ═══════════════════════════════════════════════════════
+function traenerIndstillinger(){
+  let h = '';
+    // ── OPSÆTNING · klubkoden bor på enheden, aldrig i koden
+  const kk = lager.hent("klubkode","");
+  const antalN = Object.keys(S.noegler||{}).length;
+  h += '<div class="kort" style="border-left:3px solid ' + (kk ? 'var(--vundet)' : 'var(--guld)') + '">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">⚙️ FORBINDELSE</div>' +
+      '<span data-act="ops-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.opsAaben?'✕':'✏️') + '</span></div>' +
+    '<p class="lille" style="margin:6px 0 0">' + (kk
+      ? 'Klubkode gemt · ' + antalN + ' spiller' + (antalN===1?'':'e') + ' koblet til en nøgle. Vurderinger sendes automatisk.'
+      : 'Indtast klubkoden for at sende vurderinger videre til spillerne.') + '</p>';
+  if (S.opsAaben) {
+    h += '<input class="felt" style="margin-top:8px" data-felt="kkUdkast" value="' + esc(S.kkUdkast||'') +
+      '" placeholder="klubkode" autocapitalize="off" spellcheck="false">' +
+      '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="ops-gem">Gem</button></div>' +
+      '<p class="lille" style="margin:8px 0 0;font-style:italic">Koden gemmes kun på denne enhed og står ingen steder i koden.</p>';
+    // ── SIKKERHEDSKOPI
+    h += '<div style="border-top:1px solid var(--kant);margin-top:12px;padding-top:10px">' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udcbe SIKKERHEDSKOPI</div>' +
+      '<p class="lille" style="margin:6px 0 8px">Dine vurderinger og evalueringer ligger kun i denne browser. Ryddes den, er de væk. Tag en kopi jævnligt.</p>' +
+      '<div class="raekke"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-lav">\ud83d\udcbe Lav kopi</button>' +
+      '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-gendan-aabn">\u267b\ufe0f Gendan</button></div>';
+    if (S.bkTekst) {
+      h += '<textarea rows="5" readonly style="margin-top:8px;font-size:11px">'+esc(S.bkTekst)+'</textarea>' +
+        '<div class="raekke" style="margin-top:6px"><button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px" data-act="bk-kopier">\ud83d\udccb Kopiér</button>' +
+        '<button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px" data-act="bk-del">\ud83d\udce4 Del\u2026</button></div>' +
+        '<p class="lille" style="margin:6px 0 0;font-style:italic">Kopien indeholder trænerens tekst om spillerne. Gem den et sikkert sted \u2014 klubkoden er IKKE med.</p>';
+    }
+    if (S.bkAaben) {
+      h += '<textarea rows="4" data-felt="gendanUdkast" placeholder="Indsæt en sikkerhedskopi her" style="margin-top:8px;font-size:11px">'+esc(S.gendanUdkast||'')+'</textarea>' +
+        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:'+(S.gendanBekraeft?'var(--tabt)':'var(--grus)')+'" data-act="bk-gendan">' +
+        (S.gendanBekraeft ? '\u26a0\ufe0f Tryk igen \u2014 ERSTATTER alt' : '\u267b\ufe0f Gendan') + '</button></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';   // FORBINDELSE-kortet lukkes her, saa MIN TRUP staar for sig selv
+    // ── MIN TRUP
+  {
+    const egen = (S.truppen||[]).length;
+    const antG = egen ? Object.keys(DATA.grupper).length : 0;
+    const medN = (S.truppen||[]).filter(function(x){return x.noegle;}).length;
+    h += '<div class="kort" style="border-left:3px solid ' + (egen ? 'var(--vundet)' : 'var(--guld)') + '">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+        '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udc65 MIN TRUP</div>' +
+        '<span data-act="trup-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.trupAaben?'\u2715':'\u270f\ufe0f') + '</span></div>' +
+      '<p class="lille" style="margin:6px 0 0">' + (egen
+        ? egen + ' spiller' + (egen===1?'':'e') + ' i ' + antG + ' gruppe' + (antG===1?'':'r') + ' \u00b7 ' + medN + ' med n\u00f8gle'
+        : '\u26a1 Du ser <b>eksempeldata</b>. Skriv din f\u00f8rste spiller ind \u2014 s\u00e5 forsvinder eksemplerne.') + '</p>';
+    if (S.trupAaben) {
+      if (egen) {
+        h += '<div style="margin-top:9px">';
+        (S.truppen||[]).forEach(function(p, i){
+          h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:8px 0">' +
+            '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+esc(p.navn)+'</div>' +
+            '<div class="lille">'+esc(p.gruppe||'\u2014')+(p.noegle?' \u00b7 \ud83d\udd11 koblet':' \u00b7 ingen n\u00f8gle')+'</div></div>' +
+            '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px;'+(S.trupSlet===i?'background:var(--tabt);color:#fff':'')+'" data-act="trup-slet" data-v="'+i+'">'+(S.trupSlet===i?'Slet?':'\ud83d\uddd1')+'</button></div>';
+        });
+        h += '</div>';
+      }
+      h += '<input class="felt" style="margin-top:9px" data-felt="trupNavn" value="'+esc(S.trupNavn||'')+'" placeholder="navn, som klubben vil vise det" autocapitalize="words">' +
+        '<input class="felt" style="margin-top:6px" data-felt="trupGruppe" value="'+esc(S.trupGruppe||'')+'" placeholder="gruppe, fx U14 Elite" autocapitalize="words">' +
+        '<input class="felt" style="margin-top:6px" data-felt="trupNoegle" value="'+esc(S.trupNoegle||'')+'" placeholder="spillern\u00f8gle (kan udfyldes senere)" autocapitalize="off" spellcheck="false">' +
+        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="trup-tilfoej">+ Tilf\u00f8j spiller</button></div>' +
+        '<p class="lille" style="margin:8px 0 0;font-style:italic">Skriv navnet, som klubben vil have det vist \u2014 fornavn, fornavn og initial, eller fuldt navn. N\u00f8glen udleveres af klubben sammen med familiens egen.</p>';
+    }
+  }
+    if (S.syncBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
+    (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
+  h += '</div>';
+  return h;
+}
 
 function traenerGrupper(t){
   if (S.aabenSpiller) return spillerDetalje(S.aabenSpiller);
@@ -472,7 +492,7 @@ function spillerDetalje(navn){
   const minN = (S.noegler||{})[navn];
   h += '<div class="kort" style="border-left:3px solid ' + (minN ? 'var(--vundet)' : 'var(--kant)') + '">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-      '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">🔑 SPILLERNØGLE</div>' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🔑 SPILLERNØGLE</div>' +
       '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="noegle-aabn" data-v="'+esc(navn)+'">' +
       (S.noegleFor===navn ? 'Luk' : (minN ? 'Ret' : 'Tilføj')) + '</button></div>';
   if (S.noegleFor === navn) {
@@ -497,7 +517,7 @@ function spillerDetalje(navn){
   const navnPaa = id => { for (const [,liste] of alle) { const k = liste.find(x=>x.id===id); if (k) return k.navn; } return id; };
   h += '<div class="kort" style="border-left:3px solid var(--is)">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-      '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">🎯 FOKUSPUNKTER</div>' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🎯 FOKUSPUNKTER</div>' +
       '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="fp-aabn" data-v="'+esc(navn)+'">' +
       (S.fpAaben===navn ? 'Færdig' : (mine.length ? 'Ret' : 'Vælg')) + '</button></div>';
   if (S.fpAaben !== navn) {

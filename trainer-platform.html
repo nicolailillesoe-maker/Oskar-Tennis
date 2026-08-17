@@ -76,6 +76,30 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 .flise-valg.til{background:rgba(159,216,232,.13);border-color:var(--is);color:var(--is);font-weight:700}
 .flise-valg.til::after{content:"\2713";position:absolute;top:6px;right:8px;font-size:10px;
   line-height:1;color:var(--is);opacity:.85}
+/* ── VELKOMST-REJSEN · tre skridt, hvert med en lille fest ── */
+.rejse{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:0 22px 70px}
+.rejse-trin{font-size:11px;font-weight:800;letter-spacing:2px;color:var(--grus);margin-bottom:10px}
+.rejse h1{font-size:29px;line-height:1.15;margin:0 0 8px;letter-spacing:-.4px}
+.rejse p.und{font-size:14.5px;color:var(--tekst2);line-height:1.5;margin:0 0 22px}
+.rejse .felt{font-size:17px;padding:15px 16px;min-height:52px}
+.rejse .knap{min-height:52px;font-size:15.5px;margin-top:12px}
+.prik-raekke{display:flex;gap:7px;margin-bottom:26px}
+.prik{width:7px;height:7px;border-radius:50%;background:var(--kant);transition:background .3s,width .3s}
+.prik.naaet{background:var(--is)}
+.prik.nu{background:var(--guld);width:22px;border-radius:4px}
+.fest{text-align:center;padding:26px 0}
+.fest .stort{font-size:64px;line-height:1;margin-bottom:14px;display:inline-block;
+  animation:festhop .62s cubic-bezier(.2,1.5,.4,1) both}
+.fest h2{font-size:25px;margin:0 0 6px;letter-spacing:-.3px}
+.fest p{font-size:14.5px;color:var(--tekst2);margin:0}
+@keyframes festhop{0%{transform:scale(.3) rotate(-14deg);opacity:0}
+  60%{transform:scale(1.12) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+@keyframes glidind{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.rejse > *{animation:glidind .34s ease both}
+.rejse > *:nth-child(2){animation-delay:.05s}
+.rejse > *:nth-child(3){animation-delay:.1s}
+.rejse > *:nth-child(4){animation-delay:.15s}
+@media (prefers-reduced-motion:reduce){.fest .stort,.rejse > *{animation:none}}
 .flise-omr{display:flex;align-items:center;gap:6px;margin:14px 0 2px;font-size:11px;
   font-weight:800;letter-spacing:1.2px;color:var(--daempet);text-transform:uppercase}
 /* Ugefokus-fliserne: lavere end hovedfliserne, fire på række i 2x2.
@@ -220,7 +244,16 @@ let S = {
   // Tilmeldinger fra det delte lag. Holdes ADSKILT fra truppen med vilje:
   // truppen er dem, traeneren vurderer — tilmeldingerne er dem, der venter paa svar.
   tilmeldinger: [], tilmHenter: false, tilmHentet: null,
+  // ── VELKOMST-REJSEN. En ny traener moeder en TOM bane, ikke tretten
+  // fremmede drenge. Tre skridt, og verden aabner sig — som naar Oskar
+  // starter en ny kamp. Gemmes, saa den kun koeres en gang pr. enhed.
+  rejse: lager.hent("rejse", { trin: 0, faerdig: false }),
+  rejseNavn: "", rejseKlub: "", rejseSpiller: "", rejseFest: null,
 };
+
+// Traenerens eget navn overlever et reload.
+try { var _tn = lager.hent("traenernavn", ""); if (_tn) { S.traener = _tn;
+  if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].navn = _tn; } } catch(e) {}
 
 // ── TRUPPEN erstatter eksempeldata, saa snart traeneren har skrevet en spiller ind.
 function nySpiller(navn, gruppe){
@@ -311,10 +344,59 @@ function init(n){ return n.split(" ").map(w=>w[0]).slice(0,2).join(""); }
 function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); return v.length? v.reduce((a,b)=>a+b,0)/v.length : 0; }
 
 function render(){
-  el("app").innerHTML = S.rolle === "traener" ? renderTraener() : renderSpiller();
+  const paaRejse = S.rolle === "traener" && !(S.rejse && S.rejse.faerdig);
+  el("app").innerHTML = paaRejse ? renderRejse()
+    : (S.rolle === "traener" ? renderTraener() : renderSpiller());
+  el("rollebar").style.display = paaRejse ? "none" : "";
   el("rollebar").innerHTML =
     '<button class="knap '+(S.rolle==="traener"?"til":"")+'" data-act="rolle" data-v="traener">🧑\u200d🏫 Træner</button>' +
     '<button class="knap '+(S.rolle==="spiller"?"til":"")+'" data-act="rolle" data-v="spiller">🎾 Spiller</button>';
+}
+
+// ══════════════════════════════════════════════════════════
+// VELKOMST-REJSEN · designstandard v1.0: en skaerm, et formaal.
+// Tre skridt, hvert med en lille fest — saa man MAERKER at noget
+// lykkedes. Ingen navne, ingen eksempler: tom bane og en bold.
+// ══════════════════════════════════════════════════════════
+const REJSE_TRIN = [
+  { n: "SKRIDT 1 AF 3", h: "Velkommen \ud83c\udfbe", u: "Lad os få dig i gang. Det tager et halvt minut.",
+    felt: "rejseNavn", ph: "dit navn", knap: "Kom i gang",
+    festIkon: "\ud83d\udc4b", festH: function(v){ return "Hej " + v + "!"; },
+    festU: "Godt at have dig med. Nu kobler vi dig til klubben." },
+  { n: "SKRIDT 2 AF 3", h: "Klubbens kode", u: "Koden har du fået af klubben. Den gemmes kun på denne enhed og står ingen steder i koden.\n\nHar du den ikke endnu, så spring over — så bliver alt på din telefon, indtil du taster den ind.",
+    felt: "rejseKlub", ph: "klubkode", knap: "Forbind", kanSpringes: true,
+    festIkon: "\ud83d\udd17", festH: function(){ return "Forbundet"; },
+    festU: "Dine vurderinger kan nu nå frem til spillerne." },
+  { n: "SKRIDT 3 AF 3", h: "Din første spiller", u: "Skriv navnet, som klubben vil have det vist. Resten kan du tilføje bagefter.",
+    felt: "rejseSpiller", ph: "spillerens navn", knap: "Læg på holdet",
+    festIkon: "\ud83c\udfbe", festH: function(v){ return v + " er på holdet"; },
+    festU: "Så er du kørende. Velkommen om bord." },
+];
+
+function renderRejse(){
+  let h = '<div class="rejse">';
+  if (S.rejseFest) {
+    const f = S.rejseFest;
+    h += '<div class="fest"><div class="stort">'+f.ikon+'</div>' +
+      '<h2>'+esc(f.h)+'</h2><p>'+esc(f.u)+'</p>' +
+      '<button class="knap" style="background:var(--grus);margin:26px auto 0;max-width:230px;display:block" data-act="rejse-videre">' +
+      (f.sidste ? 'Åbn platformen' : 'Videre') + '</button></div>';
+    return h + '</div>';
+  }
+  const i = Math.min(S.rejse.trin || 0, REJSE_TRIN.length - 1), t = REJSE_TRIN[i];
+  h += '<div class="prik-raekke">';
+  REJSE_TRIN.forEach(function(_, j){
+    h += '<span class="prik'+(j < i ? ' naaet' : (j === i ? ' nu' : ''))+'"></span>'; });
+  h += '</div>';
+  h += '<div class="rejse-trin">'+t.n+'</div>';
+  h += '<h1>'+t.h+'</h1><p class="und" style="white-space:pre-line">'+t.u+'</p>';
+  h += '<input class="felt" data-felt="'+t.felt+'" value="'+esc(S[t.felt]||'')+'" placeholder="'+t.ph+'" ' +
+    (t.felt === "rejseKlub" ? 'autocapitalize="off" spellcheck="false"' : 'autocapitalize="words"') + '>';
+  h += '<button class="knap" style="background:var(--grus)" data-act="rejse-naeste">'+t.knap+'</button>';
+  if (t.kanSpringes) h += '<button class="knap valg" style="margin-top:9px" data-act="rejse-spring">Jeg har ikke koden endnu</button>';
+  if (S.syncBesked) h += '<p class="lille" style="margin:9px 0 0;color:var(--tabt)">'+esc(S.syncBesked.t)+'</p>';
+  if (i === 0) h += '<p class="lille" style="margin-top:18px;text-align:center">Alt gemmes kun på denne enhed.</p>';
+  return h + '</div>';
 }
 
 // ---------- TRÆNER ----------
@@ -392,7 +474,7 @@ function traenerIndstillinger(){
       '<span data-act="ops-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.opsAaben?'✕':'✏️') + '</span></div>' +
     '<p class="lille" style="margin:6px 0 0">' + (kk
       ? 'Klubkode gemt · ' + antalN + ' spiller' + (antalN===1?'':'e') + ' koblet til en nøgle. Vurderinger sendes automatisk.'
-      : 'Indtast klubkoden for at sende vurderinger videre til spillerne.') + '</p>';
+      : '\ud83d\udcf1 <b>Alt bliver på denne telefon.</b> Intet sendes nogen steder. Indtast klubkoden, når du vil dele vurderinger med spillerne.') + '</p>';
   if (S.opsAaben) {
     h += '<input class="felt" style="margin-top:8px" data-felt="kkUdkast" value="' + esc(S.kkUdkast||'') +
       '" placeholder="klubkode" autocapitalize="off" spellcheck="false">' +
@@ -873,6 +955,33 @@ document.addEventListener("click", function(e){
   else if (act==="kvartal-gen"){ S.kvartalUdkast=v; render(); }
   else if (act==="luk-kvartal"){ S.kvartalUdkast=null; render(); }
   else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekst=(ta&&ta.value)||S.kvartalTekst||""; const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } S.evalueringer=S.evalueringer||{}; S.evalueringer[n]={tekst:tekst,dato:new Date().toISOString().slice(0,10)}; lager.gem("evalueringer", S.evalueringer); alert("\u2713 Evaluering sendt til "+n.split(" ")[0]+"!\n\nSkift til \ud83c\udfbe Spiller-rollen og se den lande under \u0027Din evaluering\u0027."); S.kvartalUdkast=null; render(); }
+  else if (act==="rejse-naeste"){
+    var ri = Math.min(S.rejse.trin || 0, 2), rf = ["rejseNavn","rejseKlub","rejseSpiller"][ri];
+    var rv = (S[rf]||"").trim();
+    if (!rv) { S.syncBesked = { fejl:true, t:"Skriv noget først." }; render(); return; }
+    if (rv.length > 40) { S.syncBesked = { fejl:true, t:"Højst 40 tegn." }; render(); return; }
+    if (ri === 0) { S.traener = rv; if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].navn = rv;
+      lager.gem("traenernavn", rv); }
+    if (ri === 1) { lager.gem("klubkode", rv); }
+    if (ri === 2) { S.truppen = S.truppen || [];
+      S.truppen.push({ navn: rv, gruppe: "Mit hold", noegle: "" });
+      lager.gem("truppen", S.truppen); byggTrup(); }
+    var RT = REJSE_TRIN[ri];
+    S.rejseFest = { ikon: RT.festIkon, h: RT.festH(rv), u: RT.festU, sidste: ri === 2 };
+    S.syncBesked = null; render(); }
+  else if (act==="rejse-spring"){
+    // Uden klubkode roerer appen INTET udefra — sync() stopper paa "mangler-klubkode".
+    // Alt bliver paa traenerens egen telefon. Det er den tilstand, en klub kan
+    // proeve platformen i, FOER pilotaftalen er underskrevet.
+    S.rejseFest = { ikon: "\ud83d\udcf1", h: "Alt bliver hos dig",
+      u: "Ingen data forlader din telefon, før du taster klubkoden ind. Du finder feltet under Indstillinger, når du har fået koden.",
+      sidste: false };
+    S.syncBesked = null; render(); }
+  else if (act==="rejse-videre"){
+    S.rejseFest = null;
+    S.rejse.trin = (S.rejse.trin || 0) + 1;
+    if (S.rejse.trin >= 3) { S.rejse.faerdig = true; S.tab = "hjem"; }
+    lager.gem("rejse", S.rejse); render(); }
   else if (act==="tilm-hent"){
     if (S.tilmHenter) return;
     if (!lager.hent("klubkode","")) { S.syncBesked={fejl:true,t:"Indtast klubkoden f\u00f8rst."}; render(); return; }

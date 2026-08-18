@@ -405,7 +405,7 @@ function renderRejse(){
 function renderTraener(){
   const t = DATA.traenere.find(x=>x.navn===S.traener);
   let h = LOGO + '<div class="top"><div class="avatar">'+init(t.navn)+'</div>' +
-    '<div style="flex:1"><div class="eyebrow">'+esc(KONFIG.klub)+' · TRÆNER</div><h1>'+esc(t.navn)+'</h1></div></div>';
+    '<div style="flex:1"><div class="eyebrow">'+esc(KONFIG.klub)+' · TRÆNER</div><h1>Hej '+esc(t.navn.split(" ")[0])+' 👋</h1></div></div>';
   // Prototype-banneret gaelder kun eksempeldata. Har traeneren skrevet sin egen
   // trup ind, er det hans rigtige spillere — og saa maa der ikke staa "fake data".
   if (!(S.truppen||[]).length) {
@@ -815,13 +815,12 @@ function traenerKvartal(t){
 function renderSpiller(){
   const s = DATA.spillere[S.spiller];
   let h = LOGO + '<div class="top"><div class="avatar" style="background:var(--is);color:var(--nat)">'+init(S.spiller)+'</div>' +
-    '<div style="flex:1"><div class="eyebrow">'+esc(KONFIG.klub)+' · '+esc(s.gruppe)+'</div><h1>'+esc(S.spiller.split(" ")[0])+'</h1></div></div>';
+    '<div style="flex:1"><div class="eyebrow">'+esc(KONFIG.klub)+' · '+esc(s.gruppe)+'</div><h1>Hej '+esc(S.spiller.split(" ")[0])+' 👋</h1></div></div>';
   if (!(S.truppen||[]).length) {
     h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> Streaks og venner deles mellem spillere, når det delte lag er på plads.</div>';
   }
   if (S.tab==="hjem") {
-    h += '<div style="margin:14px 2px 2px"><div style="display:flex;align-items:center;gap:10px"><div class="avatar" style="width:40px;height:40px;font-size:16px">'+init(S.spiller)+'</div><h2 style="margin:0;font-size:21px">Hej '+esc(S.spiller.split(" ")[0])+' 👋</h2></div>' +
-      '<p style="margin:4px 0 0;font-size:12.5px;color:var(--daempet)">Din side i klubben</p></div>';
+    h += '<p style="margin:16px 2px 4px;font-size:12.5px;color:var(--daempet)">Din side i klubben</p>';
     h += '<div class="dev-grid">' +
       '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="mig"><span class="ik">🎾</span><b>MIG</b><small>evaluering, streaks & mine tal</small></button>' +
       '<button class="dev-flise dev-kant-is" data-act="tab" data-v="gruppe"><span class="ik">🏆</span><b>MIN GRUPPE</b><small>streak-stigen & fælles mål</small></button>' +

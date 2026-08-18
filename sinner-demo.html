@@ -133,7 +133,7 @@ if (!window.__oskarLoaded) { window.__oskarLoaded = true; (function(){
 
 window.onerror = function (msg, kilde, linje) {
   var el = document.getElementById("app");
-  if (el) el.innerHTML = '<div style="padding:20px;color:#F2EDE4;font-family:sans-serif"><h2 style="color:#C24E4E">Teknisk fejl</h2><p style="font-size:13px;line-height:1.6">' + msg + ' (linje ' + linje + ')</p><p style="font-size:12px;color:#5E7386">Tag et screenshot af denne besked og send til Claude — så bliver den rettet.</p></div>';
+  if (el) el.innerHTML = '<div style="padding:20px;color:#F2EDE4;font-family:sans-serif"><h2 style="color:#C24E4E">Teknisk fejl</h2><p style="font-size:13px;line-height:1.6">' + msg + ' (linje ' + linje + ')</p><p style="font-size:12px;color:#5E7386">Tag et screenshot af denne besked og send den til træneren — så bliver fejlen rettet.</p></div>';
 };
 // ============ ENGINE-START ============
 // Beregner hele tennis-stillingen ud fra point-sekvensen.
@@ -276,7 +276,7 @@ const GUIDE = [
   ["2 · Registrér serven","Appen viser selv, hvem der server. Fejles førsteserven: tryk '2. serv', inden bolden registreres."],
   ["3 · Registrér bolden — tre tryk","OSKAR VANDT eller TABT → hvordan endte bolden → duellens længde (kort 1-4 / mellem 5-8 / lang 9+). Scoreboardet regner selv stillingen — og duel-tallene afslører, om bud IV holder."],
   ["4 · Fortryd og alarmer","FORTRYD ruller seneste registrering tilbage. Appen advarer ved store point og efter tre gratis fejl i træk."],
-  ["5 · Afslut og analysér","'Afslut & gem' → kampen lander i Historik. '📤 Eksportér til Claude' → kopiér teksten og send den til Nicolai/Claude for analyse."],
+  ["5 · Afslut og analysér","'Afslut & gem' → kampen lander i Historik. '📤 Eksportér kampen' → kopiér teksten og send den til træneren for analyse."],
   ["📲 Føj til hjemmeskærm","iPhone: Åbn filen i Safari → del-knappen → 'Føj til hjemmeskærm' — så ligger appen som ikon. Data gemmes lokalt på DENNE enhed; eksport-teksten i familiegruppen er jeres fælles database."],
   ["⚙ Midt i kampen?","Kom du for sent i gang, eller røg et parti under en pause? Tryk '⚙ Justér stillingen' i kampbilledet, sæt sæt/partier og hvem der server næste bold — registreringen fortsætter derfra. Pointene i det igangværende parti nulstilles til 0-0."],
   ["🟠🧊 Hvorfor 'Grus & Is'?","Appens tema er hele filosofien i tre ord: GRUS er underlaget — sommergruset i Rungsted og ved UM, Nadal-mønstrenes hjemmebane, og kridtstregen i kampbilledet, hvor pointene sætter fodspor. IS er det kolde hoved — Sinners 'samme ansigt ved 40-0 og 0-40', rutinerne og 🧊-nulstillingen. Underlaget, der spilles på, og temperamentet, der vindes med."],
@@ -284,7 +284,7 @@ const GUIDE = [
 const MODSTANDERE = [
   ["Elias Vinter [2]","412 ranglistepoint · slog Sinner 6-0, 6-0 ved UM","Ingen gratis point (bud IV), servér på kroppen, gør hver duel til minimum 4 bolde. Målet første gang: 3+ partier og dueller på egne præmisser."],
   ["Emil Hays Nørlund","To match-tiebreaks på én uge: 11-9 (EHT, double) og 10-8 (OSKAR, UM-finalen)","Jævnbyrdigt til stregen. Varier returpositionen og brug bud III — han knækker på lange cross-dueller."],
-  ["Zhenyu Leo Yuan","Nr. 12 på ranglisten","Udfyldes efter næste møde — send observationer til Claude."],
+  ["Zhenyu Leo Yuan","Nr. 12 på ranglisten","Udfyldes efter næste møde — send observationer til træneren."],
 ];
 
 const BASELINE = {
@@ -421,7 +421,7 @@ const GUIDE_EN = [
   ["2 · Register the serve","The app shows who is serving. If the first serve misses: tap '2nd serve' before registering the ball."],
   ["3 · Register the ball — three taps","OSKAR WON or LOST → how the ball ended → rally length (short 1-4 / medium 5-8 / long 9+). The scoreboard computes the score by itself — and the rally numbers reveal whether rule IV holds."],
   ["4 · Undo and alerts","UNDO rolls back the last entry. The app warns on big points and after three free errors in a row."],
-  ["5 · Finish and analyse","'Finish & save' → the match lands in History. '📤 Export to Claude' → copy the text and send it to Nicolai/Claude for analysis."],
+  ["5 · Finish and analyse","'Finish & save' → the match lands in History. '📤 Export match' → copy the text and send it to your coach for analysis."],
   ["📲 Add to home screen","iPhone: open this link in Safari → share button → 'Add to Home Screen'. Data is stored locally on THIS device; the export text in the family chat is the shared database."],
   ["⚙ Joining mid-match?","Started late, or missed a game during a break? Tap '⚙ Adjust score' in the match view, set sets/games and who serves next — tracking continues from there. Points in the current game reset to 0-0."],
   ["🟠🧊 Why 'Clay & Ice'?","The app's theme is the whole philosophy in three words: CLAY is the surface — the summer clay of Rungsted and the Nationals, home of the Nadal patterns, and the chalk line in the match view where points leave footprints. ICE is the cool head — Sinner's 'same face at 40-0 and 0-40', the routines and the 🧊 reset. The surface you play on, and the temperament you win with."],
@@ -429,7 +429,7 @@ const GUIDE_EN = [
 const MODSTANDERE_EN = [
   ["Elias Vinter [2]","412 ranking points · beat Sinner 6-0, 6-0 at the Nationals","No free points (rule IV), serve at the body, make every rally at least 4 balls. First-time goal: 3+ games and rallies on his own terms."],
   ["Emil Hays Nørlund","Two match tiebreaks in one week: 11-9 (EHT, doubles) and 10-8 (OSKAR, Nationals mixed final)","Even to the wire. Vary the return position and trust rule III — he cracks in long cross-court rallies."],
-  ["Zhenyu Leo Yuan","No. 12 in the rankings","To be filled in after the next meeting — send observations to Claude."],
+  ["Zhenyu Leo Yuan","No. 12 in the rankings","To be filled in after the next meeting — send observations to your coach."],
 ];
 const STAT26_EN = [
   "🎯 The Cat. G pattern: quarterfinal-round exit (5/8) in ALL three G events — rock solid against the best fields. The next level is ONE round more.",
@@ -527,20 +527,20 @@ const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h =
 const LAASTE_FANER = ["kamp","guide","stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
 
 const FYSISK = [
-  ["🎾","Tennistræningen — status (opdateret 12. jul)","Klubtræningen holder sommerpause og starter først op igen omkring skolestart i august. August-programmet bliver med RETTELSER: Sinner skal træne med træneren — tiderne er endnu ikke på plads. Indtil da er banen selvtræningens: løbepassene her i fanen + wide-serven og forehand-crossen fra Stil-fanen. Sommerens to vinduer: FØR Rom (til og med 22/7) og EFTER hjemkomsten (29-30/7, let). Når træningstiderne lander, opdateres skemaet her (sig til Claude)."],
+  ["🎾","Tennistræningen — status (opdateret 12. jul)","Klubtræningen holder sommerpause og starter først op igen omkring skolestart i august. August-programmet bliver med RETTELSER: Sinner skal træne med træneren — tiderne er endnu ikke på plads. Indtil da er banen selvtræningens: løbepassene her i fanen + wide-serven og forehand-crossen fra Stil-fanen. Sommerens to vinduer: FØR Rom (til og med 22/7) og EFTER hjemkomsten (29-30/7, let). Når træningstiderne lander, opdateres skemaet her (sig til træneren)."],
   ["🔥","OPVARMNING — altid først (10 min.)","1) 4 min. sjipning — minimum 1.000 sjip, TÆL dem! · 2) 4 min. stille og roligt løb · 3) 2 min. stræk: for- og bagside af lår + begge lægge. Ingen genveje — opvarmningen ER en del af passet."],
   ["🏃","PAS 1 · Konditionsløb (38 min.)","2 min. hårdt løb (80-85 %) + 2 min. restitutionsløb (60-65 %) — gentages 4 gange. Så 4 minutters pause. Derefter HELE blokken igen: 4 × (2 min. hårdt + 2 min. roligt). Afslut med 2 min. meget langsomt løb + stræk af lår, lægge og baller."],
   ["⚡","PAS 2 · Intervaller (ca. 33 min.)","30 sek. hårdt løb + 30 sek. roligt løb — gentages 10 gange. 3 minutters pause. Så 10 gange igen. Afslut med 10 min. roligt løb (60 %). Temposkiftene her er tennis-motoren: eksplosion, ro, eksplosion."],
   ["🚀","PAS 3 · Hurtighed (25-30 min.)","Pendulsprint: 8 m og retur → 6 m og retur → 4 m og retur → 8 m og retur → 6 m og retur = ét sæt. 10 sæt med 60 sek. pause efter hvert. Derefter: 20 m sprint + 10 m gang, 10 gange i træk, 60 sek. pause — og hele den øvelse 5 gange. De første tre skridt er en tennisspillers vigtigste våben."],
-  ["🗓","Ugerytmen (Claudes kobling til sæsonplanen)","Uge 29-30 er sæsonplanens træningsblok — programmets hjem: fx Pas 1 mandag, Pas 3 onsdag, Pas 2 fredag. Gylden regel: Hurtighed (Pas 3) kræver friske ben — aldrig dagen efter hård kondition. Og på banen ved siden af: wide-serven fra fordelsiden. Fysikken bygger motoren; serven bygger våbnet."],
+  ["🗓","Ugerytmen (koblingen til sæsonplanen)","Uge 29-30 er sæsonplanens træningsblok — programmets hjem: fx Pas 1 mandag, Pas 3 onsdag, Pas 2 fredag. Gylden regel: Hurtighed (Pas 3) kræver friske ben — aldrig dagen efter hård kondition. Og på banen ved siden af: wide-serven fra fordelsiden. Fysikken bygger motoren; serven bygger våbnet."],
 ];
 const FYSISK_EN = [
-  ["🎾","Tennis training — status (updated 12 Jul)","Club training is on summer break and resumes around the school start in August. The August programme will be REVISED: Sinner trains with the coach — times are not yet confirmed. Until then the court belongs to self-training: the running sessions in this tab + the wide serve and forehand cross from the Style tab. The two summer windows: BEFORE Rome (through 22/7) and AFTER returning (29-30/7, light). When the training times land, the schedule here will be updated (tell Claude)."],
+  ["🎾","Tennis training — status (updated 12 Jul)","Club training is on summer break and resumes around the school start in August. The August programme will be REVISED: Sinner trains with the coach — times are not yet confirmed. Until then the court belongs to self-training: the running sessions in this tab + the wide serve and forehand cross from the Style tab. The two summer windows: BEFORE Rome (through 22/7) and AFTER returning (29-30/7, light). When the training times land, the schedule here will be updated (tell your coach)."],
   ["🔥","WARM-UP — always first (10 min.)","1) 4 min. skipping rope — minimum 1,000 skips, COUNT them! · 2) 4 min. easy jogging · 3) 2 min. stretching: front and back of thighs + both calves. No shortcuts — the warm-up IS part of the session."],
   ["🏃","SESSION 1 · Endurance run (38 min.)","2 min. hard running (80-85 %) + 2 min. recovery pace (60-65 %) — repeat 4 times. Then a 4-minute break. Then the WHOLE block again: 4 × (2 min. hard + 2 min. easy). Finish with 2 min. very slow jogging + stretch thighs, calves and glutes."],
   ["⚡","SESSION 2 · Intervals (approx. 33 min.)","30 sec. hard + 30 sec. easy — repeat 10 times. 3-minute break. Then 10 more. Finish with 10 min. easy running (60 %). These tempo shifts are the tennis engine: explode, recover, explode."],
   ["🚀","SESSION 3 · Speed (25-30 min.)","Pendulum sprints: 8 m and back → 6 m and back → 4 m and back → 8 m and back → 6 m and back = one set. 10 sets with 60 sec. rest after each. Then: 20 m sprint + 10 m walk, 10 times in a row, 60 sec. rest — and that whole drill 5 times. The first three steps are a tennis player's most important weapon."],
-  ["🗓","The weekly rhythm (Claude's link to the season plan)","Weeks 29-30 are the season plan's training block — this programme's home: e.g. Session 1 Monday, Session 3 Wednesday, Session 2 Friday. Golden rule: speed work (Session 3) needs fresh legs — never the day after hard endurance. And on court alongside it: the wide serve from the ad side. Fitness builds the engine; the serve builds the weapon."],
+  ["🗓","The weekly rhythm (the link to the season plan)","Weeks 29-30 are the season plan's training block — this programme's home: e.g. Session 1 Monday, Session 3 Wednesday, Session 2 Friday. Golden rule: speed work (Session 3) needs fresh legs — never the day after hard endurance. And on court alongside it: the wide serve from the ad side. Fitness builds the engine; the serve builds the weapon."],
 ];
 
 // ---------- Fysisk trænings-tracker ----------
@@ -1801,8 +1801,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
                 ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="fysSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="fysSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="fysSletSpoerg" data-v="'+i+'">🗑</button>') +
               '</div>'; }).join("") +
-          '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="fysEksport">📤 '+(EN?"Export new to Claude":"Eksportér nye til Claude")+' ('+S.fysLog.filter(function(e){return !e.x;}).length+')</button></div>';
-        if (S.fysEks) h += '<p class="lille">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()" style="height:100px">'+esc(S.fysEks)+'</textarea>' + eksportKnapper('fysEks', EN);
+          '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="fysEksport">📤 '+(EN?"Export new":"Eksportér nye")+' ('+S.fysLog.filter(function(e){return !e.x;}).length+')</button></div>';
+        if (S.fysEks) h += '<p class="lille">'+(EN?"Select, copy and send to your coach:":"Markér, kopiér og send til træneren:")+'</p><textarea readonly onfocus="this.select()" style="height:100px">'+esc(S.fysEks)+'</textarea>' + eksportKnapper('fysEks', EN);
       }
       const ttTot = S.ttLog.reduce(function(a, e){ return a + e.m; }, 0);
       const ttGk = S.ttLog.length ? (S.ttLog.reduce(function(a, e){ return a + e.k; }, 0) / S.ttLog.length).toFixed(1) : null;
@@ -1825,8 +1825,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
               (S.ttSletB === i
                 ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="ttSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="ttSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="ttSletSpoerg" data-v="'+i+'">🗑</button>') + '</div>'; }).join("") +
-          '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="ttEksport">📤 '+(EN?"Export new to Claude":"Eksportér nye til Claude")+' ('+S.ttLog.filter(function(e){return !e.x;}).length+')</button></div>';
-        if (S.ttEks) h += '<p class="lille">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()" style="height:110px">'+esc(S.ttEks)+'</textarea>' + eksportKnapper('ttEks', EN);
+          '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="ttEksport">📤 '+(EN?"Export new":"Eksportér nye")+' ('+S.ttLog.filter(function(e){return !e.x;}).length+')</button></div>';
+        if (S.ttEks) h += '<p class="lille">'+(EN?"Select, copy and send to your coach:":"Markér, kopiér og send til træneren:")+'</p><textarea readonly onfocus="this.select()" style="height:110px">'+esc(S.ttEks)+'</textarea>' + eksportKnapper('ttEks', EN);
       }
       h += (EN?FYSISK_EN:FYSISK).map(function(f){ return '<div class="kort"'+(f[0]==="🗓"?' style="border-left:3px solid var(--is)"':'')+'><h3>'+f[0]+' '+esc(f[1])+'</h3><p>'+esc(f[2])+'</p></div>'; }).join("");
     }
@@ -1951,7 +1951,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       return '<div class="kort"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px"><b style="font-size:13.5px">vs '+esc(k.modstander)+(k.resultat?' <span style="color:var(--is)">· '+esc(k.resultat)+'</span>':'')+'</b><span style="font-size:11px;color:var(--daempet)">'+esc(k.dato)+'</span></div>' +
         (k.turnering?'<p style="margin:2px 0 2px;font-size:11px;color:var(--daempet)">'+esc(k.turnering)+'</p>':'')+statTabel(s,EN)+saetTabel(s,EN)+
         (k.analyse && S.redigerA !== i ? '<div style="border:1.5px solid var(--guld);border-radius:10px;padding:10px 12px;margin:10px 0 4px"><b style="color:var(--guld);font-size:11px;letter-spacing:.06em">📝 ANALYSE</b><p class="lille" style="margin:6px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(k.analyse) + '</p></div>' : '') +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px" data-a="eksport" data-v="'+i+'">📤 '+(EN?"Export to Claude":"Eksportér til Claude")+'</button>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px" data-a="eksport" data-v="'+i+'">📤 '+(EN?"Export match":"Eksportér kampen")+'</button>' +
         '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--guld);color:var(--guld);font-size:12px" data-a="analyseAabn" data-v="'+i+'">📝 '+(k.analyse?(EN?"Analysis ✓":"Analyse ✓"):(EN?"Analysis":"Analyse"))+'</button>' +
         (S.sletBekraeft === i
           ? '<button class="knap" style="flex:none;padding:8px 14px;background:var(--tabt);font-size:12px" data-a="slet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet);font-size:12px" data-a="sletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
@@ -1959,7 +1959,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         '</div></div>';
     }).join("");
     if (S.redigerA !== null && S.gemte[S.redigerA]) {
-      h += '<p class="lille" style="margin-top:10px">'+(EN?"Claude\'s analysis of the match vs ":"Claudes analyse af kampen mod ")+esc(S.gemte[S.redigerA].modstander)+(EN?" — paste from the chat:":" — indsæt fra chatten:")+'</p>';
+      h += '<p class="lille" style="margin-top:10px">'+(EN?"Analysis of the match vs ":"Analyse af kampen mod ")+esc(S.gemte[S.redigerA].modstander)+(EN?" — paste from the chat:":" — indsæt fra chatten:")+'</p>';
       h += '<textarea data-felt="aTekst" placeholder="'+(EN?'Paste the analysis here…':'Indsæt analysen her…')+'" style="height:120px;border-color:var(--guld);color:var(--kridt)">'+esc(S.aTekst)+'</textarea>';
       h += '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="analyseGem" data-v="'+S.redigerA+'">💾 '+(EN?"Save analysis to match":"Gem analysen på kampen")+'</button><button class="knap" data-a="analyseAnnuller">'+(EN?"Cancel":"Annullér")+'</button></div>';
     }
@@ -1975,7 +1975,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     }
     if (S.gendanBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read the backup text — check that everything was copied.":"Kunne ikke læse backup-teksten — tjek at alt kom med.")+'</p>';
     if (S.gendanBesked && S.gendanBesked.indexOf("OK:") === 0) { const t = S.gendanBesked.split(":"); h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Restored: ":"Gendannet: ")+t[1]+' '+(EN?"matches":"kampe")+' · '+t[2]+' '+(EN?"running sessions":"løbepas")+' · '+t[3]+' '+(EN?"tennis sessions":"tennistræninger")+'</p>'; }
-    if (S.eksport) h += '<p class="lille" style="margin-top:10px">'+(EN?"Select, copy and send to Nicolai/Claude:":"Markér, kopiér og send til Nicolai/Claude:")+'</p><textarea readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>' + eksportKnapper('eksport', EN);
+    if (S.eksport) h += '<p class="lille" style="margin-top:10px">'+(EN?"Select, copy and send to your coach:":"Markér, kopiér og send til træneren:")+'</p><textarea readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>' + eksportKnapper('eksport', EN);
   }
     h += '</div></details>';
       if (!LAAST && S.tab === "status") {
@@ -1988,7 +1988,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   }
   if (!LAAST && S.tab === "strategi") {
     h += '<p class="lille">'+(EN?"Six principles from the Danish federation\'s points rules — the foundation of the season plan.":"Seks principper fra DTF\'s pointregler — fundamentet under sæsonplanen.")+'</p>' + (EN?STRATEGI_EN:STRATEGI).map(function(r){ return '<div class="kort"><h3>'+r[0]+' '+esc(r[1])+'</h3><p>'+esc(r[2])+'</p></div>'; }).join("") +
-         '<p class="lille">'+(EN?'Point scenarios ("what does a Cat. G quarterfinal move?") are computed in the chat with Claude.':'Point-scenarier ("hvad flytter en G-kvartfinale?") regnes i chatten med Claude.')+'</p>';
+         '<p class="lille">'+(EN?'Point scenarios ("what does a Cat. G quarterfinal move?") are not calculated automatically yet.':'Point-scenarier ("hvad flytter en G-kvartfinale?") beregnes ikke automatisk endnu.')+'</p>';
   }
   if (!LAAST && S.tab === "plan") {
     const fokus = ugensFokus(EN);
@@ -2031,7 +2031,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
          '<a href="https://dtf.tournamentsoftware.com/ranking/category.aspx?id=52585&amp;category=2531" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 '+(EN?"Sinner\'s current DTF ranking":"Runes aktuelle rangliste hos DTF")+'</a>';
   }
 
-  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Claude via Nicolai. Team Sinner · v1.7 · handedness picker · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Claude via Nicolai. Team Sinner · v2.1 · vundet/tabt-graf · juli 2026.")+'</p>';
+  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to your coach. Team Sinner · v1.7 · handedness picker · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til træneren. Team Sinner · v2.1 · vundet/tabt-graf · juli 2026.")+'</p>';
   h += bundNav();
   el.innerHTML = h;
   devFoldning();

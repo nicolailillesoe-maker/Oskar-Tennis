@@ -931,6 +931,23 @@ document.addEventListener("click", function(e){
       if (r && r.fejl) { S.syncBesked={fejl:true,t:"Kunne ikke hente: "+r.fejl}; render(); return; }
       S.tilmeldinger = (r && r.hold) || [];   // maalt: hent-hold svarer { hold: [...] }
       S.stigeHold = (r && r.stige_hold) || []; lager.gem("stigehold", S.stigeHold);
+      // v2.5 den anden vej (fund 18/8 sen aften): serverens tal laa i svaret,
+      // men naaede aldrig trupvisningen — detaljen viste lokale nuller for en
+      // spiller med 7 kampe paa serveren. Nu flettes de ind pr. noegle.
+      var _prNoegle = {};
+      S.tilmeldinger.forEach(function(x){ if (x.spillernoegle) _prNoegle[x.spillernoegle] = x; });
+      (S.truppen||[]).forEach(function(t3){
+        var srv = t3.noegle && _prNoegle[t3.noegle]; if (!srv) return;
+        var d3 = DATA.spillere[t3.navn]; if (!d3) return;
+        var kr = Array.isArray(srv.kampresume) ? srv.kampresume : [];
+        d3.kampe = kr.length;
+        d3.sejre = kr.filter(function(k){ return k && k.vundet; }).length;
+        d3.fysStreak = srv.fys_streak || 0;
+        d3.tennisStreak = srv.tennis_streak || 0;
+        d3.stigeTil = !!srv.stige_tilvalgt;
+        if (Array.isArray(srv.selvvurderinger)) d3.selvvurderinger = srv.selvvurderinger;
+        if (srv.opdateret) d3.sidsteTraening = String(srv.opdateret).slice(0, 10);
+      });
       S.tilmHentet = new Date().toISOString();
       var afv = S.tilmeldinger.filter(function(x){ return x.status === "afventer"; }).length;
       S.syncBesked = { fejl:false, t: afv ? afv + " ny" + (afv===1?"":"e") + " tilmelding" + (afv===1?"":"er") + " \u2713"

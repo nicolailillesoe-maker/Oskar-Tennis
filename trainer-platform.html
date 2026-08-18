@@ -16,7 +16,7 @@
 <style>
 :root{--nat:#111C33;--dyb:#070D19;--kort:rgba(255,255,255,.05);--kant:rgba(255,255,255,.12);--kant2:#31415F;--flade:#1B2A44;--kridt:#EDF2FA;--daempet:#8B99B5;--is:#9FD8E8;--grus:#2E56D6;--gruslys:#7B9BFF;--guld:#F0CF61;--vundet:#22995A;--tabt:#D2484E;--tekst2:#B9C6D8;--fod:#4A5A78}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;font-family:'Helvetica Neue',Arial,sans-serif;background:radial-gradient(120% 55% at 50% -8%,#14264A 0%,#0B1220 55%) fixed #0B1220;color:var(--kridt);font-size:15px;line-height:1.5;padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+body{margin:0;font-family:'Helvetica Neue',Arial,sans-serif;background:radial-gradient(120% 55% at 50% -8%,#14264A 0%,#0B1220 55%) fixed #0B1220;color:var(--kridt);font-size:15px;line-height:1.5;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
 a{color:var(--is)}a:hover{color:#C6EAF5}
 #app{max-width:520px;margin:0 auto;padding:16px 16px 20px}
 h1{font-size:20px;margin:2px 0}
@@ -41,10 +41,7 @@ h3{font-size:14px;margin:0 0 6px}
 .knap.valg.til{background:rgba(159,216,232,.1);border-color:var(--is);color:var(--is)}
 .top{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--kant)}
 .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#9FD8E8,#4B17B6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex:none;color:#0B1220}
-.rolle-skift{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;width:min(492px,calc(100% - 28px));background:rgba(13,20,38,.85);border:1px solid var(--kant);border-radius:999px;padding:8px 10px calc(8px + env(safe-area-inset-bottom)/2);backdrop-filter:blur(14px);z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.45)}
-.rolle-skift .inner{display:flex;gap:8px}
 /* Apple HIG: mindst 44px beroeringsflade. */
-.rolle-skift .knap{border-radius:999px;padding:12px 10px;font-size:13px;min-height:44px}
 .fane-rk{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
 .fane-rk button{flex:none;padding:8px 13px;border:1px solid var(--kant);border-radius:10px;background:transparent;color:var(--daempet);font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .fane-rk button.aktiv{background:rgba(159,216,232,.1);color:var(--is);border-color:var(--is)}
@@ -123,7 +120,6 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 </style>
 
 <div id="app"></div>
-<div class="rolle-skift"><div class="inner" id="rollebar"></div></div>
 
 <script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:860}}">
 class Component extends DCLogic {
@@ -214,7 +210,7 @@ function syncFejltekst(r) {
 }
 
 let S = {
-  rolle: "traener", traener: "Cheftræneren", spiller: "Oskar Lillesø",
+  traener: "Cheftræneren", spiller: "Oskar Lillesø",
   tab: "hjem", aabenSpiller: null,
   vurderOmraade: null, vurderGruppe: null, vurderScores: {},
   kvartalUdkast: null,
@@ -347,13 +343,11 @@ function init(n){ return n.split(" ").map(w=>w[0]).slice(0,2).join(""); }
 function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); return v.length? v.reduce((a,b)=>a+b,0)/v.length : 0; }
 
 function render(){
-  const paaRejse = S.rolle === "traener" && !(S.rejse && S.rejse.faerdig);
-  el("app").innerHTML = paaRejse ? renderRejse()
-    : (S.rolle === "traener" ? renderTraener() : renderSpiller());
-  el("rollebar").style.display = paaRejse ? "none" : "";
-  el("rollebar").innerHTML =
-    '<button class="knap '+(S.rolle==="traener"?"til":"")+'" data-act="rolle" data-v="traener">🧑\u200d🏫 Træner</button>' +
-    '<button class="knap '+(S.rolle==="spiller"?"til":"")+'" data-act="rolle" data-v="spiller">🎾 Spiller</button>';
+  // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
+  // mekanismen fra før transporten fandtes — nu bor spiller-oplevelsen i
+  // spiller-appen, og evalueringen rejser ad den ægte vej (evaluering-gem).
+  const paaRejse = !(S.rejse && S.rejse.faerdig);
+  el("app").innerHTML = paaRejse ? renderRejse() : renderTraener();
 }
 
 // ══════════════════════════════════════════════════════════
@@ -410,7 +404,7 @@ function renderTraener(){
   // Prototype-banneret gaelder kun eksempeldata. Har traeneren skrevet sin egen
   // trup ind, er det hans rigtige spillere — og saa maa der ikke staa "fake data".
   if (!(S.truppen||[]).length) {
-    h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> Skriv din egen trup ind under 👥 MIN TRUP — så forsvinder eksemplerne. 💡 Prøv loopet imens: giv en spiller en score under ⚡ Vurdér træning, og skift så til 🎾 Spiller og se den lande.</div>';
+    h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> Skriv din egen trup ind under 👥 MIN TRUP — så forsvinder eksemplerne. 💡 Vurderinger og evalueringer lander i spillerens egen app, når spilleren har en nøgle.</div>';
   }
   if (S.tab==="hjem") {
     h += '<p style="margin:16px 2px 4px;font-size:12.5px;color:var(--daempet)">Vælg, hvad du vil i gang med</p>';
@@ -835,98 +829,6 @@ function traenerKvartal(t){
 }
 
 // ---------- SPILLER ----------
-function renderSpiller(){
-  const s = DATA.spillere[S.spiller];
-  let h = LOGO + '<div class="top"><div class="avatar" style="background:var(--is);color:var(--nat)">'+init(S.spiller)+'</div>' +
-    '<div style="flex:1"><div class="eyebrow">'+esc(KONFIG.klub)+' · '+esc(s.gruppe)+'</div><h1>Hej '+esc(S.spiller.split(" ")[0])+' 👋</h1></div></div>';
-  if (!(S.truppen||[]).length) {
-    h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> Streaks og venner deles mellem spillere, når det delte lag er på plads.</div>';
-  }
-  if (S.tab==="hjem") {
-    h += '<p style="margin:16px 2px 4px;font-size:12.5px;color:var(--daempet)">Din side i klubben</p>';
-    h += '<div class="dev-grid">' +
-      '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="mig"><span class="ik">🎾</span><b>MIG</b><small>evaluering, streaks & mine tal</small></button>' +
-      '<button class="dev-flise dev-kant-is" data-act="tab" data-v="gruppe"><span class="ik">🏆</span><b>MIN GRUPPE</b><small>streak-stigen & fælles mål</small></button>' +
-      '<button class="dev-flise dev-kant-grus" data-act="tab" data-v="venner"><span class="ik">👋</span><b>VENNER</b><small>på tværs af hold</small></button>' +
-      '</div>';
-  } else {
-    h += '<button class="dev-pilknap" data-act="tab" data-v="hjem">←</button>';
-    if (S.tab==="mig") h += spillerMig(s);
-    else if (S.tab==="gruppe") h += spillerGruppe(s);
-    else if (S.tab==="venner") h += spillerVenner(s);
-  }
-  return h;
-}
-function fS(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'" data-act="tab" data-v="'+id+'">'+label+'</button>'; }
-
-function spillerMig(s){
-  let h = '<div class="grid2">' +
-    '<div class="kort" style="margin:0;text-align:center"><div style="font-size:30px">🔥</div><div style="font-size:24px;font-weight:800">'+s.fysStreak+'</div><div class="lille">ugers fys-streak</div></div>' +
-    '<div class="kort" style="margin:0;text-align:center"><div style="font-size:30px">🎾</div><div style="font-size:24px;font-weight:800">'+s.tennisStreak+'</div><div class="lille">tennis-streak</div></div></div>';
-  // Dagens træning (fra trænerens hurtig-vurdering — LOOPET)
-  if (s.dagens){ const b = skala(s.dagens.score); const o = OMRNAVN[s.dagens.omraade]||{navn:s.dagens.omraade,emoji:"\ud83c\udfbe"};
-    h += '<div class="kort" style="margin-top:10px;border:1.5px solid '+b.farve+'"><div class="eyebrow">\ud83d\udd14 DAGENS TR\u00c6NING \u2014 NY</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;margin-top:5px"><span style="width:13px;height:13px;border-radius:50%;background:'+b.farve+';flex:none"></span>' +
-      '<b style="font-size:13px">'+o.emoji+' '+esc(o.navn)+'</b><span style="margin-left:auto;font-weight:800;color:'+b.farve+'">'+s.dagens.score+'/10</span></div>' +
-      '<p class="lille" style="margin:5px 0 0">'+esc(b.label)+' \u00b7 registreret af '+esc(S.traener)+' lige nu.</p></div>'; }
-  // Fælles lag: kampe, statistik, sæson
-  h += faellesLag(s);
-  // Seneste evaluering (mail-format)
-  h += '<div class="kort" style="margin-top:10px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="badge-ai">AI + TR\u00c6NER</span>' +
-    (s.evalNy ? '<span style="background:var(--guld);color:var(--nat);font-size:10px;font-weight:800;padding:2px 7px;border-radius:7px">\u2709\ufe0f NY</span>' : '') +
-    '<span class="lille">godkendt af '+esc(S.traener)+' \u00b7 '+KONFIG.maaned+' '+KONFIG.saeson+'</span></div>' +
-    '<h3 style="margin:0 0 8px">\ud83d\udccb Din evaluering</h3>';
-  if (s.evalSendt){
-    h += '<p style="font-size:12.5px;line-height:1.55;white-space:pre-wrap;margin:0">'+esc(s.evalSendt)+'</p>';
-  } else {
-    KONFIG.omraader.forEach(function(o){
-      const v = (s.vurdering||{})[o.id]; if (!v) return;
-      const b = skala(v.score);
-      h += '<div style="border-top:1px solid var(--kant);padding:10px 0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">' +
-        '<span style="width:13px;height:13px;border-radius:50%;background:'+b.farve+';flex:none"></span>' +
-        '<b style="font-size:13px">'+esc(o.navn)+'</b>' +
-        '<span style="margin-left:auto;font-size:11.5px;font-weight:800;color:'+b.farve+'">'+b.min+'-'+b.max+' \u00b7 '+esc(b.label)+'</span></div>' +
-        '<p style="font-size:12.5px;margin:0;line-height:1.55">'+esc(v.tekst)+'</p></div>';
-    });
-  }
-  h += '</div>';
-  return h;
-}
-
-function spillerGruppe(s){
-  const sp = DATA.grupper[s.gruppe].spillere.map(n=>DATA.spillere[n]).slice().sort((a,b)=>(b.fysStreak+b.tennisStreak)-(a.fysStreak+a.tennisStreak));
-  let h = '<div class="kort"><h3>🏆 '+esc(s.gruppe)+' — streak-stigen</h3><p class="lille">Samlet streak (fys + tennis) denne uge. Venlig konkurrence! 🔥</p>';
-  sp.forEach(function(p,i){
-    const total = p.fysStreak+p.tennisStreak, m = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:var(--daempet);font-weight:700">'+(i+1)+'</span>';
-    h += '<div class="spiller-rk" style="cursor:default"><div style="width:24px;text-align:center" class="medalje">'+m+'</div>' +
-      '<div class="avatar" style="width:30px;height:30px;font-size:12px;'+(p.erBruger?'background:var(--is);color:var(--nat)':'')+'">'+init(p.navn)+'</div>' +
-      '<div style="flex:1;font-size:13.5px;font-weight:700">'+esc(p.navn)+(p.erBruger?' <span style="color:var(--is)">(dig)</span>':'')+'</div>' +
-      '<div class="streak-chip">🔥 '+total+'</div></div>';
-  });
-  h += '</div><div class="kort" style="border-left:3px solid var(--is)"><div class="eyebrow" style="color:var(--is)">🎯 GRUPPENS FÆLLES MÅL ('+DATA.grupper[s.gruppe].aargang+')</div>' +
-    '<p style="margin:6px 0 0;font-size:13px">3 træninger + 3 løbeture om ugen. <b>'+sp.filter(p=>p.fysStreak>0).length+'/'+sp.length+'</b> med aktiv streak lige nu. Kom så! 💪</p></div>';
-  return h;
-}
-
-function spillerVenner(s){
-  const venner = DATA.venner[S.spiller] || [];
-  let h = '<div class="kort"><h3>👋 Mine venner</h3><p class="lille">På tværs af træningsgrupper. Se hinandens streaks og hep på hinanden.</p>';
-  venner.forEach(function(vn){ const v = DATA.spillere[vn]; if(!v) return;
-    h += '<div class="spiller-rk" style="cursor:default"><div class="avatar" style="width:32px;height:32px;font-size:13px">'+init(vn)+'</div>' +
-      '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">'+esc(vn)+'</div><div class="lille">'+esc(v.gruppe)+'</div></div>' +
-      '<div class="streak-chip">🔥 '+(v.fysStreak+v.tennisStreak)+'</div></div>';
-  });
-  h += '</div>';
-  const alle = Object.keys(DATA.spillere).filter(n => n!==S.spiller && !venner.includes(n));
-  h += '<div class="kort"><h3>➕ Find venner</h3>';
-  alle.slice(0,5).forEach(function(n){ const p = DATA.spillere[n];
-    h += '<div class="spiller-rk" style="cursor:default"><div class="avatar" style="width:30px;height:30px;font-size:12px">'+init(n)+'</div>' +
-      '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+esc(n)+'</div><div class="lille">'+esc(p.gruppe)+'</div></div>' +
-      '<button class="knap" style="flex:none;padding:7px 13px;font-size:12.5px" data-act="add-ven" data-v="'+esc(n)+'">Tilføj</button></div>';
-  });
-  h += '<p class="lille" style="margin-top:8px">🔒 For spillere under 13 godkender en forælder venneanmodninger.</p></div>';
-  return h;
-}
 
 // ---------- EVENTS ----------
 document.addEventListener("input", function(e){ var f = e.target.dataset && e.target.dataset.felt; if (f) S[f] = e.target.value; });
@@ -954,8 +856,7 @@ document.addEventListener("click", function(e){
     const nu = S.fokuspunkter[sp] || [];
     S.fokuspunkter[sp] = nu.includes(v) ? nu.filter(x => x !== v) : nu.concat([v]);
     lager.gem("fokuspunkter", S.fokuspunkter); render(); sendVurdering(sp); }
-  if (act==="rolle"){ S.rolle=v; S.tab = "hjem"; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); }
-  else if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); }
+  if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
   else if (act==="vurder-omraade"){ S.vurderOmraade=v; render(); }
@@ -991,7 +892,7 @@ document.addEventListener("click", function(e){
         })
         .catch(function(){ S.syncBesked = { fejl: true, t: "Evalueringen er gemt HER, men netv\u00e6rket svigtede \u2014 pr\u00f8v Godkend & send igen." }; render(); });
     } else {
-      alert("\u2713 Evaluering sendt til "+n.split(" ")[0]+"!\n\nSkift til \ud83c\udfbe Spiller-rollen og se den lande under \u0027Din evaluering\u0027.\n\n(Spilleren har ingen n\u00f8gle endnu \u2014 evalueringen ligger kun p\u00e5 denne enhed.)");
+      alert("\u2713 Evalueringen er gemt her p\u00e5 enheden.\n\nSpilleren har ingen n\u00f8gle endnu \u2014 f\u00f8j n\u00f8glen til under \ud83d\udc65 MIN TRUP, og tryk Godkend & send igen, s\u00e5 lander den i spillerens app.");
     }
     S.kvartalUdkast=null; render(); }
   else if (act==="rejse-naeste"){
@@ -1156,11 +1057,10 @@ document.addEventListener("click", function(e){
       navigator.clipboard.writeText(txt).then(function(){ S.syncBesked={fejl:false,t:"Evalueringen er kopieret \u2713"}; render(); })
         .catch(function(){ S.syncBesked={fejl:true,t:"Kunne ikke kopiere \u2014 marker teksten manuelt."}; render(); }); }
     else { S.syncBesked={fejl:true,t:"Deling kr\u00e6ver en nyere browser."}; render(); } }
-  else if (act==="add-ven"){ alert("👋 Venneanmodning sendt til "+v.split(" ")[0]+"!"); }
 });
 window.__oskarInit = function(){
   if (window.__oskarInited) return;
-  if (!document.getElementById("app") || !document.getElementById("rollebar")) return;
+  if (!document.getElementById("app")) return;
   window.__oskarInited = true;
   render();
 };

@@ -246,6 +246,7 @@ let S = {
   // Tilmeldinger fra det delte lag. Holdes ADSKILT fra truppen med vilje:
   // truppen er dem, traeneren vurderer — tilmeldingerne er dem, der venter paa svar.
   tilmeldinger: [], tilmHenter: false, tilmHentet: null,
+  stigeHold: lager.hent("stigehold", []), stigeTravl: false,
   // ── VELKOMST-REJSEN. En ny traener moeder en TOM bane, ikke tretten
   // fremmede drenge. Tre skridt, og verden aabner sig — som naar Oskar
   // starter en ny kamp. Gemmes, saa den kun koeres en gang pr. enhed.
@@ -501,6 +502,27 @@ function traenerIndstillinger(){
     h += '</div>';
   }
   h += '</div>';   // FORBINDELSE-kortet lukkes her, saa MIN TRUP staar for sig selv
+    // ── STREAK-STIGEN · vaelges til pr. hold (Julie 17/8). FRA som standard.
+  {
+    const grupperILive = [];
+    (S.truppen||[]).forEach(function(p){ if (p.gruppe && grupperILive.indexOf(p.gruppe) === -1) grupperILive.push(p.gruppe); });
+    const antalTil = S.stigeHold.length;
+    h += '<div class="kort" style="border-left:3px solid ' + (antalTil ? 'var(--guld)' : 'var(--kant)') + '">' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udd25 STREAK-STIGEN</div>' +
+      '<p class="lille" style="margin:6px 0 0">Holdets tr\u00e6ningsstreaks som venlig konkurrence i spillernes app \u2014 kun fornavne og tal. FRA som standard; du v\u00e6lger til pr. hold, og hver familie skal OGS\u00c5 selv sige ja i deres app (og i for\u00e6ldresamtykkets stige-punkt), f\u00f8r deres barn kan ses.</p>';
+    if (!grupperILive.length) {
+      h += '<p class="lille" style="margin:8px 0 0;font-style:italic">Skriv din trup ind under \ud83d\udc65 MIN TRUP f\u00f8rst \u2014 s\u00e5 kan stigen t\u00e6ndes pr. hold.</p>';
+    } else {
+      grupperILive.forEach(function(g){
+        var til = S.stigeHold.indexOf(g) !== -1;
+        h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:8px 0;margin-top:' + '2px">' +
+          '<div style="flex:1;min-width:0;font-size:13px;font-weight:700">' + esc(g) + '</div>' +
+          '<button class="knap valg' + (til?' til':'') + '" style="flex:none;padding:7px 14px;font-size:12px"' + (S.stigeTravl?' disabled':'') +
+          ' data-act="stige-skift" data-v="' + esc(g) + '">' + (til ? '\ud83d\udd25 Til' : 'Fra') + '</button></div>';
+      });
+    }
+    h += '</div>';
+  }
     // ── MIN TRUP
   {
     const egen = (S.truppen||[]).length;
@@ -783,6 +805,7 @@ function traenerKvartal(t){
   const alleSp = []; t.grupper.forEach(g => DATA.grupper[g].spillere.forEach(n => alleSp.push(n)));
   if (!S.kvartalUdkast){
     let h = '<p class="lille">AI samler kvartalets scores og noter til en evaluering pr. spiller — i klubbens format. Du retter og godkender, så sendes den til spilleren.</p>';
+    if (S.syncBesked) h += '<p class="lille" style="margin:0 2px 8px;color:' + (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
     alleSp.forEach(function(n){
       const s = DATA.spillere[n];
       h += '<div class="kort" style="display:flex;align-items:center;gap:10px">' +
@@ -954,7 +977,23 @@ document.addEventListener("click", function(e){
     sendVurdering(sp); }
   else if (act==="kvartal-gen"){ S.kvartalUdkast=v; render(); }
   else if (act==="luk-kvartal"){ S.kvartalUdkast=null; render(); }
-  else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekst=(ta&&ta.value)||S.kvartalTekst||""; const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } S.evalueringer=S.evalueringer||{}; S.evalueringer[n]={tekst:tekst,dato:new Date().toISOString().slice(0,10)}; lager.gem("evalueringer", S.evalueringer); alert("\u2713 Evaluering sendt til "+n.split(" ")[0]+"!\n\nSkift til \ud83c\udfbe Spiller-rollen og se den lande under \u0027Din evaluering\u0027."); S.kvartalUdkast=null; render(); }
+  else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekst=(ta&&ta.value)||S.kvartalTekst||""; const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } S.evalueringer=S.evalueringer||{}; S.evalueringer[n]={tekst:tekst,dato:new Date().toISOString().slice(0,10)}; lager.gem("evalueringer", S.evalueringer);
+    // v2.5 (18/8): har spilleren en NØGLE, sendes evalueringen RIGTIGT til
+    // spillerens app via evaluering-gem. Uden nøgle er det demo-flowet som før.
+    var _noegle = (S.noegler||{})[n];
+    if (_noegle) {
+      sync("evaluering-gem", { spillernoegle: _noegle, dato: S.evalueringer[n].dato, tekst: tekst, af: S.traener || null })
+        .then(function(r){
+          S.syncBesked = (r && r.fejl)
+            ? { fejl: true, t: "Evalueringen er gemt HER, men kunne ikke n\u00e5 spillerens app: " + r.fejl }
+            : { fejl: false, t: "\u2713 Evalueringen er sendt til " + n.split(" ")[0] + "s app" };
+          render();
+        })
+        .catch(function(){ S.syncBesked = { fejl: true, t: "Evalueringen er gemt HER, men netv\u00e6rket svigtede \u2014 pr\u00f8v Godkend & send igen." }; render(); });
+    } else {
+      alert("\u2713 Evaluering sendt til "+n.split(" ")[0]+"!\n\nSkift til \ud83c\udfbe Spiller-rollen og se den lande under \u0027Din evaluering\u0027.\n\n(Spilleren har ingen n\u00f8gle endnu \u2014 evalueringen ligger kun p\u00e5 denne enhed.)");
+    }
+    S.kvartalUdkast=null; render(); }
   else if (act==="rejse-naeste"){
     var ri = Math.min(S.rejse.trin || 0, 2), rf = ["rejseNavn","rejseKlub","rejseSpiller"][ri];
     var rv = (S[rf]||"").trim();
@@ -990,6 +1029,7 @@ document.addEventListener("click", function(e){
       S.tilmHenter = false;
       if (r && r.fejl) { S.syncBesked={fejl:true,t:"Kunne ikke hente: "+r.fejl}; render(); return; }
       S.tilmeldinger = (r && r.hold) || [];   // maalt: hent-hold svarer { hold: [...] }
+      S.stigeHold = (r && r.stige_hold) || []; lager.gem("stigehold", S.stigeHold);
       S.tilmHentet = new Date().toISOString();
       var afv = S.tilmeldinger.filter(function(x){ return x.status === "afventer"; }).length;
       S.syncBesked = { fejl:false, t: afv ? afv + " ny" + (afv===1?"":"e") + " tilmelding" + (afv===1?"":"er") + " \u2713"
@@ -1016,6 +1056,34 @@ document.addEventListener("click", function(e){
         (nyStatus === "godkendt" ? " er godkendt og lagt i truppen \u2713" : " er sat som ikke aktiv.") };
       render();
     }).catch(function(){ S.syncBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
+  else if (act==="stige-skift"){
+    // Julies ramme 17/8: stigen vaelges til SOM HOLD. Traeneren taender den her,
+    // og spillerne ser den kun, hvis familien OGSAA selv har valgt til i deres app.
+    if (S.stigeTravl) return;
+    var g = String(v||"").trim(); if (!g) return;
+    if (!lager.hent("klubkode","")) { S.syncBesked={fejl:true,t:"Indtast klubkoden f\u00f8rst."}; render(); return; }
+    var til = S.stigeHold.indexOf(g) === -1;
+    S.stigeTravl = true; render();
+    sync("stige-hold", { hold: g, til: til }).then(function(r){
+      if (r && r.fejl) { S.stigeTravl=false; S.syncBesked={fejl:true,t:"Kunne ikke gemme: "+r.fejl}; render(); return; }
+      if (til) S.stigeHold.push(g); else S.stigeHold = S.stigeHold.filter(function(x){ return x !== g; });
+      lager.gem("stigehold", S.stigeHold);
+      // Taendes stigen, faar gruppens spillere med noegle samtidig sat deres hold
+      // hos tjenesten — ellers ville stigen aldrig finde dem (rodfund 18/8).
+      var m = (S.truppen||[]).filter(function(x){ return x.gruppe === g && x.noegle; });
+      var rest = m.length;
+      var faerdig = function(){
+        S.stigeTravl = false;
+        S.syncBesked = { fejl:false, t: "\ud83d\udd25 Stigen er " + (til ? "T\u00c6NDT" : "slukket") + " for " + g +
+          (til && m.length ? " \u00b7 " + m.length + " spiller" + (m.length===1?"":"e") + " har f\u00e5et holdet sat" : "") + " \u2713" };
+        render();
+      };
+      if (!til || !m.length) { faerdig(); return; }
+      m.forEach(function(x){
+        sync("saet-hold", { spillernoegle: x.noegle, hold: g }).then(function(){ if (--rest === 0) faerdig(); })
+          .catch(function(){ if (--rest === 0) faerdig(); });
+      });
+    }).catch(function(){ S.stigeTravl=false; S.syncBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
   else if (act==="trup-aabn"){ S.trupAaben = !S.trupAaben; S.trupSlet = null; render(); }
   else if (act==="trup-tilfoej"){
     var nv = (S.trupNavn||"").trim();

@@ -42,6 +42,9 @@ h1{font-size:24px;margin:0;font-weight:700;letter-spacing:1px}
 .dev-hero small{color:var(--daempet);font-weight:400}
 .dev-pil{margin-left:auto;font-size:22px;color:var(--is)}
 .dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* Er antallet ulige, fylder den sidste flise raekken ud. Uden den staar
+   der et hul, og gitteret ser i stykker ud — hvilket det ogsaa er. */
+.dev-grid>.dev-flise:last-child:nth-child(odd){grid-column:1/-1}
 .dev-flise{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:16px 14px 14px;border-radius:18px;border:1px solid var(--kant);background:var(--kort);color:var(--kridt);cursor:pointer;text-align:left;min-height:98px;font-family:inherit;backdrop-filter:blur(8px)}
 .dev-flise .dev-ikon{font-size:24px;margin-bottom:4px}
 .dev-flise b{font-size:13.5px;letter-spacing:.03em}
@@ -426,32 +429,6 @@ const skalaLegende = (EN) => '<p class="lille" style="margin:4px 0 8px;opacity:.
 const fysTekst = (e, EN) => e.p !== undefined
   ? (EN ? "Session " : "Pas ") + (e.p + 1)
   : e.m + " min · " + (e.t === 2 ? (EN ? "with coach" : "m. træner") : (EN ? "self" : "selv")) + (e.k ? " · " + tBaand(e.k).e + " " + e.k + "/10" : "") + (e.n ? " · " + e.n : "");
-
-// ---------- Fysisk trænings-tracker ----------
-const fysByg = (EN) => {
-  const W = [
-    EN ? "Warm-up 1/3 · Skipping rope 4 min — min. 1,000 skips, count!" : "Opvarmning 1/3 · Sjipning 4 min. — min. 1.000 sjip, tæl!",
-    EN ? "Warm-up 2/3 · Easy jog 4 min" : "Opvarmning 2/3 · Roligt løb 4 min.",
-    EN ? "Warm-up 3/3 · Stretch 2 min — thighs + calves" : "Opvarmning 3/3 · Stræk 2 min. — lår + lægge",
-  ];
-  const rund = (n, ord, tekst) => Array.from({ length: n }, (_, i) => ord + " " + (i + 1) + "/" + n + " · " + tekst);
-  const R = EN ? "Round" : "Runde";
-  return [
-    { navn: EN ? "Session 1 · Endurance run (38 min)" : "Pas 1 · Konditionsløb (38 min.)",
-      trin: W.concat(rund(4, R, EN ? "2 min hard (80-85 %) + 2 min recovery (60-65 %)" : "2 min. hårdt (80-85 %) + 2 min. roligt (60-65 %)"),
-        [EN ? "Break · 4 min — shake the legs" : "Pause · 4 min. — ryst benene"],
-        rund(4, R, EN ? "2 min hard (80-85 %) + 2 min recovery (60-65 %)" : "2 min. hårdt (80-85 %) + 2 min. roligt (60-65 %)"),
-        [EN ? "Cool-down · 2 min very easy + stretch thighs, calves, glutes" : "Nedkøring · 2 min. meget roligt løb + stræk lår, lægge, baller"]) },
-    { navn: EN ? "Session 2 · Intervals (approx. 33 min)" : "Pas 2 · Intervaller (ca. 33 min.)",
-      trin: W.concat(rund(10, R, EN ? "30 sec hard + 30 sec easy" : "30 sek. hårdt + 30 sek. roligt"),
-        [EN ? "Break · 3 min" : "Pause · 3 min."],
-        rund(10, R, EN ? "30 sec hard + 30 sec easy" : "30 sek. hårdt + 30 sek. roligt"),
-        [EN ? "Finish · 10 min easy run (60 %)" : "Afslutning · 10 min. roligt løb (60 %)"]) },
-    { navn: EN ? "Session 3 · Speed (25-30 min)" : "Pas 3 · Hurtighed (25-30 min.)",
-      trin: W.concat(rund(10, EN ? "Set" : "Sæt", EN ? "Pendulum sprints 8-6-4-8-6 m + 60 sec rest" : "Pendulsprint 8-6-4-8-6 m + 60 sek. pause"),
-        rund(5, EN ? "Block" : "Blok", EN ? "10× (20 m sprint + 10 m walk), then 60 sec rest" : "10× (20 m spurt + 10 m gang), derefter 60 sek. pause")) },
-  ];
-};
 
 // Sinner-referencetal (ATP 2025/26-sæsonniveau, afrundede — kilde: ATP Tour/Infosys)
 const DTFRANG = {};
@@ -948,7 +925,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysAktiv: null, fysLog: [], fysAfbryd: false, fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
 };
 const MEM = {};
@@ -970,7 +947,6 @@ try { const sp = lager.hent("sai-sprog"); if (sp === "en") S.sprog = "en"; } cat
 try { if (lager.hent("sai-laas") === "op") S.laast = false; } catch(e) {}
 try { if (lager.hent("sai-tryk") === "3") S.tryk3 = true; } catch(e) {}
 try { if (lager.hent("sai-zoner") === "1") S.zoner = true; } catch(e) {}
-try { const fa = lager.hent("sai-fysisk-aktiv"); if (fa) S.fysAktiv = JSON.parse(fa); } catch(e) {}
 try { const fl = JSON.parse(lager.hent("sai-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = fl; } catch(e) {}
 try { const tl = JSON.parse(lager.hent("sai-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = tl; } catch(e) {}
 try { if (lager.hent("sai-skala10") !== "1") { if (S.ttLog.length) { S.ttLog.forEach((e) => { if (e.k >= 1 && e.k <= 5) e.k = e.k * 2; }); lager.gem("sai-tennis-log", JSON.stringify(S.ttLog)); } lager.gem("sai-skala10", "1"); } } catch(e) {}
@@ -1264,22 +1240,7 @@ const A = {
     const loft = felt.charAt(0) === "s" ? 1 : ((S.aktiv && S.aktiv.saetTil === 4) ? 4 : 6);
     S.j[felt] = Math.max(0, Math.min(loft, (S.j[felt] | 0) + op)); render();
   },
-  jServer: (v) => { S.j.server = v === "1"; render(); },
-  fysStart: (i) => { S.fysAktiv = { pas: +i, trin: 0 }; S.fysAfbryd = false; lager.gem("sai-fysisk-aktiv", JSON.stringify(S.fysAktiv)); render(); },
-  fysNaeste: () => {
-    if (!S.fysAktiv) return;
-    const alle = fysByg(S.sprog === "en")[S.fysAktiv.pas].trin;
-    if (S.fysAktiv.trin + 1 >= alle.length) {
-      S.fysLog.unshift({ d: new Date().toISOString().slice(0, 10), p: S.fysAktiv.pas });
-      lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
-      S.fysAktiv = null; lager.slet("sai-fysisk-aktiv");
-    } else { S.fysAktiv.trin += 1; lager.gem("sai-fysisk-aktiv", JSON.stringify(S.fysAktiv)); }
-    render();
-  },
-  fysAfbrydSpoerg: () => { S.fysAfbryd = true; render(); },
-  fysAfbrydNej: () => { S.fysAfbryd = false; render(); },
-  fysAfbrydJa: () => { S.fysAktiv = null; S.fysAfbryd = false; lager.slet("sai-fysisk-aktiv"); render(); },
-  fysSletSpoerg: (i) => { S.fysSletB = +i; render(); },
+  jServer: (v) => { S.j.server = v === "1"; render(); },fysSletSpoerg: (i) => { S.fysSletB = +i; render(); },
   fysSletFortryd: () => { S.fysSletB = null; render(); },
   fysSlet: (i) => { S.fysLog.splice(+i, 1); S.fysSletB = null; lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog)); render(); },
   fysEksport: () => {
@@ -2014,10 +1975,10 @@ function render() {
         _flise("tab","historik","📊",(EN?"Statistics":"Statistik"),S.gemte.length+(EN?" matches · trends":" kampe · tendenser"),"dev-kant-staal") +
         _flise("tab","planer","🎯",(EN?"Rivals":"Modstandere"),(EN?"plans & notes":"planer & noter"),"dev-kant-staal") +
         _flise("tab","anbefal","💡",(EN?"Insights":"Indsigter"),(EN?"AI recommendations":"AI-anbefalinger"),"dev-kant-staal") +
-        '<button class="dev-flise dev-kant dev-kant-staal" style="grid-column:1/-1;flex-direction:row;align-items:center;min-height:0;padding:14px" data-a="devgaa" data-v="saeson:sa-hjem"><span class="dev-ikon" style="margin:0 10px 0 0">🏆</span><span style="flex:1"><b>' + (EN?"Season 2026":"Sæsonen 2026") + '</b><small style="display:block">' + (EN?"schedule, strategy & rules":"plan, strategi & regler") + '</small></span><span class="dev-pil">→</span></button>' +
-        '<button class="dev-flise dev-kant dev-kant-staal" style="flex-direction:row;align-items:center;min-height:0;padding:13px" data-a="tab" data-v="s2026"><span class="dev-ikon" style="margin:0 10px 0 0">📈</span><span style="flex:1"><b>2026</b><small style="display:block">' + (EN?"match by match":"kamp for kamp") + '</small></span></button>' +
-        '<button class="dev-flise dev-kant dev-kant-staal" style="flex-direction:row;align-items:center;min-height:0;padding:13px" data-a="tab" data-v="opsaet"><span class="dev-ikon" style="margin:0 10px 0 0">⚙️</span><span style="flex:1"><b>' + (EN?"Settings":"Indstillinger") + '</b><small style="display:block">' + (EN?"keys & device":"koder & enhed") + '</small></span></button>' +
-        '<button class="dev-flise dev-kant dev-kant-staal" style="flex-direction:row;align-items:center;min-height:0;padding:13px" data-a="tab" data-v="hb-hjem"><span class="dev-ikon" style="margin:0 10px 0 0">📘</span><span style="flex:1"><b>' + (EN?"Handbook":"Håndbog") + '</b><small style="display:block">' + (EN?"guide, style & routines":"guide, stil & rutiner") + '</small></span></button>' +
+        _flise("devgaa","saeson:sa-hjem","🏆",(EN?"Season 2026":"Sæsonen 2026"),(EN?"schedule, strategy & rules":"plan, strategi & regler"),"dev-kant-staal") +
+        _flise("tab","s2026","📈","2026",(EN?"match by match":"kamp for kamp"),"dev-kant-staal") +
+        _flise("tab","hb-hjem","📘",(EN?"Handbook":"Håndbog"),(EN?"guide, style & routines":"guide, stil & rutiner"),"dev-kant-staal") +
+        _flise("tab","opsaet","⚙️",(EN?"Settings":"Indstillinger"),(EN?"keys & device":"koder & enhed"),"dev-kant-staal") +
         '</div>';
     // ══════════════════════════════════════════════════════════════
     // DIN TRÆNER · flyttet fra forsiden 17/8-2026
@@ -2540,19 +2501,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   }
 
   if (!LAAST && S.tab === "fysisk") {
-    if (S.fysAktiv) {
-      const pas = fysByg(EN)[S.fysAktiv.pas], alle = pas.trin, nr = S.fysAktiv.trin, pct = Math.round(nr / alle.length * 100);
-      h += '<div class="kort" style="border:1.5px solid var(--grus)"><h3 style="margin-bottom:6px">💪 '+esc(pas.navn)+'</h3>' +
-        '<div style="background:var(--dyb);border-radius:6px;height:14px;overflow:hidden;margin-bottom:6px"><div style="background:var(--grus);height:100%;width:'+pct+'%"></div></div>' +
-        '<p class="lille">'+(EN?"Step":"Trin")+' '+(nr+1)+'/'+alle.length+' · '+pct+' % '+(EN?"done":"gennemført")+'</p>' +
-        '<div style="background:var(--dyb);border-radius:10px;padding:16px 14px;margin:8px 0;font-size:16px;font-weight:800;line-height:1.4">'+esc(alle[nr])+'</div>' +
-        (nr+1 < alle.length ? '<p class="lille" style="opacity:.7">'+(EN?"Next: ":"Næste: ")+esc(alle[nr+1])+'</p>' : '<p class="lille" style="color:var(--guld)">'+(EN?"Last step — finish strong!":"Sidste trin — afslut stærkt!")+'</p>') +
-        '<div class="raekke" style="margin-top:8px"><button class="knap stor" style="background:var(--vundet)" data-a="fysNaeste">'+(nr+1 >= alle.length ? (EN?"🎉 Session DONE":"🎉 Pas GENNEMFØRT") : (EN?"✔ Step done":"✔ Trin færdigt"))+'</button></div>' +
-        (S.fysAfbryd
-          ? '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--tabt)" data-a="fysAfbrydJa">'+(EN?"Yes, abort — nothing is saved":"Ja, afbryd — intet gemmes")+'</button><button class="knap" data-a="fysAfbrydNej">'+(EN?"No, keep going":"Nej, videre")+'</button></div>'
-          : '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px;padding:8px" data-a="fysAfbrydSpoerg">'+(EN?"Abort session":"Afbryd passet")+'</button></div>') +
-        '</div>';
-    } else {
+    
       h += '<p class="lille">'+(EN?"Log physical training exactly like tennis training — with the coaches' 1-10 scale, so everything can be compared.":"Registrér fysisk træning på samme måde som tennistræningen — med trænernes 1-10-skala, så alt kan sammenlignes.")+'</p>';
       (function(){
         const m = ugeMaal(S.fysLog);
@@ -2617,7 +2566,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         if (S.ttEks) h += '<p class="lille">'+(EN?"Select, copy and share with your coach:":"Markér, kopiér og del med træneren:")+'</p><textarea readonly onfocus="this.select()" style="height:110px">'+esc(S.ttEks)+'</textarea>' + eksportKnapper('ttEks', EN);
       }
       h += (EN?FYSISK_EN:FYSISK).map(function(f){ return '<div class="kort"'+(f[0]==="🗓"?' style="border-left:3px solid var(--is)"':'')+'><h3>'+f[0]+' '+esc(f[1])+'</h3><p>'+esc(f[2])+'</p></div>'; }).join("");
-    }
+    
   }
 
   if (!LAAST && S.tab === "historik") {

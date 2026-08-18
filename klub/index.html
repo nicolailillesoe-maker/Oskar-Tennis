@@ -382,7 +382,7 @@ const REGLER_EN = [
 const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
-const VERSION = "v3.0.5k · 16. august 2026";
+const VERSION = "v3.0.6 · 18. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -925,7 +925,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
 };
 const MEM = {};
@@ -949,6 +949,7 @@ try { if (lager.hent("sai-tryk") === "3") S.tryk3 = true; } catch(e) {}
 try { if (lager.hent("sai-zoner") === "1") S.zoner = true; } catch(e) {}
 try { const fl = JSON.parse(lager.hent("sai-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = fl; } catch(e) {}
 try { const tl = JSON.parse(lager.hent("sai-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = tl; } catch(e) {}
+try { S.stigeTilvalgt = lager.hent("sai-stige-tilvalgt") === "1"; } catch(e) {}
 try { if (lager.hent("sai-skala10") !== "1") { if (S.ttLog.length) { S.ttLog.forEach((e) => { if (e.k >= 1 && e.k <= 5) e.k = e.k * 2; }); lager.gem("sai-tennis-log", JSON.stringify(S.ttLog)); } lager.gem("sai-skala10", "1"); } } catch(e) {}
 try { const rå = JSON.parse(lager.hent("sai-kampe") || "[]"); S.gemte = (Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean); } catch(e) {}
 try { const a = lager.hent("sai-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.parse(a)); } catch(e) {}
@@ -1513,13 +1514,53 @@ const A = {
     S.noegleAaben = false; render();
     if (S.spillerNoegle) A.synkroniser();
   },
+  // ── STREAK-STIGEN · tilvalget er forældrenes handling og bor i Indstillinger.
+  stigeSkift: (v) => {
+    const til = v === "til";
+    if (S.stigeTilvalgt === til) return;
+    S.stigeTilvalgt = til;
+    lager.gem("sai-stige-tilvalgt", til ? "1" : "0");
+    if (!til) { S.stigeData = null; S.stigeBesked = null; }
+    render();
+    // Skubbes straks: et tilvalg sender tallene, et fravalg sletter dem hos klubben.
+    if (S.klubKode && S.spillerNoegle) A.synkroniser();
+  },
+  stigeAabn: () => {
+    S.tab = "stige"; render();
+    if (S.stigeTilvalgt && !S.stigeHenter) A.stigeHent();
+  },
+  stigeHent: async () => {
+    const EN = S.sprog === "en";
+    if (S.stigeHenter) return;
+    S.stigeHenter = true; S.stigeBesked = null; render();
+    const r = await sync("stige-hent", {});
+    S.stigeHenter = false;
+    if (r.fejl) {
+      S.stigeBesked = { fejl: true, t:
+        r.fejl === "ikke-tilvalgt" ? (EN?"Turn the ladder on under \u2699 Settings first.":"Sl\u00e5 stigen til under \u2699 Indstillinger f\u00f8rst.") :
+        r.fejl === "intet-hold"    ? (EN?"The club hasn't put you on a team yet \u2014 ask your coach.":"Klubben har ikke sat dig p\u00e5 et hold endnu \u2014 sp\u00f8rg tr\u00e6neren.") :
+        r.fejl === "hold-fra"      ? (EN?"Your team hasn't turned the ladder on yet.":"Dit hold har ikke sl\u00e5et stigen til endnu.") :
+        r.fejl === "ikke-godkendt" ? (EN?"Awaiting the club's approval.":"Afventer klubbens godkendelse.") :
+        r.fejl === "mangler-klubkode" || r.fejl === "mangler-spillernoegle"
+          ? (EN?"Enter club code and player key under \u2699 Settings first.":"Indtast klubkode og spillern\u00f8gle under \u2699 Indstillinger f\u00f8rst.")
+          : (EN?"No connection \u2014 try again.":"Ingen forbindelse \u2014 pr\u00f8v igen.") };
+    } else {
+      S.stigeData = { hold: r.hold, spillere: r.spillere || [], hentet: new Date().toISOString() };
+    }
+    render();
+  },
   synkroniser: async () => {
     const EN = S.sprog === "en";
     if (S.syncHenter) return;
     if (!S.klubKode) { S.kodeAaben = true; render(); return; }
     if (!S.spillerNoegle) { S.noegleAaben = true; render(); return; }
     S.syncHenter = true; S.syncBesked = null; render();
-    const op  = await sync("gem", { fornavn: (SPILLER), kampresume: kampResume() });
+    const _krop = { fornavn: (SPILLER), kampresume: kampResume() };
+    // Stigen (Julies ramme 17/8): tallene forlader KUN telefonen med et aktivt
+    // tilvalg — og et fravalg sendes med, så serveren sletter de gemte tal.
+    if (S.stigeTilvalgt) { _krop.stige_tilvalgt = true; _krop.fys_streak = ugeMaal(S.fysLog).streak; _krop.tennis_streak = ugeMaal(S.ttLog).streak; }
+    else _krop.stige_tilvalgt = false;
+    const op  = await sync("gem", _krop);
     const ned = op.fejl ? op : await sync("hent", {});
     S.syncHenter = false;
     if (ned.fejl) {
@@ -1529,7 +1570,7 @@ const A = {
         ned.fejl === "validering" ? (EN?"Rejected by the guard.":"Afvist af sikkerhedsvagten.") :
         (EN?"No connection \u2014 try again.":"Ingen forbindelse \u2014 pr\u00f8v igen.") };
     } else {
-      S.traenerData = { spiller: ned.spiller || null, ugefokus: ned.ugefokus || [], hentet: new Date().toISOString() };
+      S.traenerData = { spiller: ned.spiller || null, ugefokus: ned.ugefokus || [], stigeHoldTil: !!ned.stige_hold_til, hentet: new Date().toISOString() };
       lager.gem("sai-traenerdata", JSON.stringify(S.traenerData));
       S.syncBesked = { fejl: false, t: EN ? "Synced with the coach \u2713" : "Synkroniseret med tr\u00e6neren \u2713" };
     }
@@ -1971,6 +2012,7 @@ function render() {
       h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"START MATCH":"START KAMP") + '</b><br><small id="hero-sub">' + (EN?"register points live from the court":"registrér point live fra banen") + '</small></span><span class="dev-pil">→</span></button>';
       h += '<div class="dev-grid">' +
         (S.klubKode ? _flise("tab","traener","🧑‍🏫",(EN?"Your coach":"Din træner"),_traenerStatus(EN),"dev-kant-guld") : "") +
+        (S.klubKode && S.traenerData && S.traenerData.stigeHoldTil ? _flise("stigeAabn","","🔥",(EN?"The ladder":"Stigen"),(EN?"your group's streaks":"holdets streaks"),"dev-kant-guld") : "") +
         _flise("tab","fysisk","💪",(EN?"Train":"Træn"),(EN?"todays session & running":"dagens pas & løb"),"dev-kant-staal") +
         _flise("tab","historik","📊",(EN?"Statistics":"Statistik"),S.gemte.length+(EN?" matches · trends":" kampe · tendenser"),"dev-kant-staal") +
         _flise("tab","planer","🎯",(EN?"Rivals":"Modstandere"),(EN?"plans & notes":"planer & noter"),"dev-kant-staal") +
@@ -2063,6 +2105,30 @@ function render() {
         if (S.syncBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
           (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
         h += '</div>';
+
+        // ── DIN EVALUERING · trænerens godkendte tekst (v2.5-transporten, 18/8).
+        // Fritekst OM barnet, TIL barnet — det er produktet (princip 19).
+        // Den hentes med "hent", vises her og sendes ALDRIG videre i analyse-kald.
+        const evl = (tsp && Array.isArray(tsp.evalueringer)) ? tsp.evalueringer.slice().reverse() : [];
+        if (evl.length) {
+          const nyeste = evl[0];
+          h += '<div class="kort" style="border-left:3px solid var(--is)">' +
+            '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">📋 ' +
+            (EN?"YOUR EVALUATION":"DIN EVALUERING") + '</div>' +
+            '<p class="lille" style="margin:0 0 6px">' + esc(nyeste.d || "") + (nyeste.af ? ' \u00b7 ' + esc(nyeste.af) : '') + '</p>' +
+            '<p style="margin:0;font-size:13.5px;line-height:1.55;white-space:pre-wrap">' + esc(nyeste.t || "") + '</p>';
+          if (evl.length > 1) {
+            h += '<details style="margin-top:9px"><summary class="lille" style="cursor:pointer">' +
+              (EN?"Earlier evaluations":"Tidligere evalueringer") + ' (' + (evl.length-1) + ')</summary>';
+            evl.slice(1).forEach(function(e){
+              h += '<div style="border-top:1px solid var(--kant);margin-top:8px;padding-top:8px">' +
+                '<p class="lille" style="margin:0 0 4px">' + esc(e.d || "") + (e.af ? ' \u00b7 ' + esc(e.af) : '') + '</p>' +
+                '<p style="margin:0;font-size:13px;line-height:1.5;white-space:pre-wrap">' + esc(e.t || "") + '</p></div>';
+            });
+            h += '</details>';
+          }
+          h += '</div>';
+        }
     // ══════════════════════════════════════════════════════════════
     // INDSTILLINGER · samlet 17/8-2026
     // Foer laa spillernoeglen som et tandhjul inde i et forsidekort, klubkoden
@@ -2070,6 +2136,49 @@ function render() {
     // kun saettes op én gang, hoerer ét sted. Justér stillingen bliver i kampen —
     // den er en handling midt i en kamp, ikke en opsaetning.
     // ══════════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════
+    // STIGEN · holdets streak-stige. Julies ramme 17/8: eget samtykkepunkt,
+    // FRA som standard, holdet vælger til. Kun fornavne og tal — der
+    // findes ikke et felt til mere, hverken her eller i tjenesten.
+    // ══════════════════════════════════════════════════════════════
+    } else if (S.tab === "stige") {
+      h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") +
+           '<b style="font-size:16px">🔥 ' + (EN?"The ladder":"Stigen") + '</b></div>';
+      if (!S.stigeTilvalgt) {
+        h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
+          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' + (EN?"🔥 THE STREAK LADDER":"🔥 STREAK-STIGEN") + '</div>' +
+          '<p class="lille" style="margin:0 0 8px">' + (EN
+            ? "The ladder shows how many weeks in a row each player on your team has kept their training going \u2014 first names and numbers, nothing else. It is OFF until you choose it, and the choice belongs with the ladder item in the parental consent."
+            : "Stigen viser, hvor mange uger i tr\u00e6k hver spiller p\u00e5 holdet har holdt tr\u00e6ningen k\u00f8rende \u2014 fornavne og tal, intet andet. Den er sl\u00e5et FRA, indtil I selv v\u00e6lger den til, og valget h\u00f8rer sammen med stige-punktet i for\u00e6ldresamtykket.") + '</p>' +
+          '<button class="knap" style="background:var(--grus)" data-a="tab" data-v="opsaet">' + (EN?"Go to Settings":"G\u00e5 til Indstillinger") + '</button></div>';
+      } else {
+        const sd = S.stigeData;
+        if (S.stigeHenter && !sd) h += '<div class="kort"><p class="lille" style="margin:0">' + (EN?"Fetching the ladder \u2026":"Henter stigen \u2026") + '</p></div>';
+        if (sd) {
+          const sp = (sd.spillere || []).slice().sort(function(a,b){ return (b.fys+b.tennis)-(a.fys+a.tennis); });
+          const aktive = sp.filter(function(p){ return (p.fys+p.tennis) > 0; }).length;
+          h += '<div class="kort"><h3 style="margin:0 0 2px">🏆 ' + esc(sd.hold || "") + '</h3>' +
+            '<p class="lille" style="margin:0 0 8px">' + (EN?"Total streak (physical + tennis), weeks in a row. Friendly competition! 🔥":"Samlet streak (fysisk + tennis), uger i tr\u00e6k. Venlig konkurrence! 🔥") + '</p>';
+          if (!sp.length) h += '<p class="lille" style="margin:0">' + (EN?"No one on the ladder yet \u2014 be the first! 💪":"Ingen p\u00e5 stigen endnu \u2014 v\u00e6r den f\u00f8rste! 💪") + '</p>';
+          sp.forEach(function(p, i){
+            const total = p.fys + p.tennis;
+            const m = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:var(--daempet);font-weight:700">'+(i+1)+'</span>';
+            h += '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--kant)' + (p.dig?';background:rgba(227,179,65,.07);border-radius:8px;padding-left:6px;padding-right:6px':'') + '">' +
+              '<span style="width:22px;text-align:center;flex:none">' + m + '</span>' +
+              '<div style="flex:1;min-width:0"><b style="font-size:13.5px">' + esc(p.fornavn || "") + (p.dig ? ' <span style="font-size:10.5px;color:var(--guld);font-weight:800">' + (EN?"\u2014 you":"\u2014 dig") + '</span>' : '') + '</b>' +
+              '<div class="lille" style="font-size:11px">💪 ' + p.fys + ' \u00b7 🎾 ' + p.tennis + '</div></div>' +
+              '<span style="display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:800;padding:3px 9px;border-radius:9px;background:var(--flade);flex:none">🔥 ' + total + '</span></div>';
+          });
+          if (sp.length) h += '<p class="lille" style="margin:8px 0 0"><b>' + aktive + '/' + sp.length + '</b> ' + (EN?"with an active streak right now. Come on! 💪":"med aktiv streak lige nu. Kom s\u00e5! 💪") + '</p>';
+          h += '</div>';
+        }
+        h += '<div class="kort"><p class="lille" style="margin:0 0 8px">' + (EN
+            ? "At least 3 physical sessions and 3 tennis sessions a week keep the streak alive. Log them, sync \u2014 climb."
+            : "Mindst 3 fysiske pas og 3 tennistr\u00e6ninger om ugen holder streaken i live. Log dem, synkronis\u00e9r \u2014 og klatr.") + '</p>' +
+          '<button class="knap" style="background:var(--grus)"' + (S.stigeHenter?' disabled':'') + ' data-a="stigeHent">' + (S.stigeHenter ? (EN?"Fetching \u2026":"Henter \u2026") : (EN?"\u21bb Refresh":"\u21bb Opdat\u00e9r")) + '</button>' +
+          (S.stigeBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.stigeBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.stigeBesked.t) + '</p>' : '') +
+          '</div>';
+      }
     } else if (S.tab === "opsaet") {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") +
            '<b style="font-size:16px">⚙️ ' + (EN?"Settings":"Indstillinger") + '</b></div>';
@@ -2097,7 +2206,16 @@ function render() {
         (S.klubKode ? '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:12px" data-a="klubKodeRyd">' + (EN?"Remove":"Fjern") + '</button>' : '') +
         '</div></div>';
 
-      h += '<div class="kort"><div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' +
+      if (S.klubKode) {
+        h += '<div class="kort" style="border-left:3px solid ' + (S.stigeTilvalgt?'var(--guld)':'var(--kant)') + '"><div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' +
+          (EN?"🔥 THE STREAK LADDER":"🔥 STREAK-STIGEN") + '</div>' +
+          '<p class="lille" style="margin:0 0 8px">' + (EN
+            ? "Shares your training streaks with your team \u2014 first name and two numbers, nothing else. OFF by default: without the opt-in the numbers never leave this phone. Opting out again deletes them at the club. The opt-in belongs with the ladder item in the parental consent."
+            : "Deler dine tr\u00e6ningsstreaks med holdet \u2014 fornavn og to tal, intet andet. FRA som standard: uden tilvalg forlader tallene aldrig denne telefon. V\u00e6lger I fra igen, slettes tallene hos klubben. Tilvalget h\u00f8rer sammen med stige-punktet i for\u00e6ldresamtykket.") + '</p>' +
+          '<div class="raekke"><button class="knap valg' + (S.stigeTilvalgt?' til':'') + '" data-a="stigeSkift" data-v="til">' + (EN?"On":"Til") + '</button>' +
+          '<button class="knap valg' + (S.stigeTilvalgt?'':' til') + '" data-a="stigeSkift" data-v="fra">' + (EN?"Off":"Fra") + '</button></div></div>';
+      }
+            h += '<div class="kort"><div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' +
         (EN?"🌐 LANGUAGE":"🌐 SPROG") + '</div>' +
         '<div class="raekke"><button class="knap valg' + (EN?'':' til') + '" data-a="sprog" data-v="da">Dansk</button>' +
         '<button class="knap valg' + (EN?' til':'') + '" data-a="sprog" data-v="en">English</button></div></div>';
@@ -2887,7 +3005,7 @@ function autoSynk(){
   if (_autoSynkKoert || !S.klubKode || !S.spillerNoegle) return;
   _autoSynkKoert = true;
   sync("hent", {}).then(function(r){
-    if (r && !r.fejl) { S.traenerData = r; lager.gem("sai-traenerdata", JSON.stringify(r)); render(); }
+    if (r && !r.fejl) { S.traenerData = { spiller: r.spiller || null, ugefokus: r.ugefokus || [], stigeHoldTil: !!r.stige_hold_til, hentet: new Date().toISOString() }; lager.gem("sai-traenerdata", JSON.stringify(S.traenerData)); render(); }
   });
 }
 window.__oskarInit = function(){

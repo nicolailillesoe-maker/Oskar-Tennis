@@ -444,6 +444,10 @@ const REGLER_EN = [
 const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved: "Aaric Tajhya (16th) with 74.4", foran: "Reinholdt E. B. Schultz (14th) with 123.3" };
 
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
+// Versionsstemplet ét sted. Foden laeser denne. Foer stod tallet i hver fil
+// to gange, og de to var uenige: engelsk sagde v1.7 · July, dansk v2.1 · juli,
+// mens koden var v3.0.5k. ATP-dateringerne er IKKE versionsstempler og roeres ikke.
+const VERSION_KORT = "v3.0.5k";
 const KODEHASH = 2293772734;
 const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
 const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
@@ -2048,7 +2052,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
          '<a href="https://dtf.tournamentsoftware.com/ranking/category.aspx?id=52585&amp;category=2531" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 '+(EN?SPILLER+"\'s current DTF ranking":SPILLER+"s aktuelle rangliste hos DTF")+'</a>';
   }
 
-  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to "+EJER+" via Nicolai. Team "+SPILLER+" · July 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til "+EJER+" via Nicolai. Team P · v2.1 · vundet/tabt-graf · juli 2026.")+'</p>';
+  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to "+EJER+" via Nicolai. Team "+SPILLER+" · "+VERSION_KORT+" · August 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til "+EJER+" via Nicolai. Team P · "+VERSION_KORT+" · august 2026.")+'</p>';
   h += bundNav();
   el.innerHTML = h;
   devFoldning();

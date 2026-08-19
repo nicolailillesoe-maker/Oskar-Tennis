@@ -659,6 +659,22 @@ function ugeMaal(fysLog) {
   return { denneUge, MAAL, streak };
 }
 
+// Træningsresumé til trænerlaget (19/8, Nicolais beslutning): OMFANGET pr. uge
+// — antal tennis, antal fys, minutter — aldrig indholdet. Bygges af egen log,
+// nyeste uge først, højst 8 uger. Noter og typer bliver på telefonen.
+function traeningsResume() {
+  const spande = {};
+  const laeg = function(log, felt){ (log || []).forEach(function(e){
+    if (!e || !e.d) return;
+    const u = ugeNoegle(e.d);
+    const s = (spande[u] = spande[u] || { u: u, t: 0, f: 0, m: 0 });
+    s[felt] += 1; s.m += (typeof e.m === "number" && e.m > 0 ? Math.min(e.m, 600) : 0);
+  }); };
+  laeg(S.ttLog, "t"); laeg(S.fysLog, "f");
+  return Object.keys(spande).map(function(k){ return spande[k]; })
+    .sort(function(a, b){ return b.u - a.u; }).slice(0, 8);
+}
+
 const RIVALKAMPE_DUMMY = [];
 const RIVALDETALJER = {};
 const RIVALFOKUS = {};
@@ -1560,6 +1576,7 @@ const A = {
     // tilvalg — og et fravalg sendes med, så serveren sletter de gemte tal.
     if (S.stigeTilvalgt) { _krop.stige_tilvalgt = true; _krop.fys_streak = ugeMaal(S.fysLog).streak; _krop.tennis_streak = ugeMaal(S.ttLog).streak; }
     else _krop.stige_tilvalgt = false;
+    _krop.traeningsresume = traeningsResume();
     const op  = await sync("gem", _krop);
     const ned = op.fejl ? op : await sync("hent", {});
     S.syncHenter = false;

@@ -534,7 +534,7 @@ const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved:
 // Versionsstemplet ét sted. Foden laeser denne. Foer stod tallet i hver fil
 // to gange, og de to var uenige: engelsk sagde v1.7 · July, dansk v2.1 · juli,
 // mens koden var v3.0.5k. ATP-dateringerne er IKKE versionsstempler og roeres ikke.
-const VERSION_KORT = "v3.0.12";
+const VERSION_KORT = "v3.0.13";
 const KODEHASH = 1187643301;
 const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
 const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
@@ -1100,7 +1100,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {"Kevin Le Li": "EKSEMPEL: Sådan vil analysen se ud mod UM-rivalen — her ses et mønster med for mange gaver i korte dueller og en 2. serv, der skal beskyttes. Efter jeres rigtige kampe står de ÆGTE tal her.", "Philip Hartvigsen Dianati": "EKSEMPEL: Mod feltets nr. 1 vil skemaet vise, om marginerne holder — her fortæller dummy-tallene en historie om netfejl og breakbolde, der skal veksles.", "Philip Tiedemann": "EKSEMPEL: Tætte kampe afgøres på returpoint — dummy-mønstret viser præcis den slags marginer, systemet fanger.", "Andreas Falch Midtgaard": "EKSEMPEL: Mod double-makkeren viser dummy-data en opskrift, der virker — server-dominans og tålmodighed.", "Emil Thøgersen": "EKSEMPEL: En stabil opskrift i dummy-tallene — 2. serv-niveau og ro på breakbolde."};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "venstre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "venstre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: true, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
 };
 const MEM = {};
@@ -1731,6 +1731,7 @@ const A = {
     }
     render();
   },
+  tvHist: () => { S.tvHistAaben = !S.tvHistAaben; render(); },
   synkroniser: async () => {
     const EN = S.sprog === "en";
     if (S.syncHenter) return;
@@ -2184,6 +2185,29 @@ function render() {
                 (sv ? '<span class="lille" style="opacity:.7">' + (EN?"you ":"dig ") + sv.s + '</span>' : '') +
               '</span></div>';
           });
+          // HISTORIK (19/8, Nicolais bestilling): en ny score må aldrig SKJULE
+          // den gamle. Fold med de seneste 12 hændelser — trænerens farvede
+          // score og spillerens egen dom samme dag ved siden af.
+          // Defensiv dato-sortering: serveren garanterer rækkefølgen fra synk
+          // v2.7.1, men allerede-gemt data kan ligge i vilkårlig orden.
+          const histV = (tsp.vurderinger||[]).slice()
+            .sort(function(a,b){ return String(a.d) < String(b.d) ? -1 : String(a.d) > String(b.d) ? 1 : 0; })
+            .slice(-12).reverse();
+          if (histV.length > 1) {
+            h += '<p class="lille" data-a="tvHist" style="margin:8px 0 0;cursor:pointer;color:var(--daempet)">' +
+              (S.tvHistAaben ? '▾ ' : '▸ ') + (EN?"History":"Historik") + ' · ' + histV.length + '</p>';
+            if (S.tvHistAaben) histV.forEach(function(x){
+              const ho = OMR[x.o] || { n: x.o, i: "" };
+              const hs = (tsp.selvvurderinger||[]).filter(function(q){ return q.d===x.d && q.o===x.o; }).slice(-1)[0];
+              h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:5px 0">' +
+                '<span class="lille" style="flex:none;width:42px;color:var(--daempet)">' + esc(String(x.d).slice(5)) + '</span>' +
+                '<span style="flex:1;font-size:12px">' + ho.i + ' ' + ho.n + '</span>' +
+                '<b style="flex:none;font-size:13.5px;color:' + FV(x.s) + '">' + x.s + '</b>' +
+                (hs ? '<span class="lille" style="flex:none;opacity:.7">' + (EN?"you ":"dig ") + hs.s + '</span>'
+                    : '<span class="lille" style="flex:none;opacity:.3">–</span>') +
+              '</div>';
+            });
+          }
           if ((tsp.fokuspunkter||[]).length) h += '<p class="lille" style="margin:8px 0 0">🎯 ' +
             (EN?"Focus: ":"Fokus: ") + tsp.fokuspunkter.map(esc).join(" · ") + '</p>';
         }

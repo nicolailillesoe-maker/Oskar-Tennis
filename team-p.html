@@ -450,7 +450,7 @@ const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved:
 // Versionsstemplet ét sted. Foden laeser denne. Foer stod tallet i hver fil
 // to gange, og de to var uenige: engelsk sagde v1.7 · July, dansk v2.1 · juli,
 // mens koden var v3.0.5k. ATP-dateringerne er IKKE versionsstempler og roeres ikke.
-const VERSION_KORT = "v3.0.6";
+const VERSION_KORT = "v3.0.7";
 const KODEHASH = 2293772734;
 const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
 const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
@@ -1367,6 +1367,7 @@ const A = {
   fyTypeVaelg: (v) => { S.fyType = +v; render(); },
   fyGem: () => { if (!S.fyKval || !S.fyType) return;
     S.fysLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.fyMin, k: S.fyKval, t: S.fyType, n: S.fyNote || "" });
+    if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);   // auto-transport 19/8
     lager.gem("teamp-fysisk-log", JSON.stringify(S.fysLog));
     S.fyKval = 0; S.fyNote = ""; render(); },
   ttMinJust: (v) => { S.ttMin = Math.max(15, Math.min(300, S.ttMin + (+v))); render(); },
@@ -1375,6 +1376,7 @@ const A = {
   ttGem: () => {
     if (!S.ttKval || !S.ttType) return;
     S.ttLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.ttMin, k: S.ttKval, t: S.ttType, n: S.ttNote || "" });
+    if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);   // auto-transport 19/8
     lager.gem("teamp-tennis-log", JSON.stringify(S.ttLog));
     S.ttKval = 0; S.ttType = 0; S.ttNote = ""; S.ttEks = null; render();
   },
@@ -1546,6 +1548,7 @@ const A = {
       aktiv: false,
     } : null;
     S.gemte.unshift(S.aktiv); gemAlle();
+    if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 600);   // auto-transport 19/8: kampen står hos træneren uden ét tryk
     S.aktiv = null; S.afventer = null; S.resInput = ""; gemAktiv();
     if (_delt) {
       // Ryd en ventende liveSend-timer FOERST. Ellers fyrer den efter dette
@@ -1611,7 +1614,6 @@ const A = {
     catch (e) { S.liveBesked = { fejl: false, t: l }; }
     render();
   },
-  noegleAabn: () => { S.noegleAaben = !S.noegleAaben; S.noegleUdkast = S.spillerNoegle || ""; render(); },
   noegleGem: () => {
     S.spillerNoegle = (S.noegleUdkast || "").trim();
     lager.gem("teamp-spillernoegle", S.spillerNoegle);
@@ -1656,8 +1658,8 @@ const A = {
   synkroniser: async () => {
     const EN = S.sprog === "en";
     if (S.syncHenter) return;
-    if (!S.klubKode) { S.kodeAaben = true; render(); return; }
-    if (!S.spillerNoegle) { S.noegleAaben = true; render(); return; }
+    if (!S.klubKode) { S.syncBesked = { fejl: true, t: EN ? "Enter the club code under \u2699 Settings first." : "Indtast klubkoden under \u2699 Indstillinger f\u00f8rst." }; render(); return; }
+    if (!S.spillerNoegle) { S.syncBesked = { fejl: true, t: EN ? "Enter the player key under \u2699 Settings first." : "Indtast spillern\u00f8glen under \u2699 Indstillinger f\u00f8rst." }; render(); return; }
     S.syncHenter = true; S.syncBesked = null; render();
     const _krop = { fornavn: SPILLER, kampresume: kampResume() };
     // Stigen (Julies ramme 17/8): tallene forlader KUN telefonen med et aktivt
@@ -2060,21 +2062,12 @@ function render() {
                       selv:    { n: EN?"Play-yourself court":"Spil-selv-banen",    i:"🤝" } };
         const FV = function(x){ return x<=2?"#EB4452":x<=4?"#FA932E":x<=6?"#E7D24D":"#53AB7F"; };
         h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-            '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">🧑‍🏫 ' +
-            (EN?"YOUR COACH":"DIN TRÆNER") + '</div>' +
-            '<span data-a="noegleAabn" title="' + (EN?"Player key":"Spillernøgle") +
-            '" style="cursor:pointer;font-size:13px;opacity:.6">⚙️</span></div>';
+          // Nøgle-UI FJERNET 19/8 (Nicolai: "den er jo allerede i Indstillinger").
+          // Designstandard regel 2: alt, der kun sættes op én gang, bor ét sted.
+          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">🧑‍🏫 ' +
+            (EN?"YOUR COACH":"DIN TRÆNER") + '</div>';
 
-        if (S.noegleAaben) {
-          h += '<p class="lille" style="margin:8px 0 4px">' + (EN
-            ? "Enter the player key you got from the club. Once per device."
-            : "Indtast spillernøglen, du har fået af klubben. Kun én gang på denne enhed.") + '</p>' +
-            '<input class="felt" data-felt="noegleUdkast" value="' + esc(S.noegleUdkast || "") +
-            '" placeholder="' + (EN?"player key":"spillernøgle") + '" autocapitalize="off" spellcheck="false">' +
-            '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="noegleGem">' +
-            (EN?"Save":"Gem") + '</button></div>';
-        } else if (!tsp || !((tsp.vurderinger||[]).length)) {
+        if (!tsp || !((tsp.vurderinger||[]).length)) {
           h += '<p class="lille" style="margin:6px 0 8px">' + (EN
             ? "No assessments yet. Tap below to check with the coach."
             : "Ingen vurderinger endnu. Tryk herunder for at tjekke hos træneren.") + '</p>';
@@ -2999,6 +2992,8 @@ let _autoSynkKoert = false;
 function autoSynk(){
   if (_autoSynkKoert || !S.klubKode || !S.spillerNoegle) return;
   _autoSynkKoert = true;
+  // 19/8: fuld synk (skub + hent) — Nicolai: "automatisér al den transport".
+  try { A.synkroniser(); return; } catch (e) {}
   sync("hent", {}).then(function(r){
     if (r && !r.fejl) { S.traenerData = { spiller: r.spiller || null, ugefokus: r.ugefokus || [], stigeHoldTil: !!r.stige_hold_til, hentet: new Date().toISOString() }; lager.gem("teamp-traenerdata", JSON.stringify(S.traenerData)); render(); }
   });

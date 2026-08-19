@@ -450,7 +450,7 @@ const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved:
 // Versionsstemplet ét sted. Foden laeser denne. Foer stod tallet i hver fil
 // to gange, og de to var uenige: engelsk sagde v1.7 · July, dansk v2.1 · juli,
 // mens koden var v3.0.5k. ATP-dateringerne er IKKE versionsstempler og roeres ikke.
-const VERSION_KORT = "v3.0.9";
+const VERSION_KORT = "v3.0.10";
 const KODEHASH = 2293772734;
 const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
 const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
@@ -2176,9 +2176,18 @@ function render() {
           h += '</div>';
         }
         h += '<div class="kort"><p class="lille" style="margin:0 0 8px">' + (EN
-            ? "At least 3 physical sessions and 3 tennis sessions a week keep the streak alive. Log them, sync \u2014 climb."
-            : "Mindst 3 fysiske pas og 3 tennistr\u00e6ninger om ugen holder streaken i live. Log dem, synkronis\u00e9r \u2014 og klatr.") + '</p>' +
-          '<button class="knap" style="background:var(--grus)"' + (S.stigeHenter?' disabled':'') + ' data-a="stigeHent">' + (S.stigeHenter ? (EN?"Fetching \u2026":"Henter \u2026") : (EN?"\u21bb Refresh":"\u21bb Opdat\u00e9r")) + '</button>' +
+            ? "At least 3 physical sessions and 3 tennis sessions a week keep the streak alive. Log them \u2014 the rest happens by itself."
+            : "Mindst 3 fysiske pas og 3 tennistr\u00e6ninger om ugen holder streaken i live. Log dem \u2014 resten sker af sig selv.") + '</p>' +
+          // Opdatér-knappen FJERNET 19/8 (Nicolai: "den her skal vel også
+          // køres af sig selv?"). Stigen hentes automatisk, når skærmen åbnes;
+          // linjen viser hvornår, og et tryk på den opdaterer manuelt.
+          (function(){
+            const sh = (S.stigeData && S.stigeData.hentet) ? new Date(S.stigeData.hentet) : null;
+            const kl = sh ? ((sh.getHours()<10?"0":"")+sh.getHours()+"."+(sh.getMinutes()<10?"0":"")+sh.getMinutes()) : null;
+            return '<p class="lille" data-a="stigeHent" style="margin:0;cursor:pointer;color:var(--daempet)">' +
+              (S.stigeHenter ? (EN?"\u23f3 Fetching\u2026":"\u23f3 Henter\u2026")
+                : ((EN?"Updates by itself":"Opdaterer af sig selv") + (kl ? " \u00b7 " + (EN?"last":"senest") + " " + kl + " \u2713" : ""))) + '</p>';
+          })() +
           (S.stigeBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.stigeBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.stigeBesked.t) + '</p>' : '') +
           '</div>';
       }

@@ -584,7 +584,23 @@ function spillerDetalje(navn){
     '<div><h1 style="margin:0;font-size:19px">'+esc(navn)+'</h1><p class="lille">'+esc(s.gruppe)+(s.rang?' · DTF #'+s.rang:'')+(s.wtn?' · WTN '+s.wtn:'')+'</p></div></div>';
   h += '<div class="grid2" style="margin-top:8px">' +
     mini("Kampe", s.kampe) + mini("Sejrsrate", (s.kampe?Math.round(s.sejre/s.kampe*100):0)+"%") +
-    mini("🔥 Fys-streak", s.fysStreak+" uger") + mini("🎾 Træninger", s.traeningerKvartal) + '</div></div>';
+    mini("🔥 Fys-streak", s.fysStreak+" uger") + mini("🎾 Træninger", (s.trResume && s.trResume.length ? ((s.trResume[0].t||0)+(s.trResume[0].f||0)) + " denne uge" : s.traeningerKvartal)) + '</div></div>';
+
+  // ── TRÆNING · SENESTE UGER (19/8) — omfanget fra spillerens egen log:
+  // antal tennis, antal fys og timer pr. uge. Aldrig noter, aldrig indhold.
+  if (s.trResume && s.trResume.length) {
+    h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus);margin-bottom:2px">\ud83d\udcc5 TR\u00c6NING \u00b7 SENESTE UGER</div>' +
+      '<p class="lille" style="margin:0 0 4px">Fra spillerens egen registrering \u2014 antal og tid, aldrig indhold.</p>';
+    s.trResume.slice(0, 8).forEach(function(w){
+      var timer = (Math.round((w.m || 0) / 6) / 10).toFixed(1).replace(".", ",");
+      var ialt = (w.t || 0) + (w.f || 0);
+      h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:6px 0">' +
+        '<span style="flex:none;width:52px;font-size:12px;font-weight:700">Uge ' + (w.u % 100) + '</span>' +
+        '<span style="flex:1;font-size:12.5px">\ud83c\udfbe ' + (w.t || 0) + ' \u00b7 \ud83d\udcaa ' + (w.f || 0) + ' \u00b7 ' + timer + ' t</span>' +
+        '<span style="flex:none;font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px;background:var(--flade);color:' + (ialt >= 6 ? 'var(--vundet)' : ialt >= 3 ? 'var(--guld)' : 'var(--daempet)') + '">' + ialt + ' pas</span></div>';
+    });
+    h += '</div>';
+  }
 
   // ── SPILLERNØGLE · koblingen mellem navn og nøgle bor på trænerens enhed.
   // Uden den ved platformen ikke, hvem vurderingen skal sendes til.
@@ -946,6 +962,7 @@ document.addEventListener("click", function(e){
         d3.tennisStreak = srv.tennis_streak || 0;
         d3.stigeTil = !!srv.stige_tilvalgt;
         if (Array.isArray(srv.selvvurderinger)) d3.selvvurderinger = srv.selvvurderinger;
+        if (Array.isArray(srv.traeningsresume)) d3.trResume = srv.traeningsresume;
         if (srv.opdateret) d3.sidsteTraening = String(srv.opdateret).slice(0, 10);
       });
       S.tilmHentet = new Date().toISOString();

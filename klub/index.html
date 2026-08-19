@@ -382,7 +382,7 @@ const REGLER_EN = [
 const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
-const VERSION = "v3.0.7 · 19. august 2026";
+const VERSION = "v3.0.9 · 19. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -941,7 +941,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
 };
 const MEM = {};
@@ -1527,11 +1527,16 @@ const A = {
     render();
   },
   noegleGem: () => {
-    S.spillerNoegle = (S.noegleUdkast || "").trim();
+    const v = (S.noegleUdkast || "").trim();
+    if (!v) return;   // tomt felt sletter ALDRIG en gemt nøgle (19/8)
+    S.spillerNoegle = v;
     lager.gem("sai-spillernoegle", S.spillerNoegle);
-    S.noegleAaben = false; render();
-    if (S.spillerNoegle) A.synkroniser();
+    S.noegleAaben = false; S.nyNoegleAaben = false; S.noegleUdkast = ""; render();
+    A.synkroniser();
   },
+  nyNoegleAabn: () => { S.nyNoegleAaben = !S.nyNoegleAaben; S.noegleUdkast = ""; S.visNoegle = false; render(); },
+  visSkift: (v) => { S[v] = !S[v]; render(); },
+  nyKodeAabn: () => { S.nyKodeAaben = !S.nyKodeAaben; S.kodeUdkast = ""; render(); },
   // ── STREAK-STIGEN · tilvalget er forældrenes handling og bor i Indstillinger.
   stigeSkift: (v) => {
     const til = v === "til";
@@ -1717,8 +1722,8 @@ const A = {
     });
   },
   klubKodeAabn: () => { S.kodeAaben = !S.kodeAaben; S.kodeUdkast = ""; S.hentBesked = null; render(); },
-  klubKodeGem: () => { const v = (S.kodeUdkast || "").trim(); if (!v) return; S.klubKode = v; lager.gem("sai-klubkode", v); S.kodeAaben = false; S.kodeUdkast = ""; S.hentBesked = { i: -1, fejl: false, t: S.sprog === "en" ? "Club code saved on this device." : "Klubkoden er gemt p\u00e5 denne enhed." }; render(); },
-  klubKodeRyd: () => { S.klubKode = ""; lager.gem("sai-klubkode", ""); S.kodeAaben = false; S.kodeUdkast = ""; render(); },
+  klubKodeGem: () => { const v = (S.kodeUdkast || "").trim(); if (!v) return; S.klubKode = v; lager.gem("sai-klubkode", v); S.kodeAaben = false; S.nyKodeAaben = false; S.kodeUdkast = ""; S.hentBesked = { i: -1, fejl: false, t: S.sprog === "en" ? "Club code saved on this device." : "Klubkoden er gemt p\u00e5 denne enhed." }; render(); },
+  klubKodeRyd: () => { S.klubKode = ""; lager.gem("sai-klubkode", ""); S.kodeAaben = false; S.nyKodeAaben = false; S.kodeUdkast = ""; render(); },
   eksport: (i) => { S.eksport = lavEksport(S.gemte[+i]); S._sf = S._sf || {}; S._sf["1"] = true; render();
     setTimeout(function(){ var b = document.getElementById("eksport-boks"); if (b) b.scrollIntoView({behavior:"smooth", block:"center"}); }, 60); },
   analyseAabn: (i) => { S.redigerA = S.redigerA === +i ? null : +i; S.aTekst = (S.gemte[+i] && S.gemte[+i].analyse) || ""; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
@@ -2085,8 +2090,8 @@ function render() {
             (tsp && tsp.status === "godkendt"
               ? '<span style="color:var(--vundet)">\u2713 ' + (EN?"Approved by the club. ":"Godkendt af klubben. ") + '</span>'
               : '') + (EN
-            ? "No assessments yet. Tap below to check with the coach."
-            : "Ingen vurderinger endnu. Tryk herunder for at tjekke hos træneren.") + '</p>';
+            ? "No assessments yet \u2014 they show up here by themselves."
+            : "Ingen vurderinger endnu \u2014 de dukker op her af sig selv.") + '</p>';
         } else {
           if (tsp.hold || tsp.traeningshold) h += '<p class="lille" style="margin:6px 0 0">' +
             (tsp.hold ? '<b>' + esc(tsp.hold) + '</b>' : '') +
@@ -2109,9 +2114,16 @@ function render() {
             (EN?"Focus: ":"Fokus: ") + tsp.fokuspunkter.map(esc).join(" · ") + '</p>';
         }
 
-        h += '<div class="raekke" style="margin-top:8px"><button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px' +
-          (S.syncHenter?';opacity:.6':'') + '" data-a="synkroniser">' +
-          (S.syncHenter ? (EN?"⏳ Syncing…":"⏳ Synkroniserer…") : (EN?"🔄 Check with the coach":"🔄 Tjek hos træneren")) + '</button></div>';
+        // "Tjek hos træneren"-knappen FJERNET 19/8 (Nicolai: "det skal køre
+        // af sig selv"). Appen synker automatisk; linjen viser hvornår, og et
+        // tryk på den opdaterer manuelt midt i en session.
+        (function(){
+          const sidst = (S.traenerData && S.traenerData.hentet) ? new Date(S.traenerData.hentet) : null;
+          const kl = sidst ? ((sidst.getHours()<10?"0":"")+sidst.getHours()+"."+(sidst.getMinutes()<10?"0":"")+sidst.getMinutes()) : null;
+          h += '<p class="lille" data-a="synkroniser" style="margin:8px 0 0;cursor:pointer;color:var(--daempet)">' +
+            (S.syncHenter ? (EN?"\u23f3 Syncing\u2026":"\u23f3 Synkroniserer\u2026")
+              : ((EN?"Updates by itself":"Opdaterer af sig selv") + (kl ? " \u00b7 " + (EN?"last":"senest") + " " + kl + " \u2713" : ""))) + '</p>';
+        })();
         if (S.syncBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
           (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
         h += '</div>';
@@ -2193,28 +2205,50 @@ function render() {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") +
            '<b style="font-size:16px">⚙️ ' + (EN?"Settings":"Indstillinger") + '</b></div>';
 
+      // Gemte koder vises ALDRIG i klartekst (19/8, Nicolai): sammenfoldet
+      // kvittering + Skift. Feltet er tomt, når det foldes ud — den gamle kode
+      // kan hverken aflæses over skulderen eller havne i et screenshot.
       h += '<div class="kort"><div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' +
-        (EN?"🔑 PLAYER KEY":"🔑 SPILLERNØGLE") + '</div>' +
-        '<p class="lille" style="margin:0 0 6px">' + (EN
-          ? "You got this from the club. Once per device."
-          : "Den har du fået af klubben. Kun én gang på denne enhed.") + '</p>' +
-        '<input class="felt" data-felt="noegleUdkast" value="' + esc(S.noegleAaben ? (S.noegleUdkast||"") : (S.spillerNoegle||"")) +
-        '" placeholder="' + (EN?"player key":"spillernøgle") + '" autocapitalize="off" spellcheck="false">' +
-        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="noegleGem">' +
-        (EN?"Save":"Gem") + '</button></div></div>';
+        (EN?"🔑 PLAYER KEY":"🔑 SPILLERNØGLE") + '</div>';
+      if (S.spillerNoegle && !S.nyNoegleAaben) {
+        h += '<div style="display:flex;align-items:center;gap:8px">' +
+          '<p class="lille" style="margin:0;flex:1;color:var(--vundet)">\u2713 ' + (EN?"Key saved and in use.":"N\u00f8gle gemt og i brug.") + '</p>' +
+          '<button class="knap valg" style="flex:none;padding:7px 13px;font-size:12px" data-a="nyNoegleAabn">' + (EN?"Change":"Skift") + '</button></div>';
+      } else {
+        h += '<p class="lille" style="margin:0 0 6px">' + (EN
+            ? "You got this from the club. Once per device."
+            : "Den har du fået af klubben. Kun én gang på denne enhed.") + '</p>' +
+          '<div style="display:flex;gap:6px;align-items:stretch">' +
+          '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:' + (S.visNoegle?"none":"disc") + '" data-felt="noegleUdkast" value="' + esc(S.noegleUdkast||"") +
+          '" placeholder="' + (EN?"new player key":"ny spillern\u00f8gle") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:13px" data-a="visSkift" data-v="visNoegle">' + (S.visNoegle ? "\ud83d\ude48" : "\ud83d\udc41") + '</button>' + '</div>' +
+          '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="noegleGem">' + (EN?"Save":"Gem") + '</button>' +
+          (S.spillerNoegle ? '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="nyNoegleAabn">' + (EN?"Cancel":"Annull\u00e9r") + '</button>' : '') + '</div>';
+      }
+      h += '</div>';
 
       h += '<div class="kort"><div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' +
-        (EN?"🏷 CLUB CODE":"🏷 KLUBKODE") + '</div>' +
-        '<p class="lille" style="margin:0 0 6px">' + (S.klubKode
-          ? (EN?"Connected. Analyses and the coach layer are on.":"Forbundet. Analyser og trænerlaget er slået til.")
-          : (EN?"📱 Everything stays on this phone. Nothing is sent anywhere."
-             :"📱 Alt bliver på denne telefon. Intet sendes nogen steder.")) + '</p>' +
-        '<input class="felt" data-felt="kodeUdkast" value="' + esc(S.kodeAaben ? (S.kodeUdkast||"") : (S.klubKode||"")) +
-        '" placeholder="' + (EN?"club code":"klubkode") + '" autocapitalize="off" spellcheck="false">' +
-        '<div class="raekke" style="margin-top:6px">' +
-        '<button class="knap" style="background:var(--grus)" data-a="klubKodeGem">' + (EN?"Save":"Gem") + '</button>' +
-        (S.klubKode ? '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:12px" data-a="klubKodeRyd">' + (EN?"Remove":"Fjern") + '</button>' : '') +
-        '</div></div>';
+        (EN?"🏷 CLUB CODE":"🏷 KLUBKODE") + '</div>';
+      if (S.klubKode && !S.nyKodeAaben) {
+        h += '<div style="display:flex;align-items:center;gap:8px">' +
+          '<p class="lille" style="margin:0;flex:1;color:var(--vundet)">\u2713 ' + (EN?"Connected \u2014 analyses and the coach layer are on.":"Forbundet \u2014 analyser og tr\u00e6nerlaget er sl\u00e5et til.") + '</p>' +
+          '<button class="knap valg" style="flex:none;padding:7px 13px;font-size:12px" data-a="nyKodeAabn">' + (EN?"Change":"Skift") + '</button>' +
+          '<button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px;color:var(--daempet)" data-a="klubKodeRyd">' + (EN?"Remove":"Fjern") + '</button></div>';
+      } else {
+        h += '<p class="lille" style="margin:0 0 6px">' + (S.klubKode
+            ? (EN?"Enter the new club code.":"Indtast den nye klubkode.")
+            : (EN?"📱 Everything stays on this phone. Nothing is sent anywhere."
+               :"📱 Alt bliver på denne telefon. Intet sendes nogen steder.")) + '</p>' +
+          '<div style="display:flex;gap:6px;align-items:stretch">' +
+          '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:' + (S.visKode?"none":"disc") + '" data-felt="kodeUdkast" value="' + esc(S.kodeUdkast||"") +
+          '" placeholder="' + (EN?"club code":"klubkode") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:13px" data-a="visSkift" data-v="visKode">' + (S.visKode ? "\ud83d\ude48" : "\ud83d\udc41") + '</button>' + '</div>' +
+          '<div class="raekke" style="margin-top:6px">' +
+          '<button class="knap" style="background:var(--grus)" data-a="klubKodeGem">' + (EN?"Save":"Gem") + '</button>' +
+          (S.klubKode ? '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="nyKodeAabn">' + (EN?"Cancel":"Annull\u00e9r") + '</button>' : '') +
+          '</div>';
+      }
+      h += '</div>';
 
       if (S.klubKode) {
         h += '<div class="kort" style="border-left:3px solid ' + (S.stigeTilvalgt?'var(--guld)':'var(--kant)') + '"><div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' +

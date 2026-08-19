@@ -450,7 +450,7 @@ const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved:
 // Versionsstemplet ét sted. Foden laeser denne. Foer stod tallet i hver fil
 // to gange, og de to var uenige: engelsk sagde v1.7 · July, dansk v2.1 · juli,
 // mens koden var v3.0.5k. ATP-dateringerne er IKKE versionsstempler og roeres ikke.
-const VERSION_KORT = "v3.0.11";
+const VERSION_KORT = "v3.0.12";
 const KODEHASH = 2293772734;
 const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
 const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
@@ -1648,9 +1648,9 @@ const A = {
     S.stigeHenter = false;
     if (r.fejl) {
       S.stigeBesked = { fejl: true, t:
-        r.fejl === "ikke-tilvalgt" ? (EN?"Turn the ladder on under \u2699 Settings first.":"Sl\u00e5 stigen til under \u2699 Indstillinger f\u00f8rst.") :
+        r.fejl === "ikke-tilvalgt" ? (EN?"Turn the streak on under \u2699 Settings first.":"Sl\u00e5 streaken til under \u2699 Indstillinger f\u00f8rst.") :
         r.fejl === "intet-hold"    ? (EN?"The club hasn't put you on a team yet \u2014 ask your coach.":"Klubben har ikke sat dig p\u00e5 et hold endnu \u2014 sp\u00f8rg tr\u00e6neren.") :
-        r.fejl === "hold-fra"      ? (EN?"Your team hasn't turned the ladder on yet.":"Dit hold har ikke sl\u00e5et stigen til endnu.") :
+        r.fejl === "hold-fra"      ? (EN?"Your team hasn't turned the streak on yet.":"Dit hold har ikke sl\u00e5et streaken til endnu.") :
         r.fejl === "ikke-godkendt" ? (EN?"Awaiting the club's approval.":"Afventer klubbens godkendelse.") :
         r.fejl === "mangler-klubkode" || r.fejl === "mangler-spillernoegle"
           ? (EN?"Enter club code and player key under \u2699 Settings first.":"Indtast klubkode og spillern\u00f8gle under \u2699 Indstillinger f\u00f8rst.")
@@ -1823,7 +1823,7 @@ function turneringsKontekst(EN){
   if (!e) return "";
   var raad = hvornaar.indexOf("DAG")>=0 || hvornaar==="TODAY"
     ? (EN?" — close out efficiently and recover: two matches in one day.":" — luk kampen effektivt og restituér: to kampe på én dag.")
-    : (EN?" — manage the legs; the ladder continues.":" — forvalt kræfterne; stigen fortsætter.");
+    : (EN?" — manage the legs; the streak continues.":" — forvalt kræfterne; streaken fortsætter.");
   return '<p class="lille" style="margin:8px 0 0;border-top:1px dashed var(--kant);padding-top:8px">🗓 <b style="color:var(--guld)">' + (EN?"NEXT":"NÆSTE") + ' (' + hvornaar + ' ' + (EN?"at":"kl.") + ' ' + e.tid + '):</b> ' + e.titel + ' ' + e.detalje + raad + '</p>';
 }
 
@@ -2054,7 +2054,7 @@ function render() {
       h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"START MATCH":"START KAMP") + '</b><br><small id="hero-sub">' + (EN?"register points live from the court":"registrér point live fra banen") + '</small></span><span class="dev-pil">→</span></button>';
       h += '<div class="dev-grid">' +
         (S.klubKode ? _flise("tab","traener","🧑‍🏫",(EN?"Your coach":"Din træner"),_traenerStatus(EN),"dev-kant-guld") : "") +
-        (S.klubKode && S.traenerData && S.traenerData.stigeHoldTil ? _flise("stigeAabn","","🔥",(EN?"The ladder":"Stigen"),(EN?"your group's streaks":"holdets streaks"),"dev-kant-guld") : "") +
+        (S.klubKode && S.traenerData && S.traenerData.stigeHoldTil ? _flise("stigeAabn","","🔥",(EN?"Streak":"Streak"),(EN?"your group's streaks":"holdets streaks"),"dev-kant-guld") : "") +
         _flise("tab","fysisk","💪",(EN?"Train":"Træn"),(EN?"todays session & running":"dagens pas & løb"),"dev-kant-staal") +
         _flise("tab","historik","📊",(EN?"Statistics":"Statistik"),S.gemte.length+(EN?" matches · trends":" kampe · tendenser"),"dev-kant-staal") +
         _flise("tab","planer","🎯",(EN?"Rivals":"Modstandere"),(EN?"plans & notes":"planer & noter"),"dev-kant-staal") +
@@ -2166,23 +2166,23 @@ function render() {
     // ══════════════════════════════════════════════════════════════
     } else if (S.tab === "stige") {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") +
-           '<b style="font-size:16px">🔥 ' + (EN?"The ladder":"Stigen") + '</b></div>';
+           '<b style="font-size:16px">🔥 ' + (EN?"Streak":"Streak") + '</b></div>';
       if (!S.stigeTilvalgt) {
         h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
-          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' + (EN?"🔥 THE STREAK LADDER":"🔥 STREAK-STIGEN") + '</div>' +
+          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' + "🔥 STREAK" + '</div>' +
           '<p class="lille" style="margin:0 0 8px">' + (EN
-            ? "The ladder shows how many weeks in a row each player on your team has kept their training going \u2014 first names and numbers, nothing else. It is OFF until you choose it, and the choice belongs with the ladder item in the parental consent."
-            : "Stigen viser, hvor mange uger i tr\u00e6k hver spiller p\u00e5 holdet har holdt tr\u00e6ningen k\u00f8rende \u2014 fornavne og tal, intet andet. Den er sl\u00e5et FRA, indtil I selv v\u00e6lger den til, og valget h\u00f8rer sammen med stige-punktet i for\u00e6ldresamtykket.") + '</p>' +
+            ? "The streak shows how many weeks in a row each player on your team has kept their training going \u2014 first names and numbers, nothing else. It is OFF until you choose it, and the choice belongs with the streak item in the parental consent."
+            : "Streaken viser, hvor mange uger i tr\u00e6k hver spiller p\u00e5 holdet har holdt tr\u00e6ningen k\u00f8rende \u2014 fornavne og tal, intet andet. Den er sl\u00e5et FRA, indtil I selv v\u00e6lger den til, og valget h\u00f8rer sammen med streak-punktet i for\u00e6ldresamtykket.") + '</p>' +
           '<button class="knap" style="background:var(--grus)" data-a="tab" data-v="opsaet">' + (EN?"Go to Settings":"G\u00e5 til Indstillinger") + '</button></div>';
       } else {
         const sd = S.stigeData;
-        if (S.stigeHenter && !sd) h += '<div class="kort"><p class="lille" style="margin:0">' + (EN?"Fetching the ladder \u2026":"Henter stigen \u2026") + '</p></div>';
+        if (S.stigeHenter && !sd) h += '<div class="kort"><p class="lille" style="margin:0">' + (EN?"Fetching the streak \u2026":"Henter streaken \u2026") + '</p></div>';
         if (sd) {
           const sp = (sd.spillere || []).slice().sort(function(a,b){ return (b.fys+b.tennis)-(a.fys+a.tennis); });
           const aktive = sp.filter(function(p){ return (p.fys+p.tennis) > 0; }).length;
           h += '<div class="kort"><h3 style="margin:0 0 2px">🏆 ' + esc(sd.hold || "") + '</h3>' +
             '<p class="lille" style="margin:0 0 8px">' + (EN?"Total streak (physical + tennis), weeks in a row. Friendly competition! 🔥":"Samlet streak (fysisk + tennis), uger i tr\u00e6k. Venlig konkurrence! 🔥") + '</p>';
-          if (!sp.length) h += '<p class="lille" style="margin:0">' + (EN?"No one on the ladder yet \u2014 be the first! 💪":"Ingen p\u00e5 stigen endnu \u2014 v\u00e6r den f\u00f8rste! 💪") + '</p>';
+          if (!sp.length) h += '<p class="lille" style="margin:0">' + (EN?"No one on the streak yet \u2014 be the first! 💪":"Ingen p\u00e5 streaken endnu \u2014 v\u00e6r den f\u00f8rste! 💪") + '</p>';
           sp.forEach(function(p, i){
             const total = p.fys + p.tennis;
             const m = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:var(--daempet);font-weight:700">'+(i+1)+'</span>';
@@ -2262,7 +2262,7 @@ function render() {
 
       if (S.klubKode) {
         h += '<div class="kort" style="border-left:3px solid ' + (S.stigeTilvalgt?'var(--guld)':'var(--kant)') + '"><div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' +
-          (EN?"🔥 THE STREAK LADDER":"🔥 STREAK-STIGEN") + '</div>' +
+          "🔥 STREAK" + '</div>' +
           '<p class="lille" style="margin:0 0 8px">' + (EN
             ? "Shares your training streaks with your team \u2014 first name and two numbers, nothing else. OFF by default: without the opt-in the numbers never leave this phone. Opting out again deletes them at the club. The opt-in belongs with the ladder item in the parental consent."
             : "Deler dine tr\u00e6ningsstreaks med holdet \u2014 fornavn og to tal, intet andet. FRA som standard: uden tilvalg forlader tallene aldrig denne telefon. V\u00e6lger I fra igen, slettes tallene hos klubben. Tilvalget h\u00f8rer sammen med stige-punktet i for\u00e6ldresamtykket.") + '</p>' +

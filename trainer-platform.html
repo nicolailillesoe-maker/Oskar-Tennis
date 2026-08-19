@@ -268,6 +268,48 @@ async function hentEvalUdkast(n) {
   render();
 }
 
+// Tilmeldinger + truppens servertal. Egen funktion (19/8): kortet bor nu
+// under Indstillinger, og auto-Tjek ved sideindlæsning kalder direkte —
+// aldrig via et knap-klik, der forudsætter en bestemt skærm.
+function hentTilmeldinger(){
+
+    if (S.tilmHenter) return;
+    if (!lager.hent("klubkode","")) { S.syncBesked={fejl:true,t:"Indtast klubkoden f\u00f8rst."}; render(); return; }
+    S.tilmHenter = true; S.syncBesked = null; render();
+    sync("hent-hold", {}).then(function(r){
+      S.tilmHenter = false;
+      if (r && r.fejl) { S.syncBesked={fejl:true,t:"Kunne ikke hente: "+r.fejl}; render(); return; }
+      S.tilmeldinger = (r && r.hold) || [];   // maalt: hent-hold svarer { hold: [...] }
+      S.stigeHold = (r && r.stige_hold) || []; lager.gem("stigehold", S.stigeHold);
+      // v2.5 den anden vej (fund 18/8 sen aften): serverens tal laa i svaret,
+      // men naaede aldrig trupvisningen — detaljen viste lokale nuller for en
+      // spiller med 7 kampe paa serveren. Nu flettes de ind pr. noegle.
+      var _prNoegle = {};
+      S.tilmeldinger.forEach(function(x){ if (x.spillernoegle) _prNoegle[x.spillernoegle] = x; });
+      (S.truppen||[]).forEach(function(t3){
+        var srv = t3.noegle && _prNoegle[t3.noegle]; if (!srv) return;
+        if (srv.fornavn) { S.srvNavne = S.srvNavne || {}; S.srvNavne[t3.noegle] = srv.fornavn; }
+        var d3 = DATA.spillere[t3.navn]; if (!d3) return;
+        var kr = Array.isArray(srv.kampresume) ? srv.kampresume : [];
+        d3.kampe = kr.length;
+        d3.sejre = kr.filter(function(k){ return k && k.vundet; }).length;
+        d3.fysStreak = srv.fys_streak || 0;
+        d3.tennisStreak = srv.tennis_streak || 0;
+        d3.stigeTil = !!srv.stige_tilvalgt;
+        if (Array.isArray(srv.selvvurderinger)) d3.selvvurderinger = srv.selvvurderinger;
+        if (Array.isArray(srv.traeningsresume)) d3.trResume = srv.traeningsresume;
+        if (Array.isArray(srv.kampresume)) d3.kampResume = srv.kampresume;
+        if (srv.opdateret) d3.sidsteTraening = String(srv.opdateret).slice(0, 10);
+      });
+      lager.gem("srvnavne", S.srvNavne || {});
+      S.tilmHentet = new Date().toISOString();
+      var afv = S.tilmeldinger.filter(function(x){ return x.status === "afventer"; }).length;
+      S.syncBesked = { fejl:false, t: afv ? afv + " ny" + (afv===1?"":"e") + " tilmelding" + (afv===1?"":"er") + " \u2713"
+                                        : "Ingen nye tilmeldinger \u2713" };
+      render();
+    }).catch(function(){ S.tilmHenter=false; S.syncBesked={fejl:true,t:"Ingen forbindelse."}; render(); });
+}
+
 function syncFejltekst(r) {
   if (r.fejl === "mangler-klubkode") return "Indtast klubkoden først.";
   if (r.fejl === "adgang") return "Klubkoden blev afvist.";
@@ -476,31 +518,8 @@ function renderTraener(){
   }
   if (S.tab==="hjem") {
     h += '<p style="margin:16px 2px 4px;font-size:12.5px;color:var(--daempet)">Vælg, hvad du vil i gang med</p>';
-    // ── NYE TILMELDINGER · familier, der har oprettet sig og venter paa klubben
-    {
-      const afv = (S.tilmeldinger||[]).filter(function(x){ return x.status === "afventer"; });
-      h += '<div class="kort" style="border-left:3px solid ' + (afv.length ? 'var(--guld)' : 'var(--kant)') + '">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-          '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udce5 NYE TILMELDINGER' +
-          (afv.length ? ' <span style="background:var(--guld);color:var(--nat);padding:1px 6px;border-radius:7px;margin-left:5px">'+afv.length+'</span>' : '') + '</div>' +
-          '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="tilm-hent">' +
-          (S.tilmHenter ? '\u2026' : (S.tilmHentet ? 'Opdatér' : 'Tjek')) + '</button></div>';
-      if (!S.tilmHentet) {
-        h += '<p class="lille" style="margin:6px 0 0">Tryk Tjek for at se, om nogen familier har oprettet sig.</p>';
-      } else if (!afv.length) {
-        h += '<p class="lille" style="margin:6px 0 0">Ingen venter på svar lige nu.</p>';
-      } else {
-        afv.forEach(function(t2){
-          h += '<div style="border-top:1px solid var(--kant);padding:9px 0">' +
-            '<div style="font-size:13px;font-weight:700">'+esc(t2.fornavn||'Spiller')+'</div>' +
-            '<div class="lille" style="margin-bottom:7px">'+esc(t2.spillernoegle||'')+(t2.hold?' \u00b7 '+esc(t2.hold):'')+'</div>' +
-            '<div class="raekke"><button class="knap" style="background:var(--vundet)" data-act="tilm-svar" data-v="'+esc(t2.spillernoegle)+'~~godkendt">\u2713 Godkend</button>' +
-            '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-act="tilm-svar" data-v="'+esc(t2.spillernoegle)+'~~afvist">Afvis</button></div></div>';
-        });
-        h += '<p class="lille" style="margin:8px 0 0;font-style:italic">Godkendte spillere lægges automatisk i din trup med deres nøgle.</p>';
-      }
-      h += '</div>';
-    }
+    // NYE TILMELDINGER-kortet er FLYTTET til ⚙ Indstillinger (19/8, Nicolai:
+    // "kun den faktiske funktionalitet på forsiden"). Auto-Tjek kører stadig.
     if (S.syncBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
       (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
     h += '</div>';
@@ -529,6 +548,31 @@ function faneKnap(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'"
 // ═══════════════════════════════════════════════════════
 function traenerIndstillinger(){
   let h = '';
+    // ── NYE TILMELDINGER · familier, der har oprettet sig og venter paa klubben
+    {
+      const afv = (S.tilmeldinger||[]).filter(function(x){ return x.status === "afventer"; });
+      h += '<div class="kort" style="border-left:3px solid ' + (afv.length ? 'var(--guld)' : 'var(--kant)') + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+          '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udce5 NYE TILMELDINGER' +
+          (afv.length ? ' <span style="background:var(--guld);color:var(--nat);padding:1px 6px;border-radius:7px;margin-left:5px">'+afv.length+'</span>' : '') + '</div>' +
+          '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="tilm-hent">' +
+          (S.tilmHenter ? '\u2026' : (S.tilmHentet ? 'Opdatér' : 'Tjek')) + '</button></div>';
+      if (!S.tilmHentet) {
+        h += '<p class="lille" style="margin:6px 0 0">Tryk Tjek for at se, om nogen familier har oprettet sig.</p>';
+      } else if (!afv.length) {
+        h += '<p class="lille" style="margin:6px 0 0">Ingen venter på svar lige nu.</p>';
+      } else {
+        afv.forEach(function(t2){
+          h += '<div style="border-top:1px solid var(--kant);padding:9px 0">' +
+            '<div style="font-size:13px;font-weight:700">'+esc(t2.fornavn||'Spiller')+'</div>' +
+            '<div class="lille" style="margin-bottom:7px">'+esc(t2.spillernoegle||'')+(t2.hold?' \u00b7 '+esc(t2.hold):'')+'</div>' +
+            '<div class="raekke"><button class="knap" style="background:var(--vundet)" data-act="tilm-svar" data-v="'+esc(t2.spillernoegle)+'~~godkendt">\u2713 Godkend</button>' +
+            '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-act="tilm-svar" data-v="'+esc(t2.spillernoegle)+'~~afvist">Afvis</button></div></div>';
+        });
+        h += '<p class="lille" style="margin:8px 0 0;font-style:italic">Godkendte spillere lægges automatisk i din trup med deres nøgle.</p>';
+      }
+      h += '</div>';
+    }
     // ── OPSÆTNING · klubkoden bor på enheden, aldrig i koden
   const kk = lager.hent("klubkode","");
   const antalN = Object.keys(S.noegler||{}).length;
@@ -572,10 +616,10 @@ function traenerIndstillinger(){
     (S.truppen||[]).forEach(function(p){ if (p.gruppe && grupperILive.indexOf(p.gruppe) === -1) grupperILive.push(p.gruppe); });
     const antalTil = S.stigeHold.length;
     h += '<div class="kort" style="border-left:3px solid ' + (antalTil ? 'var(--guld)' : 'var(--kant)') + '">' +
-      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udd25 STREAK-STIGEN</div>' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udd25 STREAK</div>' +
       '<p class="lille" style="margin:6px 0 0">Holdets tr\u00e6ningsstreaks som venlig konkurrence i spillernes app \u2014 kun fornavne og tal. FRA som standard; du v\u00e6lger til pr. hold, og hver familie skal OGS\u00c5 selv sige ja i deres app (og i for\u00e6ldresamtykkets stige-punkt), f\u00f8r deres barn kan ses.</p>';
     if (!grupperILive.length) {
-      h += '<p class="lille" style="margin:8px 0 0;font-style:italic">Skriv din trup ind under \ud83d\udc65 MIN TRUP f\u00f8rst \u2014 s\u00e5 kan stigen t\u00e6ndes pr. hold.</p>';
+      h += '<p class="lille" style="margin:8px 0 0;font-style:italic">Skriv din trup ind under \ud83d\udc65 MIN TRUP f\u00f8rst \u2014 s\u00e5 kan streaken t\u00e6ndes pr. hold.</p>';
     } else {
       grupperILive.forEach(function(g){
         var til = S.stigeHold.indexOf(g) !== -1;
@@ -1117,42 +1161,7 @@ document.addEventListener("click", function(e){
     S.rejse.trin = (S.rejse.trin || 0) + 1;
     if (S.rejse.trin >= 3) { S.rejse.faerdig = true; S.tab = "hjem"; }
     lager.gem("rejse", S.rejse); render(); }
-  else if (act==="tilm-hent"){
-    if (S.tilmHenter) return;
-    if (!lager.hent("klubkode","")) { S.syncBesked={fejl:true,t:"Indtast klubkoden f\u00f8rst."}; render(); return; }
-    S.tilmHenter = true; S.syncBesked = null; render();
-    sync("hent-hold", {}).then(function(r){
-      S.tilmHenter = false;
-      if (r && r.fejl) { S.syncBesked={fejl:true,t:"Kunne ikke hente: "+r.fejl}; render(); return; }
-      S.tilmeldinger = (r && r.hold) || [];   // maalt: hent-hold svarer { hold: [...] }
-      S.stigeHold = (r && r.stige_hold) || []; lager.gem("stigehold", S.stigeHold);
-      // v2.5 den anden vej (fund 18/8 sen aften): serverens tal laa i svaret,
-      // men naaede aldrig trupvisningen — detaljen viste lokale nuller for en
-      // spiller med 7 kampe paa serveren. Nu flettes de ind pr. noegle.
-      var _prNoegle = {};
-      S.tilmeldinger.forEach(function(x){ if (x.spillernoegle) _prNoegle[x.spillernoegle] = x; });
-      (S.truppen||[]).forEach(function(t3){
-        var srv = t3.noegle && _prNoegle[t3.noegle]; if (!srv) return;
-        if (srv.fornavn) { S.srvNavne = S.srvNavne || {}; S.srvNavne[t3.noegle] = srv.fornavn; }
-        var d3 = DATA.spillere[t3.navn]; if (!d3) return;
-        var kr = Array.isArray(srv.kampresume) ? srv.kampresume : [];
-        d3.kampe = kr.length;
-        d3.sejre = kr.filter(function(k){ return k && k.vundet; }).length;
-        d3.fysStreak = srv.fys_streak || 0;
-        d3.tennisStreak = srv.tennis_streak || 0;
-        d3.stigeTil = !!srv.stige_tilvalgt;
-        if (Array.isArray(srv.selvvurderinger)) d3.selvvurderinger = srv.selvvurderinger;
-        if (Array.isArray(srv.traeningsresume)) d3.trResume = srv.traeningsresume;
-        if (Array.isArray(srv.kampresume)) d3.kampResume = srv.kampresume;
-        if (srv.opdateret) d3.sidsteTraening = String(srv.opdateret).slice(0, 10);
-      });
-      lager.gem("srvnavne", S.srvNavne || {});
-      S.tilmHentet = new Date().toISOString();
-      var afv = S.tilmeldinger.filter(function(x){ return x.status === "afventer"; }).length;
-      S.syncBesked = { fejl:false, t: afv ? afv + " ny" + (afv===1?"":"e") + " tilmelding" + (afv===1?"":"er") + " \u2713"
-                                        : "Ingen nye tilmeldinger \u2713" };
-      render();
-    }).catch(function(){ S.tilmHenter=false; S.syncBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
+  else if (act==="tilm-hent"){ hentTilmeldinger(); }
   else if (act==="tilm-svar"){
     var dele = String(v).split("~~"), noegle = dele[0], nyStatus = dele[1];
     var post = (S.tilmeldinger||[]).filter(function(x){ return x.spillernoegle === noegle; })[0];
@@ -1191,7 +1200,7 @@ document.addEventListener("click", function(e){
       var rest = m.length;
       var faerdig = function(){
         S.stigeTravl = false;
-        S.syncBesked = { fejl:false, t: "\ud83d\udd25 Stigen er " + (til ? "T\u00c6NDT" : "slukket") + " for " + g +
+        S.syncBesked = { fejl:false, t: "\ud83d\udd25 Streaken er " + (til ? "T\u00c6NDT" : "slukket") + " for " + g +
           (til && m.length ? " \u00b7 " + m.length + " spiller" + (m.length===1?"":"e") + " har f\u00e5et holdet sat" : "") + " \u2713" };
         render();
       };
@@ -1299,10 +1308,7 @@ window.__oskarInit = function(){
   // Auto-Tjek (19/8, Nicolai: "automatisér al den transport"): med klubkode
   // hentes tilmeldinger og truppens tal af sig selv, én gang pr. sideindlæsning.
   setTimeout(function(){ try {
-    if (lager.hent("klubkode","") && !S.tilmHentet) {
-      var kb = document.querySelector('[data-act="tilm-hent"]');
-      if (kb) kb.click();
-    }
+    if (lager.hent("klubkode","") && !S.tilmHentet) hentTilmeldinger();
   } catch (e) {} }, 500);
   render();
 };

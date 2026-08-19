@@ -534,7 +534,7 @@ const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved:
 // Versionsstemplet ét sted. Foden laeser denne. Foer stod tallet i hver fil
 // to gange, og de to var uenige: engelsk sagde v1.7 · July, dansk v2.1 · juli,
 // mens koden var v3.0.5k. ATP-dateringerne er IKKE versionsstempler og roeres ikke.
-const VERSION_KORT = "v3.0.10";
+const VERSION_KORT = "v3.0.11";
 const KODEHASH = 1187643301;
 const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
 const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
@@ -1743,6 +1743,20 @@ const A = {
     if (S.stigeTilvalgt) { _krop.stige_tilvalgt = true; _krop.fys_streak = ugeMaal(S.fysLog).streak; _krop.tennis_streak = ugeMaal(S.ttLog).streak; }
     else _krop.stige_tilvalgt = false;
     _krop.traeningsresume = traeningsResume();
+    // Selvvurderingen ER pas-kvaliteten (19/8, flow-designet): spillerens egen
+    // 1-10 pr. pas rejser som selvvurdering — fysisk pas → fysisk, træning m.
+    // træner → traener, selv-træning → selv. Seneste 14 dage, højst 100 poster.
+    _krop.selvvurderinger = (function(){
+      const graense = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+      const ud = [];
+      (S.fysLog || []).forEach(function(e){
+        if (e.d >= graense && Number.isInteger(e.k) && e.k >= 1 && e.k <= 10) ud.push({ d: e.d, o: "fysisk", s: e.k });
+      });
+      (S.ttLog || []).forEach(function(e){
+        if (e.d >= graense && Number.isInteger(e.k) && e.k >= 1 && e.k <= 10) ud.push({ d: e.d, o: (e.t === 2 ? "traener" : "selv"), s: e.k });
+      });
+      return ud.slice(0, 100);
+    })();
     const op  = await sync("gem", _krop);
     const ned = op.fejl ? op : await sync("hent", {});
     S.syncHenter = false;
@@ -2153,14 +2167,20 @@ function render() {
           const uf = (td.ugefokus||[]).slice(-1)[0];
           if (uf) h += '<p class="lille" style="margin:6px 0 8px">' + (EN?"This week's focus: ":"Ugens fokus: ") +
             '<b style="color:var(--guld)">' + esc(uf.omraade) + '</b></p>';
+          const _idag = new Date().toISOString().slice(0, 10);
           ["fysisk","traener","selv"].forEach(function(o){
-            const tv = (tsp.vurderinger||[]).filter(function(x){ return x.o===o; }).slice(-1)[0];
+            const alleTv = (tsp.vurderinger||[]).filter(function(x){ return x.o===o; });
+            const tv = alleTv.slice(-1)[0];
+            const tvIdag = alleTv.filter(function(x){ return x.d===_idag; });
             const sv = (tsp.selvvurderinger||[]).filter(function(x){ return x.o===o; }).slice(-1)[0];
             if (!tv && !sv) return;
             h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--kant)">' +
               '<span style="font-size:12.5px">' + OMR[o].i + ' ' + OMR[o].n + '</span>' +
               '<span style="display:flex;gap:10px;align-items:center">' +
-                (tv ? '<b style="font-size:15px;color:'+FV(tv.s)+'">'+tv.s+'</b>' : '<span style="color:var(--daempet)">–</span>') +
+                (tvIdag.length > 1
+                  ? tvIdag.map(function(x){ return '<b style="font-size:15px;color:'+FV(x.s)+'">'+x.s+'</b>'; }).join('<span class="lille" style="opacity:.55"> · </span>') +
+                    '<span class="lille" style="opacity:.7"> ' + (EN?"today":"i dag") + '</span>'
+                  : (tv ? '<b style="font-size:15px;color:'+FV(tv.s)+'">'+tv.s+'</b>' : '<span style="color:var(--daempet)">–</span>')) +
                 (sv ? '<span class="lille" style="opacity:.7">' + (EN?"you ":"dig ") + sv.s + '</span>' : '') +
               '</span></div>';
           });

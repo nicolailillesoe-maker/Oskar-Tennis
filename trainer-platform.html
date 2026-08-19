@@ -190,14 +190,25 @@ async function sync(handling, krop, spillerNoegle) {
 
 // Trænerens vurdering af én spiller sendes op med det samme.
 // Spillernøglen slås op i den lokale kobling navn → nøgle.
+// Områderne oversat til det delte lags sprog. RETTET 19/8 (målt): "spilselv"
+// røg før i "traener"-spanden, fordi oversættelsen tjekkede på "selv" —
+// spil-selv-scores stod som trænerbane-scores ude hos spilleren.
+function omrTilSync(omr) {
+  return omr === "fysisk" ? "fysisk" : (omr === "spilselv" || omr === "selv" ? "selv" : "traener");
+}
+
 async function sendVurdering(spillerNavn) {
   const n = (S.noegler || {})[spillerNavn];
   if (!n) return;
+  // Hændelser, aldrig celler (19/8): alle vurderinger rejser (loft 300; vagten
+  // tager højst 400). Fornavnet er FAMILIENS felt — der sendes serverens eget
+  // navn retur (rundtur), så trænerens gem aldrig overskriver familiens valg.
   const mine = S.vurderinger.filter(v => v.spiller === spillerNavn)
-    .map(v => ({ d: v.dato, o: v.omraade === "fysisk" ? "fysisk" : (v.omraade === "selv" ? "selv" : "traener"),
-                 s: v.score, f: v.fokus || null }));
-  const r = await sync("gem", { fornavn: spillerNavn.split(" ")[0],
-    vurderinger: mine, fokuspunkter: S.fokuspunkter[spillerNavn] || [] }, n);
+    .map(v => ({ d: v.dato, o: omrTilSync(v.omraade), s: v.score, f: v.fokus || null }))
+    .slice(-300);
+  const krop = { vurderinger: mine, fokuspunkter: S.fokuspunkter[spillerNavn] || [] };
+  krop.fornavn = (S.srvNavne || {})[n] || spillerNavn.split(" ")[0];
+  const r = await sync("gem", krop, n);
   S.syncBesked = r.fejl ? { fejl: true, t: syncFejltekst(r) } : { fejl: false, t: "Sendt til " + spillerNavn.split(" ")[0] + " ✓" };
   render();
 }
@@ -222,6 +233,8 @@ let S = {
   // Kobling mellem spillernavn og spillernøgle. Nøglerne udleveres af klubben
   // og skrives ind én gang pr. enhed — de står aldrig i koden.
   noegler: lager.hent("noegler", {}),
+  // Serverens egne fornavne pr. nøgle (19/8): familiens valgte navn, rundtur.
+  srvNavne: lager.hent("srvnavne", {}),
   syncBesked: null, syncHenter: false,
   opsAaben: false, kkUdkast: "", noegleFor: null, noegleUdkast: "", visKode: false, visTrupN: false, trupRet: null, retGruppe: undefined, retNoegle: undefined,
   // Godkendte evalueringer. Fritekst, som FØR kun levede i hukommelsen og
@@ -637,6 +650,29 @@ function spillerDetalje(navn){
     h += '</div>';
   }
 
+  // ── VURDERINGER · SENESTE (19/8, flow-designet): trænerens hændelser og
+  // spillerens egen dom (fra hans træningslog, via synken) side om side.
+  // Det ER Carstens MVP: "spillerens egen vurdering ved siden af".
+  (function(){
+    const mineV = S.vurderinger.filter(function(v){ return v.spiller === navn; }).slice(-12).reverse();
+    if (!mineV.length) return;
+    const selvV = Array.isArray(s.selvvurderinger) ? s.selvvurderinger : [];
+    h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus);margin-bottom:2px">📋 VURDERINGER · SENESTE</div>' +
+      '<p class="lille" style="margin:0 0 4px">Din score pr. pas · spillerens egen dom samme dag (fra hans træningslog).</p>';
+    mineV.forEach(function(v){
+      const b = skala(v.score);
+      const o = OMRNAVN[v.omraade] || { emoji: "", navn: v.omraade };
+      const sMatch = selvV.filter(function(x){ return x.d === v.dato && x.o === omrTilSync(v.omraade); }).slice(-1)[0];
+      h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:6px 0">' +
+        '<span style="flex:none;width:78px;font-size:11.5px;color:var(--daempet)">' + esc(String(v.dato).slice(5)) + '</span>' +
+        '<span style="flex:1;font-size:12.5px">' + o.emoji + ' ' + esc(o.navn) + '</span>' +
+        '<b style="flex:none;font-size:14px;color:' + b.farve + '">' + v.score + '</b>' +
+        (sMatch ? '<span class="lille" style="flex:none;opacity:.75">spiller ' + sMatch.s + '</span>'
+                : '<span class="lille" style="flex:none;opacity:.35">–</span>') + '</div>';
+    });
+    h += '</div>';
+  })();
+
   // FOKUSPUNKTER · faste kategorier, aldrig fritekst.
   // Referat 11/8: "Terkel arbejder med højde over nettet og bedre inside out
   // — og klubbens andre trænere kan se dem." Det løser samtidig Carstens eget
@@ -802,7 +838,15 @@ function traenerVurder(t){
     const s = DATA.spillere[n], valgt = S.vurderScores[n];
     h += '<div class="kort" style="padding:11px 13px"><div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">' +
       '<div class="avatar" style="width:28px;height:28px;font-size:11px;'+(s.erBruger?'background:var(--is);color:var(--nat)':'')+'">'+init(n)+'</div>' +
-      '<div style="flex:1;font-size:13px;font-weight:700">'+esc(n)+'</div></div>' +
+      '<div style="flex:1;font-size:13px;font-weight:700">'+esc(n)+'</div>' +
+      (function(){
+        // Dagens tidligere pas vises, så tælleren aldrig lyver om dagen (19/8).
+        const idag = new Date().toISOString().slice(0,10);
+        const dv = S.vurderinger.filter(function(x){ return x.spiller===n && x.omraade===S.vurderOmraade && x.dato===idag; });
+        if (!dv.length) return '';
+        return '<span class="lille" style="flex:none">I dag: ' +
+          dv.map(function(x){ return '<b style="color:'+skala(x.score).farve+'">'+x.score+'</b>'; }).join(' · ') + '</span>';
+      })() + '</div>' +
       '<div style="display:flex;gap:7px;justify-content:space-between">';
     KONFIG.farveskala.forEach(function(b){
       const on = valgt === b.max;
@@ -811,8 +855,9 @@ function traenerVurder(t){
     h += '</div></div>';
   });
   if (done===sp.length && done>0){
-    h += '<div class="kort" style="border:1.5px solid var(--vundet);text-align:center"><h3 style="color:var(--vundet);margin:0">✓ Alle vurderet!</h3>' +
-      '<p class="lille" style="margin:4px 0 0">Gemmes til spillernes historik. Ved kvartalets slut samler AI det til en evaluering.</p></div>';
+    h += '<div class="kort" style="border:1.5px solid var(--vundet);text-align:center"><h3 style="color:var(--vundet);margin:0">✓ Passet er gemt!</h3>' +
+      '<p class="lille" style="margin:4px 0 0">Hvert pas gemmes for sig i spillernes historik. Ved rundens slut samler AI det til en evaluering.</p>' +
+      '<div class="raekke" style="margin-top:9px;justify-content:center"><button class="knap valg" style="flex:none;padding:8px 14px" data-act="nyt-pas">➕ Vurdér et nyt pas</button></div></div>';
   }
   return h;
 }
@@ -829,7 +874,7 @@ function skalaForklaring(){
 function traenerKvartal(t){
   const alleSp = []; t.grupper.forEach(g => DATA.grupper[g].spillere.forEach(n => alleSp.push(n)));
   if (!S.kvartalUdkast){
-    let h = '<p class="lille">AI samler kvartalets scores og noter til en evaluering pr. spiller — i klubbens format. Du retter og godkender, så sendes den til spilleren.</p>';
+    let h = '<p class="lille">AI samler rundens scores og noter til en evaluering pr. spiller — i klubbens format. Du retter og godkender, så sendes den til spilleren.</p>';
     if (S.syncBesked) h += '<p class="lille" style="margin:0 2px 8px;color:' + (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
     alleSp.forEach(function(n){
       const s = DATA.spillere[n];
@@ -890,23 +935,32 @@ document.addEventListener("click", function(e){
   if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
-  else if (act==="vurder-omraade"){ S.vurderOmraade=v; render(); }
+  else if (act==="vurder-omraade"){ S.vurderOmraade=v; S.vurderScores = {}; render(); }
   else if (act==="luk-omraade"){ S.vurderOmraade=null; S.vurderGruppe=null; render(); }
   else if (act==="vurder-gruppe"){ S.vurderGruppe=v; render(); }
   else if (act==="luk-gruppe"){ S.vurderGruppe=null; render(); }
   else if (act==="score"){
     const sp = t.dataset.sp;
+    const idag = new Date().toISOString().slice(0,10);
+    // HÆNDELSE, ikke celle (19/8, flow-designet): to pas samme dag må ALDRIG
+    // overskrive hinanden. Et gen-tryk i SAMME pas retter dog blot scoren —
+    // en glidende finger skal ikke blive til to hændelser.
+    let rettet = false;
+    if (S.vurderScores[sp] !== undefined) {
+      for (let j = S.vurderinger.length - 1; j >= 0; j--) {
+        const x = S.vurderinger[j];
+        if (x.spiller === sp && x.omraade === S.vurderOmraade && x.dato === idag) {
+          x.score = +v; x.fokus = ugensFokus(); rettet = true; break;
+        }
+      }
+    }
+    if (!rettet) S.vurderinger.push({ dato: idag, spiller: sp,
+                                      omraade: S.vurderOmraade, score: +v, fokus: ugensFokus() });
     S.vurderScores[sp] = +v;
-    // Vurderingen gemmes med det samme, sammen med ugens fokus.
-    // Uden fokus-koblingen kan vi ikke svare på Carstens spørgsmål:
-    // hvad rykker sig, når vi arbejder med det mentale i tre uger?
-    S.vurderinger = S.vurderinger.filter(x =>
-      !(x.spiller === sp && x.omraade === S.vurderOmraade && x.dato === new Date().toISOString().slice(0,10)));
-    S.vurderinger.push({ dato: new Date().toISOString().slice(0,10), spiller: sp,
-                         omraade: S.vurderOmraade, score: +v, fokus: ugensFokus() });
     lager.gem("vurderinger", S.vurderinger);
     render();
     sendVurdering(sp); }
+  else if (act==="nyt-pas"){ S.vurderScores = {}; render(); }
   else if (act==="kvartal-gen"){ S.kvartalUdkast=v; render(); }
   else if (act==="luk-kvartal"){ S.kvartalUdkast=null; render(); }
   else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekst=(ta&&ta.value)||S.kvartalTekst||""; const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } S.evalueringer=S.evalueringer||{}; S.evalueringer[n]={tekst:tekst,dato:new Date().toISOString().slice(0,10)}; lager.gem("evalueringer", S.evalueringer);
@@ -969,6 +1023,7 @@ document.addEventListener("click", function(e){
       S.tilmeldinger.forEach(function(x){ if (x.spillernoegle) _prNoegle[x.spillernoegle] = x; });
       (S.truppen||[]).forEach(function(t3){
         var srv = t3.noegle && _prNoegle[t3.noegle]; if (!srv) return;
+        if (srv.fornavn) { S.srvNavne = S.srvNavne || {}; S.srvNavne[t3.noegle] = srv.fornavn; }
         var d3 = DATA.spillere[t3.navn]; if (!d3) return;
         var kr = Array.isArray(srv.kampresume) ? srv.kampresume : [];
         d3.kampe = kr.length;
@@ -981,6 +1036,7 @@ document.addEventListener("click", function(e){
         if (Array.isArray(srv.kampresume)) d3.kampResume = srv.kampresume;
         if (srv.opdateret) d3.sidsteTraening = String(srv.opdateret).slice(0, 10);
       });
+      lager.gem("srvnavne", S.srvNavne || {});
       S.tilmHentet = new Date().toISOString();
       var afv = S.tilmeldinger.filter(function(x){ return x.status === "afventer"; }).length;
       S.syncBesked = { fejl:false, t: afv ? afv + " ny" + (afv===1?"":"e") + " tilmelding" + (afv===1?"":"er") + " \u2713"

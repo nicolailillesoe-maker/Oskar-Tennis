@@ -172,6 +172,7 @@ const lager = {
 // nødvendig for at læse holdet, men den kræves for at skrive på én spiller.
 // ══════════════════════════════════════════════════════════════════════
 const SYNC_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/spiller-sync";
+const EVAL_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-evaluering";
 
 async function sync(handling, krop, spillerNoegle) {
   const klub = lager.hent("klubkode", "");
@@ -213,6 +214,60 @@ async function sendVurdering(spillerNavn) {
   render();
 }
 
+// ÆGTE AI-UDKAST (19/8, lukker LLM-oprustningskortets punkt 5): rundens
+// hændelser — trænerens pas-scores, spillerens egne domme, kampresuméer,
+// træningsugetal og fokus — sendes som TAL til analyse-evaluering, og
+// udkastet kommer tilbage. Ingen fritekst sendes; teksten SKABES af kaldet.
+// Fejler noget som helst, falder vi tilbage til den lokale skabelon.
+async function hentEvalUdkast(n) {
+  S.kvartalUdkast = n; S.kvartalAI = null; S.kvartalNote = null;
+  const klub = lager.hent("klubkode", "");
+  const noegle = (S.noegler || {})[n];
+  if (!klub) { S.kvartalNote = "Ingen klubkode — skabelonen vises."; render(); return; }
+  S.kvartalHenter = true; render();
+  try {
+    const idag = new Date().toISOString().slice(0, 10);
+    const d = DATA.spillere[n] || {};
+    const sp = {
+      fornavn: (noegle && (S.srvNavne || {})[noegle]) || n.split(" ")[0],
+      vurderinger: S.vurderinger.filter(function(v){ return v.spiller === n; })
+        .map(function(v){ return { d: v.dato, o: omrTilSync(v.omraade), s: v.score, f: v.fokus || null }; }).slice(-400),
+      selvvurderinger: (Array.isArray(d.selvvurderinger) ? d.selvvurderinger : [])
+        .map(function(v){ return { d: v.d, o: v.o, s: v.s, f: v.f || null }; }).slice(-400),
+      kampresume: (Array.isArray(d.kampResume) ? d.kampResume : []).slice(0, 30)
+        .map(function(k){ return { d: String(k.d || "").slice(0, 10), res: k.res || "", vundet: !!k.vundet,
+          balance: (typeof k.balance === "number" ? k.balance : undefined),
+          bolde: (typeof k.bolde === "number" ? k.bolde : undefined),
+          turnering: k.turnering || undefined }; }),
+      traeningsresume: (Array.isArray(d.trResume) ? d.trResume : []).slice(0, 12)
+        .map(function(w){ return { u: w.u, t: w.t || 0, f: w.f || 0, m: w.m || 0 }; }),
+      fokuspunkter: (S.fokuspunkter[n] || []).slice(0, 10),
+      ugefokus: Object.keys(S.ugefokus || {}).filter(function(u){ return S.ugefokus[u]; }).sort().slice(-15)
+        .map(function(u){ return { u: u, o: S.ugefokus[u] }; }),
+    };
+    var grp = null; Object.keys(DATA.grupper).forEach(function(g){ if (DATA.grupper[g].spillere.indexOf(n) !== -1) grp = g; });
+    if (grp) sp.gruppe = grp;
+    var forrige = (S.evalueringer || {})[n];
+    if (forrige && forrige.dato && forrige.dato < idag) sp.periodeFra = forrige.dato;
+    const styring = new AbortController();
+    const ur = setTimeout(function(){ styring.abort(); }, 90000);
+    const r = await fetch(EVAL_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-klub-noegle": klub },
+      body: JSON.stringify({ sprog: "da", spiller: sp }),
+      signal: styring.signal,
+    });
+    clearTimeout(ur);
+    const svar = await r.json().catch(function(){ return {}; });
+    if (r.ok && svar && svar.evaluering) S.kvartalAI = svar.evaluering;
+    else S.kvartalNote = "AI-udkastet kunne ikke hentes (" + (svar.kode || r.status) + ") — skabelonen vises.";
+  } catch (e) {
+    S.kvartalNote = "Ingen forbindelse — skabelonen vises.";
+  }
+  S.kvartalHenter = false;
+  render();
+}
+
 function syncFejltekst(r) {
   if (r.fejl === "mangler-klubkode") return "Indtast klubkoden først.";
   if (r.fejl === "adgang") return "Klubkoden blev afvist.";
@@ -224,7 +279,7 @@ let S = {
   traener: "Cheftræneren", spiller: "Oskar Lillesø",
   tab: "hjem", aabenSpiller: null,
   vurderOmraade: null, vurderGruppe: null, vurderScores: {},
-  kvartalUdkast: null,
+  kvartalUdkast: null, kvartalAI: null, kvartalHenter: false, kvartalNote: null,
   // ── gemte data
   vurderinger: lager.hent("vurderinger", []),   // {dato, spiller, omraade, score, fokus}
   ugefokus:    lager.hent("ugefokus", {}),      // {"2026-33": "mentalt"}
@@ -610,8 +665,12 @@ function spillerDetalje(navn){
     '<div class="avatar" style="width:48px;height:48px;font-size:19px">'+init(navn)+'</div>' +
     '<div><h1 style="margin:0;font-size:19px">'+esc(navn)+'</h1><p class="lille">'+esc(s.gruppe)+(s.rang?' · DTF #'+s.rang:'')+(s.wtn?' · WTN '+s.wtn:'')+'</p></div></div>';
   h += '<div class="grid2" style="margin-top:8px">' +
-    mini("Kampe", s.kampe) + mini("Sejrsrate", (s.kampe?Math.round(s.sejre/s.kampe*100):0)+"%") +
-    mini("🔥 Fys-streak", s.fysStreak+" uger") + mini("🎾 Træninger", (s.trResume && s.trResume.length ? ((s.trResume[0].t||0)+(s.trResume[0].f||0)) + " denne uge" : s.traeningerKvartal)) + '</div></div>';
+    miniIkon("Kampe", s.kampe, IKON.ketcher) +
+    miniRing("Sejrsrate", (s.kampe?Math.round(s.sejre/s.kampe*100):0)) +
+    miniIkon("Fys-streak · uger", s.fysStreak, IKON.loeber) +
+    (s.trResume && s.trResume.length
+      ? miniIkon("Pas denne uge", (s.trResume[0].t||0)+(s.trResume[0].f||0), IKON.bold)
+      : miniIkon("Træninger", s.traeningerKvartal, IKON.bold)) + '</div></div>';
 
   // ── TRÆNING · SENESTE UGER (19/8) — omfanget fra spillerens egen log:
   // antal tennis, antal fys og timer pr. uge. Aldrig noter, aldrig indhold.
@@ -729,6 +788,43 @@ function spillerDetalje(navn){
   return h;
 }
 function mini(label,v){ return '<div style="background:var(--nat);border-radius:10px;padding:10px 12px"><div style="font-size:19px;font-weight:800">'+v+'</div><div class="lille">'+label+'</div></div>'; }
+
+// ── Illustrative stat-fliser (19/8, Nicolai: "billeder ind i sejrsrate …
+// måske en tennisketcher"). Linjetegnet SVG i husets farver. Tallet står
+// altid som tekst — illustrationen er pynt, aldrig informationsbæreren.
+const IKON = {
+  ketcher: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+    '<g transform="rotate(-38 12 12)">' +
+    '<ellipse cx="12" cy="8" rx="5.6" ry="7" stroke="var(--is)" stroke-width="1.5"/>' +
+    '<path d="M12 1.4v13.2 M6.7 5h10.6 M6.5 11h11" stroke="var(--is)" stroke-width=".7" opacity=".65"/>' +
+    '<path d="M12 15.2v7.2" stroke="var(--guld)" stroke-width="2.4" stroke-linecap="round"/>' +
+    '</g></svg>',
+  bold: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+    '<circle cx="12" cy="12" r="8.6" stroke="var(--guld)" stroke-width="1.6"/>' +
+    '<path d="M5.2 6.2c4 2.4 4 9.2 0 11.6 M18.8 6.2c-4 2.4-4 9.2 0 11.6" stroke="var(--guld)" stroke-width="1.3" opacity=".8"/></svg>',
+  loeber: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+    '<circle cx="14.8" cy="4.1" r="1.9" stroke="var(--is)" stroke-width="1.5"/>' +
+    '<path d="M13.9 7.3 L11.7 12.4 M13.6 7.9 L17.7 9.2 M13.7 8 L10.1 10.1" stroke="var(--is)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<path d="M11.7 12.4 L15.3 15.1 L14.3 20.6 M11.7 12.4 L9.3 16.4 L5.6 18.3" stroke="var(--is)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<path d="M3.2 7.6h3.4 M2 11h2.6" stroke="var(--guld)" stroke-width="1.5" stroke-linecap="round" opacity=".85"/></svg>'
+};
+function miniIkon(label, v, ikon){
+  return '<div style="background:var(--nat);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">' +
+    '<span style="flex:none;display:flex">' + ikon + '</span>' +
+    '<div style="min-width:0"><div style="font-size:19px;font-weight:800">' + v + '</div><div class="lille">' + label + '</div></div></div>';
+}
+function miniRing(label, pct){
+  const p = Math.max(0, Math.min(100, +pct || 0));
+  const O = 2 * Math.PI * 14.5;               // omkreds ved r=14,5
+  const arc = (p / 100) * O;
+  return '<div style="background:var(--nat);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">' +
+    '<svg width="38" height="38" viewBox="0 0 38 38" aria-hidden="true" style="flex:none">' +
+    '<circle cx="19" cy="19" r="14.5" fill="none" stroke="var(--kant)" stroke-width="4.5"/>' +
+    (p > 0 ? '<circle cx="19" cy="19" r="14.5" fill="none" stroke="var(--guld)" stroke-width="4.5" stroke-linecap="round" ' +
+      'stroke-dasharray="' + arc.toFixed(1) + ' ' + O.toFixed(1) + '" transform="rotate(-90 19 19)"/>' : '') +
+    '</svg>' +
+    '<div style="min-width:0"><div style="font-size:19px;font-weight:800">' + p + '%</div><div class="lille">' + label + '</div></div></div>';
+}
 
 function faellesLag(s){
   if (!s.kampliste || !s.kampliste.length) return "";
@@ -888,16 +984,30 @@ function traenerKvartal(t){
     return h;
   }
   const n = S.kvartalUdkast, s = DATA.spillere[n], fornavn = n.split(" ")[0];
-  let tekst = "Hej "+fornavn+"\n\nHermed evaluering fra "+KONFIG.maaned+" "+KONFIG.saeson+"\n\nSpiller: "+n+"\nTræner: "+t.navn+"\n";
-  KONFIG.omraader.forEach(function(o){
-    const v = (s.vurdering||{})[o.id]; if (!v) return;
-    const b = skala(v.score);
-    tekst += "\n"+o.navn+"\n"+b.emoji+" "+b.min+"-"+b.max+" = "+b.label+". "+v.tekst+"\n";
-  });
+  if (S.kvartalHenter) {
+    return '<button class="knap valg" style="margin-bottom:10px;flex:none;padding:8px 14px" data-act="luk-kvartal">‹ Alle spillere</button>' +
+      '<div class="kort" style="text-align:center"><h3 style="margin:0">⏳ Udkastet skrives …</h3>' +
+      '<p class="lille" style="margin:6px 0 0">Rundens pas-scores, kampe og træningstal samles til et udkast — cirka 20 sekunder. Du retter og godkender bagefter.</p></div>';
+  }
+  let tekst;
+  if (S.kvartalAI) {
+    tekst = S.kvartalAI;
+  } else {
+    // Fald-tilbage: den lokale skabelon (som før AI-koblingen 19/8)
+    tekst = "Hej "+fornavn+"\n\nHermed evaluering fra "+KONFIG.maaned+" "+KONFIG.saeson+"\n\nSpiller: "+n+"\nTræner: "+t.navn+"\n";
+    KONFIG.omraader.forEach(function(o){
+      const v = (s.vurdering||{})[o.id]; if (!v) return;
+      const b = skala(v.score);
+      tekst += "\n"+o.navn+"\n"+b.emoji+" "+b.min+"-"+b.max+" = "+b.label+". "+v.tekst+"\n";
+    });
+  }
   S.kvartalTekst = tekst;
   let h = '<button class="knap valg" style="margin-bottom:10px;flex:none;padding:8px 14px" data-act="luk-kvartal">‹ Alle spillere</button>';
-  h += '<div class="kort"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="badge-ai">AI-UDKAST</span><h3 style="margin:0">'+esc(n)+'</h3></div>' +
-    '<p class="lille">Samlet fra scores + noter i klubbens format. Ret frit, godkend derefter.</p>' +
+  h += '<div class="kort"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="badge-ai">' + (S.kvartalAI ? 'AI-UDKAST' : 'SKABELON') + '</span><h3 style="margin:0">'+esc(n)+'</h3></div>' +
+    (S.kvartalNote ? '<p class="lille" style="margin:0 0 6px;color:var(--guld)">' + esc(S.kvartalNote) + '</p>' : '') +
+    '<p class="lille">' + (S.kvartalAI
+      ? 'Bygget af rundens pas-scores, kampe og træningstal. Det er DIT udkast — ret frit, godkend derefter.'
+      : 'Samlet fra scores + noter i klubbens format. Ret frit, godkend derefter.') + '</p>' +
     '<textarea id="evalTekst" rows="16">'+esc(tekst)+'</textarea>' +
     '<div class="raekke" style="margin-top:10px"><button class="knap valg" data-act="luk-kvartal">Kassér</button>' +
     '<button class="knap til" data-act="kvartal-godkend">✓ Godkend & send</button></div></div>';
@@ -961,7 +1071,7 @@ document.addEventListener("click", function(e){
     render();
     sendVurdering(sp); }
   else if (act==="nyt-pas"){ S.vurderScores = {}; render(); }
-  else if (act==="kvartal-gen"){ S.kvartalUdkast=v; render(); }
+  else if (act==="kvartal-gen"){ hentEvalUdkast(v); }
   else if (act==="luk-kvartal"){ S.kvartalUdkast=null; render(); }
   else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekst=(ta&&ta.value)||S.kvartalTekst||""; const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } S.evalueringer=S.evalueringer||{}; S.evalueringer[n]={tekst:tekst,dato:new Date().toISOString().slice(0,10)}; lager.gem("evalueringer", S.evalueringer);
     // v2.5 (18/8): har spilleren en NØGLE, sendes evalueringen RIGTIGT til

@@ -223,7 +223,7 @@ let S = {
   // og skrives ind én gang pr. enhed — de står aldrig i koden.
   noegler: lager.hent("noegler", {}),
   syncBesked: null, syncHenter: false,
-  opsAaben: false, kkUdkast: "", noegleFor: null, noegleUdkast: "",
+  opsAaben: false, kkUdkast: "", noegleFor: null, noegleUdkast: "", visKode: false, visTrupN: false, trupRet: null, retGruppe: undefined, retNoegle: undefined,
   // Godkendte evalueringer. Fritekst, som FØR kun levede i hukommelsen og
   // forsvandt ved reload. Teksten bliver på trænerens enhed — den sendes
   // aldrig med i et analyse-kald og aldrig gennem spiller-sync (princip 17+19).
@@ -472,8 +472,10 @@ function traenerIndstillinger(){
       ? 'Klubkode gemt · ' + antalN + ' spiller' + (antalN===1?'':'e') + ' koblet til en nøgle. Vurderinger sendes automatisk.'
       : '\ud83d\udcf1 <b>Alt bliver på denne telefon.</b> Intet sendes nogen steder. Indtast klubkoden, når du vil dele vurderinger med spillerne.') + '</p>';
   if (S.opsAaben) {
-    h += '<input class="felt" style="margin-top:8px" data-felt="kkUdkast" value="' + esc(S.kkUdkast||'') +
-      '" placeholder="klubkode" autocapitalize="off" spellcheck="false">' +
+    h += '<div style="display:flex;gap:6px;margin-top:8px">' +
+      '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:13px;order:2" data-act="vis-skift" data-v="visKode">' + (S.visKode?'\ud83d\ude48':'\ud83d\udc41') + '</button>' +
+      '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:' + (S.visKode?'none':'disc') + '" data-felt="kkUdkast" value="' + esc(S.kkUdkast||'') +
+      '" placeholder="klubkode" autocapitalize="off" spellcheck="false" autocomplete="off">' + '</div>' +
       '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="ops-gem">Gem</button></div>' +
       '<p class="lille" style="margin:8px 0 0;font-style:italic">Koden gemmes kun på denne enhed og står ingen steder i koden.</p>';
     // ── SIKKERHEDSKOPI
@@ -536,13 +538,25 @@ function traenerIndstillinger(){
           h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:8px 0">' +
             '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+esc(p.navn)+'</div>' +
             '<div class="lille">'+esc(p.gruppe||'\u2014')+(p.noegle?' \u00b7 \ud83d\udd11 koblet':' \u00b7 ingen n\u00f8gle')+'</div></div>' +
+            '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px" data-act="trup-ret" data-v="'+i+'">'+(S.trupRet===i?'Luk':'Ret')+'</button>' +
             '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px;'+(S.trupSlet===i?'background:var(--tabt);color:#fff':'')+'" data-act="trup-slet" data-v="'+i+'">'+(S.trupSlet===i?'Slet?':'\ud83d\uddd1')+'</button></div>';
+          // Ret-i-truppen (19/8): gruppe og n\u00f8gle rettes HER \u2014 aldrig inde p\u00e5 spilleren.
+          if (S.trupRet === i) {
+            h += '<div style="padding:0 0 8px">' +
+              '<input class="felt" data-felt="retGruppe" value="'+esc(S.retGruppe!==undefined?S.retGruppe:(p.gruppe||''))+'" placeholder="gruppe" autocapitalize="words">' +
+              '<div style="display:flex;gap:6px;margin-top:6px">' +
+              '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:'+(S.visTrupN?'none':'disc')+'" data-felt="retNoegle" value="'+esc(S.retNoegle!==undefined?S.retNoegle:(p.noegle||''))+'" placeholder="spillern\u00f8gle" autocapitalize="off" spellcheck="false" autocomplete="off">' +
+              '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:13px" data-act="vis-skift" data-v="visTrupN">'+(S.visTrupN?'\ud83d\ude48':'\ud83d\udc41')+'</button></div>' +
+              '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="trup-ret-gem" data-v="'+i+'">Gem</button></div></div>';
+          }
         });
         h += '</div>';
       }
       h += '<input class="felt" style="margin-top:9px" data-felt="trupNavn" value="'+esc(S.trupNavn||'')+'" placeholder="navn, som klubben vil vise det" autocapitalize="words">' +
         '<input class="felt" style="margin-top:6px" data-felt="trupGruppe" value="'+esc(S.trupGruppe||'')+'" placeholder="gruppe, fx U14 Elite" autocapitalize="words">' +
-        '<input class="felt" style="margin-top:6px" data-felt="trupNoegle" value="'+esc(S.trupNoegle||'')+'" placeholder="spillern\u00f8gle (kan udfyldes senere)" autocapitalize="off" spellcheck="false">' +
+        '<div style="display:flex;gap:6px;margin-top:6px">' +
+        '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:'+(S.visTrupN?'none':'disc')+'" data-felt="trupNoegle" value="'+esc(S.trupNoegle||'')+'" placeholder="spillern\u00f8gle (kan udfyldes senere)" autocapitalize="off" spellcheck="false" autocomplete="off">' +
+        '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:13px" data-act="vis-skift" data-v="visTrupN">'+(S.visTrupN?'\ud83d\ude48':'\ud83d\udc41')+'</button></div>' +
         '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="trup-tilfoej">+ Tilf\u00f8j spiller</button></div>' +
         '<p class="lille" style="margin:8px 0 0;font-style:italic">Skriv navnet, som klubben vil have det vist \u2014 fornavn, fornavn og initial, eller fuldt navn. N\u00f8glen udleveres af klubben sammen med familiens egen.</p>';
     }
@@ -602,25 +616,26 @@ function spillerDetalje(navn){
     h += '</div>';
   }
 
-  // ── SPILLERNØGLE · koblingen mellem navn og nøgle bor på trænerens enhed.
-  // Uden den ved platformen ikke, hvem vurderingen skal sendes til.
+  // ── SPILLERNØGLE-kortet FJERNET 19/8 (Nicolai): spilleropsætning bor
+  // under Indstillinger → MIN TRUP, hvor gruppe og nøgle nu kan rettes direkte.
   const minN = (S.noegler||{})[navn];
-  h += '<div class="kort" style="border-left:3px solid ' + (minN ? 'var(--vundet)' : 'var(--kant)') + '">' +
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🔑 SPILLERNØGLE</div>' +
-      '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="noegle-aabn" data-v="'+esc(navn)+'">' +
-      (S.noegleFor===navn ? 'Luk' : (minN ? 'Ret' : 'Tilføj')) + '</button></div>';
-  if (S.noegleFor === navn) {
-    h += '<input class="felt" style="margin-top:8px" data-felt="noegleUdkast" value="' + esc(S.noegleUdkast||'') +
-      '" placeholder="spillernøgle" autocapitalize="off" spellcheck="false">' +
-      '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="noegle-gem" data-sp="'+esc(navn)+'">Gem</button></div>' +
-      '<p class="lille" style="margin:8px 0 0;font-style:italic">Nøglen udleveres af klubben sammen med familiens egen. Tom = ingen deling.</p>';
-  } else {
-    h += '<p class="lille" style="margin:6px 0 0">' + (minN
-      ? 'Koblet · vurderinger sendes til ' + esc(navn.split(" ")[0]) + ' automatisk.'
-      : 'Ikke koblet endnu — vurderinger bliver på denne enhed.') + '</p>';
+  if (!minN) h += '<p class="lille" style="margin:0 0 8px">\ud83d\udd11 Ingen n\u00f8gle \u2014 vurderinger bliver p\u00e5 denne enhed. N\u00f8glen s\u00e6ttes under \u2699 Indstillinger \u2192 MIN TRUP.</p>';
+
+  // ── SENESTE KAMPE (19/8) · tr\u00e6nerens weekend-kig: hvordan gik det?
+  // Fra kampresum\u00e9et \u2014 fem tal pr. kamp, aldrig boldene.
+  if (s.kampResume && s.kampResume.length) {
+    h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus);margin-bottom:2px">\ud83c\udfbe SENESTE KAMPE</div>' +
+      '<p class="lille" style="margin:0 0 4px">Resultat og balance (skabte minus for\u00e6rede point) \u2014 fra spillerens synk.</p>';
+    s.kampResume.slice(0, 10).forEach(function(k){
+      var bal = (typeof k.balance === "number") ? k.balance : null;
+      h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:7px 0">' +
+        '<span style="width:9px;height:9px;border-radius:50%;flex:none;background:' + (k.vundet ? 'var(--vundet)' : 'var(--tabt)') + '"></span>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">' + esc(k.res || "\u2014") + '</div>' +
+        '<div class="lille">' + esc(String(k.d || "").slice(0, 10)) + (k.turnering ? ' \u00b7 ' + esc(k.turnering) : '') + (k.bolde ? ' \u00b7 ' + k.bolde + ' bolde' : '') + '</div></div>' +
+        (bal !== null ? '<span style="flex:none;font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px;background:var(--flade);color:' + (bal > 0 ? 'var(--vundet)' : bal < 0 ? 'var(--tabt)' : 'var(--daempet)') + '">' + (bal > 0 ? '+' : '') + bal + '</span>' : '') + '</div>';
+    });
+    h += '</div>';
   }
-  h += '</div>';
 
   // FOKUSPUNKTER · faste kategorier, aldrig fritekst.
   // Referat 11/8: "Terkel arbejder med højde over nettet og bedre inside out
@@ -963,6 +978,7 @@ document.addEventListener("click", function(e){
         d3.stigeTil = !!srv.stige_tilvalgt;
         if (Array.isArray(srv.selvvurderinger)) d3.selvvurderinger = srv.selvvurderinger;
         if (Array.isArray(srv.traeningsresume)) d3.trResume = srv.traeningsresume;
+        if (Array.isArray(srv.kampresume)) d3.kampResume = srv.kampresume;
         if (srv.opdateret) d3.sidsteTraening = String(srv.opdateret).slice(0, 10);
       });
       S.tilmHentet = new Date().toISOString();
@@ -1037,6 +1053,24 @@ document.addEventListener("click", function(e){
     S.syncBesked={fejl:false,t:nv+" er tilf\u00f8jet \u2713"}; render();
     var sidst = S.truppen[S.truppen.length-1];
     if (sidst && sidst.noegle) sendVurdering(sidst.navn); }
+  else if (act==="vis-skift"){ S[v] = !S[v]; render(); }
+  else if (act==="trup-ret"){ var ri2 = +v; S.trupRet = (S.trupRet===ri2?null:ri2); S.retGruppe = undefined; S.retNoegle = undefined; S.trupSlet = null; render(); }
+  else if (act==="trup-ret-gem"){
+    var ir = +v, pr2 = (S.truppen||[])[ir]; if (!pr2) return;
+    var nyG = (S.retGruppe!==undefined?S.retGruppe:pr2.gruppe||"").trim() || "Mit hold";
+    var nyN = (S.retNoegle!==undefined?S.retNoegle:pr2.noegle||"").trim();
+    pr2.gruppe = nyG;
+    if (nyN !== pr2.noegle) {
+      if (pr2.noegle && S.noegler) delete S.noegler[pr2.navn];
+      pr2.noegle = nyN;
+      if (nyN) { S.noegler = S.noegler||{}; S.noegler[pr2.navn] = nyN; }
+      lager.gem("noegler", S.noegler||{});
+    }
+    lager.gem("truppen", S.truppen); byggTrup();
+    // Er stigen t\u00e6ndt for gruppen, f\u00e5r spilleren sit hold sat med det samme.
+    if (nyN && S.stigeHold.indexOf(nyG) !== -1) sync("saet-hold", { spillernoegle: nyN, hold: nyG });
+    S.trupRet = null; S.retGruppe = undefined; S.retNoegle = undefined;
+    S.syncBesked = { fejl:false, t: pr2.navn + " er opdateret \u2713" }; render(); }
   else if (act==="trup-slet"){
     var ix = +v;
     if (S.trupSlet !== ix) { S.trupSlet = ix;
@@ -1096,6 +1130,14 @@ window.__oskarInit = function(){
   if (window.__oskarInited) return;
   if (!document.getElementById("app")) return;
   window.__oskarInited = true;
+  // Auto-Tjek (19/8, Nicolai: "automatisér al den transport"): med klubkode
+  // hentes tilmeldinger og truppens tal af sig selv, én gang pr. sideindlæsning.
+  setTimeout(function(){ try {
+    if (lager.hent("klubkode","") && !S.tilmHentet) {
+      var kb = document.querySelector('[data-act="tilm-hent"]');
+      if (kb) kb.click();
+    }
+  } catch (e) {} }, 500);
   render();
 };
 window.__oskarInit();

@@ -382,7 +382,7 @@ const REGLER_EN = [
 const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
-const VERSION = "v3.0.6 · 18. august 2026";
+const VERSION = "v3.0.7 · 19. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1278,6 +1278,7 @@ const A = {
   fyTypeVaelg: (v) => { S.fyType = +v; render(); },
   fyGem: () => { if (!S.fyKval || !S.fyType) return;
     S.fysLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.fyMin, k: S.fyKval, t: S.fyType, n: S.fyNote || "" });
+    if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);   // auto-transport 19/8
     lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
     S.fyKval = 0; S.fyNote = ""; render(); },
   ttMinJust: (v) => { S.ttMin = Math.max(15, Math.min(300, S.ttMin + (+v))); render(); },
@@ -1286,6 +1287,7 @@ const A = {
   ttGem: () => {
     if (!S.ttKval || !S.ttType) return;
     S.ttLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.ttMin, k: S.ttKval, t: S.ttType, n: S.ttNote || "" });
+    if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);   // auto-transport 19/8
     lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
     S.ttKval = 0; S.ttType = 0; S.ttNote = ""; S.ttEks = null; render();
   },
@@ -1458,6 +1460,7 @@ const A = {
       aktiv: false,
     } : null;
     S.gemte.unshift(S.aktiv); gemAlle();
+    if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 600);   // auto-transport 19/8: kampen står hos træneren uden ét tryk
     S.aktiv = null; S.afventer = null; S.resInput = ""; gemAktiv();
     if (_delt) {
       // Ryd en ventende liveSend-timer FOERST. Ellers fyrer den efter dette
@@ -1523,7 +1526,6 @@ const A = {
     catch (e) { S.liveBesked = { fejl: false, t: l }; }
     render();
   },
-  noegleAabn: () => { S.noegleAaben = !S.noegleAaben; S.noegleUdkast = S.spillerNoegle || ""; render(); },
   noegleGem: () => {
     S.spillerNoegle = (S.noegleUdkast || "").trim();
     lager.gem("sai-spillernoegle", S.spillerNoegle);
@@ -1568,8 +1570,8 @@ const A = {
   synkroniser: async () => {
     const EN = S.sprog === "en";
     if (S.syncHenter) return;
-    if (!S.klubKode) { S.kodeAaben = true; render(); return; }
-    if (!S.spillerNoegle) { S.noegleAaben = true; render(); return; }
+    if (!S.klubKode) { S.syncBesked = { fejl: true, t: EN ? "Enter the club code under \u2699 Settings first." : "Indtast klubkoden under \u2699 Indstillinger f\u00f8rst." }; render(); return; }
+    if (!S.spillerNoegle) { S.syncBesked = { fejl: true, t: EN ? "Enter the player key under \u2699 Settings first." : "Indtast spillern\u00f8glen under \u2699 Indstillinger f\u00f8rst." }; render(); return; }
     S.syncHenter = true; S.syncBesked = null; render();
     const _krop = { fornavn: (SPILLER), kampresume: kampResume() };
     // Stigen (Julies ramme 17/8): tallene forlader KUN telefonen med et aktivt
@@ -2056,21 +2058,12 @@ function render() {
                       selv:    { n: EN?"Play-yourself court":"Spil-selv-banen",    i:"🤝" } };
         const FV = function(x){ return x<=2?"#EB4452":x<=4?"#FA932E":x<=6?"#E7D24D":"#53AB7F"; };
         h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-            '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">🧑‍🏫 ' +
-            (EN?"YOUR COACH":"DIN TRÆNER") + '</div>' +
-            '<span data-a="noegleAabn" title="' + (EN?"Player key":"Spillernøgle") +
-            '" style="cursor:pointer;font-size:13px;opacity:.6">⚙️</span></div>';
+          // Nøgle-UI FJERNET 19/8 (Nicolai: "den er jo allerede i Indstillinger").
+          // Designstandard regel 2: alt, der kun sættes op én gang, bor ét sted.
+          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">🧑‍🏫 ' +
+            (EN?"YOUR COACH":"DIN TRÆNER") + '</div>';
 
-        if (S.noegleAaben) {
-          h += '<p class="lille" style="margin:8px 0 4px">' + (EN
-            ? "Enter the player key you got from the club. Once per device."
-            : "Indtast spillernøglen, du har fået af klubben. Kun én gang på denne enhed.") + '</p>' +
-            '<input class="felt" data-felt="noegleUdkast" value="' + esc(S.noegleUdkast || "") +
-            '" placeholder="' + (EN?"player key":"spillernøgle") + '" autocapitalize="off" spellcheck="false">' +
-            '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="noegleGem">' +
-            (EN?"Save":"Gem") + '</button></div>';
-        } else if (tsp && tsp.status === "afventer") {
+        if (tsp && tsp.status === "afventer") {
           // Tilmeldingen er sendt, men klubben har ikke godkendt endnu.
           h += '<div style="border-top:1px solid var(--kant);margin-top:8px;padding-top:9px">' +
             '<div style="display:flex;align-items:center;gap:7px">' +
@@ -3021,6 +3014,8 @@ let _autoSynkKoert = false;
 function autoSynk(){
   if (_autoSynkKoert || !S.klubKode || !S.spillerNoegle) return;
   _autoSynkKoert = true;
+  // 19/8: fuld synk (skub + hent) — Nicolai: "automatisér al den transport".
+  try { A.synkroniser(); return; } catch (e) {}
   sync("hent", {}).then(function(r){
     if (r && !r.fejl) { S.traenerData = { spiller: r.spiller || null, ugefokus: r.ugefokus || [], stigeHoldTil: !!r.stige_hold_til, hentet: new Date().toISOString() }; lager.gem("sai-traenerdata", JSON.stringify(S.traenerData)); render(); }
   });

@@ -382,7 +382,7 @@ const REGLER_EN = [
 const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
-const VERSION = "v3.0.17 · 20. august 2026";
+const VERSION = "v3.0.18 · 20. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1066,6 +1066,41 @@ function analysePulsTegn() {
       '<span>' + (EN ? trin[2] : trin[1]) + '</span>' +
       '<span style="color:var(--daempet);flex:none;font-variant-numeric:tabular-nums">' +
         Math.floor(s) + ' s</span></p>';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// KLUB-KORTET · navn + logo, saa appen bliver klubbens egen.
+// Begge dele bor KUN paa denne enhed — som spillernavnet og klubkoden.
+// Flyttet ud i en funktion 20/8, saa forsiden og Indstillinger deler
+// ÉN kilde (princip 11) i stedet for to kopier, der driver fra hinanden.
+// ══════════════════════════════════════════════════════════════════════
+function klubKort(EN) {
+  let h = '<div class="kort" style="border-left:3px solid var(--guld)">' +
+      '<div style="display:flex;align-items:center;gap:8px">' +
+        (KLUBLOGO ? '<img src="'+KLUBLOGO+'" alt="" style="width:26px;height:26px;border-radius:50%;object-fit:contain;background:var(--dyb);flex:none">' : '') +
+        '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);flex:1">🏛 ' +
+        (KLUB ? esc(KLUB.toUpperCase()) : (EN?"YOUR CLUB":"JERES KLUB")) + '</div>' +
+        '<span data-a="klubAabn" title="'+(EN?"Club name and logo":"Klubbens navn og logo")+'" style="cursor:pointer;font-size:13px;opacity:.6">' +
+        (S.klubAaben?'✕':'⚙️') + '</span></div>';
+    if (S.klubAaben) {
+      h += '<p class="lille" style="margin:8px 0 6px">' + (EN
+        ? "The club name and logo appear at the top of the app. Stored only on this device."
+        : "Klubbens navn og logo vises øverst i appen. Gemmes kun på denne enhed.") + '</p>' +
+        '<input class="felt" data-felt="klubUdkast" maxlength="40" placeholder="'+(EN?'Club name':'Klubbens navn')+'" value="'+esc(S.klubUdkast !== "" ? S.klubUdkast : KLUB)+'">' +
+        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="klubNavnGem">'+(EN?"Save":"Gem")+'</button></div>' +
+        '<div style="display:flex;align-items:center;gap:9px;margin-top:9px">' +
+          (KLUBLOGO?'<img src="'+KLUBLOGO+'" alt="" style="width:38px;height:38px;border-radius:50%;object-fit:contain;background:var(--dyb);flex:none">':'') +
+          '<label class="knap valg" style="flex:1;text-align:center;cursor:pointer;padding:9px;font-size:12.5px">' +
+          (EN?(KLUBLOGO?"Change logo":"Upload logo"):(KLUBLOGO?"Skift logo":"Upload logo")) +
+          '<input type="file" accept="image/*" data-felt="logoFil" style="display:none"></label>' +
+          (KLUBLOGO?'<button class="knap valg" style="flex:none;padding:9px 12px;font-size:12.5px" data-a="logoRyd">'+(EN?"Remove":"Fjern")+'</button>':'') +
+        '</div>';
+      if (S.klubBesked) h += '<p class="lille" style="margin:6px 0 0;color:'+(S.klubBesked.fejl?'var(--tabt)':'var(--vundet)')+'">'+esc(S.klubBesked.t)+'</p>';
+  } else if (!KLUB) {
+    h += '<p class="lille" style="margin:6px 0 0">'+(EN?"Add your club's name and logo — tap the gear.":"Tilføj klubbens navn og logo — tryk på tandhjulet.")+'</p>';
+  }
+  h += '</div>';
+  return h;
 }
 
 function nyFoelgekode(navn) {
@@ -2113,33 +2148,10 @@ function render() {
 
       h += '<div style="margin:16px 2px 6px;display:flex;align-items:center;gap:12px">' + avat((SPILLER),46) + '<div><h2 style="margin:0;font-size:23px">' + (EN?("Hi "+SPILLER):("Hej "+SPILLER)) + '</h2>' +
         '<p style="margin:5px 0 0;font-size:12.5px;color:var(--daempet)">' + S.gemte.length + (EN?" matches":" kampe") + ' · ' + S.ttLog.length + (EN?" sessions":" træninger") + (_dsc>0 ? ' · <b style="color:var(--guld)">' + _dsc + (EN?" days to Sommer Cup":" dage til Sommer Cup") + '</b>' : '') + '</p><p id="dev-kal" style="margin:4px 0 0;font-size:12px;color:var(--is)"></p></div></div>';
-      // ── KLUBBEN · navn + logo, så appen bliver klubbens egen.
-      // Begge dele bor KUN på denne enhed — som spillernavnet og klubkoden.
-      h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
-        '<div style="display:flex;align-items:center;gap:8px">' +
-          (KLUBLOGO ? '<img src="'+KLUBLOGO+'" alt="" style="width:26px;height:26px;border-radius:50%;object-fit:contain;background:var(--dyb);flex:none">' : '') +
-          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);flex:1">🏛 ' +
-          (KLUB ? esc(KLUB.toUpperCase()) : (EN?"YOUR CLUB":"JERES KLUB")) + '</div>' +
-          '<span data-a="klubAabn" title="'+(EN?"Club name and logo":"Klubbens navn og logo")+'" style="cursor:pointer;font-size:13px;opacity:.6">' +
-          (S.klubAaben?'✕':'⚙️') + '</span></div>';
-      if (S.klubAaben) {
-        h += '<p class="lille" style="margin:8px 0 6px">' + (EN
-          ? "The club name and logo appear at the top of the app. Stored only on this device."
-          : "Klubbens navn og logo vises øverst i appen. Gemmes kun på denne enhed.") + '</p>' +
-          '<input class="felt" data-felt="klubUdkast" maxlength="40" placeholder="'+(EN?'Club name':'Klubbens navn')+'" value="'+esc(S.klubUdkast !== "" ? S.klubUdkast : KLUB)+'">' +
-          '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="klubNavnGem">'+(EN?"Save":"Gem")+'</button></div>' +
-          '<div style="display:flex;align-items:center;gap:9px;margin-top:9px">' +
-            (KLUBLOGO?'<img src="'+KLUBLOGO+'" alt="" style="width:38px;height:38px;border-radius:50%;object-fit:contain;background:var(--dyb);flex:none">':'') +
-            '<label class="knap valg" style="flex:1;text-align:center;cursor:pointer;padding:9px;font-size:12.5px">' +
-            (EN?(KLUBLOGO?"Change logo":"Upload logo"):(KLUBLOGO?"Skift logo":"Upload logo")) +
-            '<input type="file" accept="image/*" data-felt="logoFil" style="display:none"></label>' +
-            (KLUBLOGO?'<button class="knap valg" style="flex:none;padding:9px 12px;font-size:12.5px" data-a="logoRyd">'+(EN?"Remove":"Fjern")+'</button>':'') +
-          '</div>';
-        if (S.klubBesked) h += '<p class="lille" style="margin:6px 0 0;color:'+(S.klubBesked.fejl?'var(--tabt)':'var(--vundet)')+'">'+esc(S.klubBesked.t)+'</p>';
-      } else if (!KLUB) {
-        h += '<p class="lille" style="margin:6px 0 0">'+(EN?"Add your club's name and logo — tap the gear.":"Tilføj klubbens navn og logo — tryk på tandhjulet.")+'</p>';
-      }
-      h += '</div>';
+      // ── KLUBBEN · flyttet til Indstillinger 20/8 (princip 21: engangs-opsaetning
+      // hoerer under tandhjulet). Forsiden viser kun maerket, NAAR der er en
+      // klub at vise — ellers staar der ikke en opgave og venter paa nogen.
+      if (KLUB || KLUBLOGO) h += klubKort(EN);
       h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"START MATCH":"START KAMP") + '</b><br><small id="hero-sub">' + (EN?"register points live from the court":"registrér point live fra banen") + '</small></span><span class="dev-pil">→</span></button>';
       h += '<div class="dev-grid">' +
         (S.klubKode ? _flise("tab","traener","🧑‍🏫",(EN?"Your coach":"Din træner"),_traenerStatus(EN),"dev-kant-guld") : "") +
@@ -2374,6 +2386,8 @@ function render() {
           (EN?"Tap to fetch the streak.":"Tryk for at hente streaken.") + '</p></div>';
       }
     } else if (S.tab === "opsaet") {
+    // Klub-kortet bor her nu. Vises ALTID — ogsaa foer klubben er sat op.
+    h += klubKort(EN);
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") +
            '<b style="font-size:16px">⚙️ ' + (EN?"Settings":"Indstillinger") + '</b></div>';
 

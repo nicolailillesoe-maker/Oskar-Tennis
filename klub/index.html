@@ -382,7 +382,7 @@ const REGLER_EN = [
 const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
-const VERSION = "v3.0.13 · 19. august 2026";
+const VERSION = "v3.0.14 · 20. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -941,7 +941,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false,
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
 };
 const MEM = {};
@@ -950,24 +950,51 @@ const lager = {
   gem: (k, v) => { try { window.localStorage.setItem(k, v); } catch (e) { MEM[k] = v; } },
   slet: (k) => { try { window.localStorage.removeItem(k); } catch (e) { delete MEM[k]; } },
 };
+// ── FEJL-HØSTEN 20/8 · F6: udfaldet udledes af resultat-strengen.
+// Kampe gemt før v3.0.5 (5/8-2026) mangler facitVandt, fordi automatikken
+// først kom med #20b. "6-2, 4-6, 4-10" → 1 vundet sæt mod 2 = nederlag.
+// Er stillingen uafgjort eller strengen ulæselig, returneres undefined —
+// vi gætter ALDRIG på et udfald (princip 14).
+function vandtIflgResultat(res) {
+  if (typeof res !== "string" || !res.trim()) return undefined;
+  var v = 0, t = 0;
+  res.split(",").forEach(function(s) {
+    var m = String(s).replace(/MTB/i, "").trim().match(/^(\d+)\s*-\s*(\d+)$/);
+    if (!m) return;
+    var a = +m[1], b = +m[2];
+    if (a > b) v++; else if (b > a) t++;
+  });
+  if (v === t) return undefined;
+  return v > t;
+}
+// F9: et navn med mellemrum i enden er en ANDEN nøgle end det samme navn uden.
+var _trim = function(x) { return typeof x === "string" ? x.trim() : x; };
+// F1: registrering bruger unshift, flet bruger push — datoen afgør visningen.
+// Stabil: samme dato beholder sin indbyrdes orden.
+function sorterNyestFoerst(liste, felt) {
+  return (Array.isArray(liste) ? liste.slice() : []).sort(function(a, b) {
+    var x = String((a && a[felt]) || ""), y = String((b && b[felt]) || "");
+    return x > y ? -1 : x < y ? 1 : 0;
+  });
+}
 const rensKamp = (g) => {
   if (g && g.kamp) g = g.kamp; // v1-format
   if (!g || !Array.isArray(g.point)) return null;
-  return { modstander: g.modstander || "Ukendt modstander", turnering: g.turnering || "",
+  return { modstander: _trim(g.modstander) || "Ukendt modstander", turnering: _trim(g.turnering) || "",
     dato: g.dato || new Date().toISOString().slice(0,10),
     oskarFirst: typeof g.oskarFirst === "boolean" ? g.oskarFirst : true,
-    mtb: typeof g.mtb === "boolean" ? g.mtb : true, saetTil: g.saetTil === 4 ? 4 : 6, noAd: g.noAd === true, afsluttet: g.afsluttet === true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : undefined, resultat: g.resultat || "", analyse: g.analyse || "", justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
+    mtb: typeof g.mtb === "boolean" ? g.mtb : true, saetTil: g.saetTil === 4 ? 4 : 6, noAd: g.noAd === true, afsluttet: g.afsluttet === true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : vandtIflgResultat(g.resultat), resultat: g.resultat || "", analyse: g.analyse || "", justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
     point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1, l: [1,2,3].indexOf(q.l) >= 0 ? q.l : 0, z: [1,2,3].indexOf(q.z) >= 0 ? q.z : 0 })) };
 };
 try { const sp = lager.hent("sai-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
 try { if (lager.hent("sai-laas") === "op") S.laast = false; } catch(e) {}
 try { if (lager.hent("sai-tryk") === "3") S.tryk3 = true; } catch(e) {}
 try { if (lager.hent("sai-zoner") === "1") S.zoner = true; } catch(e) {}
-try { const fl = JSON.parse(lager.hent("sai-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = fl; } catch(e) {}
-try { const tl = JSON.parse(lager.hent("sai-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = tl; } catch(e) {}
+try { const fl = JSON.parse(lager.hent("sai-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = sorterNyestFoerst(fl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d"); } catch(e) {}
+try { const tl = JSON.parse(lager.hent("sai-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = sorterNyestFoerst(tl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d"); } catch(e) {}
 try { S.stigeTilvalgt = lager.hent("sai-stige-tilvalgt") === "1"; } catch(e) {}
 try { if (lager.hent("sai-skala10") !== "1") { if (S.ttLog.length) { S.ttLog.forEach((e) => { if (e.k >= 1 && e.k <= 5) e.k = e.k * 2; }); lager.gem("sai-tennis-log", JSON.stringify(S.ttLog)); } lager.gem("sai-skala10", "1"); } } catch(e) {}
-try { const rå = JSON.parse(lager.hent("sai-kampe") || "[]"); S.gemte = (Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean); } catch(e) {}
+try { const rå = JSON.parse(lager.hent("sai-kampe") || "[]"); S.gemte = sorterNyestFoerst((Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean), "dato"); } catch(e) {}
 try { const a = lager.hent("sai-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.parse(a)); } catch(e) {}
 try { const kk = lager.hent("sai-klubkode"); if (kk) S.klubKode = kk; } catch(e) {}
 try { const sn = lager.hent("sai-spillernoegle"); if (sn) S.spillerNoegle = sn; } catch(e) {}
@@ -1277,7 +1304,7 @@ const A = {
   fyKvalVaelg: (v) => { S.fyKval = +v; render(); },
   fyTypeVaelg: (v) => { S.fyType = +v; render(); },
   fyGem: () => { if (!S.fyKval || !S.fyType) return;
-    S.fysLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.fyMin, k: S.fyKval, t: S.fyType, n: S.fyNote || "" });
+    S.fysLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.fyMin, k: S.fyKval, t: S.fyType, n: (S.fyNote || "").trim() });
     if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);   // auto-transport 19/8
     lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
     S.fyKval = 0; S.fyNote = ""; render(); },
@@ -1286,7 +1313,7 @@ const A = {
   ttTypeVaelg: (v) => { S.ttType = +v; render(); },
   ttGem: () => {
     if (!S.ttKval || !S.ttType) return;
-    S.ttLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.ttMin, k: S.ttKval, t: S.ttType, n: S.ttNote || "" });
+    S.ttLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.ttMin, k: S.ttKval, t: S.ttType, n: (S.ttNote || "").trim() });
     if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);   // auto-transport 19/8
     lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
     S.ttKval = 0; S.ttType = 0; S.ttNote = ""; S.ttEks = null; render();
@@ -1332,6 +1359,11 @@ const A = {
       // Flet også logs (dedup på dato+pas)
       if (Array.isArray(d.fysLog)) { const fN = {}; S.fysLog.forEach(function(e){ fN[e.d+"|"+e.p] = true; }); d.fysLog.forEach(function(e){ if (!fN[e.d+"|"+e.p]) { S.fysLog.push(e); fN[e.d+"|"+e.p] = true; } }); }
       if (Array.isArray(d.ttLog)) { const tN = {}; S.ttLog.forEach(function(e){ tN[JSON.stringify(e)] = true; }); d.ttLog.forEach(function(e){ if (!tN[JSON.stringify(e)]) S.ttLog.push(e); }); }
+      // F1 (20/8): flet bruger push, så indflettede pas lander bagest i lageret.
+      // Sortér FØR de skrives, ellers arver lageret den blandede orden for altid.
+      // (S.gemte sorteres allerede få linjer oppe.)
+      S.fysLog = sorterNyestFoerst(S.fysLog, "d");
+      S.ttLog = sorterNyestFoerst(S.ttLog, "d");
       gemAlle();
       lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
       lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
@@ -1348,6 +1380,10 @@ const A = {
       S.gemte = d.kampe.map(rensKamp).filter(Boolean);
       S.fysLog = Array.isArray(d.fysLog) ? d.fysLog : [];
       S.ttLog = Array.isArray(d.ttLog) ? d.ttLog : [];
+      // F1 (20/8): en gendannet backup kan bære en blandet orden med sig ind.
+      S.gemte = sorterNyestFoerst(S.gemte, "dato");
+      S.fysLog = sorterNyestFoerst(S.fysLog, "d");
+      S.ttLog = sorterNyestFoerst(S.ttLog, "d");
       gemAlle();
       lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
       lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
@@ -1396,7 +1432,7 @@ const A = {
   wizMod: (v) => { S.nyMod = v; render(); },
   start: () => {
     S.wiz = 1; S._doneVist = false;
-    S.aktiv = { modstander: S.nyMod || "Ukendt modstander", turnering: S.nyTur || "",
+    S.aktiv = { modstander: (S.nyMod || "").trim() || "Ukendt modstander", turnering: (S.nyTur || "").trim(),
       dato: new Date().toISOString().slice(0,10), oskarFirst: S.nyFirst, mtb: S.nyMtb, saetTil: S.nyFormat === 4 ? 4 : 6, noAd: S.nyFormat === 4 && S.nyNoAd, point: [], justeringer: [] };
     S.afventer = null; S.serv = 1; gemAktiv(); render();
   },
@@ -1599,7 +1635,10 @@ const A = {
       });
       return ud.slice(0, 100);
     })();
+    // F7: kun efter en bevidst sletning — og kun denne ene gang.
+    if (S.kampSlettet) _krop.erstat = ["kampresume"];
     const op  = await sync("gem", _krop);
+    if (S.kampSlettet && !op.fejl) S.kampSlettet = false;
     const ned = op.fejl ? op : await sync("hent", {});
     S.syncHenter = false;
     if (ned.fejl) {
@@ -1746,7 +1785,16 @@ const A = {
   analyseAnnuller: () => { S.redigerA = null; S.aTekst = ""; render(); },
   sletSpoerg: (i) => { S.sletBekraeft = +i; render(); },
   sletFortryd: () => { S.sletBekraeft = null; render(); },
-  slet: (i) => { S.gemte.splice(+i, 1); S.sletBekraeft = null; S.eksport = null; gemAlle(); render(); },
+  slet: (i) => {
+    S.gemte.splice(+i, 1); S.sletBekraeft = null; S.eksport = null; gemAlle();
+    // F7 (20/8): serveren FLETTER kampe (synk v2.7), så en slettet kamp kommer
+    // tilbage ved næste synk og bliver stående hos træneren. Mærket her får
+    // næste synk til at sende "erstat" — sletningen, familien lige bekræftede,
+    // ER samtykket. Intet andet synk-kald rører ventilen.
+    S.kampSlettet = true;
+    if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);
+    render();
+  },
 };
 
 // ---------- Rendering ----------

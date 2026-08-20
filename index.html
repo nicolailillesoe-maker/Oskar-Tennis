@@ -534,7 +534,7 @@ const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved:
 // Versionsstemplet ét sted. Foden laeser denne. Foer stod tallet i hver fil
 // to gange, og de to var uenige: engelsk sagde v1.7 · July, dansk v2.1 · juli,
 // mens koden var v3.0.5k. ATP-dateringerne er IKKE versionsstempler og roeres ikke.
-const VERSION_KORT = "v3.0.16";
+const VERSION_KORT = "v3.0.17";
 const KODEHASH = 1187643301;
 const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
 const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
@@ -3197,7 +3197,14 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
          '<a href="https://dtf.tournamentsoftware.com/ranking/category.aspx?id=52585&amp;category=2531" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 '+(EN?"Oskar\'s current DTF ranking":"Oskars aktuelle rangliste hos DTF")+'</a>';
   }
 
-  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses and updates: send the export to Nicolai. Team Oskar · "+VERSION_KORT+" · August 2026.":"Data gemmes lokalt i browseren på denne enhed. Analyser og opdateringer: send eksporten til Nicolai. Team Oskar · "+VERSION_KORT+" · august 2026.")+'</p>';
+        // v3.0.17: foden fortæller nu sandheden. Den gamle tekst bad om en
+      // eksport, der ikke længere skal sendes — appen synker selv.
+      h += '<p class="fod">' + (S.klubKode
+        ? (EN ? "Data is stored on this device and syncs with your club."
+              : "Data gemmes p\u00e5 denne enhed og synkroniseres med din klub.")
+        : (EN ? "Data is stored on this device only \u2014 nothing is sent anywhere."
+              : "Data gemmes kun p\u00e5 denne enhed \u2014 intet sendes videre."))
+        + ' Team Oskar \u00b7 ' + VERSION_KORT + (EN ? " \u00b7 August 2026." : " \u00b7 august 2026.") + '</p>';
   h += bundNav();
   el.innerHTML = h;
   devFoldning();

@@ -450,7 +450,7 @@ const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved:
 // Versionsstemplet ét sted. Foden laeser denne. Foer stod tallet i hver fil
 // to gange, og de to var uenige: engelsk sagde v1.7 · July, dansk v2.1 · juli,
 // mens koden var v3.0.5k. ATP-dateringerne er IKKE versionsstempler og roeres ikke.
-const VERSION_KORT = "v3.0.14";
+const VERSION_KORT = "v3.0.15";
 const KODEHASH = 2293772734;
 const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
 const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
@@ -2107,9 +2107,6 @@ function render() {
         _flise("tab","fysisk","💪",(EN?"Train":"Træn"),(EN?"todays session & running":"dagens pas & løb"),"dev-kant-staal") +
         _flise("tab","historik","📊",(EN?"Statistics":"Statistik"),S.gemte.length+(EN?" matches · trends":" kampe · tendenser"),"dev-kant-staal") +
         _flise("tab","planer","🎯",(EN?"Rivals":"Modstandere"),(EN?"plans & notes":"planer & noter"),"dev-kant-staal") +
-        _flise("tab","anbefal","💡",(EN?"Insights":"Indsigter"),(EN?"AI recommendations":"AI-anbefalinger"),"dev-kant-staal") +
-        _flise("devgaa","saeson:sa-hjem","🏆",(EN?"Season 2026":"Sæsonen 2026"),(EN?"schedule, strategy & rules":"plan, strategi & regler"),"dev-kant-staal") +
-        _flise("tab","s2026","📈","2026",(EN?"match by match":"kamp for kamp"),"dev-kant-staal") +
         _flise("tab","hb-hjem","📘",(EN?"Handbook":"Håndbog"),(EN?"guide, style & routines":"guide, stil & rutiner"),"dev-kant-staal") +
         _flise("tab","opsaet","⚙️",(EN?"Settings":"Indstillinger"),(EN?"keys & device":"koder & enhed"),"dev-kant-staal") +
         '</div>';
@@ -2356,7 +2353,8 @@ function render() {
         _flise("tab","rutiner","🧊",(EN?"ROUTINES":"RUTINER"),(EN?"before, during and after the match":"før, under og efter kampen"),"dev-kant-grus") +
         '</div>';
     } else {
-      const _tilbage = ["guide","stil","rutiner"].indexOf(S.tab) >= 0 ? "hb-hjem" : "hjem";
+      const _tilbage = ["guide","stil","rutiner"].indexOf(S.tab) >= 0 ? "hb-hjem"
+        : (S.tab === "anbefal" ? "historik" : "hjem");   // v3.0.15
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 8px">' + _hjempil(_tilbage) +
         '<b style="font-size:16px">' + _fn(S.tab) + '</b></div>';
     }
@@ -2813,6 +2811,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   }
 
   if (!LAAST && S.tab === "historik") {
+    // v3.0.15: Indsigter flyttet hertil fra forsiden (paritet med index.html).
+    h += '<button class="dev-hero dev-kant dev-kant-is" data-a="tab" data-v="anbefal" style="margin:2px 0 12px"><span style="font-size:27px">💡</span><span><b>' + (EN?"INSIGHTS":"INDSIGTER") + '</b><br><small>' + (EN?"what the numbers say \u2014 and what to do about it":"hvad tallene siger \u2014 og hvad du g\u00f8r ved det") + '</small></span><span class="dev-pil">\u2192</span></button>';
     h += '<details class="dev-fold dev-kant dev-kant-is" data-sf="0"' + (S._sf && S._sf["0"] ? " open" : "") + '><summary><span class="dev-ikon">📈</span><span><b>' + (EN?"The form curve":"Formkurven") + '</b><small>' + (EN?"Win/loss trend match by match — can you see the progress?":"Vind/tab-udviklingen kamp for kamp — kan du se fremgangen?") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
     h += grafVT(EN);
     h += '</div></details>';

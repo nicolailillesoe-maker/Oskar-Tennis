@@ -450,7 +450,7 @@ const PROFIL_EN = { fordeling: "73.50 individual + 6.00 team + 2.00 TE", bagved:
 // Versionsstemplet ét sted. Foden laeser denne. Foer stod tallet i hver fil
 // to gange, og de to var uenige: engelsk sagde v1.7 · July, dansk v2.1 · juli,
 // mens koden var v3.0.5k. ATP-dateringerne er IKKE versionsstempler og roeres ikke.
-const VERSION_KORT = "v3.0.15";
+const VERSION_KORT = "v3.0.16";
 const KODEHASH = 2293772734;
 const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
 const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
@@ -1113,6 +1113,47 @@ const SYNC_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/spill
 // ══════════════════════════════════════════════════════════════════════
 
 // Kort og læsbar, så den kan siges i telefonen: "PHILIP-4F2A"
+// ══════════════════════════════════════════════════════════════════════
+// ANALYSE-PULSEN · 20/8-2026
+// Maalt i produktionsloggen: analyse-kamp 27,9 og 34,1 s · analyse-
+// evaluering 19,8-26,9 s. Gennemsnit 24,9 s.
+// Bjaelken naar ALDRIG 100 %. Vi kender ikke sluttidspunktet, og en
+// bjaelke, der rammer 100 og saa bliver staaende, lyver mere end en,
+// der naermer sig og venter.
+// ══════════════════════════════════════════════════════════════════════
+const ANALYSE_TRIN = [
+  [0,  "Sender kampens tal …",                    "Sending the match data …"],
+  [4,  "Motoren læser boldene …",            "The engine is reading the balls …"],
+  [11, "Finder mønstrene i sættene …",  "Finding the patterns in the sets …"],
+  [20, "Skriver analysen …",                      "Writing the analysis …"],
+  [33, "Næsten der — lange kampe tager længere tid.", "Almost there — long matches take longer."],
+];
+let _apTimer = null, _apStart = 0;
+function analysePulsStart() {
+  _apStart = Date.now();
+  if (_apTimer) clearInterval(_apTimer);
+  _apTimer = setInterval(analysePulsTegn, 400);
+  setTimeout(analysePulsTegn, 30);
+}
+function analysePulsStop() { if (_apTimer) clearInterval(_apTimer); _apTimer = null; }
+function analysePulsTegn() {
+  const el = document.getElementById("analyse-puls");
+  if (!el) return;
+  const EN = S.sprog === "en";
+  const s = (Date.now() - _apStart) / 1000;
+  let trin = ANALYSE_TRIN[0];
+  for (let i = 0; i < ANALYSE_TRIN.length; i++) if (s >= ANALYSE_TRIN[i][0]) trin = ANALYSE_TRIN[i];
+  const pct = Math.min(92, 92 * (1 - Math.exp(-s / 15)));
+  el.innerHTML =
+    '<div style="height:4px;border-radius:3px;background:var(--kant);overflow:hidden;margin:0 0 6px">' +
+      '<div style="height:100%;width:' + pct.toFixed(1) + '%;background:var(--guld);' +
+      'transition:width .4s linear"></div></div>' +
+    '<p class="lille" style="margin:0;display:flex;justify-content:space-between;gap:8px">' +
+      '<span>' + (EN ? trin[2] : trin[1]) + '</span>' +
+      '<span style="color:var(--daempet);flex:none;font-variant-numeric:tabular-nums">' +
+        Math.floor(s) + ' s</span></p>';
+}
+
 function nyFoelgekode(navn) {
   const rent = String(navn || "SAI").toUpperCase().replace(/[^A-ZÆØÅ]/g, "").slice(0, 8) || "SAI";
   const tegn = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";   // ingen I/O/0/1 — de forveksles
@@ -1793,7 +1834,7 @@ const A = {
     if (!k) return;
     if (!S.klubKode) { S.kodeAaben = true; S.kodeUdkast = ""; S.hentBesked = { i: n, fejl: true, t: EN ? "Enter the club code first \u2014 you only do this once on this device." : "Indtast klubkoden f\u00f8rst \u2014 det g\u00f8res kun \u00e9n gang p\u00e5 denne enhed." }; render(); return; }
     if (S.henter !== null) return;
-    S.henter = n; S.hentBesked = null; render();
+    S.henter = n; S.hentBesked = null; render(); analysePulsStart();
     const styring = new AbortController();
     const ur = setTimeout(function(){ styring.abort(); }, 120000);
     fetch(ANALYSE_URL, {
@@ -1807,16 +1848,16 @@ const A = {
       clearTimeout(ur);
       if (sv.ok && sv.d && sv.d.analyse) {
         if (S.gemte[n]) { S.gemte[n].analyse = sv.d.analyse; gemAlle(); }
-        S.henter = null; S._sf = S._sf || {}; S._sf["1"] = true;
+        S.henter = null; analysePulsStop(); S._sf = S._sf || {}; S._sf["1"] = true;
         S.hentBesked = { i: n, fejl: false, t: EN ? "Analysis fetched and saved to the match." : "Analysen er hentet og gemt p\u00e5 kampen." };
       } else {
-        S.henter = null; S._sf = S._sf || {}; S._sf["1"] = true;
+        S.henter = null; analysePulsStop(); S._sf = S._sf || {}; S._sf["1"] = true;
         S.hentBesked = { i: n, fejl: true, t: analyseFejltekst(sv.d && sv.d.kode, sv.s, EN) };
       }
       render();
     }).catch(function() {
       clearTimeout(ur);
-      S.henter = null; S._sf = S._sf || {}; S._sf["1"] = true;
+      S.henter = null; analysePulsStop(); S._sf = S._sf || {}; S._sf["1"] = true;
       S.hentBesked = { i: n, fejl: true, t: analyseFejltekst(null, 0, EN) };
       render();
     });
@@ -2247,38 +2288,77 @@ function render() {
         const sd = S.stigeData;
         if (S.stigeHenter && !sd) h += '<div class="kort"><p class="lille" style="margin:0">' + (EN?"Fetching the streak \u2026":"Henter streaken \u2026") + '</p></div>';
         if (sd) {
+          // ══ STREAK-SKAERMEN GENTEGNET 20/8-2026 ═══════════════════════
+          // Dit eget tal er skaermens helt — ikke en chip i hoejre side.
+          // Fys og tennis staar HVER FOR SIG: summen af to streaks er ikke
+          // "uger i traek", og det paastaas ikke laengere.
+          // Ranglisten dukker foerst op, naar der er nogen at maale sig med.
+          // ══════════════════════════════════════════════════════════════
           const sp = (sd.spillere || []).slice().sort(function(a,b){ return (b.fys+b.tennis)-(a.fys+a.tennis); });
           const aktive = sp.filter(function(p){ return (p.fys+p.tennis) > 0; }).length;
-          h += '<div class="kort"><h3 style="margin:0 0 2px">🏆 ' + esc(sd.hold || "") + '</h3>' +
-            '<p class="lille" style="margin:0 0 8px">' + (EN?"Total streak (physical + tennis), weeks in a row. Friendly competition! 🔥":"Samlet streak (fysisk + tennis), uger i tr\u00e6k. Venlig konkurrence! 🔥") + '</p>';
-          if (!sp.length) h += '<p class="lille" style="margin:0">' + (EN?"No one on the streak yet \u2014 be the first! 💪":"Ingen p\u00e5 streaken endnu \u2014 v\u00e6r den f\u00f8rste! 💪") + '</p>';
-          sp.forEach(function(p, i){
-            const total = p.fys + p.tennis;
-            const m = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:var(--daempet);font-weight:700">'+(i+1)+'</span>';
-            h += '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--kant)' + (p.dig?';background:rgba(227,179,65,.07);border-radius:8px;padding-left:6px;padding-right:6px':'') + '">' +
-              '<span style="width:22px;text-align:center;flex:none">' + m + '</span>' +
-              '<div style="flex:1;min-width:0"><b style="font-size:13.5px">' + esc(p.fornavn || "") + (p.dig ? ' <span style="font-size:10.5px;color:var(--guld);font-weight:800">' + (EN?"\u2014 you":"\u2014 dig") + '</span>' : '') + '</b>' +
-              '<div class="lille" style="font-size:11px">💪 ' + p.fys + ' \u00b7 🎾 ' + p.tennis + '</div></div>' +
-              '<span style="display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:800;padding:3px 9px;border-radius:9px;background:var(--flade);flex:none">🔥 ' + total + '</span></div>';
-          });
-          if (sp.length) h += '<p class="lille" style="margin:8px 0 0"><b>' + aktive + '/' + sp.length + '</b> ' + (EN?"with an active streak right now. Come on! 💪":"med aktiv streak lige nu. Kom s\u00e5! 💪") + '</p>';
-          h += '</div>';
-        }
-        h += '<div class="kort"><p class="lille" style="margin:0 0 8px">' + (EN
-            ? "At least 3 physical sessions and 3 tennis sessions a week keep the streak alive. Log them \u2014 the rest happens by itself."
-            : "Mindst 3 fysiske pas og 3 tennistr\u00e6ninger om ugen holder streaken i live. Log dem \u2014 resten sker af sig selv.") + '</p>' +
-          // Opdatér-knappen FJERNET 19/8 (Nicolai: "den her skal vel også
-          // køres af sig selv?"). Stigen hentes automatisk, når skærmen åbnes;
-          // linjen viser hvornår, og et tryk på den opdaterer manuelt.
-          (function(){
+          const mig = sp.filter(function(p){ return p.dig; })[0] || null;
+          const uge = function(n){ return n + " " + (n === 1 ? (EN?"week":"uge") : (EN?"weeks":"uger")); };
+
+          // ── DIT EGET, STORT ──────────────────────────────────────────
+          if (mig) {
+            const varm = (mig.fys + mig.tennis) > 0;
+            h += '<div class="kort dev-kant ' + (varm ? 'dev-kant-guld' : 'dev-kant-staal') + '" style="text-align:center;padding:18px 14px 14px">' +
+              '<div style="font-size:' + (varm ? '44' : '36') + 'px;line-height:1;margin-bottom:2px;' + (varm ? '' : 'filter:grayscale(1);opacity:.45') + '">🔥</div>' +
+              '<div style="display:flex;justify-content:center;gap:26px;margin:12px 0 4px">' +
+                '<div><div style="font-size:34px;font-weight:800;line-height:1;color:' + (mig.fys ? 'var(--guld)' : 'var(--daempet)') + '">' + mig.fys + '</div>' +
+                  '<div class="lille" style="margin:4px 0 0">💪 ' + (EN?"physical":"fysisk") + '</div>' +
+                  '<div class="lille" style="opacity:.6">' + (EN?"weeks in a row":"uger i træk") + '</div></div>' +
+                '<div style="width:1px;background:var(--kant)"></div>' +
+                '<div><div style="font-size:34px;font-weight:800;line-height:1;color:' + (mig.tennis ? 'var(--guld)' : 'var(--daempet)') + '">' + mig.tennis + '</div>' +
+                  '<div class="lille" style="margin:4px 0 0">🎾 ' + (EN?"tennis":"tennis") + '</div>' +
+                  '<div class="lille" style="opacity:.6">' + (EN?"weeks in a row":"uger i træk") + '</div></div>' +
+              '</div>' +
+              '<p class="lille" style="margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--kant);opacity:.9">' + (EN
+                ? "3 physical sessions + 3 tennis sessions in a week keeps it alive."
+                : "3 fysiske pas + 3 tennistræninger på en uge holder den i live.") + '</p>' +
+              '</div>';
+          }
+
+          // ── HOLDET ───────────────────────────────────────────────────
+          h += '<div class="kort"><h3 style="margin:0 0 2px;font-size:15px">🏆 ' + esc(sd.hold || "") + '</h3>';
+
+          if (!sp.length) {
+            h += '<p class="lille" style="margin:6px 0 0">' + (EN?"No one on the streak yet — be the first! 💪":"Ingen på streaken endnu — vær den første! 💪") + '</p>';
+          } else if (sp.length === 1) {
+            // EN rangliste med EN deltager er ikke en rangliste. Ingen medalje,
+            // ingen "1/1" — en aerlig saetning i stedet.
+            h += '<p class="lille" style="margin:6px 0 0">' + (EN
+              ? "You are the first on the team. When more join, you can follow each other here."
+              : "Du er den første på holdet. Når flere kommer med, kan I følge hinanden her.") + '</p>';
+          } else {
+            h += '<p class="lille" style="margin:0 0 8px">' + (EN?"Weeks in a row — friendly competition! 🔥":"Uger i træk — venlig konkurrence! 🔥") + '</p>';
+            sp.forEach(function(p, i){
+              const m = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:var(--daempet);font-weight:700">'+(i+1)+'</span>';
+              h += '<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid var(--kant)' + (p.dig?';background:rgba(227,179,65,.07);border-radius:8px;padding-left:6px;padding-right:6px':'') + '">' +
+                '<span style="width:22px;text-align:center;flex:none">' + m + '</span>' +
+                '<div style="flex:1;min-width:0"><b style="font-size:13.5px">' + esc(p.fornavn || "") + (p.dig ? ' <span style="font-size:10.5px;color:var(--guld);font-weight:800">' + (EN?"— you":"— dig") + '</span>' : '') + '</b></div>' +
+                '<span style="flex:none;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums">💪 ' + p.fys + '</span>' +
+                '<span style="flex:none;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums">🎾 ' + p.tennis + '</span></div>';
+            });
+            h += '<p class="lille" style="margin:8px 0 0"><b>' + aktive + '/' + sp.length + '</b> ' + (EN?"with an active streak right now. Come on! 💪":"med aktiv streak lige nu. Kom så! 💪") + '</p>';
+          }
+
+          // driftslinjen er en LINJE, ikke et kort
+          h += (function(){
             const sh = (S.stigeData && S.stigeData.hentet) ? new Date(S.stigeData.hentet) : null;
             const kl = sh ? ((sh.getHours()<10?"0":"")+sh.getHours()+"."+(sh.getMinutes()<10?"0":"")+sh.getMinutes()) : null;
-            return '<p class="lille" data-a="stigeHent" style="margin:0;cursor:pointer;color:var(--daempet)">' +
-              (S.stigeHenter ? (EN?"\u23f3 Fetching\u2026":"\u23f3 Henter\u2026")
-                : ((EN?"Updates by itself":"Opdaterer af sig selv") + (kl ? " \u00b7 " + (EN?"last":"senest") + " " + kl + " \u2713" : ""))) + '</p>';
-          })() +
-          (S.stigeBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.stigeBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.stigeBesked.t) + '</p>' : '') +
-          '</div>';
+            return '<p class="lille" data-a="stigeHent" style="margin:10px 0 0;padding-top:8px;border-top:1px solid var(--kant);cursor:pointer;color:var(--daempet);opacity:.75">' +
+              (S.stigeHenter ? (EN?"⏳ Fetching…":"⏳ Henter…")
+                : ((EN?"Updates by itself":"Opdaterer af sig selv") + (kl ? " · " + (EN?"last":"senest") + " " + kl : ""))) + '</p>';
+          })();
+          h += (S.stigeBesked ? '<p class="lille" style="margin:6px 0 0;color:' + (S.stigeBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.stigeBesked.t) + '</p>' : '');
+          h += '</div>';
+        }
+        // Regel-kortet og drifts-kortet er fjernet 20/8: reglen staar nu ved
+        // tallet, den forklarer, og driftslinjen staar nederst i holdkortet.
+        // Handleren "stigeHent" lever videre — linjen er stadig trykbar.
+        if (!sd && !S.stigeHenter) h += '<div class="kort"><p class="lille" style="margin:0" data-a="stigeHent">' +
+          (EN?"Tap to fetch the streak.":"Tryk for at hente streaken.") + '</p></div>';
       }
     } else if (S.tab === "opsaet") {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") +
@@ -2935,7 +3015,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           : '') +
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
         (k.analyse && S.henter!==i ? '' :
-          '<button class="knap" style="flex:none;padding:8px 14px;background:var(--grus);font-size:12px'+(S.henter!==null&&S.henter!==i?';opacity:.45':'')+'" data-a="hentAnalyse" data-v="'+i+'">'+(S.henter===i?(EN?"⏳ Fetching…":"⏳ Henter…"):(EN?"🧠 Get analysis":"🧠 Hent analyse"))+'</button>') +
+          '<button class="knap" style="flex:none;padding:8px 14px;background:var(--grus);font-size:12px'+(S.henter!==null&&S.henter!==i?';opacity:.45':'')+'" data-a="hentAnalyse" data-v="'+i+'">'+(S.henter===i?(EN?"⏳ Analysing…":"⏳ Analyserer…"):(EN?"🧠 Get analysis":"🧠 Hent analyse"))+'</button>') +
+        (S.henter===i ? '<div id="analyse-puls" style="width:100%;margin:9px 0 2px"></div>' : '') +
         (S.sletBekraeft === i
           ? '<button class="knap" style="flex:none;padding:8px 14px;background:var(--tabt);font-size:12px" data-a="slet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet);font-size:12px" data-a="sletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
           : '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--tabt);color:var(--tabt);font-size:12px" data-a="sletSpoerg" data-v="'+i+'">🗑 '+(EN?"Delete":"Slet")+'</button>') +

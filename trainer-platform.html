@@ -716,7 +716,13 @@ function spillerDetalje(navn){
       ? miniIkon("Pas denne uge", (s.trResume[0].t||0)+(s.trResume[0].f||0), IKON.bold)
       : miniIkon("Træninger", s.traeningerKvartal, IKON.bold)) + '</div></div>';
 
-  // ── TRÆNING · SENESTE UGER (19/8) — omfanget fra spillerens egen log:
+  // ── PAS I KVARTALET (20/8, F13). Tælleren `traeningerKvartal` er et
+// DEMO-felt: den står 0 for enhver rigtig spiller og opdateres aldrig.
+// Sandheden ligger i `trResume` — uge-tallene fra spillerens egen synk,
+// højst 12 uger = netop et kvartal. Tennis + fysisk, som TRÆN-fanen selv
+// regner dem. Findes der ingen synk endnu, falder vi tilbage til feltet,
+// så demo-truppen ser ud som før.
+// ── TRÆNING · SENESTE UGER (19/8) — omfanget fra spillerens egen log:
   // antal tennis, antal fys og timer pr. uge. Aldrig noter, aldrig indhold.
   if (s.trResume && s.trResume.length) {
     h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus);margin-bottom:2px">\ud83d\udcc5 TR\u00c6NING \u00b7 SENESTE UGER</div>' +
@@ -852,6 +858,13 @@ const IKON = {
     '<path d="M11.7 12.4 L15.3 15.1 L14.3 20.6 M11.7 12.4 L9.3 16.4 L5.6 18.3" stroke="var(--is)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>' +
     '<path d="M3.2 7.6h3.4 M2 11h2.6" stroke="var(--guld)" stroke-width="1.5" stroke-linecap="round" opacity=".85"/></svg>'
 };
+function passIKvartalet(s) {
+  // trResume er højst 12 uger (backend-loftet) — altså et kvartal.
+  if (s && Array.isArray(s.trResume) && s.trResume.length)
+    return s.trResume.reduce(function(a, w){ return a + (w.t || 0) + (w.f || 0); }, 0);
+  return (s && s.traeningerKvartal) || 0;
+}
+
 function miniIkon(label, v, ikon){
   return '<div style="background:var(--nat);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">' +
     '<span style="flex:none;display:flex">' + ikon + '</span>' +
@@ -1020,7 +1033,7 @@ function traenerKvartal(t){
       const s = DATA.spillere[n];
       h += '<div class="kort" style="display:flex;align-items:center;gap:10px">' +
         '<div class="avatar" style="width:30px;height:30px;font-size:12px;'+(s.erBruger?'background:var(--is);color:var(--nat)':'')+'">'+init(n)+'</div>' +
-        '<div style="flex:1"><div style="font-size:13.5px;font-weight:700">'+esc(n)+'</div><div class="lille">'+s.traeningerKvartal+' træninger · '+s.kampe+' kampe</div></div>' +
+        '<div style="flex:1"><div style="font-size:13.5px;font-weight:700">'+esc(n)+'</div><div class="lille">'+passIKvartalet(s)+' træninger · '+s.kampe+' kampe</div></div>' +
         '<button class="knap" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="kvartal-gen" data-v="'+esc(n)+'"><span class="badge-ai">AI</span> '+(((S.evalueringer||{})[n])?'Ny':'Generér')+'</button>' +
         (((S.evalueringer||{})[n]) ? '<button class="knap valg" style="flex:none;padding:8px 10px;font-size:12.5px" data-act="eval-del" data-v="'+esc(n)+'">\ud83d\udce4</button>' : '') +
         '</div>';

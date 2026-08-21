@@ -295,6 +295,13 @@ function hentTilmeldinger(){
         d3.sejre = kr.filter(function(k){ return k && k.vundet; }).length;
         d3.fysStreak = srv.fys_streak || 0;
         d3.tennisStreak = srv.tennis_streak || 0;
+        // ⭐ 21/8: streak v2.8 — ét tal, træninger i træk, regnet af serveren
+        // ud fra den flettede traeningslog. De to gamle uge-tal bevares som
+        // fallback, saa en spiller, der endnu ikke har synket paa v3.0.20,
+        // ikke pludselig staar paa 0. Maalt: Oskar havde streak 8 og
+        // fys_streak 0 samtidig — traeneren saa 0, spilleren saa 8.
+        d3.streak = (srv.streak !== undefined && srv.streak !== null)
+          ? srv.streak : ((srv.fys_streak || 0) + (srv.tennis_streak || 0));
         d3.stigeTil = !!srv.stige_tilvalgt;
         if (Array.isArray(srv.selvvurderinger)) d3.selvvurderinger = srv.selvvurderinger;
         if (Array.isArray(srv.traeningsresume)) d3.trResume = srv.traeningsresume;
@@ -367,7 +374,7 @@ try { var _tn = lager.hent("traenernavn", ""); if (_tn) { S.traener = _tn;
 // ── TRUPPEN erstatter eksempeldata, saa snart traeneren har skrevet en spiller ind.
 function nySpiller(navn, gruppe){
   return { navn:navn, rang:null, klub:(typeof KONFIG!=="undefined"?KONFIG.klub:"")||"", wtn:null,
-    erBruger:false, gruppe:gruppe, fysStreak:0, tennisStreak:0, vurdering:{}, kampe:0, sejre:0,
+    erBruger:false, gruppe:gruppe, fysStreak:0, tennisStreak:0, streak:0, vurdering:{}, kampe:0, sejre:0,
     sidsteTraening:"\u2014", traeningerKvartal:0, kampliste:[], statistik:null, rivaler:[] };
 }
 function byggTrup(){
@@ -452,12 +459,20 @@ function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt
 function init(n){ return n.split(" ").map(w=>w[0]).slice(0,2).join(""); }
 function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); return v.length? v.reduce((a,b)=>a+b,0)/v.length : 0; }
 
+// ⭐ VERSIONSSTEMPEL 21/8. Traenerplatformen har hidtil ikke haft ét —
+// man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
+// versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
+// svare "er alt oppe?". Den foelger nu spiller-apperne.
+const VERSION = "v3.0.23 \u00b7 21. august 2026";
+
 function render(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
   // mekanismen fra før transporten fandtes — nu bor spiller-oplevelsen i
   // spiller-appen, og evalueringen rejser ad den ægte vej (evaluering-gem).
   const paaRejse = !(S.rejse && S.rejse.faerdig);
-  el("app").innerHTML = paaRejse ? renderRejse() : renderTraener();
+  el("app").innerHTML = (paaRejse ? renderRejse() : renderTraener()) +
+    '<p style="text-align:center;font-size:11px;color:var(--daempet);opacity:.65;margin:18px 0 10px">' +
+    'Tr\u00e6nerplatformen \u00b7 ' + VERSION + '</p>';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -711,7 +726,7 @@ function spillerDetalje(navn){
   h += '<div class="grid2" style="margin-top:8px">' +
     miniIkon("Kampe", s.kampe, IKON.ketcher) +
     miniRing("Sejrsrate", (s.kampe?Math.round(s.sejre/s.kampe*100):0)) +
-    miniIkon("Fys-streak · uger", s.fysStreak, IKON.loeber) +
+    miniIkon("Træninger i træk", s.streak || 0, IKON.loeber) +
     (s.trResume && s.trResume.length
       ? miniIkon("Pas denne uge", (s.trResume[0].t||0)+(s.trResume[0].f||0), IKON.bold)
       : miniIkon("Træninger", s.traeningerKvartal, IKON.bold)) + '</div></div>';

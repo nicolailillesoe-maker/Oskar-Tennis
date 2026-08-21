@@ -382,7 +382,7 @@ const REGLER_EN = [
 const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
-const VERSION = "v3.0.18 · 20. august 2026";
+const VERSION = "v3.0.20 · 20. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -641,6 +641,60 @@ function ugeNoegle(dISO) {
   start.setDate(start.getDate() + 3 - ((start.getDay() + 6) % 7));
   return aar * 100 + Math.round((d - start) / 604800000) + 1;
 }
+// ══════════════════════════════════════════════════════════════════════
+// PASSETS IDENTITET · 20/8-2026
+// En dublet kan kun findes, hvis en post har et navn. Et traeningspas
+// gemtes som { d, m, k, t, n } — kun dato, intet klokkeslaet, intet id.
+// To aegte pas samme dag med samme laengde var umulige at skelne.
+//
+// udledtPasId() skal vaere DETERMINISTISK: to telefoner, der hver har
+// det samme gamle pas, skal naa frem til det SAMME id — ellers ser
+// fletningen dem som to og lægger dem oveni hinanden.
+// ══════════════════════════════════════════════════════════════════════
+function nytPasId() {
+  return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+function udledtPasId(e) {
+  var raa = [e && e.d, e && e.m, e && e.k, e && e.t, (e && e.n) || ""].join("|");
+  var h = 5381;
+  for (var i = 0; i < raa.length; i++) h = ((h * 33) ^ raa.charCodeAt(i)) >>> 0;
+  return "g" + h.toString(36) + "-" + String((e && e.d) || "").replace(/-/g, "");
+}
+function sikrePasId(liste) {
+  if (!Array.isArray(liste)) return [];
+  liste.forEach(function (e) { if (e && typeof e === "object" && !e.id) e.id = udledtPasId(e); });
+  return liste;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// STREAK v2.8 · pas i traek, ikke uger i traek
+// Samme algoritme som spiller-sync v2.8.1 koerer server-side. Den staar
+// begge steder MED VILJE: serveren ejer tallet for holdet, appen regner
+// sit eget med det samme, saa skaermen ikke venter paa et svar.
+// Aendres den ene, SKAL den anden foelge med.
+// ══════════════════════════════════════════════════════════════════════
+const STREAK_HUL = 10;   // dage. Maalt mod Oskars rytme: han traener hver 3. dag.
+function _streakDage(fysLog, ttLog, idagISO) {
+  var d = [];
+  (fysLog || []).forEach(function(e){ if (e && e.d) d.push(String(e.d).slice(0,10)); });
+  (ttLog  || []).forEach(function(e){ if (e && e.d) d.push(String(e.d).slice(0,10)); });
+  if (!d.length) return { streak: 0, sidste: null, tilbage: null };
+  d.sort();
+  var dg = function(a,b){ return Math.round((Date.parse(b+"T00:00:00Z") - Date.parse(a+"T00:00:00Z")) / 86400000); };
+  var sidste = d[d.length-1];
+  var siden = dg(sidste, idagISO);
+  if (siden > STREAK_HUL) return { streak: 0, sidste: sidste, tilbage: 0 };
+  var n = 1;
+  for (var i = d.length - 1; i > 0; i--) {
+    if (dg(d[i-1], d[i]) > STREAK_HUL) break;
+    n++;
+  }
+  return { streak: n, sidste: sidste, tilbage: STREAK_HUL - siden };
+}
+function minStreak() {
+  return _streakDage(S.fysLog, S.ttLog, new Date().toISOString().slice(0,10));
+}
+
 function ugeMaal(fysLog) {
   const MAAL = 3;
   const taelling = {};
@@ -990,8 +1044,8 @@ try { const sp = lager.hent("sai-sprog"); if (sp === "en") S.sprog = "en"; } cat
 try { if (lager.hent("sai-laas") === "op") S.laast = false; } catch(e) {}
 try { if (lager.hent("sai-tryk") === "3") S.tryk3 = true; } catch(e) {}
 try { if (lager.hent("sai-zoner") === "1") S.zoner = true; } catch(e) {}
-try { const fl = JSON.parse(lager.hent("sai-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = sorterNyestFoerst(fl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d"); } catch(e) {}
-try { const tl = JSON.parse(lager.hent("sai-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = sorterNyestFoerst(tl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d"); } catch(e) {}
+try { const fl = JSON.parse(lager.hent("sai-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = sikrePasId(sorterNyestFoerst(fl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d")); } catch(e) {}
+try { const tl = JSON.parse(lager.hent("sai-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = sikrePasId(sorterNyestFoerst(tl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d")); } catch(e) {}
 try { S.stigeTilvalgt = lager.hent("sai-stige-tilvalgt") === "1"; } catch(e) {}
 try { if (lager.hent("sai-skala10") !== "1") { if (S.ttLog.length) { S.ttLog.forEach((e) => { if (e.k >= 1 && e.k <= 5) e.k = e.k * 2; }); lager.gem("sai-tennis-log", JSON.stringify(S.ttLog)); } lager.gem("sai-skala10", "1"); } } catch(e) {}
 try { const rå = JSON.parse(lager.hent("sai-kampe") || "[]"); S.gemte = sorterNyestFoerst((Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean), "dato"); } catch(e) {}
@@ -1383,7 +1437,7 @@ const A = {
   fyKvalVaelg: (v) => { S.fyKval = +v; render(); },
   fyTypeVaelg: (v) => { S.fyType = +v; render(); },
   fyGem: () => { if (!S.fyKval || !S.fyType) return;
-    S.fysLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.fyMin, k: S.fyKval, t: S.fyType, n: (S.fyNote || "").trim() });
+    S.fysLog.unshift({ id: nytPasId(), d: new Date().toISOString().slice(0, 10), m: S.fyMin, k: S.fyKval, t: S.fyType, n: (S.fyNote || "").trim() });
     if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);   // auto-transport 19/8
     lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
     S.fyKval = 0; S.fyNote = ""; render(); },
@@ -1392,7 +1446,7 @@ const A = {
   ttTypeVaelg: (v) => { S.ttType = +v; render(); },
   ttGem: () => {
     if (!S.ttKval || !S.ttType) return;
-    S.ttLog.unshift({ d: new Date().toISOString().slice(0, 10), m: S.ttMin, k: S.ttKval, t: S.ttType, n: (S.ttNote || "").trim() });
+    S.ttLog.unshift({ id: nytPasId(), d: new Date().toISOString().slice(0, 10), m: S.ttMin, k: S.ttKval, t: S.ttType, n: (S.ttNote || "").trim() });
     if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);   // auto-transport 19/8
     lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
     S.ttKval = 0; S.ttType = 0; S.ttNote = ""; S.ttEks = null; render();
@@ -1436,8 +1490,14 @@ const A = {
       // Sortér nyeste først hvis dato findes
       S.gemte.sort(function(a, b){ return (b.dato||"").localeCompare(a.dato||""); });
       // Flet også logs (dedup på dato+pas)
-      if (Array.isArray(d.fysLog)) { const fN = {}; S.fysLog.forEach(function(e){ fN[e.d+"|"+e.p] = true; }); d.fysLog.forEach(function(e){ if (!fN[e.d+"|"+e.p]) { S.fysLog.push(e); fN[e.d+"|"+e.p] = true; } }); }
-      if (Array.isArray(d.ttLog)) { const tN = {}; S.ttLog.forEach(function(e){ tN[JSON.stringify(e)] = true; }); d.ttLog.forEach(function(e){ if (!tN[JSON.stringify(e)]) S.ttLog.push(e); }); }
+            // ⚠️ RETTET 20/8: noeglen var `e.d + "|" + e.p`, og feltet `p` findes
+      // ikke i posten. Alle fysiske pas paa samme dato smeltede til ét.
+      if (Array.isArray(d.fysLog)) { sikrePasId(d.fysLog); const fN = {};
+        sikrePasId(S.fysLog).forEach(function(e){ fN[e.id] = true; });
+        d.fysLog.forEach(function(e){ if (!fN[e.id]) { S.fysLog.push(e); fN[e.id] = true; } }); }
+            if (Array.isArray(d.ttLog)) { sikrePasId(d.ttLog); const tN = {};
+        sikrePasId(S.ttLog).forEach(function(e){ tN[e.id] = true; });
+        d.ttLog.forEach(function(e){ if (!tN[e.id]) { S.ttLog.push(e); tN[e.id] = true; } }); }
       // F1 (20/8): flet bruger push, så indflettede pas lander bagest i lageret.
       // Sortér FØR de skrives, ellers arver lageret den blandede orden for altid.
       // (S.gemte sorteres allerede få linjer oppe.)
@@ -1697,9 +1757,26 @@ const A = {
     const _krop = { fornavn: (SPILLER), kampresume: kampResume() };
     // Stigen (Julies ramme 17/8): tallene forlader KUN telefonen med et aktivt
     // tilvalg — og et fravalg sendes med, så serveren sletter de gemte tal.
-    if (S.stigeTilvalgt) { _krop.stige_tilvalgt = true; _krop.fys_streak = ugeMaal(S.fysLog).streak; _krop.tennis_streak = ugeMaal(S.ttLog).streak; }
+    if (S.stigeTilvalgt) { _krop.stige_tilvalgt = true;
+      // De to gamle uge-tal sendes stadig, indtil traenerplatformen er fulgt med.
+      // Det NYE tal kan IKKE sendes ind — serveren regner det af traeningslog.
+      _krop.fys_streak = ugeMaal(S.fysLog).streak; _krop.tennis_streak = ugeMaal(S.ttLog).streak; }
     else _krop.stige_tilvalgt = false;
     _krop.traeningsresume = traeningsResume();
+    // ── DEN RIGTIGE FLET (v2.8.0, 20/8). Passene rejser som HÆNDELSER med
+    // hvert sit id, saa serveren kan fjerne dubletter paa identitet i stedet
+    // for at tage det hoejeste tal i en uge. Fem felter — og noten er ikke
+    // et af dem. Forældresamtykket lover "hvor tit og hvor laenge, aldrig
+    // hvad": dato, type og minutter ER hvor tit og hvor laenge. Kvaliteten
+    // rejser i forvejen som selvvurdering, saa den er ikke ny.
+    _krop.traeningslog = (function(){
+      var ud = [];
+      sikrePasId(S.fysLog || []).forEach(function(e){
+        if (e && e.d) ud.push({ id: e.id, d: e.d, t: "fysisk", m: e.m || 0, k: e.k || 0 }); });
+      sikrePasId(S.ttLog || []).forEach(function(e){
+        if (e && e.d) ud.push({ id: e.id, d: e.d, t: "tennis", m: e.m || 0, k: e.k || 0 }); });
+      return ud.slice(0, 500);
+    })();
     // Selvvurderingen ER pas-kvaliteten (19/8, flow-designet): spillerens egen
     // 1-10 pr. pas rejser som selvvurdering — fysisk pas → fysisk, træning m.
     // træner → traener, selv-træning → selv. Seneste 14 dage, højst 100 poster.
@@ -1728,8 +1805,34 @@ const A = {
         (EN?"No connection \u2014 try again.":"Ingen forbindelse \u2014 pr\u00f8v igen.") };
     } else {
       S.traenerData = { spiller: ned.spiller || null, ugefokus: ned.ugefokus || [], stigeHoldTil: !!ned.stige_hold_til, hentet: new Date().toISOString() };
+      // ── Det, den ANDEN telefon har logget, kommer hjem. Poster udefra har
+      // hverken note eller undertype — noten forlod aldrig den anden telefon.
+      // De markeres `_fjern`, saa historikken kan sige det aerligt i stedet
+      // for at lade som om der bare ikke var skrevet noget.
+      (function(){
+        var sp = ned.spiller || {}; var log = sp.traeningslog;
+        if (!Array.isArray(log) || !log.length) return;
+        var nyeFys = 0, nyeTt = 0;
+        var kendt = {}; sikrePasId(S.fysLog).concat(sikrePasId(S.ttLog)).forEach(function(e){ kendt[e.id] = true; });
+        log.forEach(function(p){
+          if (!p || !p.id || kendt[p.id]) return;
+          var post = { id: p.id, d: p.d, m: p.m || 0, k: p.k || 0, t: 0, n: "", _fjern: true };
+          if (p.t === "fysisk") { S.fysLog.push(post); nyeFys++; } else { S.ttLog.push(post); nyeTt++; }
+          kendt[p.id] = true;
+        });
+        if (nyeFys || nyeTt) {
+          S.fysLog = sorterNyestFoerst(S.fysLog, "d"); S.ttLog = sorterNyestFoerst(S.ttLog, "d");
+          lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
+          lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
+          S._nyeUdefra = nyeFys + nyeTt;
+        }
+      })();
       lager.gem("sai-traenerdata", JSON.stringify(S.traenerData));
-      S.syncBesked = { fejl: false, t: EN ? "Synced with the coach \u2713" : "Synkroniseret med tr\u00e6neren \u2713" };
+      S.syncBesked = { fejl: false, t: (S._nyeUdefra
+        ? (EN ? "Synced \u2713 \u2014 " + S._nyeUdefra + " session(s) from another device"
+              : "Synkroniseret \u2713 \u2014 " + S._nyeUdefra + " pas fra en anden enhed")
+        : (EN ? "Synced with the coach \u2713" : "Synkroniseret med tr\u00e6neren \u2713")) };
+      S._nyeUdefra = 0;
     }
     render();
   },
@@ -2315,7 +2418,7 @@ function render() {
         h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
           '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' + "🔥 STREAK" + '</div>' +
           '<p class="lille" style="margin:0 0 8px">' + (EN
-            ? "The streak shows how many weeks in a row each player on your team has kept their training going \u2014 first names and numbers, nothing else. It is OFF until you choose it, and the choice belongs with the streak item in the parental consent."
+            ? "The streak shows how many sessions in a row each player on your team has kept going \u2014 first names and numbers, nothing else. It is OFF until you choose it, and the choice belongs with the streak item in the parental consent."
             : "Streaken viser, hvor mange uger i tr\u00e6k hver spiller p\u00e5 holdet har holdt tr\u00e6ningen k\u00f8rende \u2014 fornavne og tal, intet andet. Den er sl\u00e5et FRA, indtil I selv v\u00e6lger den til, og valget h\u00f8rer sammen med streak-punktet i for\u00e6ldresamtykket.") + '</p>' +
           '<button class="knap" style="background:var(--grus)" data-a="tab" data-v="opsaet">' + (EN?"Go to Settings":"G\u00e5 til Indstillinger") + '</button></div>';
       } else {
@@ -2326,26 +2429,30 @@ function render() {
           // Princip 24: en rangliste med ÉN deltager er ikke en rangliste.
           // Princip 25: to streaks lagt sammen er ikke "uger i traek" — de vises
           // hver for sig, indtil traeningsstreaken (v2.8) afloeser dem begge.
-          const sp = (sd.spillere || []).slice().sort(function(a,b){ return (b.fys+b.tennis)-(a.fys+a.tennis); });
-          const aktive = sp.filter(function(p){ return (p.fys+p.tennis) > 0; }).length;
+          // Serveren regner holdets streaks af den flettede log — vi har ikke
+          // de andre spilleres logs, og skal heller ikke have dem.
+          const _st = function(p){ return (p.streak !== undefined && p.streak !== null) ? p.streak : ((p.fys||0)+(p.tennis||0)); };
+          const sp = (sd.spillere || []).slice().sort(function(a,b){ return _st(b)-_st(a); });
+          const aktive = sp.filter(function(p){ return _st(p) > 0; }).length;
           const mig = sp.filter(function(p){ return p.dig; })[0] || null;
 
           if (mig) {
-            const varm = (mig.fys + mig.tennis) > 0;
-            h += '<div class="kort dev-kant ' + (varm ? 'dev-kant-guld' : 'dev-kant-staal') + '" style="text-align:center;padding:18px 14px 14px">' +
-              '<div style="font-size:' + (varm ? '44' : '36') + 'px;line-height:1;margin-bottom:2px;' + (varm ? '' : 'filter:grayscale(1);opacity:.45') + '">🔥</div>' +
-              '<div style="display:flex;justify-content:center;gap:26px;margin:12px 0 4px">' +
-                '<div><div style="font-size:34px;font-weight:800;line-height:1;color:' + (mig.fys ? 'var(--guld)' : 'var(--daempet)') + '">' + mig.fys + '</div>' +
-                  '<div class="lille" style="margin:4px 0 0">💪 ' + (EN?"physical":"fysisk") + '</div>' +
-                  '<div class="lille" style="opacity:.6">' + (EN?"weeks in a row":"uger i træk") + '</div></div>' +
-                '<div style="width:1px;background:var(--kant)"></div>' +
-                '<div><div style="font-size:34px;font-weight:800;line-height:1;color:' + (mig.tennis ? 'var(--guld)' : 'var(--daempet)') + '">' + mig.tennis + '</div>' +
-                  '<div class="lille" style="margin:4px 0 0">🎾 ' + (EN?"tennis":"tennis") + '</div>' +
-                  '<div class="lille" style="opacity:.6">' + (EN?"weeks in a row":"uger i træk") + '</div></div>' +
-              '</div>' +
-              '<p class="lille" style="margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--kant);opacity:.9">' + (EN
-                ? "3 physical sessions + 3 tennis sessions in a week keeps it alive."
-                : "3 fysiske pas + 3 tennistræninger på en uge holder den i live.") + '</p>' +
+            var _ms = minStreak();
+            const varm = _ms.streak > 0;
+            h += '<div class="kort dev-kant ' + (varm ? 'dev-kant-guld' : 'dev-kant-staal') + '" style="text-align:center;padding:20px 14px 16px">' +
+              '<div style="font-size:' + (varm ? '46' : '36') + 'px;line-height:1;' + (varm ? '' : 'filter:grayscale(1);opacity:.45') + '">🔥</div>' +
+              '<div style="font-size:64px;font-weight:800;line-height:1.05;margin:6px 0 0;color:' + (varm ? 'var(--guld)' : 'var(--daempet)') + '">' + _ms.streak + '</div>' +
+              '<div class="lille" style="margin:2px 0 0;letter-spacing:.5px">' + (EN ? "SESSIONS IN A ROW" : "TRÆNINGER I TRÆK") + '</div>' +
+              (varm && _ms.tilbage !== null
+                ? '<p class="lille" style="margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--kant)">' + (EN
+                    ? "Train within <b>" + _ms.tilbage + " day(s)</b> to keep it alive."
+                    : "Træn inden for <b>" + _ms.tilbage + " dag" + (_ms.tilbage === 1 ? "" : "e") + "</b>, så holder den.") + '</p>'
+                : '<p class="lille" style="margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--kant)">' + (EN
+                    ? "Log a session and you are on 1."
+                    : "Log en træning, så står du på 1.") + '</p>') +
+              '<p class="lille" style="margin:6px 0 0;opacity:.75">' + (EN
+                ? "Every session counts one. More than 10 days without, and you start over."
+                : "Hver træning tæller én. Går der mere end 10 dage uden, starter du forfra.") + '</p>' +
               '</div>';
           }
 
@@ -2358,14 +2465,13 @@ function render() {
               ? "You are the first on the team. When more join, you can follow each other here."
               : "Du er den første på holdet. Når flere kommer med, kan I følge hinanden her.") + '</p>';
           } else {
-            h += '<p class="lille" style="margin:0 0 8px">' + (EN?"Weeks in a row — friendly competition! 🔥":"Uger i træk — venlig konkurrence! 🔥") + '</p>';
+            h += '<p class="lille" style="margin:0 0 8px">' + (EN?"Sessions in a row — friendly competition! 🔥":"Træninger i træk — venlig konkurrence! 🔥") + '</p>';
             sp.forEach(function(p, i){
               const m = i===0?'🥇':i===1?'🥈':i===2?'🥉':'<span style="color:var(--daempet);font-weight:700">'+(i+1)+'</span>';
               h += '<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid var(--kant)' + (p.dig?';background:rgba(227,179,65,.07);border-radius:8px;padding-left:6px;padding-right:6px':'') + '">' +
                 '<span style="width:22px;text-align:center;flex:none">' + m + '</span>' +
                 '<div style="flex:1;min-width:0"><b style="font-size:13.5px">' + esc(p.fornavn || "") + (p.dig ? ' <span style="font-size:10.5px;color:var(--guld);font-weight:800">' + (EN?"— you":"— dig") + '</span>' : '') + '</b></div>' +
-                '<span style="flex:none;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums">💪 ' + p.fys + '</span>' +
-                '<span style="flex:none;font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums">🎾 ' + p.tennis + '</span></div>';
+                '<span style="flex:none;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;color:' + (_st(p) ? 'var(--guld)' : 'var(--daempet)') + '">🔥 ' + _st(p) + '</span></div>';
             });
             h += '<p class="lille" style="margin:8px 0 0"><b>' + aktive + '/' + sp.length + '</b> ' + (EN?"with an active streak right now. Come on! 💪":"med aktiv streak lige nu. Kom så! 💪") + '</p>';
           }
@@ -2912,6 +3018,10 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
                 ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="ttSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="ttSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="ttSletSpoerg" data-v="'+i+'">🗑</button>') + '</div>'; }).join("") +
           '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="ttEksport">📤 '+(EN?"Export new":"Eksportér nye")+' ('+S.ttLog.filter(function(e){return !e.x;}).length+')</button></div>';
+        h += (function(){ var f = (S.ttLog||[]).filter(function(x){ return x._fjern; }).length;
+          return f ? '<p class="lille" style="margin:6px 0 0;padding-top:6px;border-top:1px dashed var(--kant);opacity:.85">\ud83d\udcf1 '
+            + f + (EN ? " session(s) came from another phone \u2014 date and length only."
+                      : " pas kom fra en anden telefon \u2014 kun dato og l\u00e6ngde.") + '</p>' : ''; })();
         if (S.ttEks) h += '<p class="lille">'+(EN?"Select, copy and share with your coach:":"Markér, kopiér og del med træneren:")+'</p><textarea readonly onfocus="this.select()" style="height:110px">'+esc(S.ttEks)+'</textarea>' + eksportKnapper('ttEks', EN);
       }
       h += (EN?FYSISK_EN:FYSISK).map(function(f){ return '<div class="kort"'+(f[0]==="🗓"?' style="border-left:3px solid var(--is)"':'')+'><h3>'+f[0]+' '+esc(f[1])+'</h3><p>'+esc(f[2])+'</p></div>'; }).join("");
@@ -3075,7 +3185,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         S.ttLog.map(function(e){
           return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+e.d+' · '+e.m+' min · '+(e.t===1?'🎾 ':e.t===2?'🧑‍🏫 ':'')+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span></div>';
         }).join("") +
-        '<p class="lille" style="margin:6px 0 0;opacity:.75">'+(EN?"Edit or delete under the TRAIN tab.":"Redigér eller slet under 🏃 TRÆN-fanen.")+'</p></div>';
+        (function(){ var f = (S.ttLog||[]).filter(function(x){ return x._fjern; }).length + (S.fysLog||[]).filter(function(x){ return x._fjern; }).length; return f ? '<p class="lille" style="margin:6px 0 0;padding-top:6px;border-top:1px dashed var(--kant);opacity:.85">📱 ' + f + (EN ? " session(s) were logged on another phone — date and length came along, the note stayed there." : " pas er logget på en anden telefon — dato og længde kom med, noten blev derovre.") + '</p>' : ''; })() + '<p class="lille" style="margin:6px 0 0;opacity:.75">'+(EN?"Edit or delete under the TRAIN tab.":"Redigér eller slet under 🏃 TRÆN-fanen.")+'</p></div>';
     }
     h += '</div></details>';
     h += '<details class="dev-fold dev-kant dev-kant-is" data-sf="3"' + (S._sf && S._sf["3"] ? " open" : "") + '><summary><span class="dev-ikon">💾</span><span><b>' + (EN?"Backup & move data":"Backup & flyt data") + '</b><small>' + (EN?"Backup, restore and merge between phones — do it BEFORE deleting home screen shortcuts.":"Sikkerhedskopi, gendan og flet mellem telefoner — gør det FØR genveje slettes.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';

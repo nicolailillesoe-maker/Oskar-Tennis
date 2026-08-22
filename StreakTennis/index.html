@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.2.0 · 22. august 2026";
+const VERSION = "v4.3.0 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1222,6 +1222,10 @@ let S = {
   // er teamets spejl — den ser data og tavler, aldrig beskeder.
   rolle: "spiller", famKoder: null, famNyKode: null, famEtiket: "",
   famHenter: false, famBesked: null, famTilbud: null,
+  // Venne-chatten (v4.3, "vi skal have chats med"): én samtale ad gangen.
+  // chatLaest = {haandtag: tidsstempel} — kun prikkens hukommelse, lokalt.
+  chatVen: null, chatNavn: "", chatBeskeder: null, chatHenter: false,
+  chatUdkast: "", chatBesked: null, chatAnmeldId: null, chatLaest: {},
   rumUdkast: "", rumHenter: false, rumBesked: null, rumSet: 0,
   venneKode: null, venneAaben: false, venneUdkast: "",
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
@@ -1315,6 +1319,7 @@ try {
 // Rollen (v4.2): en familie-enhed har gemt "familie" — den taster og ser
 // data, aldrig beskeder. Serveren haandhaever; UI'et er aerligt om det.
 try { if (lager.hent("sai-rolle") === "familie") S.rolle = "familie"; } catch(e) {}
+try { const cl = JSON.parse(lager.hent("sai-chat-laest") || "{}"); if (cl && typeof cl === "object") S.chatLaest = cl; } catch(e) {}
 
 // ⭐ FAMILIE-LINKET · ?familie=KODE (v4.2). Som venne-linket: tilbuddet
 // staar klar, men SELVE tilslutningen er et tryk — foraelderens handling.
@@ -2231,6 +2236,59 @@ const A = {
     location.reload();
   },
   famAfvis: () => { S.famTilbud = null; render(); },
+  // ══ VENNE-CHATTEN (v4.3, "vi skal have chats med") ════════════════
+  chatAabn: (v) => {
+    const dele = String(v).split("|");
+    S.chatVen = dele[0]; S.chatNavn = dele[1] || ""; S.chatBeskeder = null;
+    S.chatUdkast = ""; S.chatBesked = null; S.chatAnmeldId = null;
+    S.tab = "chat";
+    // Læst nu — prikken slukker. Kun et tidsstempel, kun lokalt.
+    try { S.chatLaest[S.chatVen] = new Date().toISOString();
+      lager.gem("sai-chat-laest", JSON.stringify(S.chatLaest)); } catch(e) {}
+    // Blid puls mens samtalen er åben — går i stå af sig selv udenfor.
+    if (!window._chatTimer) window._chatTimer = setInterval(function(){
+      if (S.tab === "chat") A.chatHent();
+    }, 10000);
+    render(); A.chatHent();
+  },
+  chatLuk: () => { S.chatVen = null; S.chatBeskeder = null; S.tab = "stige"; render(); },
+  chatHent: async () => {
+    if (!S.chatVen || S.chatHenter) return;
+    S.chatHenter = true;
+    const r = await sync("chat-hent", { ven: S.chatVen });
+    S.chatHenter = false;
+    if (!r.fejl) {
+      S.chatBeskeder = r.beskeder || [];
+      try { S.chatLaest[S.chatVen] = new Date().toISOString();
+        lager.gem("sai-chat-laest", JSON.stringify(S.chatLaest)); } catch(e) {}
+    } else if (S.chatBeskeder === null) S.chatBeskeder = [];
+    render();
+  },
+  chatSend: async () => {
+    const t = (S.chatUdkast || "").trim();
+    if (!t || !S.chatVen) return;
+    S.chatUdkast = ""; S.chatBesked = null; render();
+    const r = await sync("chat-skriv", { ven: S.chatVen, art: "t", tekst: t.slice(0, 140) });
+    if (r.fejl) {
+      S.chatBesked = { t: r.fejl === "link"
+        ? (S.sprog === "en" ? "Links are not allowed in the chat." : "Links er ikke tilladt i chatten.")
+        : (S.sprog === "en" ? "The message did not go through — try again." : "Beskeden kom ikke afsted — prøv igen.") };
+      render();
+    } else A.chatHent();
+  },
+  chatReager: async (v) => {
+    if (!S.chatVen) return;
+    const r = await sync("chat-skriv", { ven: S.chatVen, art: "r", tekst: v });
+    if (!r.fejl) A.chatHent();
+  },
+  chatAnmeldSpoerg: (v) => { S.chatAnmeldId = Number(v); render(); },
+  chatAnmeldNej: () => { S.chatAnmeldId = null; render(); },
+  chatAnmeldJa: async () => {
+    const id = S.chatAnmeldId; if (!id || !S.chatVen) return;
+    S.chatAnmeldId = null; render();
+    const r = await sync("chat-anmeld", { ven: S.chatVen, id });
+    if (!r.fejl) A.chatHent();
+  },
   venneHent: async () => {
     if (S.vennerHenter) return;
     if (!S.spillerNoegle) return;
@@ -3032,6 +3090,52 @@ function render() {
           : "Tribunen låses, når kampen slutter. Venner kan se resultatet og det, der blev sagt, i 7 dage — og familien kan slette det hele når som helst.") + '</p>';
       }
 
+    } else if (S.tab === "chat") {
+      // ⭐ VENNE-CHATTEN (v4.3). Serverens regler er samtalens fodnote:
+      // 30 dage / 200 beskeder, Fjern ven sletter for begge, ⚑ skjuler.
+      h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' +
+        '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 16px" data-a="chatLuk">←</button>' +
+        '<b style="font-size:16px">💬 ' + esc(S.chatNavn || (EN?"Friend":"Ven")) + '</b></div>';
+      const cb = S.chatBeskeder;
+      h += '<div class="kort">';
+      if (cb === null) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">⏳ …</p>';
+      else if (!cb.length) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (EN
+        ? "Nothing here yet. Say hi — or send a 🔥."
+        : "Her er tomt endnu. Sig hej — eller send en 🔥.") + '</p>';
+      else cb.slice(-60).forEach(function(b){
+        if (b.art === "r") {
+          h += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;' + (b.mig ? 'justify-content:flex-end' : '') + '">' +
+            '<span style="font-size:19px;flex:none">' + esc(b.tekst) + '</span>' +
+            '<span class="lille" style="margin:0">' + esc(b.fornavn) + '</span></div>';
+        } else {
+          h += '<div style="padding:6px 0;border-top:1px solid var(--kant)">' +
+            '<div style="display:flex;align-items:baseline;gap:8px">' +
+            '<b style="font-size:12px;color:' + (b.mig ? 'var(--guld)' : 'var(--is)') + '">' + esc(b.fornavn) + '</b>' +
+            (!b.mig && b.id ? '<button style="margin-left:auto;background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;min-height:24px" data-a="chatAnmeldSpoerg" data-v="' + b.id + '" aria-label="Rapportér">⚑</button>' : '') + '</div>' +
+            '<div style="font-size:13.5px;margin-top:1px;word-break:break-word">' + esc(b.tekst) + '</div>';
+          if (S.chatAnmeldId === b.id) {
+            h += '<div style="margin-top:6px;padding:8px;border:1px dashed var(--kant);border-radius:8px">' +
+              '<p class="lille" style="margin:0 0 7px">' + (EN
+                ? "Report this message? It is hidden for both of you right away and reviewed by the platform."
+                : "Rapportér beskeden? Den skjules for jer begge med det samme og gennemses af platformen.") + '</p>' +
+              '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="chatAnmeldJa">' + (EN?"Report":"Rapportér") + '</button>' +
+              '<button class="knap valg" style="min-height:44px" data-a="chatAnmeldNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
+          }
+          h += '</div>';
+        }
+      });
+      h += '</div>';
+      h += '<div class="raekke" style="margin-top:8px">' +
+        ["🔥","👏","🎾","💪"].map(function(i){
+          return '<button class="knap" style="min-height:52px;font-size:24px;padding:0" data-a="chatReager" data-v="' + i + '">' + i + '</button>';
+        }).join("") + '</div>';
+      h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:stretch">' +
+        '<input class="felt" style="flex:1;min-width:0" maxlength="140" placeholder="' + (EN?"Write to your friend":"Skriv til din ven") + '" value="' + esc(S.chatUdkast) + '" data-felt="chatUdkast">' +
+        '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="chatSend">' + (EN?"Send":"Send") + '</button></div>';
+      h += (S.chatBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.chatBesked.t) + '</p>' : '');
+      h += '<p class="lille" style="margin:10px 2px 0;opacity:.7">' + (EN
+        ? "The chat keeps at most 30 days and 200 messages. Remove friend deletes it for both of you. ⚑ hides a message for both right away."
+        : "Chatten gemmer højst 30 dage og 200 beskeder. Fjern ven sletter den for jer begge. ⚑ skjuler en besked for begge med det samme.") + '</p>';
     } else if (S.tab === "traener") {
       // 22/8: ABSORBERET I TRÆN. Gamle stier (og gammel gemt tilstand)
       // lander i det samme indhold — intet doer, det flytter bare hjem.
@@ -3156,6 +3260,7 @@ function render() {
                 : '') + '</div>' +
               '<span style="flex:none;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;color:' + (v.streak ? 'var(--guld)' : 'var(--daempet)') + '">\ud83d\udd25 ' + (v.streak || 0) + '</span>' +
               (v.live ? '<button class="knap" style="flex:none;min-height:44px;padding:0 13px;font-size:12px" data-a="rumAabn" data-v="' + esc(v.live.foelgekode + "|" + v.fornavn) + '">' + (EN?"Watch":"Se med") + '</button>' : '') +
+              (S.rolle !== "familie" ? '<button class="knap valg" style="flex:none;min-height:44px;padding:0 13px;font-size:15px;position:relative" data-a="chatAabn" data-v="' + esc((v.id || "") + "|" + v.fornavn) + '" aria-label="Chat">💬' + (v.chat_seneste && (!S.chatLaest[v.id] || S.chatLaest[v.id] < v.chat_seneste) ? '<span style="position:absolute;top:5px;right:7px;width:8px;height:8px;border-radius:50%;background:var(--guld)"></span>' : '') + '</button>' : '') +
               '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:13px;color:var(--daempet)" data-a="venneFjernSpoerg" data-v="' + esc((v.id || "") + "|" + v.fornavn) + '" aria-label="' + (EN?"Remove friend":"Fjern ven") + '">✕</button>' +
               '</div>';
             // ⭐ DEN FAERDIGE KAMP — laast og foldet (22/8, "man skal kunne
@@ -3172,8 +3277,8 @@ function render() {
             if (S.venneFjernId && S.venneFjernNavn === v.fornavn) {
               h += '<div class="kort dev-kant dev-kant-staal" style="padding:10px 12px;margin:2px 0 8px">' +
                 '<p class="lille" style="margin:0 0 8px">' + (EN
-                  ? "Remove <b>" + esc(v.fornavn) + "</b>? You will no longer see each other — for either of you. No message is sent."
-                  : "Fjern <b>" + esc(v.fornavn) + "</b>? I ser ikke længere hinanden — det gælder begge veje. Der sendes ingen besked.") + '</p>' +
+                  ? "Remove <b>" + esc(v.fornavn) + "</b>? You will no longer see each other — for either of you. Your chat is deleted for both. No message is sent."
+                  : "Fjern <b>" + esc(v.fornavn) + "</b>? I ser ikke længere hinanden — det gælder begge veje. Jeres samtale slettes for begge. Der sendes ingen besked.") + '</p>' +
                 '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="venneFjernJa">' + (EN?"Remove":"Fjern") + '</button>' +
                 '<button class="knap valg" style="min-height:44px" data-a="venneFjernNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
             }

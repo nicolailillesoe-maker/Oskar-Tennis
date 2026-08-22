@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.4.6 · 22. august 2026";
+const VERSION = "v4.4.7 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -3557,7 +3557,7 @@ function render() {
           famKrop += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--kant)">' +
             '<div class="lille" style="flex:1;min-width:0;margin:0">' + esc(f.etiket || (EN?"(no label)":"(uden etiket)")) +
             (f.status === "spaerret" ? ' · <span style="color:var(--tabt)">' + (EN?"blocked":"spærret") + '</span>' : '') + '</div>' +
-            (f.status === "aktiv" ? '<button class="knap valg" style="flex:none;min-height:40px;padding:0 11px;font-size:12px;color:var(--daempet)" data-a="famSpaer" data-v="' + esc(f.id) + '">' + (EN?"Block":"Spær") + '</button>' : '') + '</div>';
+            (f.status === "aktiv" ? '<button class="knap valg" style="flex:none;min-height:40px;padding:0 11px;font-size:12px;color:var(--daempet)" data-a="famSpaer" data-v="' + esc(f.id) + '">' + (EN?"Remove":"Fjern") + '</button>' : '') + '</div>';
         });
         else famKrop += '<p class="lille" style="margin:8px 0 0;opacity:.7">' + (EN?"No keys issued yet.":"Ingen nøgler udstedt endnu.") + '</p>';
         famKrop += (S.famBesked ? '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '');

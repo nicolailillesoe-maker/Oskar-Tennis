@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.5.3 · 22. august 2026";
+const VERSION = "v4.6.0 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1200,7 +1200,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, ejerLive: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -2024,6 +2024,7 @@ const A = {
     S.tab = "stige"; render();
     if (S.stigeTilvalgt && !S.stigeHenter) A.stigeHent();
     if (S.spillerNoegle && (S.klubKode || S.venneAktiv) && !S.vennerHenter) A.venneHent();
+    if (S.spillerNoegle && (S.klubKode || S.venneAktiv) && !S.grHenter) A.grHent();
   },
 // ══════════════════════════════════════════════════════════════════
   // VENNE-RUMMET · design: venne-laget-design-v01
@@ -2096,6 +2097,55 @@ const A = {
       S.vennerBesked = { fejl: false, t: EN ? "The match and the stand are deleted." : "Kampen og tribunen er slettet." };
       A.rumLuk();
     } else { S.rumBesked = { fejl: true, t: EN ? "Could not delete — try again." : "Kunne ikke slette — prøv igen." }; render(); }
+  },
+
+  // ══ RUMMENE (v4.6.0) — "det skal bare rum.. Hvor der jo sker flere
+  // ting i." Serveren (v2.15.0) ejer reglerne; appen viser og spørger.
+  grHent: async () => {
+    if (S.grHenter || !S.spillerNoegle) return;
+    S.grHenter = true;
+    const r = await sync("gruppe-hent", {});
+    S.grHenter = false;
+    if (r && !r.fejl && Array.isArray(r.rum)) S.grListe = r.rum;
+    render();
+  },
+  grNySkift: () => { S.grNyAaben = !S.grNyAaben; S.grBesked = null; render(); },
+  grOpret: async () => {
+    const EN = S.sprog === "en";
+    const navn = (S.grNavn || "").trim();
+    if (!navn) { S.grBesked = { fejl: true, t: EN ? "Give the room a name." : "Giv rummet et navn." }; render(); return; }
+    const r = await sync("gruppe-opret", { navn: navn.slice(0, 24) });
+    if (r.fejl) {
+      S.grBesked = { fejl: true, t: r.fejl === "loft"
+        ? (EN ? "You already have 5 rooms." : "Du har allerede 5 rum.")
+        : (EN ? "Could not open the room." : "Kunne ikke åbne rummet.") };
+    } else {
+      S.grNyAaben = false; S.grNavn = "";
+      S.grBesked = { fejl: false, t: (EN ? "The room " : "Rummet ") + (r.navn || "") + (EN ? " is open \u2713 Now invite your friends." : " er åbnet \u2713 Invitér så vennerne.") };
+      A.grHent();
+    }
+    render();
+  },
+  grInvi: async (v) => {
+    const EN = S.sprog === "en";
+    const r = await sync("gruppe-kode", { id: String(v || ""), antal: 3 });
+    if (r.fejl) { S.grBesked = { fejl: true, t: EN ? "Could not make codes." : "Kunne ikke lave koder." }; }
+    else { S.grKoder = r.koder || []; S.grKodeRum = String(v || ""); S.grBesked = null; }
+    render();
+  },
+  grKoderLuk: () => { S.grKoder = null; S.grKodeRum = ""; render(); },
+  grForladValg: (v) => { S.grForladSpoerg = String(v || ""); render(); },
+  grForladNej: () => { S.grForladSpoerg = null; render(); },
+  grForladJa: async () => {
+    const gid = S.grForladSpoerg; S.grForladSpoerg = null; render();
+    if (gid) await sync("gruppe-forlad", { id: gid });
+    S.grListe = null;
+    A.grHent();
+  },
+  grFjern: async (v) => {
+    const d = String(v || "").split("|");
+    await sync("gruppe-fjern", { id: d[0] || "", medlem: d[1] || "" });
+    A.grHent();
   },
 
   rumAabn: (v) => {
@@ -2390,7 +2440,16 @@ const A = {
     const k = (S.venneUdkast || "").trim().toUpperCase();
     if (k.length !== 6) { S.vennerBesked = { fejl: true, t: EN ? "The code is 6 characters." : "Koden er 6 tegn." }; render(); return; }
     S.vennerHenter = true; S.vennerBesked = null; render();
-    const r = await sync("venne-indloes", { kode: k });
+    let r = await sync("venne-indloes", { kode: k });
+    // ⭐ v4.6.0 · KODEN VED SELV, HVAD DEN ER: en ukendt venne-kode
+    // prøves som RUM-kode, før der siges nej — Accepter ven er døren
+    // ind i både venskaber og rum.
+    let rumNavn = null;
+    if (r.fejl === "ukendt") {
+      const g = await sync("gruppe-indloes", { kode: k });
+      if (!g.fejl) { r = g; rumNavn = g.navn || ""; }
+      else if (g.fejl === "brugt" || g.fejl === "udloebet" || g.fejl === "loft") r = g;
+    }
     S.vennerHenter = false;
     if (r.fejl) {
       // sync() laegger serverens `kode` i r.fejl — ikke i r.kode. Maalt i
@@ -2400,14 +2459,18 @@ const A = {
         r.fejl === "udloebet" ? (EN ? "That code has expired." : "Den kode er udløbet.") :
         r.fejl === "selv"     ? (EN ? "That is your own code — send it to a friend." : "Det er din egen kode — send den til en ven.") :
         r.fejl === "ukendt"   ? (EN ? "No such code." : "Den kode findes ikke.") :
+        r.fejl === "loft"     ? (EN ? "The room is full." : "Rummet er fuldt.") :
         r.fejl === "kraever-invitation" ? (EN ? "StreakTennis requires an invitation — ask a StreakTennis family for a link." : "StreakTennis kræver en invitation — bed en StreakTennis-familie om et link.") :
                                 (EN ? "Could not redeem the code." : "Kunne ikke indløse koden.") };
     } else {
       S.venneAaben = false; S.venneUdkast = "";
       S.venneAktiv = true; lager.gem("sai-venne-aktiv", "1");
       A.synkroniser();
-      S.vennerBesked = { fejl: false, t: (EN ? "You and " : "Du og ") + (r.fornavn || (EN?"your friend":"din ven")) + (EN ? " can now see each other ✓" : " kan nu se hinanden ✓") };
+      S.vennerBesked = rumNavn !== null
+        ? { fejl: false, t: (EN ? "You are in the room " : "Du er med i rummet ") + rumNavn + " ✓" }
+        : { fejl: false, t: (EN ? "You and " : "Du og ") + (r.fornavn || (EN?"your friend":"din ven")) + (EN ? " can now see each other ✓" : " kan nu se hinanden ✓") };
       A.venneHent();
+      if (rumNavn !== null) A.grHent();
     }
     render();
   },
@@ -3362,6 +3425,64 @@ function render() {
       // ══ VENNE-RUMMET ══════════════════════════════════════════════
       // Venne-lagets hele pointe er, at det gaar PAA TVAERS af klubber.
       // Det stod alligevel bag klub-doeren indtil 21/8 — min fejl.
+        // ⭐ RUMMENE (v4.6.0) — Nicolai: "Man derinde kan se streaks på
+        // hinanden, de sidste kampe.. hele tiden med den nyeste data.
+        // Inde i rummet kommer der live boards når de spiller så de
+        // derinde kan heppe." Teamet (familie) ser — rører ikke.
+        h += '<div class="kort"><h3 style="margin:0 0 2px;font-size:15px">\ud83d\udeaa ' + (EN?"ROOMS":"RUM") + '</h3>';
+        h += '<p class="lille" style="margin:0 0 8px">' + (EN
+          ? "Your friends in one place \u2014 streaks, matches and live boards."
+          : "Vennerne samlet ét sted \u2014 streaks, kampe og livetavler.") + '</p>';
+        (S.grListe || []).forEach(function(rm){
+          h += '<div class="kort" style="margin:8px 0;background:#0a1322">' +
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+            '<b style="flex:1;min-width:0;font-size:14px">\ud83d\udeaa ' + esc(rm.navn || "") + '</b>' +
+            (rm.ejer && S.rolle !== "familie" ? '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="grInvi" data-v="' + esc(rm.id) + '">\ud83c\udf9f ' + (EN?"Invite":"Invitér") + '</button>' : '') +
+            (S.rolle !== "familie" ? '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:13px;color:var(--daempet)" data-a="grForladValg" data-v="' + esc(rm.id) + '" aria-label="' + (rm.ejer ? (EN?"Close room":"Luk rummet") : (EN?"Leave room":"Forlad rummet")) + '">\u2715</button>' : '') +
+            '</div>';
+          (rm.medlemmer || []).forEach(function(m){
+            h += '<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px">' +
+              '<span style="flex:1;min-width:0">' + esc(m.fornavn || "") + (m.dig ? ' <span class="lille" style="color:var(--daempet)">(' + (EN?"you":"dig") + ')</span>' : '') + '</span>' +
+              '<span style="flex:none;font-weight:800;font-variant-numeric:tabular-nums;color:' + (m.streak ? 'var(--guld)' : 'var(--daempet)') + '">\ud83d\udd25 ' + (m.streak || 0) + '</span>' +
+              (m.live ? '<button class="knap" style="flex:none;min-height:44px;padding:0 12px;font-size:12px;background:var(--grus)" data-a="rumAabn" data-v="' + esc(m.live.foelgekode + "|" + (m.fornavn || "")) + '">\ud83d\udd34 LIVE</button>' : '') +
+              (!m.live && m.seneste ? '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="rumAabn" data-v="' + esc(m.seneste.foelgekode + "|" + (m.fornavn || "")) + '">' + (EN?"See":"Se") + '</button>' : '') +
+              (rm.ejer && m.id && S.rolle !== "familie" ? '<button class="knap valg" style="flex:none;min-height:44px;padding:0 10px;font-size:12px;color:var(--daempet)" data-a="grFjern" data-v="' + esc(rm.id + "|" + m.id) + '" aria-label="' + (EN?"Remove from room":"Fjern fra rummet") + '">\u2715</button>' : '') +
+              '</div>';
+            if (!m.dig && m.seneste && m.seneste.resultat) {
+              h += '<div class="lille" style="padding:0 0 4px;color:var(--daempet)">\ud83d\udd12 ' + (EN?"Last match":"Seneste kamp") + ' \u00b7 <b style="color:var(--kridt)">' + esc(m.seneste.resultat) + '</b>' + (m.seneste.modstander ? ' \u00b7 ' + esc(m.seneste.modstander) : '') + '</div>';
+            }
+          });
+          if (S.grKoder && S.grKodeRum === rm.id) {
+            h += '<div class="kort dev-kant dev-kant-guld" style="margin-top:8px;padding:10px;text-align:center">' +
+              '<p class="lille" style="margin:0 0 6px">' + (EN
+                ? "Three fresh codes \u2014 send ONE to each friend, outside the app. Each works once, 24 hours."
+                : "Tre friske koder \u2014 send ÉN til hver ven, uden for appen. Hver virker én gang, 24 timer.") + '</p>' +
+              S.grKoder.map(function(kk){ return '<div style="font-size:22px;font-weight:800;letter-spacing:3px;color:var(--guld);font-variant-numeric:tabular-nums;padding:2px 0">' + esc(kk) + '</div>'; }).join('') +
+              '<button class="knap valg" style="margin-top:6px;min-height:44px;width:100%" data-a="grKoderLuk">' + (EN?"Done":"Færdig") + '</button></div>';
+          }
+          if (S.grForladSpoerg === rm.id) {
+            h += '<div class="kort" style="margin-top:8px;padding:10px;border-left:3px solid var(--tabt)">' +
+              '<p class="lille" style="margin:0 0 8px">' + (rm.ejer
+                ? (EN ? "Close the room for everyone? Cannot be undone." : "Luk rummet for alle? Kan ikke fortrydes.")
+                : (EN ? "Leave the room? You need a new code to come back." : "Forlad rummet? Du skal have en ny kode for at komme ind igen.")) + '</p>' +
+              '<div class="raekke"><button class="knap" style="min-height:44px" data-a="grForladJa">' + (rm.ejer ? (EN?"Close":"Luk") : (EN?"Leave":"Forlad")) + '</button>' +
+              '<button class="knap valg" style="min-height:44px" data-a="grForladNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
+          }
+          h += '</div>';
+        });
+        if (S.rolle !== "familie") {
+          if (S.grNyAaben) {
+            h += '<div style="margin-top:6px"><input placeholder="' + (EN?"Name the room":"Døb rummet") + '" value="' + esc(S.grNavn) + '" data-felt="grNavn" maxlength="24">' +
+              '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="grOpret">\ud83d\udeaa ' + (EN?"Open the room":"Åbn rummet") + '</button></div>';
+          } else {
+            h += '<button class="knap" style="margin-top:6px;width:100%;min-height:44px" data-a="grNySkift">\ud83d\udeaa ' + (EN?"Make a room":"Lav et rum") + '</button>';
+          }
+        } else if (!(S.grListe || []).length) {
+          h += '<p class="lille" style="margin:0;color:var(--daempet)">' + (EN?"No rooms yet.":"Ingen rum endnu.") + '</p>';
+        }
+        h += (S.grBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.grBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.grBesked.t) + '</p>' : '');
+        h += '</div>';
+
         h += '<div class="kort"><h3 style="margin:0 0 2px;font-size:15px">\ud83e\udd1d ' + (EN?"FRIENDS":"VENNER") + '</h3>';
         if (!S.venner.length) {
           h += '<p class="lille" style="margin:6px 0 10px">' + (EN
@@ -3496,7 +3617,10 @@ function render() {
 
         if (S.venneAaben) {
           h += '<div style="margin-top:9px"><input placeholder="' + (EN?"6 characters":"6 tegn") + '" value="' + esc(S.venneUdkast) + '" data-felt="venneUdkast" maxlength="6" style="text-transform:uppercase;letter-spacing:3px;text-align:center;font-weight:700">' +
-            '<button class="knap" style="margin-top:7px;width:100%;min-height:44px" data-a="venneIndloes">' + (S.vennerHenter ? (EN?"\u23f3 \u2026":"\u23f3 \u2026") : (EN?"Accept friend":"Accepter ven")) + '</button></div>';
+            '<button class="knap" style="margin-top:7px;width:100%;min-height:44px" data-a="venneIndloes">' + (S.vennerHenter ? (EN?"\u23f3 \u2026":"\u23f3 \u2026") : (EN?"Accept friend":"Accepter ven")) + '</button>' +
+            '<p class="lille" style="margin:7px 0 0;opacity:.75">' + (EN
+              ? "A room code? Everyone in the room sees each other&rsquo;s first name, streak and matches \u2014 including friends who join later."
+              : "Er koden til et rum? Alle i rummet ser hinandens fornavn, streak og kampe \u2014 ogs\u00e5 venner, der kommer til senere.") + '</p></div>';
         }
         }
 

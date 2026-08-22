@@ -50,6 +50,27 @@
   .skjult{display:none}
   .chip{display:inline-block;background:#0a1322;border:1px solid var(--kant);border-radius:999px;
     padding:5px 11px;font-size:12px;color:var(--is);margin:8px 4px 0 0}
+  .adm{display:none}
+  .adm .frow{border-top:1px solid var(--kant);padding:13px 0}
+  .adm .frow:first-child{border-top:none;padding-top:4px}
+  .fmeta{font-size:11.5px;color:var(--daempet);display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  .fmeta b{color:var(--kridt)}
+  .fstatus{display:inline-block;border-radius:999px;padding:2px 9px;font-size:10px;font-weight:800;letter-spacing:1px}
+  .st-ny{background:rgba(232,178,60,.15);color:var(--guld);border:1px solid rgba(232,178,60,.45)}
+  .st-laest{background:rgba(143,184,232,.12);color:var(--is);border:1px solid rgba(143,184,232,.4)}
+  .st-graa{background:rgba(125,140,163,.15);color:#aab6c8;border:1px solid rgba(125,140,163,.5)}
+  .st-bygget{background:rgba(62,207,142,.12);color:var(--vundet);border:1px solid rgba(62,207,142,.4)}
+  .st-afvist{background:rgba(232,99,92,.12);color:var(--tabt);border:1px solid rgba(232,99,92,.4)}
+  .ftekst{font-size:14px;line-height:1.5;color:var(--kridt);margin-top:6px}
+  .fsvar{font-size:12.5px;color:var(--is);margin-top:5px}
+  .fknapper{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+  .fknapper button{flex:1;min-height:34px;border:1px solid var(--kant);background:#0a1322;color:var(--is);
+    border-radius:9px;font-size:11.5px;font-family:inherit;cursor:pointer;min-width:68px}
+  .fknapper button.aktivst{border-color:var(--guld);color:var(--guld);font-weight:800}
+  .fnotat{display:flex;gap:6px;margin-top:8px}
+  .fnotat input{flex:1;min-height:36px;font-size:13px;padding:8px 10px}
+  .fnotat button{min-height:36px;border:none;border-radius:9px;background:var(--grus);color:#fff;
+    padding:0 14px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
 </style>
 </head>
 <body>
@@ -97,6 +118,24 @@
 
 <div class="kort">
   <p class="lille"><b class="h">Hvad gemmer vi?</b> Kun din idé, dit fornavn hvis du skrev det, og hvilken konto den kom fra — så vi kan sige tak eller spørge om noget. Ikke andet. Idéen bruges ALDRIG til analyser af kampe eller spillere.</p>
+</div>
+
+<div class="adm" id="adm">
+  <div class="sektion">🔐 POSTKASSEN — ADMIN</div>
+  <div class="kort guld">
+    <p class="lille" id="admtal">Henter …</p>
+    <div id="admliste"></div>
+  </div>
+</div>
+
+<div class="adm" id="admnoegle">
+  <div class="sektion">🔐 ADMIN</div>
+  <div class="kort">
+    <label for="admkode">DIN SPILLER-KODE</label>
+    <input id="admkode" type="password" autocomplete="off" placeholder="Koden fra din egen app">
+    <button class="knap" id="admgem">Åbn postkassen</button>
+    <p class="lille" style="margin-top:8px">Kun platformens ejer kan åbne den — alle andre bliver pænt afvist.</p>
+  </div>
 </div>
 
 <div class="fod">
@@ -177,6 +216,101 @@
         vis("Ingen forbindelse — prøv igen om lidt.", true);
       });
   });
+
+  // ── ADMIN. Kun for platformens ejer: browserens kode hashes og
+  //    sammenlignes lokalt — selve koden forlader aldrig telefonen ud
+  //    over kaldet til postkassen, og serveren afgør adgangen uanset
+  //    hvad siden viser.
+  var ADMIN_HASH = "56a3099009b9df2214a0afb1b40e93cef771fbc65fc393fc5d491f88ce597789";
+  var adm = document.getElementById("adm");
+  var admListe = document.getElementById("admliste");
+  var admTal = document.getElementById("admtal");
+  var admNoegleBoks = document.getElementById("admnoegle");
+  var admKode = document.getElementById("admkode");
+  var admGem = document.getElementById("admgem");
+  var admAktivNoegle = "";
+  var STATUSNAVN = { ny: "NY", laest: "LÆST", graa: "GRÅ ZONE", bygget: "BYGGET", afvist: "AFVIST" };
+
+  function sha256(t){
+    if (!(window.crypto && crypto.subtle)) return Promise.reject(new Error("ingen crypto"));
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)).then(function(h){
+      return Array.prototype.map.call(new Uint8Array(h), function(x){ return ("0" + x.toString(16)).slice(-2); }).join("");
+    });
+  }
+  function admKald(krop){
+    return fetch(URL_FORSLAG, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-spiller-noegle": admAktivNoegle },
+      body: JSON.stringify(krop)
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); });
+  }
+  function esc(t){
+    var d = document.createElement("div"); d.textContent = String(t == null ? "" : t);
+    return d.innerHTML.replace(/"/g, "&quot;");
+  }
+  function admVis(rk){
+    admTal.textContent = rk.length
+      ? rk.length + " forslag i alt — nyeste øverst."
+      : "Postkassen er tom endnu. Første forslag lander her.";
+    var h = "";
+    for (var i = 0; i < rk.length; i++){
+      var f = rk[i];
+      var d = new Date(f.oprettet);
+      var dato = d.getDate() + "/" + (d.getMonth() + 1);
+      var knapper = "";
+      var st = ["laest", "graa", "bygget", "afvist"];
+      for (var j = 0; j < st.length; j++){
+        knapper += '<button data-fid="' + esc(f.id) + '" data-fst="' + st[j] + '"'
+          + (f.status === st[j] ? ' class="aktivst"' : '') + '>' + STATUSNAVN[st[j]] + '</button>';
+      }
+      h += '<div class="frow">'
+        + '<div class="fmeta"><b>' + dato + '</b>'
+        + '<span>' + esc(f.fornavn || "uden navn") + '</span>'
+        + '<span>' + (f.kilde === "klub" ? "🏛 " + esc(f.klub || "klub") : "🎾 app") + '</span>'
+        + '<span class="fstatus st-' + esc(f.status) + '">' + esc(STATUSNAVN[f.status] || f.status) + '</span></div>'
+        + '<div class="ftekst">' + esc(f.tekst) + '</div>'
+        + (f.svar ? '<div class="fsvar">↳ ' + esc(f.svar) + '</div>' : '')
+        + '<div class="fknapper">' + knapper + '</div>'
+        + '<div class="fnotat"><input maxlength="300" placeholder="notat (valgfrit)" value="' + esc(f.svar || "") + '" data-fnid="' + esc(f.id) + '">'
+        + '<button data-fgem="' + esc(f.id) + '" data-fstnu="' + esc(f.status) + '">Gem</button></div>'
+        + '</div>';
+    }
+    admListe.innerHTML = h;
+  }
+  function admHent(){
+    admKald({ handling: "liste" }).then(function(s){
+      if (s.ok) { adm.style.display = "block"; admNoegleBoks.style.display = "none"; admVis(s.d.forslag || []); }
+      else { adm.style.display = "block"; admTal.textContent = "Kunne ikke hente — prøv igen om lidt."; }
+    }).catch(function(){ adm.style.display = "block"; admTal.textContent = "Ingen forbindelse — prøv igen om lidt."; });
+  }
+  admListe.addEventListener("click", function(e){
+    var k = e.target;
+    if (!k || !k.dataset) return;
+    if (k.dataset.fid) {
+      admKald({ handling: "status", id: k.dataset.fid, status: k.dataset.fst })
+        .then(function(s){ if (s.ok) admHent(); });
+    } else if (k.dataset.fgem) {
+      var felt = admListe.querySelector('input[data-fnid="' + k.dataset.fgem + '"]');
+      admKald({ handling: "status", id: k.dataset.fgem, status: k.dataset.fstnu, svar: (felt && felt.value || "").trim() })
+        .then(function(s){ if (s.ok) admHent(); });
+    }
+  });
+  function admStart(n){
+    admAktivNoegle = n;
+    sha256(n).then(function(hx){
+      if (hx === ADMIN_HASH) { admHent(); }
+      else if (location.hash === "#admin") { admNoegleBoks.style.display = "block"; }
+    }).catch(function(){ if (location.hash === "#admin") admNoegleBoks.style.display = "block"; });
+  }
+  admGem.addEventListener("click", function(){
+    var n = (admKode.value || "").trim();
+    if (!n) return;
+    try { localStorage.setItem("sai-admin-noegle", n); } catch (e) {}
+    admStart(n);
+  });
+  var admKandidat = noegle || hent("sai-admin-noegle");
+  if (admKandidat) admStart(admKandidat);
+  else if (location.hash === "#admin") admNoegleBoks.style.display = "block";
 })();
 </script>
 </body>

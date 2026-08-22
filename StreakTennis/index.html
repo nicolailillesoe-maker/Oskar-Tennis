@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.4.4 · 22. august 2026";
+const VERSION = "v4.4.6 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -2371,7 +2371,9 @@ const A = {
     S.vennerHenter = true; S.vennerBesked = null; render();
     const r = await sync("venne-kode", {});
     S.vennerHenter = false;
-    if (r.fejl) S.vennerBesked = { fejl: true, t: EN ? "Could not create a code." : "Kunne ikke lave en kode." };
+    if (r.fejl) S.vennerBesked = { fejl: true, t: r.fejl === "kraever-invitation"
+      ? (EN ? "StreakTennis requires an invitation \u2014 ask a StreakTennis family for a link." : "StreakTennis kr\u00e6ver en invitation \u2014 bed en StreakTennis-familie om et link.")
+      : (EN ? "Could not create a code." : "Kunne ikke lave en kode.") };
     else {
       S.venneKode = r.kode;
       // ⭐ At udstede en kode ER samtykket til, at fornavn og streak kan
@@ -2398,6 +2400,7 @@ const A = {
         r.fejl === "udloebet" ? (EN ? "That code has expired." : "Den kode er udløbet.") :
         r.fejl === "selv"     ? (EN ? "That is your own code — send it to a friend." : "Det er din egen kode — send den til en ven.") :
         r.fejl === "ukendt"   ? (EN ? "No such code." : "Den kode findes ikke.") :
+        r.fejl === "kraever-invitation" ? (EN ? "StreakTennis requires an invitation — ask a StreakTennis family for a link." : "StreakTennis kræver en invitation — bed en StreakTennis-familie om et link.") :
                                 (EN ? "Could not redeem the code." : "Kunne ikke indløse koden.") };
     } else {
       S.venneAaben = false; S.venneUdkast = "";
@@ -2449,7 +2452,9 @@ const A = {
       const _r = await sync("gem", _p);
       S.syncHenter = false;
       S.syncBesked = _r.fejl
-        ? { fejl: true, t: EN ? "No connection \u2014 try again." : "Ingen forbindelse \u2014 pr\u00f8v igen." }
+        ? { fejl: true, t: _r.fejl === "kraever-invitation"
+            ? (EN ? "StreakTennis requires an invitation \u2014 the app still works fine on this phone." : "StreakTennis kr\u00e6ver en invitation \u2014 appen virker stadig fint p\u00e5 denne telefon.")
+            : (EN ? "No connection \u2014 try again." : "Ingen forbindelse \u2014 pr\u00f8v igen.") }
         : { fejl: false, t: EN ? "Your streak is shared with your friends \u2713" : "Din streak er delt med dine venner \u2713" };
       render(); return;
     }
@@ -3022,10 +3027,9 @@ function render() {
       // ── OVERBLIKKET FLYTTET TIL TRÆN 22/8 (Nicolai: "Det skal under
       // Træning i stedet"). Forsiden er fliser — tallene bor nu dér,
       // hvor arbejdet bag dem logges.
-      // ── KLUBBEN · flyttet til Indstillinger 20/8 (princip 21: engangs-opsaetning
-      // hoerer under tandhjulet). Forsiden viser kun maerket, NAAR der er en
-      // klub at vise — ellers staar der ikke en opgave og venter paa nogen.
-      if (KLUB || KLUBLOGO) h += klubKort(EN);
+      // ── KLUBBEN · HELT ud af forsiden 22/8 (Nicolai: "Klubben ligger
+      // stadig på forsiden"). Fredningsreglens ene aftalte flytning er
+      // hermed gjort: kortet bor nu KUN i Indstillinger, efter KLUBKODE.
       h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"START MATCH":"START KAMP") + '</b><br><small id="hero-sub">' + (EN?"register points live from the court":"registrér point live fra banen") + '</small></span><span class="dev-pil">→</span></button>';
       h += '<div class="dev-grid">' +
         // "Din træner"-flisen UDGIK 22/8 — indholdet er absorberet i TRÆN
@@ -3456,8 +3460,6 @@ function render() {
         // Regel-kortet og drifts-kortet er fjernet 20/8: reglen staar nu ved
         // tallet, den forklarer, og driftslinjen staar nederst i holdkortet.
     } else if (S.tab === "opsaet") {
-    // Klub-kortet bor her nu. Vises ALTID — ogsaa foer klubben er sat op.
-    h += klubKort(EN);
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") +
            '<b style="font-size:16px">⚙️ ' + (EN?"Settings":"Indstillinger") + '</b></div>';
 
@@ -3637,6 +3639,11 @@ function render() {
         '<p class="lille" style="margin:8px 0 0;opacity:.75">' + (EN
           ? "Friends see only your first name, your streak and your live match — nothing else."
           : "Venner ser kun dit fornavn, din streak og din live-kamp — intet andet.") + '</p>';
+      // 🏛 JERES KLUB (v4.4.6): kortet bor nu HER — efter klubkoden, som
+      // det hoerer sammen med, og ikke oeverst paa skaermen (Nicolai:
+      // "den ligger for hoejt under indstillinger"). Vises altid — ogsaa
+      // foer klubben er sat op.
+      h += klubKort(EN);
       // ⭐ NAVNET (v4.4.1): det, vennerne ser. Kunne foer kun saettes paa
       // velkomstskaermen — nu kan en tastefejl (eller en far, der doebte
       // sig "Oskar" i et eksperiment) rettes med ét tryk.

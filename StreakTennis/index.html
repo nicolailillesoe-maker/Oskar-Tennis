@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.3.0 · 22. august 2026";
+const VERSION = "v4.4.0 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1226,6 +1226,9 @@ let S = {
   // chatLaest = {haandtag: tidsstempel} — kun prikkens hukommelse, lokalt.
   chatVen: null, chatNavn: "", chatBeskeder: null, chatHenter: false,
   chatUdkast: "", chatBesked: null, chatAnmeldId: null, chatLaest: {},
+  // Hjemkomsten (v4.4): "oskar"/"teamp" naar den gamle app bor paa
+  // telefonen og StreakTennis endnu ikke har en spiller.
+  flytTilbud: null,
   rumUdkast: "", rumHenter: false, rumBesked: null, rumSet: 0,
   venneKode: null, venneAaben: false, venneUdkast: "",
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
@@ -1328,6 +1331,22 @@ try {
   if (_fp && /^fam-[0-9a-f]{32}$/.test(_fp.trim())) {
     S.famTilbud = _fp.trim();
     history.replaceState(null, "", location.pathname);
+  }
+} catch(e) {}
+
+// ⭐ HJEMKOMSTEN (v4.4). Samme domaene = samme lager: bor Team Oskar
+// (eller Team P) allerede paa telefonen, kan StreakTennis se det — og
+// tilbyder ET tryk, der flytter det hele ind. Kopiering, aldrig flytning:
+// de gamle noegler roeres ikke, og den gamle app virker som foer.
+try {
+  if (!lager.hent("sai-spiller")) {
+    const _pr = ["oskar", "teamp"];
+    for (let _i = 0; _i < _pr.length; _i++) {
+      const _p = _pr[_i];
+      if (lager.hent(_p + "-kampe") || lager.hent(_p + "-tennis-log") || lager.hent(_p + "-spiller")) {
+        S.flytTilbud = _p; break;
+      }
+    }
   }
 } catch(e) {}
 
@@ -2236,6 +2255,31 @@ const A = {
     location.reload();
   },
   famAfvis: () => { S.famTilbud = null; render(); },
+  // ══ HJEMKOMSTEN (v4.4) ════════════════════════════════════════════
+  flytInd: () => {
+    const p = S.flytTilbud; if (!p) return;
+    try {
+      // Alle den gamle apps noegler kopieres 1:1 til sai-*. Overskrivning
+      // er bevidst: tilbuddet vises kun paa en frisk StreakTennis, saa det
+      // eneste, der viger, er den selvfoedte spiller-kode — og den SKAL
+      // vige for den rigtige identitet (fx oskar-a6aa886b), naar den findes.
+      const noegler = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && k.indexOf(p + "-") === 0) noegler.push(k);
+      }
+      noegler.forEach(function(k){
+        lager.gem("sai-" + k.slice(p.length + 1), window.localStorage.getItem(k));
+      });
+      // Den gamle personlige app kendte ikke navnefeltet — navnet foelger
+      // praefikset, hvis det mangler.
+      if (!lager.hent("sai-spiller")) lager.gem("sai-spiller", p === "teamp" ? "Philip" : "Oskar");
+      lager.gem("sai-laas", "op");
+      lager.gem("sai-flyttet-fra", p);
+    } catch(e) {}
+    location.reload();
+  },
+  flytNej: () => { S.flytTilbud = null; render(); },
   // ══ VENNE-CHATTEN (v4.3, "vi skal have chats med") ════════════════
   chatAabn: (v) => {
     const dele = String(v).split("|");
@@ -2890,6 +2934,18 @@ function render() {
         '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="famBliv">' + (S.famHenter ? "⏳ …" : (S.sprog === "en" ? "Join the team" : "Bliv en del af teamet")) + '</button>' +
         '<button class="knap valg" data-a="famAfvis">' + (S.sprog === "en" ? "Not now" : "Ikke nu") + '</button></div>' +
         (S.famBesked ? '<p class="lille" style="margin:8px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '') + '</div>';
+      return;
+    }
+    if (S.flytTilbud) {
+      const _gnavn = S.flytTilbud === "teamp" ? "Team P" : "Team Oskar";
+      el.innerHTML = '<div class="topbar"><span class="brand"><span class="brandnavn">STREAKTENNIS</span></span></div>' +
+        '<div class="kort" style="margin:60px 16px 0;border-color:var(--guld)">' +
+        '<h2 style="color:var(--guld);font-size:16px;margin:0 0 10px">' + (S.sprog === "en" ? "Welcome home" : "Velkommen hjem") + '</h2>' +
+        '<p class="lille" style="margin:0 0 12px">' + (S.sprog === "en"
+          ? "<b>" + _gnavn + "</b> already lives on this phone. One tap moves everything in — matches, sessions and codes. The old app is not touched, and it keeps working."
+          : "<b>" + _gnavn + "</b> bor allerede på denne telefon. Ét tryk flytter det hele ind — kampe, træninger og koder. Den gamle app røres ikke og virker som før.") + '</p>' +
+        '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="flytInd">' + (S.sprog === "en" ? "Move " + _gnavn + " in" : "Flyt " + _gnavn + " ind") + '</button>' +
+        '<button class="knap valg" data-a="flytNej">' + (S.sprog === "en" ? "Start fresh" : "Start forfra") + '</button></div></div>';
       return;
     }
     el.innerHTML = '<div class="topbar"><span class="brand"><span class="brandnavn">STREAKTENNIS</span></span></div>' +

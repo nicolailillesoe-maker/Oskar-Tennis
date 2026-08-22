@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.4.0 · 22. august 2026";
+const VERSION = "v4.4.4 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -2215,7 +2215,7 @@ const A = {
     const r = await sync("familie-kode", S.famEtiket ? { etiket: S.famEtiket.slice(0, 20) } : {});
     S.famHenter = false;
     if (r.fejl) S.famBesked = { t: r.status === 429
-      ? (S.sprog === "en" ? "At most 6 family keys." : "Højst 6 familie-nøgler.")
+      ? (S.sprog === "en" ? "At most 6 team keys." : "Højst 6 team-nøgler.")
       : (S.sprog === "en" ? "The key could not be made right now." : "Nøglen kunne ikke laves lige nu.") };
     else { S.famNyKode = r.kode; S.famEtiket = ""; A.famHent(); }
     render();
@@ -2226,9 +2226,15 @@ const A = {
     const t = (S.sprog === "en"
       ? "Join our team in StreakTennis — open the link and tap ”Join the team”: "
       : "Vær med på holdet i StreakTennis — åbn linket og tryk ”Bliv en del af teamet”: ");
-    if (navigator.share) { navigator.share({ text: t + url }).catch(function(){}); }
-    else { try { navigator.clipboard.writeText(t + url); S.kopieret = "famLink"; render();
-      setTimeout(function(){ S.kopieret = null; render(); }, 1600); } catch(e) {} }
+    // Nøglen forsvinder, så snart den er delt (Nicolai 22/8): en
+    // engangshemmelighed skal ikke blive stående på skærmen. Del-arket
+    // hhv. "kopieret ✓" er kvitteringen; listen viser den som aktiv.
+    if (navigator.share) {
+      navigator.share({ text: t + url })
+        .then(function(){ S.famNyKode = null; render(); })
+        .catch(function(){});
+    } else { try { navigator.clipboard.writeText(t + url); S.kopieret = "famLink"; render();
+      setTimeout(function(){ S.kopieret = null; S.famNyKode = null; render(); }, 1600); } catch(e) {} }
   },
   famSpaer: async (v) => {
     const r = await sync("familie-spaer", { id: v });
@@ -2240,13 +2246,21 @@ const A = {
     const r = await sync("familie-indloes", { kode: S.famTilbud });
     S.famHenter = false;
     if (r.fejl) {
-      S.famBesked = { t: (S.sprog === "en" ? "The link does not work — ask for a new one." : "Linket virker ikke — bed om et nyt.") };
+      // sync() laegger serverens fejlkode I r.fejl ved ikke-200 (maalt:
+      // `return r.ok ? d : { fejl: d.kode || "netvaerk", ... }`).
+      S.famBesked = { t: r.fejl === "brugt"
+        ? (S.sprog === "en" ? "This link has already been used — ask for a new key." : "Linket er allerede brugt — bed om en ny nøgle.")
+        : (S.sprog === "en" ? "The link does not work — ask for a new one." : "Linket virker ikke — bed om et nyt.") };
       render(); return;
     }
     // Enheden BLIVER familie: koden er nu dens noegle, rollen laases i
     // lageret, og appen genfoedes som teamets spejl.
+    // ⭐ v4.4.3 · EN NOEGLE, EN AKTIVERING: serveren ROTEREDE noeglen ved
+    // indloesningen — enheden gemmer den NYE hemmelighed fra svaret, som
+    // aldrig har staaet i en URL. Linkets kode er doed i samme sekund.
+    // Uden `noegle` i svaret (aeldre motor) bruges linkets kode som foer.
     try {
-      lager.gem("sai-spillernoegle", S.famTilbud);
+      lager.gem("sai-spillernoegle", (r.noegle && /^fam-[0-9a-f]{32}$/.test(r.noegle)) ? r.noegle : S.famTilbud);
       lager.gem("sai-rolle", "familie");
       lager.gem("sai-venne-aktiv", "1");
       lager.gem("sai-laas", "op");
@@ -2255,6 +2269,13 @@ const A = {
     location.reload();
   },
   famAfvis: () => { S.famTilbud = null; render(); },
+  // ══ NAVNESKIFT (v4.4.1) ═══════════════════════════════════════════
+  navnSkift: () => {
+    const v = (S.navnNyt || "").trim().slice(0, 24);
+    if (!v) return;
+    try { lager.gem("sai-spiller", v); } catch(e) {}
+    location.reload();
+  },
   // ══ HJEMKOMSTEN (v4.4) ════════════════════════════════════════════
   flytInd: () => {
     const p = S.flytTilbud; if (!p) return;
@@ -3012,7 +3033,7 @@ function render() {
         // 21/8: flisen kraevede en klub OG et tilvalg fra traeneren. Det var
         // forkert — streaken regnes af familiens egen log og har aldrig haft
         // brug for en server. Den er der nu altid.
-        _flise("stigeAabn","","🔥",(EN?"Streak":"Streak"),
+        _flise("stigeAabn","","🔥",(EN?"Streak Zone":"Streak Zone"),
           (S.klubKode && S.traenerData && S.traenerData.stigeHoldTil
             ? (EN?"your group's streaks":"holdets streaks")
             : (EN?"sessions in a row & friends":"træninger i træk & venner")),"dev-kant-guld") +
@@ -3116,8 +3137,8 @@ function render() {
         h += '<div class="kort" style="margin-top:10px">';
         if (!bs.length) {
           h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (S.rolle === "familie"
-            ? (EN ? "The stand belongs to the player and the friends — family access sees the match, not the messages."
-                  : "Tribunen er spillerens og vennernes — familie-adgang ser kampen, ikke beskederne.")
+            ? (EN ? "The stand belongs to the player and the friends — the team key sees the match, not the messages."
+                  : "Tribunen er spillerens og vennernes — team-nøglen ser kampen, ikke beskederne.")
             : (EN ? "Nobody has said anything yet. Be the first — tap a reaction."
                   : "Ingen har sagt noget endnu. Vær den første — tryk en reaktion.")) + '</p>';
         } else {
@@ -3200,7 +3221,7 @@ function render() {
       h += _dinTraener(EN);
     } else if (S.tab === "stige") {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") +
-           '<b style="font-size:16px">🔥 ' + (EN?"Streak":"Streak") + '</b></div>';
+           '<b style="font-size:16px">🔥 ' + (EN?"Streak Zone":"Streak Zone") + '</b></div>';
       // ══ DIT EGET TAL · ALTID ══════════════════════════════════════
       // 21/8 (Nicolai): "en spiller behøver ikke have tilladelse fra klubben
       // til at lave streaks. Det skal i virkeligheden være på fra start."
@@ -3380,8 +3401,8 @@ function render() {
                 h += '<div class="kort dev-kant dev-kant-staal" style="padding:10px 12px;margin:2px 0 8px">' +
                   '<p class="lille" style="margin:0 0 6px"><b>' + esc(ak.turnering || (EN?"Match":"Kamp")) + '</b>' + (ak.modstander ? ' · vs ' + esc(ak.modstander) : '') + '</p>';
                 if (ab === null) h += '<p class="lille" style="margin:0">' + (EN
-                  ? "The conversation belongs to the player and the friends — family access sees the match, not the messages."
-                  : "Samtalen er spillerens og vennernes — familie-adgang ser kampen, ikke beskederne.") + '</p>';
+                  ? "The conversation belongs to the player and the friends — the team key sees the match, not the messages."
+                  : "Samtalen er spillerens og vennernes — team-nøglen ser kampen, ikke beskederne.") + '</p>';
                 else if (!ab || !ab.length) h += '<p class="lille" style="margin:0">' + (EN ? "Nothing was said in this one." : "Der blev ikke sagt noget i denne.") + '</p>';
                 else ab.slice(-40).forEach(function(b){
                   h += (b.art === "r")
@@ -3511,23 +3532,23 @@ function render() {
       // ⭐ FAMILIEN (v4.2, "byg 4"): mor og far taster og ser data — aldrig
       // beskeder. Noeglen vises EN gang; kun hash paa serveren.
       if (S.rolle === "familie") {
-        h += _opsKort("familie", "👪", (EN?"FAMILY":"FAMILIEN"), (EN?"family access":"familie-adgang"), "var(--is)",
+        h += _opsKort("familie", "👪", (EN?"THE TEAM":"TEAMET"), (EN?"team key":"team-nøgle"), "var(--is)",
           '<p class="lille" style="margin:0">' + (EN
-            ? "This phone is family access to the team: it enters and sees data — never the messages between the player and the friends."
-            : "Denne telefon er familie-adgang til teamet: den taster og ser data — aldrig beskederne mellem spilleren og vennerne.") + '</p>');
+            ? "This phone holds a team key: it enters and sees data — never the messages between the player and the friends."
+            : "Denne telefon har en team-nøgle: den taster og ser data — aldrig beskederne mellem spilleren og vennerne.") + '</p>');
       } else {
         let famKrop = '<p class="lille" style="margin:0 0 8px">' + (EN
-          ? "Give mum or dad their own key to the team. They enter and see everything — except the messages."
-          : "Giv mor eller far deres egen nøgle til teamet. De taster og ser alt — undtagen beskederne.") + '</p>' +
+          ? "Give mum or dad their own team key. They enter and see everything — except the messages. The link works once."
+          : "Giv mor eller far deres egen team-nøgle. De taster og ser alt — undtagen beskederne. Linket virker én gang.") + '</p>' +
           '<input data-felt="famEtiket" maxlength="20" placeholder="' + (EN?"Label, e.g. Mum (optional)":"Etiket, fx Mor (valgfrit)") + '" value="' + esc(S.famEtiket || "") + '">' +
-          '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="famNy">' + (S.famHenter ? "⏳ …" : (EN?"Get a family key":"Få en familie-nøgle")) + '</button>';
+          '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="famNy">' + (S.famHenter ? "⏳ …" : (EN?"Get a team key":"Få en team-nøgle")) + '</button>';
         if (S.famNyKode) {
           famKrop += '<div class="kort dev-kant dev-kant-guld" style="margin-top:9px;padding:12px;text-align:center">' +
             '<div style="font-size:12px;font-weight:700;letter-spacing:1px;word-break:break-all;color:var(--guld);font-variant-numeric:tabular-nums">' + esc(S.famNyKode) + '</div>' +
             '<p class="lille" style="margin:8px 0 0">' + (EN
               ? "Shown ONCE — send the link now. The app sends nothing itself."
               : "Vises ÉN gang — send linket nu. Appen sender ikke selv noget.") + '</p>' +
-            '<button class="knap" style="margin-top:9px;min-height:44px;background:var(--grus)" data-a="famDel">' + (S.kopieret === "famLink" ? (EN?"Link copied ✓":"Link kopieret ✓") : "📤 " + (EN?"Share family link":"Del familie-link")) + '</button></div>';
+            '<button class="knap" style="margin-top:9px;min-height:44px;background:var(--grus)" data-a="famDel">' + (S.kopieret === "famLink" ? (EN?"Link copied ✓":"Link kopieret ✓") : "📤 " + (EN?"Share team link":"Del team-link")) + '</button></div>';
         }
         if (S.famKoder === null) famKrop += '<button class="knap valg" style="margin-top:8px;width:100%;min-height:44px;font-size:12px" data-a="famHent">' + (S.famHenter ? "⏳ …" : (EN?"Show issued keys":"Vis udstedte nøgler")) + '</button>';
         else if (S.famKoder.length) S.famKoder.forEach(function(f){
@@ -3539,7 +3560,7 @@ function render() {
         else famKrop += '<p class="lille" style="margin:8px 0 0;opacity:.7">' + (EN?"No keys issued yet.":"Ingen nøgler udstedt endnu.") + '</p>';
         famKrop += (S.famBesked ? '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '');
         const famAntal = S.famKoder ? S.famKoder.filter(function(f){ return f.status === "aktiv"; }).length : 0;
-        h += _opsKort("familie", "👪", (EN?"FAMILY":"FAMILIEN"),
+        h += _opsKort("familie", "👪", (EN?"THE TEAM":"TEAMET"),
           famAntal ? (famAntal === 1 ? (EN?"1 key":"1 nøgle") : famAntal + (EN?" keys":" nøgler")) : (EN?"mum & dad":"mor & far"), "var(--daempet)", famKrop);
       }
       h += _opsKort("klub", "🏷", (EN?"CLUB CODE":"KLUBKODE"),
@@ -3616,6 +3637,15 @@ function render() {
         '<p class="lille" style="margin:8px 0 0;opacity:.75">' + (EN
           ? "Friends see only your first name, your streak and your live match — nothing else."
           : "Venner ser kun dit fornavn, din streak og din live-kamp — intet andet.") + '</p>';
+      // ⭐ NAVNET (v4.4.1): det, vennerne ser. Kunne foer kun saettes paa
+      // velkomstskaermen — nu kan en tastefejl (eller en far, der doebte
+      // sig "Oskar" i et eksperiment) rettes med ét tryk.
+      h += _opsKort("navn", "✏️", (EN?"NAME":"NAVNET"), esc(SPILLER || "—"), "var(--kridt)",
+        '<p class="lille" style="margin:0 0 8px">' + (EN
+          ? "The app&rsquo;s name — and what your friends see. Stored only on this device; the next sync carries it along."
+          : "Appens navn — og det, dine venner ser. Gemmes kun på denne enhed; næste synk tager det med.") + '</p>' +
+        '<input data-felt="navnNyt" maxlength="24" placeholder="' + (EN?"New first name":"Nyt fornavn") + '" value="' + esc(S.navnNyt || "") + '">' +
+        '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="navnSkift">' + (EN?"Save name":"Gem navnet") + '</button>');
       h += _opsKort("data", "📱", (EN?"YOUR DATA":"DINE DATA"),
         (S.klubKode ? (EN?"club connected":"klub tilsluttet")
           : S.venneAktiv ? (EN?"friends only":"kun venner")

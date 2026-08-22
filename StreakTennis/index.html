@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.5.0 · 22. august 2026";
+const VERSION = "v4.5.3 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -3473,9 +3473,15 @@ function render() {
         }
         h += '</div>';
 
+        // ⭐ v4.5.1 · VENNE-KODER ER SPILLERENS (Nicolai 22/8 om team-
+        // adgangen: "ikke kunne sende links rundt til vennegrupper - ud
+        // over links til live kampe"). Teamet ser listen og tavlerne;
+        // koder udstedes og indløses kun på spillerens egen telefon.
+        // Serveren håndhæver (v2.14.1: 403 rolle); UI'et er ærligt.
+        if (S.rolle !== "familie") {
         h += '<div class="raekke" style="margin-top:10px">' +
-          '<button class="knap" style="min-height:44px" data-a="venneNyKode">\ud83d\udd11 ' + (EN?"Get a code":"F\u00e5 en kode") + '</button>' +
-          '<button class="knap" style="min-height:44px" data-a="venneAabn">\u2795 ' + (EN?"Enter a code":"Indtast kode") + '</button></div>';
+          '<button class="knap" style="min-height:44px" data-a="venneNyKode">\ud83e\udd1d ' + (EN?"Add a friend":"Tilf\u00f8j ven") + '</button>' +
+          '<button class="knap" style="min-height:44px" data-a="venneAabn">\u2705 ' + (EN?"Accept friend":"Accepter ven") + '</button></div>';
 
         if (S.venneKode) {
           h += '<div class="kort dev-kant dev-kant-guld" style="margin-top:9px;text-align:center;padding:14px">' +
@@ -3490,13 +3496,18 @@ function render() {
 
         if (S.venneAaben) {
           h += '<div style="margin-top:9px"><input placeholder="' + (EN?"6 characters":"6 tegn") + '" value="' + esc(S.venneUdkast) + '" data-felt="venneUdkast" maxlength="6" style="text-transform:uppercase;letter-spacing:3px;text-align:center;font-weight:700">' +
-            '<button class="knap" style="margin-top:7px;width:100%;min-height:44px" data-a="venneIndloes">' + (S.vennerHenter ? (EN?"\u23f3 \u2026":"\u23f3 \u2026") : (EN?"Add friend":"Tilf\u00f8j ven")) + '</button></div>';
+            '<button class="knap" style="margin-top:7px;width:100%;min-height:44px" data-a="venneIndloes">' + (S.vennerHenter ? (EN?"\u23f3 \u2026":"\u23f3 \u2026") : (EN?"Accept friend":"Accepter ven")) + '</button></div>';
+        }
         }
 
         h += (S.vennerBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.vennerBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.vennerBesked.t) + '</p>' : '');
-        h += '<p class="lille" style="margin:10px 0 0;padding-top:8px;border-top:1px dashed var(--kant);opacity:.7">' + (EN
-          ? "A friend sees your first name, your streak and your match while it runs \u2014 never your notes."
-          : "En ven ser dit fornavn, din streak og din kamp mens den spilles \u2014 aldrig dine noter.") + '</p>';
+        h += '<p class="lille" style="margin:10px 0 0;padding-top:8px;border-top:1px dashed var(--kant);opacity:.7">' + (S.rolle === "familie"
+          ? (EN
+            ? "The team watches \u2014 friends are invited from the player&rsquo;s own phone. Live matches can always be shared from the scoreboard."
+            : "Teamet kigger med \u2014 venner inviteres fra spillerens egen telefon. Live-kampe kan altid deles fra tavlen.")
+          : (EN
+            ? "A friend sees your first name, your streak and your match while it runs \u2014 never your notes."
+            : "En ven ser dit fornavn, din streak og din kamp mens den spilles \u2014 aldrig dine noter.")) + '</p>';
         h += '</div>';
         // Regel-kortet og drifts-kortet er fjernet 20/8: reglen staar nu ved
         // tallet, den forklarer, og driftslinjen staar nederst i holdkortet.

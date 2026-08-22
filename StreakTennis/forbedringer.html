@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>StreakTennis · Gør den bedre</title>
+<style>
+  :root{
+    --dyb:#070d18; --nat:#0b1424; --kort:#101c30; --kant:#1d2c45;
+    --guld:#e8b23c; --grus:#3861d8; --is:#8fb8e8; --kridt:#eef3fa;
+    --daempet:#7d8ca3; --vundet:#3ecf8e; --tabt:#e8635c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:linear-gradient(180deg,#070d18 0%,#0b1424 55%,#0d1526 100%);color:var(--kridt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;padding:0 0 60px;min-height:100vh}
+  .wrap{max-width:520px;margin:0 auto;padding:0 16px}
+  header{padding:42px 0 6px;text-align:center}
+  .brand{font-size:13px;font-weight:800;letter-spacing:4px;color:var(--guld)}
+  .byline{font-size:10.5px;letter-spacing:1.5px;color:var(--daempet);margin-top:4px}
+  .hero{font-size:44px;margin-top:10px}
+  h1{font-size:29px;line-height:1.15;margin:14px 0 8px}
+  h1 .fx{color:var(--guld)}
+  .intro{color:var(--is);font-size:14.5px;line-height:1.5;margin:0 auto;max-width:430px}
+  .kort{background:var(--kort);border:1px solid var(--kant);border-radius:18px;
+    padding:18px 16px;margin:16px 0;box-shadow:0 6px 24px rgba(0,0,0,.35)}
+  .kort.guld{border-left:3px solid var(--guld)}
+  label{display:block;font-size:11px;font-weight:800;letter-spacing:2px;
+    color:var(--daempet);margin:0 0 6px}
+  textarea,input{width:100%;background:#0a1322;border:1px solid var(--kant);border-radius:12px;
+    padding:12px;color:var(--kridt);font-size:15px;font-family:inherit;-webkit-appearance:none}
+  textarea{min-height:132px;resize:vertical;line-height:1.5}
+  textarea:focus,input:focus{outline:none;border-color:var(--grus)}
+  .taeller{text-align:right;font-size:11.5px;color:var(--daempet);margin-top:5px}
+  .knap{width:100%;min-height:48px;border:none;border-radius:12px;background:var(--grus);
+    color:#fff;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:12px}
+  .knap:disabled{opacity:.5}
+  .knap.valg{background:#0a1322;border:1px solid var(--kant);color:var(--is);font-size:14px;
+    min-height:44px;margin-top:8px}
+  p,li{font-size:14px;line-height:1.55;color:#c7d4e6}
+  .lille{font-size:12px;color:var(--daempet);line-height:1.5}
+  b.g{color:var(--guld)} b.h{color:var(--kridt)}
+  .besked{margin-top:12px;padding:12px;border-radius:12px;font-size:14px;line-height:1.5}
+  .besked.ok{background:rgba(62,207,142,.12);border:1px solid rgba(62,207,142,.4);color:#bff0d8}
+  .besked.fejl{background:rgba(232,99,92,.12);border:1px solid rgba(232,99,92,.4);color:#f3c4c1}
+  .sektion{font-size:11px;font-weight:800;letter-spacing:2.5px;color:var(--daempet);margin:28px 2px 2px}
+  .regel{display:flex;gap:10px;align-items:flex-start;margin-top:10px}
+  .regel .ikon{font-size:17px;flex:none;margin-top:1px}
+  .fod{margin-top:30px;text-align:center;font-size:11.5px;color:var(--daempet);line-height:1.6}
+  .skjult{display:none}
+  .chip{display:inline-block;background:#0a1322;border:1px solid var(--kant);border-radius:999px;
+    padding:5px 11px;font-size:12px;color:var(--is);margin:8px 4px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand">S T R E A K T E N N I S</div>
+  <div class="byline">SportsAInalytics</div>
+  <div class="hero">💡</div>
+  <h1>Gør den <span class="fx">bedre.</span></h1>
+  <p class="intro">Har du en idé? Noget der driller? Noget der mangler? Skriv det her — det bliver læst, hver gang der bygges.</p>
+</header>
+
+<div class="kort guld">
+  <label for="ide">DIN IDÉ</label>
+  <textarea id="ide" maxlength="500" placeholder="Fx: Man burde kunne se hvem der hepper mest i rummet…"></textarea>
+  <div class="taeller"><span id="antal">0</span>/500</div>
+
+  <div style="margin-top:12px">
+    <label for="navn">DIT FORNAVN <span style="font-weight:400;letter-spacing:0;text-transform:none">(valgfrit)</span></label>
+    <input id="navn" maxlength="24" placeholder="Så ved vi, hvem vi skal takke">
+  </div>
+
+  <div id="klubfelt" class="skjult" style="margin-top:12px">
+    <label for="klubkode">KLUBKODE</label>
+    <input id="klubkode" type="password" autocomplete="off" placeholder="Klubbens kode">
+    <p class="lille" style="margin-top:6px">Skriver du på vegne af klubben, så tast klubkoden — ellers virker din spiller-kode fint.</p>
+  </div>
+
+  <button class="knap" id="send">📮 Send idéen</button>
+  <button class="knap valg" id="klubskift">🏛 Jeg skriver fra en klub</button>
+  <div id="besked"></div>
+</div>
+
+<div class="sektion">SÅDAN BEHANDLES DEN</div>
+
+<div class="kort">
+  <div class="regel"><span class="ikon">⚡</span><p><b class="h">Er det en klar forbedring?</b> Så bliver den bare bygget — ingen møder, ingen ventetid.</p></div>
+  <div class="regel"><span class="ikon">🤔</span><p><b class="h">Er den i en gråzone</b> — noget der ændrer, hvad andre kan se, koster penge eller flytter en regel — så bliver den vendt med Nicolai først.</p></div>
+  <div class="regel"><span class="ikon">🎾</span><p><b class="h">Og uanset hvad:</b> tennissen kommer først. Appen skal gøre den sjovere, aldrig omvendt.</p></div>
+  <div style="margin-top:6px">
+    <span class="chip">højst 10 idéer om dagen</span><span class="chip">ingen links</span><span class="chip">500 tegn</span>
+  </div>
+</div>
+
+<div class="kort">
+  <p class="lille"><b class="h">Hvad gemmer vi?</b> Kun din idé, dit fornavn hvis du skrev det, og hvilken konto den kom fra — så vi kan sige tak eller spørge om noget. Ikke andet. Idéen bruges ALDRIG til analyser af kampe eller spillere.</p>
+</div>
+
+<div class="fod">
+  StreakTennis · SportsAInalytics<br>
+  Postkassen er altid åben. 🔥
+</div>
+
+</div>
+
+<script>
+(function(){
+  var URL_FORSLAG = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/forslag";
+  var ide = document.getElementById("ide");
+  var navn = document.getElementById("navn");
+  var klubkode = document.getElementById("klubkode");
+  var klubfelt = document.getElementById("klubfelt");
+  var klubskift = document.getElementById("klubskift");
+  var send = document.getElementById("send");
+  var besked = document.getElementById("besked");
+  var antal = document.getElementById("antal");
+  var klubTilstand = false;
+
+  // Siden bor på SAMME domæne som appen, så spiller-koden ligger allerede
+  // i browserens lager. Ingen skal taste noget for at blive genkendt.
+  function hent(k){ try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } }
+  var noegle = hent("sai-spillernoegle") || hent("oskar-spillernoegle") || hent("teamp-spillernoegle");
+  var gemtNavn = hent("sai-spiller") || hent("oskar-spiller") || "";
+  if (gemtNavn && !navn.value) navn.value = gemtNavn.slice(0, 24);
+  var gemtKlub = hent("sai-klubkode");
+
+  ide.addEventListener("input", function(){ antal.textContent = ide.value.length; });
+
+  klubskift.addEventListener("click", function(){
+    klubTilstand = !klubTilstand;
+    klubfelt.className = klubTilstand ? "" : "skjult";
+    klubskift.textContent = klubTilstand ? "🎾 Jeg er spiller (ikke klub)" : "🏛 Jeg skriver fra en klub";
+    if (klubTilstand && gemtKlub && !klubkode.value) klubkode.value = gemtKlub;
+  });
+
+  function vis(t, fejl){
+    besked.className = "besked " + (fejl ? "fejl" : "ok");
+    besked.textContent = t;
+  }
+
+  send.addEventListener("click", function(){
+    var t = (ide.value || "").trim();
+    if (!t) { vis("Skriv din idé først 🙂", true); return; }
+    var kk = klubTilstand ? (klubkode.value || "").trim() : "";
+    if (!kk && !noegle) {
+      vis("Åbn siden fra din telefon, hvor StreakTennis kører — så genkender vi dig automatisk. Eller tast klubkoden, hvis du skriver fra en klub.", true);
+      return;
+    }
+    send.disabled = true; send.textContent = "⏳ Sender …";
+    var hoveder = { "content-type": "application/json" };
+    if (kk) hoveder["x-klub-noegle"] = kk;
+    if (noegle) hoveder["x-spiller-noegle"] = noegle;
+    var krop = { tekst: t };
+    if ((navn.value || "").trim()) krop.fornavn = navn.value.trim();
+
+    fetch(URL_FORSLAG, { method: "POST", headers: hoveder, body: JSON.stringify(krop) })
+      .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+      .then(function(s){
+        send.disabled = false; send.textContent = "📮 Send idéen";
+        if (s.ok) {
+          ide.value = ""; antal.textContent = "0";
+          vis("Tak! Idéen er landet i postkassen ✓ Er den en klar forbedring, bliver den bare bygget.", false);
+        } else {
+          var k = (s.d && s.d.kode) || "";
+          vis(k === "loft" ? "Ti idéer på ét døgn — flot! Gem resten til i morgen 🙂"
+            : k === "link" ? "Links kan ikke sendes med — skriv idéen med ord i stedet."
+            : k === "kraever-invitation" ? "Vi kan ikke genkende din kode endnu. Bed om en invitation, så virker postkassen."
+            : k === "adgang" ? "Koden passer ikke. Tjek klubkoden, eller åbn siden fra telefonen med appen."
+            : "Kunne ikke sende lige nu — prøv igen om lidt.", true);
+        }
+      })
+      .catch(function(){
+        send.disabled = false; send.textContent = "📮 Send idéen";
+        vis("Ingen forbindelse — prøv igen om lidt.", true);
+      });
+  });
+})();
+</script>
+</body>
+</html>

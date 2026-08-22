@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.4.7 · 22. august 2026";
+const VERSION = "v4.4.8 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -3173,7 +3173,7 @@ function render() {
 
     } else if (S.tab === "chat") {
       // ⭐ VENNE-CHATTEN (v4.3). Serverens regler er samtalens fodnote:
-      // 30 dage / 200 beskeder, Fjern ven sletter for begge, ⚑ skjuler.
+      // 200 beskeder (rullende, v2.13.0 uden tidsvindue), Fjern ven sletter for begge, ⚑ skjuler.
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' +
         '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 16px" data-a="chatLuk">←</button>' +
         '<b style="font-size:16px">💬 ' + esc(S.chatNavn || (EN?"Friend":"Ven")) + '</b></div>';
@@ -3215,8 +3215,8 @@ function render() {
         '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="chatSend">' + (EN?"Send":"Send") + '</button></div>';
       h += (S.chatBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.chatBesked.t) + '</p>' : '');
       h += '<p class="lille" style="margin:10px 2px 0;opacity:.7">' + (EN
-        ? "The chat keeps at most 30 days and 200 messages. Remove friend deletes it for both of you. ⚑ hides a message for both right away."
-        : "Chatten gemmer højst 30 dage og 200 beskeder. Fjern ven sletter den for jer begge. ⚑ skjuler en besked for begge med det samme.") + '</p>';
+        ? "The chat keeps your last 200 messages — the oldest fall out. Remove friend deletes it for both of you. ⚑ hides a message for both right away."
+        : "Chatten gemmer jeres seneste 200 beskeder — de ældste falder ud. Fjern ven sletter den for jer begge. ⚑ skjuler en besked for begge med det samme.") + '</p>';
     } else if (S.tab === "traener") {
       // 22/8: ABSORBERET I TRÆN. Gamle stier (og gammel gemt tilstand)
       // lander i det samme indhold — intet doer, det flytter bare hjem.

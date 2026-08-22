@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.1.1 · 22. august 2026";
+const VERSION = "v4.2.0 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1214,6 +1214,14 @@ let S = {
   rumKode: null, rumNavn: "", rumData: null, rumBeskeder: [],
   // Fjern ven: inline-bekraeftelse (id + navn) · Slet kamp: samme moenster.
   venneFjernId: null, venneFjernNavn: "", rumSletBekraeft: false,
+  // Kamp-arkivet (v4.2, Nicolai: "vil gerne have B"): fortiden, kamp for
+  // kamp — hentes foerst naar folden aabnes. arkivAaben = id paa aabent rum.
+  arkiv: null, arkivHenter: false, arkivAaben: null, arkivRum: null,
+  arkivFold: false, arkivSletId: null, arkivBesked: null,
+  // Familien (v4.2, "byg 4"): rollen laeses af lageret. En familie-enhed
+  // er teamets spejl — den ser data og tavler, aldrig beskeder.
+  rolle: "spiller", famKoder: null, famNyKode: null, famEtiket: "",
+  famHenter: false, famBesked: null, famTilbud: null,
   rumUdkast: "", rumHenter: false, rumBesked: null, rumSet: 0,
   venneKode: null, venneAaben: false, venneUdkast: "",
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
@@ -1301,6 +1309,20 @@ try {
     S.venneUdkast = _vp.trim().toUpperCase();
     S.vennerBesked = { fejl: false, t: "\uD83D\uDC8C Du er inviteret \u2014 tryk \u201DTilf\u00F8j ven\u201D, s\u00E5 er I forbundet." };
     history.replaceState(null, "", location.pathname);   // koden skal ikke blive staaende i adresselinjen
+  }
+} catch(e) {}
+
+// Rollen (v4.2): en familie-enhed har gemt "familie" — den taster og ser
+// data, aldrig beskeder. Serveren haandhaever; UI'et er aerligt om det.
+try { if (lager.hent("sai-rolle") === "familie") S.rolle = "familie"; } catch(e) {}
+
+// ⭐ FAMILIE-LINKET · ?familie=KODE (v4.2). Som venne-linket: tilbuddet
+// staar klar, men SELVE tilslutningen er et tryk — foraelderens handling.
+try {
+  const _fp = new URLSearchParams(location.search).get("familie");
+  if (_fp && /^fam-[0-9a-f]{32}$/.test(_fp.trim())) {
+    S.famTilbud = _fp.trim();
+    history.replaceState(null, "", location.pathname);
   }
 } catch(e) {}
 
@@ -2079,7 +2101,11 @@ const A = {
       fetch(SYNC_URL, { method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ handling: "live-hent", foelgekode: S.rumKode }) })
         .then(function(r){ return r.json(); }).catch(function(){ return {}; }),
-      sync("rum-hent", { foelgekode: S.rumKode }),
+      // Familie-rollen ser kampen — aldrig samtalen. Serveren siger
+      // under alle omstaendigheder nej (403); vi spoerger slet ikke.
+      S.rolle === "familie"
+        ? Promise.resolve({ fejl: "rolle" })
+        : sync("rum-hent", { foelgekode: S.rumKode }),
     ]);
     S.rumHenter = false;
     if (k && k.kamp) S.rumData = k.kamp;
@@ -2116,6 +2142,95 @@ const A = {
 
   venneAabn: () => { S.venneAaben = !S.venneAaben; S.venneUdkast = ""; S.vennerBesked = null; render(); },
 
+  // ══ KAMP-ARKIVET (v4.2, "vil gerne have B") ═══════════════════════
+  arkivFoldSkift: () => {
+    S.arkivFold = !S.arkivFold; render();
+    if (S.arkivFold && S.arkiv === null) A.arkivHent();
+  },
+  arkivHent: async () => {
+    if (S.arkivHenter || !S.spillerNoegle) return;
+    S.arkivHenter = true; render();
+    const r = await sync("arkiv-hent", {});
+    S.arkivHenter = false;
+    S.arkiv = r.fejl ? [] : (r.kampe || []);
+    if (r.fejl) S.arkivBesked = { t: (S.sprog === "en" ? "The archive could not be fetched right now." : "Arkivet kunne ikke hentes lige nu.") };
+    render();
+  },
+  arkivAabn: async (v) => {
+    S.arkivAaben = v; S.arkivRum = null; S.arkivSletId = null; S.arkivBesked = null; render();
+    const r = await sync("arkiv-rum", { id: v });
+    if (!r.fejl) S.arkivRum = r;
+    else S.arkivBesked = { t: (S.sprog === "en" ? "The match could not be fetched." : "Kampen kunne ikke hentes.") };
+    render();
+  },
+  arkivLuk: () => { S.arkivAaben = null; S.arkivRum = null; S.arkivSletId = null; render(); },
+  arkivSletSpoerg: (v) => { S.arkivSletId = v; render(); },
+  arkivSletNej: () => { S.arkivSletId = null; render(); },
+  arkivSletJa: async () => {
+    const id = S.arkivSletId; if (!id) return;
+    S.arkivSletId = null; render();
+    const r = await sync("arkiv-slet", { id });
+    if (!r.fejl) {
+      S.arkiv = (S.arkiv || []).filter(function(k){ return k.id !== id; });
+      if (S.arkivAaben === id) { S.arkivAaben = null; S.arkivRum = null; }
+    } else S.arkivBesked = { t: (S.sprog === "en" ? "Could not delete right now." : "Kunne ikke slette lige nu.") };
+    render();
+  },
+  // ══ FAMILIEN (v4.2, "byg 4") ══════════════════════════════════════
+  famHent: async () => {
+    if (S.famHenter) return;
+    S.famHenter = true; render();
+    const r = await sync("familie-liste", {});
+    S.famHenter = false;
+    if (!r.fejl) S.famKoder = r.koder || [];
+    render();
+  },
+  famNy: async () => {
+    if (S.famHenter) return;
+    S.famHenter = true; S.famBesked = null; render();
+    const r = await sync("familie-kode", S.famEtiket ? { etiket: S.famEtiket.slice(0, 20) } : {});
+    S.famHenter = false;
+    if (r.fejl) S.famBesked = { t: r.status === 429
+      ? (S.sprog === "en" ? "At most 6 family keys." : "Højst 6 familie-nøgler.")
+      : (S.sprog === "en" ? "The key could not be made right now." : "Nøglen kunne ikke laves lige nu.") };
+    else { S.famNyKode = r.kode; S.famEtiket = ""; A.famHent(); }
+    render();
+  },
+  famDel: () => {
+    if (!S.famNyKode) return;
+    const url = location.origin + location.pathname + "?familie=" + S.famNyKode;
+    const t = (S.sprog === "en"
+      ? "Join our team in StreakTennis — open the link and tap ”Join the team”: "
+      : "Vær med på holdet i StreakTennis — åbn linket og tryk ”Bliv en del af teamet”: ");
+    if (navigator.share) { navigator.share({ text: t + url }).catch(function(){}); }
+    else { try { navigator.clipboard.writeText(t + url); S.kopieret = "famLink"; render();
+      setTimeout(function(){ S.kopieret = null; render(); }, 1600); } catch(e) {} }
+  },
+  famSpaer: async (v) => {
+    const r = await sync("familie-spaer", { id: v });
+    if (!r.fejl) A.famHent(); else render();
+  },
+  famBliv: async () => {
+    if (!S.famTilbud || S.famHenter) return;
+    S.famHenter = true; render();
+    const r = await sync("familie-indloes", { kode: S.famTilbud });
+    S.famHenter = false;
+    if (r.fejl) {
+      S.famBesked = { t: (S.sprog === "en" ? "The link does not work — ask for a new one." : "Linket virker ikke — bed om et nyt.") };
+      render(); return;
+    }
+    // Enheden BLIVER familie: koden er nu dens noegle, rollen laases i
+    // lageret, og appen genfoedes som teamets spejl.
+    try {
+      lager.gem("sai-spillernoegle", S.famTilbud);
+      lager.gem("sai-rolle", "familie");
+      lager.gem("sai-venne-aktiv", "1");
+      lager.gem("sai-laas", "op");
+      if (r.fornavn) lager.gem("sai-spiller", r.fornavn);
+    } catch(e) {}
+    location.reload();
+  },
+  famAfvis: () => { S.famTilbud = null; render(); },
   venneHent: async () => {
     if (S.vennerHenter) return;
     if (!S.spillerNoegle) return;
@@ -2704,6 +2819,21 @@ function render() {
 
   h += '<div class="hero"><span class="eyebrow">'+(EN?'High tempo \u00b7 ball in \u00b7 cool head':'H\u00f8jt tempo \u00b7 bolden ind \u00b7 hovedet koldt')+'</span>'+naesteChip(EN)+'</div>';
   if (!SPILLER) {
+    // ⭐ FAMILIE-LINKET foerst (v4.2): en frisk telefon, der aabnes med et
+    // ?familie=-link, skal ikke opfinde en ny spiller — den skal MED paa
+    // holdet. Trykket ER tilslutningen; foer det sendes intet bindende.
+    if (S.famTilbud) {
+      el.innerHTML = '<div class="topbar"><span class="brand"><span class="brandnavn">STREAKTENNIS</span></span></div>' +
+        '<div class="kort" style="margin:60px 16px 0;border-color:var(--guld)">' +
+        '<h2 style="color:var(--guld);font-size:16px;margin:0 0 10px">' + (S.sprog === "en" ? "You are invited" : "Du er inviteret") + '</h2>' +
+        '<p class="lille" style="margin:0 0 12px">' + (S.sprog === "en"
+          ? "This phone becomes part of the team: you enter and see data — never the messages between the player and the friends."
+          : "Denne telefon bliver en del af teamet: du taster og ser data — aldrig beskederne mellem spilleren og vennerne.") + '</p>' +
+        '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="famBliv">' + (S.famHenter ? "⏳ …" : (S.sprog === "en" ? "Join the team" : "Bliv en del af teamet")) + '</button>' +
+        '<button class="knap valg" data-a="famAfvis">' + (S.sprog === "en" ? "Not now" : "Ikke nu") + '</button></div>' +
+        (S.famBesked ? '<p class="lille" style="margin:8px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '') + '</div>';
+      return;
+    }
     el.innerHTML = '<div class="topbar"><span class="brand"><span class="brandnavn">STREAKTENNIS</span></span></div>' +
       '<div class="kort" style="margin:60px 16px 0;border-color:var(--guld)">' +
       '<h2 style="color:var(--guld);font-size:16px;margin:0 0 10px">' + (S.sprog === "en" ? "Welcome" : "Velkommen") + '</h2>' +
@@ -2860,7 +2990,7 @@ function render() {
         }
 
         h += '<div id="rum-flyv" style="position:relative;height:0"></div>';   // ankerpunkt; selve ikonet flyver i <body>
-        if (live) {
+        if (live && S.rolle !== "familie") {
           h += '<div class="raekke" style="margin-top:2px">' +
             ["🔥","👏","🎾","💪"].map(function(i){
               return '<button class="knap" style="min-height:52px;font-size:24px;padding:0" data-a="rumReager" data-v="' + i + '">' + i + '</button>';
@@ -2871,9 +3001,11 @@ function render() {
         const bs = S.rumBeskeder || [];
         h += '<div class="kort" style="margin-top:10px">';
         if (!bs.length) {
-          h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (EN
-            ? "Nobody has said anything yet. Be the first — tap a reaction."
-            : "Ingen har sagt noget endnu. Vær den første — tryk en reaktion.") + '</p>';
+          h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (S.rolle === "familie"
+            ? (EN ? "The stand belongs to the player and the friends — family access sees the match, not the messages."
+                  : "Tribunen er spillerens og vennernes — familie-adgang ser kampen, ikke beskederne.")
+            : (EN ? "Nobody has said anything yet. Be the first — tap a reaction."
+                  : "Ingen har sagt noget endnu. Vær den første — tryk en reaktion.")) + '</p>';
         } else {
           bs.slice(-40).forEach(function(b){
             if (b.art === "r") {
@@ -2889,7 +3021,7 @@ function render() {
         }
         h += '</div>';
 
-        if (live) {
+        if (live && S.rolle !== "familie") {
           h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:stretch">' +
             '<input class="felt" style="flex:1;min-width:0" maxlength="140" placeholder="' + (EN?"Say something — about the match":"Sig noget — om kampen") + '" value="' + esc(S.rumUdkast) + '" data-felt="rumUdkast">' +
             '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="rumSend">' + (EN?"Send":"Send") + '</button></div>';
@@ -3057,6 +3189,63 @@ function render() {
                          : '🔒 ' + (EN?"Your last match & stand":"Din seneste kamp & tribune")) + '</button>';
         }
 
+        // ⭐ KAMP-ARKIVET (v4.2, "vil gerne have B") — fortiden, kamp for
+        // kamp. Hentes DOVENT: foerste aabning af folden kalder arkiv-hent.
+        h += '<div class="kort" style="margin-top:10px;padding:0;overflow:hidden">' +
+          '<button data-a="arkivFoldSkift" style="width:100%;min-height:52px;display:flex;align-items:center;gap:10px;background:none;border:0;padding:13px 14px;text-align:left;cursor:pointer;color:inherit;font-family:inherit">' +
+            '<span style="flex:none;font-size:15px">🗄</span>' +
+            '<span style="flex:1;min-width:0;font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">' + (EN?"MATCH ARCHIVE":"KAMP-ARKIVET") + '</span>' +
+            '<span class="lille" style="flex:none">' + (S.arkiv === null ? "" : S.arkiv.length) + '</span>' +
+            '<span style="flex:none;color:var(--daempet);font-size:11px;transition:transform .15s;transform:rotate(' + (S.arkivFold?'90':'0') + 'deg)">▶</span>' +
+          '</button>';
+        if (S.arkivFold) {
+          h += '<div style="padding:0 14px 14px">';
+          if (S.arkivHenter && S.arkiv === null) h += '<p class="lille" style="margin:0">⏳ …</p>';
+          else if (!S.arkiv || !S.arkiv.length) h += '<p class="lille" style="margin:0">' + (EN
+            ? "Finished matches land here by themselves — with the result, the board and what the stand said."
+            : "Færdige kampe lander her af sig selv — med resultat, tavle og det, tribunen sagde.") + '</p>';
+          else S.arkiv.forEach(function(k){
+            const aaben = S.arkivAaben === k.id;
+            h += '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--kant)">' +
+              '<div style="flex:1;min-width:0" class="lille">🔒 ' + esc(String(k.sluttet || "").slice(0, 10)) +
+              (k.resultat ? ' · <b style="color:var(--kridt)">' + esc(k.resultat) + '</b>' : '') +
+              (k.modstander ? ' · ' + esc(k.modstander) : '') +
+              (k.beskeder ? ' · 💬 ' + k.beskeder : '') + '</div>' +
+              '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="' + (aaben ? 'arkivLuk' : 'arkivAabn') + '"' + (aaben ? '' : ' data-v="' + esc(k.id) + '"') + '>' + (aaben ? (EN?"Close":"Luk") : (EN?"Open":"Se")) + '</button></div>';
+            if (aaben) {
+              if (!S.arkivRum) h += '<p class="lille" style="margin:4px 0 8px">⏳ …</p>';
+              else {
+                const ak = S.arkivRum.kamp || {}; const ab = S.arkivRum.beskeder;
+                h += '<div class="kort dev-kant dev-kant-staal" style="padding:10px 12px;margin:2px 0 8px">' +
+                  '<p class="lille" style="margin:0 0 6px"><b>' + esc(ak.turnering || (EN?"Match":"Kamp")) + '</b>' + (ak.modstander ? ' · vs ' + esc(ak.modstander) : '') + '</p>';
+                if (ab === null) h += '<p class="lille" style="margin:0">' + (EN
+                  ? "The conversation belongs to the player and the friends — family access sees the match, not the messages."
+                  : "Samtalen er spillerens og vennernes — familie-adgang ser kampen, ikke beskederne.") + '</p>';
+                else if (!ab || !ab.length) h += '<p class="lille" style="margin:0">' + (EN ? "Nothing was said in this one." : "Der blev ikke sagt noget i denne.") + '</p>';
+                else ab.slice(-40).forEach(function(b){
+                  h += (b.art === "r")
+                    ? '<div style="display:flex;align-items:center;gap:8px;padding:3px 0"><span style="font-size:17px;flex:none">' + esc(b.tekst) + '</span><span class="lille" style="margin:0">' + esc(b.fornavn) + '</span></div>'
+                    : '<div style="padding:5px 0;border-top:1px solid var(--kant)"><b style="font-size:12px;color:' + (b.mig ? 'var(--guld)' : 'var(--is)') + '">' + esc(b.fornavn) + '</b><div style="font-size:13px;margin-top:1px;word-break:break-word">' + esc(b.tekst) + '</div></div>';
+                });
+                if (S.arkivSletId === k.id) {
+                  h += '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--kant)">' +
+                    '<p class="lille" style="margin:0 0 8px">' + (EN
+                      ? "Delete this match from the archive? The messages go with it. Cannot be undone."
+                      : "Slet denne kamp fra arkivet? Beskederne ryger med. Kan ikke fortrydes.") + '</p>' +
+                    '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="arkivSletJa">' + (EN?"Delete":"Slet") + '</button>' +
+                    '<button class="knap valg" style="min-height:44px" data-a="arkivSletNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
+                } else {
+                  h += '<button class="knap valg" style="margin-top:8px;min-height:44px;font-size:12px;color:var(--daempet)" data-a="arkivSletSpoerg" data-v="' + esc(k.id) + '">' + (EN?"Delete from archive":"Slet fra arkivet") + '</button>';
+                }
+                h += '</div>';
+              }
+            }
+          });
+          h += (S.arkivBesked ? '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(S.arkivBesked.t) + '</p>' : '');
+          h += '</div>';
+        }
+        h += '</div>';
+
         h += '<div class="raekke" style="margin-top:10px">' +
           '<button class="knap" style="min-height:44px" data-a="venneNyKode">\ud83d\udd11 ' + (EN?"Get a code":"F\u00e5 en kode") + '</button>' +
           '<button class="knap" style="min-height:44px" data-a="venneAabn">\u2795 ' + (EN?"Enter a code":"Indtast kode") + '</button></div>';
@@ -3157,6 +3346,40 @@ function render() {
           '<div class="raekke" style="margin-top:7px">' +
           '<button class="knap" style="min-height:44px;background:var(--grus)" data-a="klubKodeGem">' + (EN?"Save":"Gem") + '</button>' +
           (S.klubKode ? '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;font-size:12px" data-a="nyKodeAabn">' + (EN?"Cancel":"Annullér") + '</button>' : '') + '</div>';
+      }
+      // ⭐ FAMILIEN (v4.2, "byg 4"): mor og far taster og ser data — aldrig
+      // beskeder. Noeglen vises EN gang; kun hash paa serveren.
+      if (S.rolle === "familie") {
+        h += _opsKort("familie", "👪", (EN?"FAMILY":"FAMILIEN"), (EN?"family access":"familie-adgang"), "var(--is)",
+          '<p class="lille" style="margin:0">' + (EN
+            ? "This phone is family access to the team: it enters and sees data — never the messages between the player and the friends."
+            : "Denne telefon er familie-adgang til teamet: den taster og ser data — aldrig beskederne mellem spilleren og vennerne.") + '</p>');
+      } else {
+        let famKrop = '<p class="lille" style="margin:0 0 8px">' + (EN
+          ? "Give mum or dad their own key to the team. They enter and see everything — except the messages."
+          : "Giv mor eller far deres egen nøgle til teamet. De taster og ser alt — undtagen beskederne.") + '</p>' +
+          '<input data-felt="famEtiket" maxlength="20" placeholder="' + (EN?"Label, e.g. Mum (optional)":"Etiket, fx Mor (valgfrit)") + '" value="' + esc(S.famEtiket || "") + '">' +
+          '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="famNy">' + (S.famHenter ? "⏳ …" : (EN?"Get a family key":"Få en familie-nøgle")) + '</button>';
+        if (S.famNyKode) {
+          famKrop += '<div class="kort dev-kant dev-kant-guld" style="margin-top:9px;padding:12px;text-align:center">' +
+            '<div style="font-size:12px;font-weight:700;letter-spacing:1px;word-break:break-all;color:var(--guld);font-variant-numeric:tabular-nums">' + esc(S.famNyKode) + '</div>' +
+            '<p class="lille" style="margin:8px 0 0">' + (EN
+              ? "Shown ONCE — send the link now. The app sends nothing itself."
+              : "Vises ÉN gang — send linket nu. Appen sender ikke selv noget.") + '</p>' +
+            '<button class="knap" style="margin-top:9px;min-height:44px;background:var(--grus)" data-a="famDel">' + (S.kopieret === "famLink" ? (EN?"Link copied ✓":"Link kopieret ✓") : "📤 " + (EN?"Share family link":"Del familie-link")) + '</button></div>';
+        }
+        if (S.famKoder === null) famKrop += '<button class="knap valg" style="margin-top:8px;width:100%;min-height:44px;font-size:12px" data-a="famHent">' + (S.famHenter ? "⏳ …" : (EN?"Show issued keys":"Vis udstedte nøgler")) + '</button>';
+        else if (S.famKoder.length) S.famKoder.forEach(function(f){
+          famKrop += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--kant)">' +
+            '<div class="lille" style="flex:1;min-width:0;margin:0">' + esc(f.etiket || (EN?"(no label)":"(uden etiket)")) +
+            (f.status === "spaerret" ? ' · <span style="color:var(--tabt)">' + (EN?"blocked":"spærret") + '</span>' : '') + '</div>' +
+            (f.status === "aktiv" ? '<button class="knap valg" style="flex:none;min-height:40px;padding:0 11px;font-size:12px;color:var(--daempet)" data-a="famSpaer" data-v="' + esc(f.id) + '">' + (EN?"Block":"Spær") + '</button>' : '') + '</div>';
+        });
+        else famKrop += '<p class="lille" style="margin:8px 0 0;opacity:.7">' + (EN?"No keys issued yet.":"Ingen nøgler udstedt endnu.") + '</p>';
+        famKrop += (S.famBesked ? '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '');
+        const famAntal = S.famKoder ? S.famKoder.filter(function(f){ return f.status === "aktiv"; }).length : 0;
+        h += _opsKort("familie", "👪", (EN?"FAMILY":"FAMILIEN"),
+          famAntal ? (famAntal === 1 ? (EN?"1 key":"1 nøgle") : famAntal + (EN?" keys":" nøgler")) : (EN?"mum & dad":"mor & far"), "var(--daempet)", famKrop);
       }
       h += _opsKort("klub", "🏷", (EN?"CLUB CODE":"KLUBKODE"),
         (S.klubKode ? (EN?"connected ✓":"forbundet ✓") : (EN?"no club":"ingen klub")),

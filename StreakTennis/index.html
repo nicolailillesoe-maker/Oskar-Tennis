@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.6.0 · 22. august 2026";
+const VERSION = "v4.6.1 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1200,7 +1200,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -1304,6 +1304,25 @@ try { const fk = lager.hent("sai-foelgekode"); if (fk) S.foelgekode = fk; } catc
 try { S.venneAktiv = lager.hent("sai-venne-aktiv") === "1"; } catch(e) {}
 try { S.liveAktiv = lager.hent("sai-liveaktiv") === "1"; } catch(e) {}
 try { const ra = JSON.parse(lager.hent("sai-rivalanalyser") || "{}"); if (ra && typeof ra === "object") S.rivalAnalyser = ra; } catch(e) {}
+
+// ⭐ DOEREN PAA KAMPEN (22/8 nat): registrering kraever en INVITATION.
+// "Saa kan de ikke bruge den - men faa den i haanden og blive fristet."
+// Telefonen genererer selv en noegle — kun serveren ved, om den er
+// LUKKET IND (doervagten). Svarer den "kraever-invitation", laases
+// kamp-registreringen bag den aerlige doer. Alle andre svar (ok,
+// netvaerk, offline) doemmer ikke: hallen uden daekning maa ALDRIG
+// stoppe en indbudt spiller, og "1" i lageret sparer alle opslag.
+try { if (lager.hent("sai-inviteret") === "0") S.doerKamp = true; } catch(e) {}
+async function inviteretTjek() {
+  try {
+    const r = await sync("gruppe-hent");
+    if (r && r.fejl === "kraever-invitation") { lager.gem("sai-inviteret", "0"); S.doerKamp = true; }
+    else if (r && !r.fejl) { lager.gem("sai-inviteret", "1"); S.doerKamp = false; }
+    render();
+  } catch (e) {}
+}
+// (udskudt et tick: SYNC_URL og resten af laget er foerst erklaeret laengere nede)
+setTimeout(function(){ try { if (lager.hent("sai-inviteret") !== "1") inviteretTjek(); } catch(e) {} }, 0);
 
 // ⭐ INVITATIONEN · ?ven=KODE (22/8). Ét tryk fra sms'en til at staa med
 // koden indtastet. MEN indloesningen sker IKKE af sig selv: trykket paa
@@ -2005,6 +2024,7 @@ const A = {
     lager.gem("sai-spillernoegle", S.spillerNoegle);
     S.noegleAaben = false; S.nyNoegleAaben = false; S.noegleUdkast = ""; render();
     A.synkroniser();
+    inviteretTjek();
   },
   nyNoegleAabn: () => { S.nyNoegleAaben = !S.nyNoegleAaben; S.noegleUdkast = ""; S.visNoegle = false; render(); },
   visSkift: (v) => { S[v] = !S[v]; render(); },
@@ -2101,6 +2121,7 @@ const A = {
 
   // ══ RUMMENE (v4.6.0) — "det skal bare rum.. Hvor der jo sker flere
   // ting i." Serveren (v2.15.0) ejer reglerne; appen viser og spørger.
+  doerTjek: () => { inviteretTjek(); },
   grHent: async () => {
     if (S.grHenter || !S.spillerNoegle) return;
     S.grHenter = true;
@@ -3903,7 +3924,13 @@ function render() {
       '<button class="knap" style="background:var(--grus);max-width:260px;margin:0 auto;display:block" data-a="laasOp">'+(EN?"🔓 Unlock":"🔓 Lås op")+'</button></div>';
   }
 
-  if (S.tab === "kamp") {
+  if (S.tab === "kamp" && !S.aktiv && S.doerKamp) {
+    // ⭐ DOEREN — aerlig, varm og lukket. En kamp i gang blokeres aldrig.
+    h += '<div class="kort dev-kant dev-kant-guld" style="text-align:center;padding:28px 16px"><div style="font-size:42px">\ud83c\udf9f</div>' +
+      '<h2 style="margin:10px 0 6px;font-size:19px">' + (EN?"Matches are invite-only":"Kampe er med invitation") + '</h2>' +
+      '<p class="lille" style="margin:0 auto 14px;max-width:300px">' + (EN?"StreakTennis requires an invitation — everyone in here is someone you know. Got the app from a friend? Ask them to put in a word. Then you are in — and your first match is waiting.":"StreakTennis kræver en invitation — alle herinde er nogen, man kender. Har du fået appen af en ven, så bed dem sige til. Så bliver du lukket ind — og din første kamp venter.") + '</p>' +
+      '<button class="knap" style="width:auto;padding:9px 18px" data-a="doerTjek">' + (EN?"I am invited — check again":"Jeg ER inviteret — tjek igen") + '</button></div>';
+  } else if (S.tab === "kamp") {
     if (!S.aktiv) {
       if (S.wiz === undefined) S.wiz = 1;
       const _wp = function(n){ return '<div style="display:flex;gap:6px;justify-content:center;margin:2px 0 12px">' + [1,2,3].map(function(i){ return '<span style="width:8px;height:8px;border-radius:50%;background:' + (i<=n?"var(--guld)":"var(--kant2)") + '"></span>'; }).join("") + '</div>'; };

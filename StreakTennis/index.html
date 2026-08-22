@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.4.8 · 22. august 2026";
+const VERSION = "v4.5.0 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1200,7 +1200,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", traenerData: null, ejerLive: null, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -2440,6 +2440,27 @@ const A = {
     if (!S.klubKode && !S.venneAktiv) { S.syncBesked = { fejl: true, t: EN ? "Nothing to sync \u2014 no club and no friends." : "Intet at synkronisere \u2014 ingen klub og ingen venner." }; render(); return; }
     S.syncHenter = true; S.syncBesked = null; render();
 
+    // ⭐ v4.5.0 · TEAM-ENHEDEN HENTER, DEN SENDER IKKE (Nicolai 22/8:
+    // "Live kampe skal vel også dukke op automatisk når man er en del
+    // af teamet..?"). Familie-rollen har ingen traeningslog at dele —
+    // den henter spillerens post og ejerens AKTIVE kamp (ejer_live).
+    // Princip 17: det, der ikke sendes, kan ikke misbruges. ejer_live
+    // gemmes IKKE i lageret — kortet lever kun saa laenge synken siger
+    // LIVE, saa det aldrig peger paa en kamp, der er slut.
+    if (S.rolle === "familie") {
+      const _n = await sync("hent", {});
+      S.syncHenter = false;
+      if (!_n.fejl) {
+        S.traenerData = { spiller: _n.spiller || null, ugefokus: _n.ugefokus || [], stigeHoldTil: !!_n.stige_hold_til, hentet: new Date().toISOString() };
+        S.ejerLive = _n.ejer_live || null;
+        lager.gem("sai-traenerdata", JSON.stringify(S.traenerData));
+        S.syncBesked = { fejl: false, t: EN ? "Fetched from the team \u2713" : "Hentet fra holdet \u2713" };
+      } else {
+        S.syncBesked = { fejl: true, t: EN ? "No connection \u2014 try again." : "Ingen forbindelse \u2014 pr\u00f8v igen." };
+      }
+      render(); return;
+    }
+
     // ══════════════════════════════════════════════════════════════════
     // ⭐ UDEN KLUB SENDES DER EN ANDEN — OG MEGET MINDRE — KROP.
     // En ven skal bruge fornavn og streak. Streaken regnes af serveren ud
@@ -3173,7 +3194,7 @@ function render() {
 
     } else if (S.tab === "chat") {
       // ⭐ VENNE-CHATTEN (v4.3). Serverens regler er samtalens fodnote:
-      // 200 beskeder (rullende, v2.13.0 uden tidsvindue), Fjern ven sletter for begge, ⚑ skjuler.
+      // Et døgn + højst 200 (v2.14.0: tunellen består, beskederne er flygtige), Fjern ven sletter for begge, ⚑ skjuler.
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' +
         '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 16px" data-a="chatLuk">←</button>' +
         '<b style="font-size:16px">💬 ' + esc(S.chatNavn || (EN?"Friend":"Ven")) + '</b></div>';
@@ -3215,8 +3236,8 @@ function render() {
         '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="chatSend">' + (EN?"Send":"Send") + '</button></div>';
       h += (S.chatBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.chatBesked.t) + '</p>' : '');
       h += '<p class="lille" style="margin:10px 2px 0;opacity:.7">' + (EN
-        ? "The chat keeps your last 200 messages — the oldest fall out. Remove friend deletes it for both of you. ⚑ hides a message for both right away."
-        : "Chatten gemmer jeres seneste 200 beskeder — de ældste falder ud. Fjern ven sletter den for jer begge. ⚑ skjuler en besked for begge med det samme.") + '</p>';
+        ? "Messages live for a day — the friendship stays. The chat keeps at most your last 200. Remove friend deletes it for both of you. ⚑ hides a message for both right away."
+        : "Beskederne lever et døgn — venskabet består. Chatten gemmer højst jeres seneste 200. Fjern ven sletter den for jer begge. ⚑ skjuler en besked for begge med det samme.") + '</p>';
     } else if (S.tab === "traener") {
       // 22/8: ABSORBERET I TRÆN. Gamle stier (og gammel gemt tilstand)
       // lander i det samme indhold — intet doer, det flytter bare hjem.
@@ -3226,12 +3247,31 @@ function render() {
     } else if (S.tab === "stige") {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") +
            '<b style="font-size:16px">🔥 ' + (EN?"Streak Zone":"Streak Zone") + '</b></div>';
+      // ⭐ v4.5.0 · TEAMET SER KAMPEN SELV (Nicolai 22/8: "Live kampe
+      // skal vel også dukke op automatisk når man er en del af
+      // teamet..?"). Kortet står KUN hos familie-rollen, og kun når
+      // ejeren har en AKTIV kamp — hentet af synken som ejer_live.
+      // Modstanderen er forkortet i KILDEN (serveren), før den når hertil.
+      if (S.rolle === "familie" && S.ejerLive && S.ejerLive.foelgekode) {
+        h += '<div class="kort" style="border-left:3px solid var(--vundet)">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+          '<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--vundet);box-shadow:0 0 8px var(--vundet)"></span>' +
+          '<b style="font-size:14px">' + (EN?"LIVE right now":"LIVE lige nu") + '</b></div>' +
+          '<p style="margin:0 0 8px;font-size:14px">' + esc(S.ejerLive.spiller || "") +
+          (S.ejerLive.modstander ? ' ' + (EN?"vs":"mod") + ' ' + esc(S.ejerLive.modstander) : '') +
+          (S.ejerLive.turnering ? '<span class="lille" style="color:var(--daempet)"> · ' + esc(S.ejerLive.turnering) + '</span>' : '') + '</p>' +
+          '<button class="knap" style="width:100%;min-height:44px;background:var(--grus)" data-a="rumAabn" data-v="' + esc(S.ejerLive.foelgekode + "|" + (S.ejerLive.spiller || "")) + '">📣 ' + (EN?"Open the board":"Åbn tavlen") + '</button></div>';
+      }
       // ══ DIT EGET TAL · ALTID ══════════════════════════════════════
       // 21/8 (Nicolai): "en spiller behøver ikke have tilladelse fra klubben
       // til at lave streaks. Det skal i virkeligheden være på fra start."
       // Tallet regnes af minStreak() ud af FAMILIENS EGEN log. Det stod før
       // inde i `if (sd)` og ventede altså på holdets data fra serveren —
       // et lokalt tal, der ventede på en klub, man måske ikke har.
+      // ⭐ v4.5.0 · teamet træner ikke — dets eget tal er altid 0, og
+      // kortets opfordring ("Log en træning") peger på en formular, der
+      // ikke findes hos familie-rollen. Så kortet står der ikke.
+      if (S.rolle !== "familie") {
       var _ms = minStreak();
       var _varm = _ms.streak > 0;
       h += '<div class="kort dev-kant ' + (_varm ? 'dev-kant-guld' : 'dev-kant-staal') + '" style="text-align:center;padding:20px 14px 16px">' +
@@ -3252,6 +3292,7 @@ function render() {
           ? "Counted on this phone. Nothing needed for this."
           : "Regnet på denne telefon. Der skal ingenting til for det.") + '</p>' +
         '</div>';
+      }
 
       // ══ HOLDETS STIGE · KUN MED KLUB ══════════════════════════════
       // Stigen ER trænerloopet: den viser andre børn på holdet, og de tal
@@ -3647,12 +3688,15 @@ function render() {
       // ⭐ NAVNET (v4.4.1): det, vennerne ser. Kunne foer kun saettes paa
       // velkomstskaermen — nu kan en tastefejl (eller en far, der doebte
       // sig "Oskar" i et eksperiment) rettes med ét tryk.
+      // ⭐ v4.5.0 · navnet er spillerens — teamet retter det ikke.
+      if (S.rolle !== "familie") {
       h += _opsKort("navn", "✏️", (EN?"NAME":"NAVNET"), esc(SPILLER || "—"), "var(--kridt)",
         '<p class="lille" style="margin:0 0 8px">' + (EN
           ? "The app&rsquo;s name — and what your friends see. Stored only on this device; the next sync carries it along."
           : "Appens navn — og det, dine venner ser. Gemmes kun på denne enhed; næste synk tager det med.") + '</p>' +
         '<input data-felt="navnNyt" maxlength="24" placeholder="' + (EN?"New first name":"Nyt fornavn") + '" value="' + esc(S.navnNyt || "") + '">' +
         '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="navnSkift">' + (EN?"Save name":"Gem navnet") + '</button>');
+      }
       h += _opsKort("data", "📱", (EN?"YOUR DATA":"DINE DATA"),
         (S.klubKode ? (EN?"club connected":"klub tilsluttet")
           : S.venneAktiv ? (EN?"friends only":"kun venner")
@@ -3660,7 +3704,7 @@ function render() {
         (S.klubKode ? "var(--is)" : S.venneAktiv ? "var(--is)" : "var(--vundet)"), _kData);
 
       // ── STREAK ────────────────────────────────────────────────────
-      if (S.klubKode) {
+      if (S.klubKode && S.rolle !== "familie") {
         h += _opsKort("streak", "🔥", "STREAK",
           (S.stigeTilvalgt ? (EN?"on":"til") : (EN?"off":"fra")),
           (S.stigeTilvalgt ? "var(--guld)" : "var(--daempet)"),
@@ -4108,6 +4152,10 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '<div style="position:relative;background:var(--dyb);border-radius:5px;height:10px"><div style="background:'+(naaet?'var(--vundet)':'var(--is)')+';height:100%;width:'+pct+'%;border-radius:5px"></div></div>' +
           (naaet ? '' : '<p class="lille" style="margin-top:6px">'+(EN?"Goal: 3 sessions a week — running, strength or footwork. Every logged session counts.":"Målet er 3 pas om ugen — løb, styrke eller benarbejde. Hvert registreret pas tæller.")+'</p>') + '</div>';
       })();
+      // ⭐ v4.5.0 · REGISTRERING ER SPILLERENS (Nicolai 22/8: "registrering
+      // af træning giver jo ikke mening. For teamet - giver KUN mening
+      // for spilleren"). Formularen står ikke hos familie-rollen.
+      if (S.rolle !== "familie") {
       h += '<h2 style="font-size:15px;color:var(--is);margin:6px 0 8px;text-transform:uppercase;letter-spacing:1px">💪 '+(EN?"Physical training log":"Fysisk træning — registrering")+'</h2>';
       h += '<div class="kort">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="flex:1;font-size:12.5px">'+(EN?"Duration":"Varighed")+'</span><button class="knap" style="flex:none;padding:8px 16px" data-a="fyMinJust" data-v="-15">−</button><b style="width:64px;text-align:center;font-size:15px">'+S.fyMin+' min</b><button class="knap" style="flex:none;padding:8px 16px" data-a="fyMinJust" data-v="15">+</button></div>' +
@@ -4119,6 +4167,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '<button class="knap valg '+(S.fyType===2?"til":"")+'" style="padding:11px 2px" data-a="fyTypeVaelg" data-v="2">🧑‍🏫 '+(EN?"With coach":"Med træner")+'</button></div>' +
         '<input placeholder="'+(EN?"Note (optional — e.g. \'intervals\' or \'strength\')":"Note (valgfri — fx \'intervaller\' eller \'styrke\')")+'" value="'+esc(S.fyNote)+'" data-felt="fyNote" style="margin-bottom:8px">' +
         '<div class="raekke"><button class="knap" style="background:'+(S.fyKval&&S.fyType?"var(--grus)":"var(--flade)")+'" data-a="fyGem">💾 '+(EN?"Save session":"Gem passet")+'</button></div></div>';
+      }
       h += '<details style="margin:4px 0 8px"><summary style="font-size:12px;color:var(--daempet);cursor:pointer">📖 '+(EN?"Inspiration — the running programme":"Inspiration — løbeprogrammet")+'</summary>' +
         (EN?FYSISK_EN:FYSISK).map(function(k){ return '<div class="kort" style="margin-top:6px"><h3 style="font-size:13px">'+k[0]+' '+esc(k[1])+'</h3><p class="lille" style="line-height:1.5">'+esc(k[2])+'</p></div>'; }).join("") + '</details>';
       if (S.fysLog.length) {
@@ -4136,6 +4185,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       }
       const ttTot = S.ttLog.reduce(function(a, e){ return a + e.m; }, 0);
       const ttGk = S.ttLog.length ? (S.ttLog.reduce(function(a, e){ return a + e.k; }, 0) / S.ttLog.length).toFixed(1) : null;
+      // ⭐ v4.5.0 · som fys: registrering er spillerens, ikke teamets.
+      if (S.rolle !== "familie") {
       h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">🎾 '+(EN?"Tennis training log":"Tennistræning — registrering")+'</h2>';
       h += '<div class="kort">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="flex:1;font-size:12.5px">'+(EN?"Duration":"Varighed")+'</span><button class="knap" style="flex:none;padding:8px 16px" data-a="ttMinJust" data-v="-15">−</button><b style="width:64px;text-align:center;font-size:15px">'+S.ttMin+' min</b><button class="knap" style="flex:none;padding:8px 16px" data-a="ttMinJust" data-v="15">+</button></div>' +
@@ -4148,6 +4199,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '<button class="knap valg '+(S.ttType===2?"til":"")+'" style="padding:11px 2px" data-a="ttTypeVaelg" data-v="2">🧑‍🏫 '+(EN?"With coach":"Med træner")+'</button></div>' +
         '<input placeholder="'+(EN?"Note (optional — e.g. \'wide serve drills\')":"Note (valgfri — fx \'wide-serv træning\')")+'" value="'+esc(S.ttNote)+'" data-felt="ttNote" style="margin-bottom:8px">' +
         '<div class="raekke"><button class="knap" style="background:'+(S.ttKval&&S.ttType?"var(--grus)":"var(--flade)")+'" data-a="ttGem">💾 '+(EN?"Save training":"Gem træningen")+'</button></div></div>';
+      }
       if (S.ttLog.length) {
         h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(ttTot/60).toFixed(1)+' '+(EN?"hours":"timer")+' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+ttGk+'/10</h3>' +
           S.ttLog.slice(0,8).map(function(e, i){
@@ -4540,7 +4592,7 @@ function autoSynk(){
   // 19/8: fuld synk (skub + hent) — Nicolai: "automatisér al den transport".
   try { A.synkroniser(); return; } catch (e) {}
   sync("hent", {}).then(function(r){
-    if (r && !r.fejl) { S.traenerData = { spiller: r.spiller || null, ugefokus: r.ugefokus || [], stigeHoldTil: !!r.stige_hold_til, hentet: new Date().toISOString() }; lager.gem("sai-traenerdata", JSON.stringify(S.traenerData)); render(); }
+    if (r && !r.fejl) { S.traenerData = { spiller: r.spiller || null, ugefokus: r.ugefokus || [], stigeHoldTil: !!r.stige_hold_til, hentet: new Date().toISOString() }; S.ejerLive = r.ejer_live || null; lager.gem("sai-traenerdata", JSON.stringify(S.traenerData)); render(); }
   });
 }
 window.__oskarInit = function(){

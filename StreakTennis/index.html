@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.6.1 · 22. august 2026";
+const VERSION = "v4.6.3 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1377,6 +1377,22 @@ try {
 const ANALYSE_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-kamp";
 const RIVAL_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-rival";
 const SYNC_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/spiller-sync";
+// ⭐ DOEREN UD (22/8 nat): en invitation begynder med en voksen, der
+// skriver. Mailen ER kanalen — vi gemmer INTET om nogen, der ikke er
+// lukket ind, og GDPR-notatets loefte ("e-mail, telefon,
+// foraeldreoplysninger behandles ikke") holder ord for ord.
+const DOER_MAIL = "mailto:nicolai@sportsainalytics.com"
+  + "?subject=" + encodeURIComponent("Adgang til StreakTennis")
+  + "&body=" + encodeURIComponent(
+      "Hej SportsAInalytics\n\n"
+      + "Vi vil gerne have adgang til StreakTennis.\n\n"
+      + "Spillerens fornavn:\n"
+      + "Alder:\n"
+      + "Klub:\n"
+      + "Hvem kender I herinde? (fornavn):\n\n"
+      + "Skrevet af (voksen):\n"
+      + "Telefon:\n\n"
+      + "Venlig hilsen");
 
 // ══════════════════════════════════════════════════════════════════════
 // LIVE-FØLG · "følg fra sofaen"
@@ -3929,7 +3945,9 @@ function render() {
     h += '<div class="kort dev-kant dev-kant-guld" style="text-align:center;padding:28px 16px"><div style="font-size:42px">\ud83c\udf9f</div>' +
       '<h2 style="margin:10px 0 6px;font-size:19px">' + (EN?"Matches are invite-only":"Kampe er med invitation") + '</h2>' +
       '<p class="lille" style="margin:0 auto 14px;max-width:300px">' + (EN?"StreakTennis requires an invitation — everyone in here is someone you know. Got the app from a friend? Ask them to put in a word. Then you are in — and your first match is waiting.":"StreakTennis kræver en invitation — alle herinde er nogen, man kender. Har du fået appen af en ven, så bed dem sige til. Så bliver du lukket ind — og din første kamp venter.") + '</p>' +
-      '<button class="knap" style="width:auto;padding:9px 18px" data-a="doerTjek">' + (EN?"I am invited — check again":"Jeg ER inviteret — tjek igen") + '</button></div>';
+      '<button class="knap" style="width:auto;padding:9px 18px" data-a="doerTjek">' + (EN?"I am invited — check again":"Jeg ER inviteret — tjek igen") + '</button>' +
+      '<div style="margin-top:10px"><a class="knap" style="width:auto;padding:9px 18px;display:inline-block;text-decoration:none;background:transparent;border:1px solid var(--kant);color:var(--is)" href="' + DOER_MAIL + '">' + (EN?"\u2709 Write to us":"\u2709 Skriv til os") + '</a></div>' +
+      '<p class="lille" style="margin:10px auto 0;max-width:290px">' + (EN?"A parent writes \u2014 we store nothing until you are in.":"En voksen skriver \u2014 vi gemmer intet, f\u00f8r I er inde.") + '</p></div>';
   } else if (S.tab === "kamp") {
     if (!S.aktiv) {
       if (S.wiz === undefined) S.wiz = 1;

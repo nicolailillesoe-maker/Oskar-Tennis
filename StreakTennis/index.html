@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.7.2 · 23. august 2026";
+const VERSION = "v4.7.6 · 23. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1200,12 +1200,12 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
   // Venne-rummet (prototype 21/8): ingen anmodninger, kun koder.
-  venner: [], vennerHenter: false, vennerBesked: null,
+  venner: [], vennerHenter: false, vennerBesked: null, invitHilsen: false,
   // Saettes KUN, naar familien selv udsteder eller indloeser en
   // venne-kode. Det er dén handling, der aabner for privat synk —
   // aldrig noget appen goer af sig selv.
@@ -1312,12 +1312,24 @@ try { const ra = JSON.parse(lager.hent("sai-rivalanalyser") || "{}"); if (ra && 
 // kamp-registreringen bag den aerlige doer. Alle andre svar (ok,
 // netvaerk, offline) doemmer ikke: hallen uden daekning maa ALDRIG
 // stoppe en indbudt spiller, og "1" i lageret sparer alle opslag.
-try { if (lager.hent("sai-inviteret") === "0") S.doerKamp = true; } catch(e) {}
+try {
+  const _inv = lager.hent("sai-inviteret");
+  if (_inv === "0") {
+    // Bagudkompatibelt: et gammelt "0" uden tidsstempel udloeber straks.
+    const _tid = parseInt(lager.hent("sai-inviteret-tid") || "0", 10);
+    S.doerKamp = (_tid > 0) && (Date.now() - _tid < 86400000);
+  }
+} catch(e) {}
 async function inviteretTjek() {
   try {
     const r = await sync("gruppe-hent");
-    if (r && r.fejl === "kraever-invitation") { lager.gem("sai-inviteret", "0"); S.doerKamp = true; }
-    else if (r && !r.fejl) { lager.gem("sai-inviteret", "1"); S.doerKamp = false; }
+    if (r && r.fejl === "kraever-invitation") {
+      lager.gem("sai-inviteret", "0"); lager.gem("sai-inviteret-tid", String(Date.now()));
+      S.doerKamp = true;
+    } else if (r && !r.fejl) {
+      lager.gem("sai-inviteret", "1"); lager.gem("sai-inviteret-tid", "");
+      S.doerKamp = false;
+    }
     render();
   } catch (e) {}
 }
@@ -1334,9 +1346,14 @@ async function inviteretTjek() {
 try {
   const _vp = new URLSearchParams(location.search).get("ven");
   if (_vp && /^[A-Za-z0-9]{6}$/.test(_vp.trim())) {
-    S.tab = "stige"; S.venneAaben = true;
+    // ⭐ v4.7.5: zonen er fliser (v4.7.0), og en lukket flise viser
+    // ingenting. Linket skal aabne den, ellers lander den inviterede
+    // paa en tom skaerm — maalt 23/8.
+    S.tab = "stige"; S.venneAaben = true; S.zonePanel = "venner";
     S.venneUdkast = _vp.trim().toUpperCase();
-    S.vennerBesked = { fejl: false, t: "\uD83D\uDC8C Du er inviteret \u2014 tryk \u201DTilf\u00F8j ven\u201D, s\u00E5 er I forbundet." };
+    // ⭐ v4.7.6: hilsenen er IKKE en knap-besked. Den staar oeverst i
+    // panelet, foer koden — ellers laeser man den aldrig.
+    S.invitHilsen = true;
     history.replaceState(null, "", location.pathname);   // koden skal ikke blive staaende i adresselinjen
   }
 } catch(e) {}
@@ -2150,6 +2167,8 @@ const A = {
   // ⭐ ZONEN ER FLISER (v4.7.0): ét panel ad gangen. Samme flise igen
   // lukker den — zonen skal kunne staa ren, ikke bare foldet ud.
   zonePanel: (v) => { S.zonePanel = (S.zonePanel === v ? null : v); render(); },
+  // ⭐ STATISTIK ER FLISER (v4.7.4): ét panel ad gangen, som i zonen.
+  statPanel: (v) => { S.statPanel = (S.statPanel === v ? null : v); render(); },
   grHent: async () => {
     if (S.grHenter || !S.spillerNoegle) return;
     S.grHenter = true;
@@ -2263,7 +2282,7 @@ const A = {
     } else A.rumHent();
   },
 
-  venneAabn: () => { S.venneAaben = !S.venneAaben; S.venneUdkast = ""; S.vennerBesked = null; render(); },
+  venneAabn: () => { S.venneAaben = !S.venneAaben; S.venneUdkast = ""; S.vennerBesked = null; S.invitHilsen = false; render(); },
 
   // ══ KAMP-ARKIVET (v4.2, "vil gerne have B") ═══════════════════════
   arkivFoldSkift: () => {
@@ -2512,7 +2531,7 @@ const A = {
         r.fejl === "kraever-invitation" ? (EN ? "StreakTennis requires an invitation — ask a StreakTennis family for a link." : "StreakTennis kræver en invitation — bed en StreakTennis-familie om et link.") :
                                 (EN ? "Could not redeem the code." : "Kunne ikke indløse koden.") };
     } else {
-      S.venneAaben = false; S.venneUdkast = "";
+      S.venneAaben = false; S.venneUdkast = ""; S.invitHilsen = false;
       S.venneAktiv = true; lager.gem("sai-venne-aktiv", "1");
       A.synkroniser();
       S.vennerBesked = rumNavn !== null
@@ -3550,6 +3569,17 @@ function render() {
         }
 
         if (_zp === "venner") {
+        // ⭐ v4.7.6 · INVITATIONEN HILSER FOERST. Kom man ind via
+        // ?ven=KODE fra en sms, er det her den eneste saetning, der
+        // forklarer skaermen. Den staar oeverst, ikke nederst.
+        if (S.invitHilsen) {
+          h += '<div class="kort dev-kant dev-kant-guld" style="margin:0 0 10px;padding:13px 14px">' +
+            '<div style="font-size:23px;line-height:1">\uD83D\uDC8C</div>' +
+            '<b style="display:block;font-size:15px;margin-top:5px">' + (EN?"You are invited":"Du er inviteret") + '</b>' +
+            '<p class="lille" style="margin:5px 0 0">' + (EN
+              ? "The code is filled in below \u2014 tap \u201DAccept friend\u201D, and you are connected."
+              : "Koden st\u00e5r klar herunder \u2014 tryk \u201DAccepter ven\u201D, s\u00e5 er I forbundet.") + '</p></div>';
+        }
         h += '<div class="kort">';
         if (!S.venner.length) {
           h += '<p class="lille" style="margin:0 0 10px">' + (EN
@@ -4480,10 +4510,40 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     // v3.0.15: Indsigter flyttet hertil fra forsiden. Den er beregnet af
     // spillerens egne kampe — den hoerer hjemme oven paa tallene.
     h += '<button class="dev-hero dev-kant dev-kant-is" data-a="tab" data-v="anbefal" style="margin:2px 0 12px"><span style="font-size:27px">💡</span><span><b>' + (EN?"INSIGHTS":"INDSIGTER") + '</b><br><small>' + (EN?"what the numbers say \u2014 and what to do about it":"hvad tallene siger \u2014 og hvad du g\u00f8r ved det") + '</small></span><span class="dev-pil">\u2192</span></button>';
-    h += '<details class="dev-fold dev-kant dev-kant-is" data-sf="0"' + (S._sf && S._sf["0"] ? " open" : "") + '><summary><span class="dev-ikon">📈</span><span><b>' + (EN?"The form curve":"Formkurven") + '</b><small>' + (EN?"Win/loss trend match by match — can you see the progress?":"Vind/tab-udviklingen kamp for kamp — kan du se fremgangen?") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    // ══════════════════════════════════════════════════════════════
+    // ⭐ STATISTIK-FLISERNE (v4.7.4) — "vi skal have lavet ALT om til
+    // tiles." Fire fliser, ét tal hver, ét panel ad gangen. Ingen
+    // brødtekst: flisen siger hvad der ER, panelet viser det.
+    // ══════════════════════════════════════════════════════════════
+    var _sp = S.statPanel;
+    var _nKamp = (S.gemte || []).length;
+    var _nTraen = (S.ttLog || []).length + (S.fysLog || []).length;
+    var _stflise = function(v, ik, titel, tal) {
+      return '<button class="dev-flise dev-kant' + (_sp === v ? ' dev-kant-is' : '') + '"'
+        + ' style="min-height:92px' + (_sp === v ? ';border-color:var(--is)' : '') + '"'
+        + ' data-a="statPanel" data-v="' + v + '">'
+        + '<span class="dev-ikon">' + ik + '</span>'
+        + '<b style="font-size:13px;letter-spacing:1.5px">' + titel + '</b>'
+        + '<small style="color:' + (_sp === v ? 'var(--is)' : 'var(--daempet)') + '">' + tal + '</small></button>';
+    };
+    h += '<div class="dev-grid" style="margin:12px 0">'
+      + _stflise("form", "\ud83d\udcc8", (EN?"FORM":"FORMKURVEN"),
+          _nKamp ? (_nKamp + " " + (EN ? (_nKamp===1?"match":"matches") : (_nKamp===1?"kamp":"kampe"))) : (EN?"no matches yet":"ingen kampe endnu"))
+      + _stflise("kampe", "\ud83c\udfbe", (EN?"MATCHES":"KAMPENE"),
+          _nKamp ? (EN?"tap to open":"tryk for at åbne") : (EN?"register your first":"registrér din første"))
+      + _stflise("traen", "\ud83c\udfc3", (EN?"TRAINING":"TR\u00c6NINGEN"),
+          _nTraen ? (_nTraen + " " + (EN ? (_nTraen===1?"session":"sessions") : (_nTraen===1?"pas":"pas"))) : (EN?"log your first":"log dit f\u00f8rste"))
+      + _stflise("backup", "\ud83d\udcbe", (EN?"BACKUP":"BACKUP"),
+          (EN?"save & move":"gem & flyt"))
+      + '</div>';
+
+      if (_sp === "form") {
+      h += '<div class="kort">';
     h += grafVT(EN);
-    h += '</div></details>';
-    h += '<details class="dev-fold dev-kant dev-kant-is" data-sf="1"' + (S._sf && S._sf["1"] ? " open" : "") + '><summary><span class="dev-ikon">🎾</span><span><b>' + (EN?"Match by match":"Kamp for kamp") + '</b><small>' + (EN?"Every saved match with full stats, set table and analysis — plus opponent comparison.":"Hver gemt kamp med fulde nøgletal, sæt-tabel og analyse — og sammenlign to modstandere.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '</div>';
+    }
+    if (_sp === "kampe") {
+    h += '<div class="kort">';
     if (S.gemte.length >= 2) {
       const sa = statistik(S.gemte[0]), sb = statistik(S.gemte[1]);
       const frem = [], skaerp = [];
@@ -4621,8 +4681,10 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       h += '<div class="raekke" style="margin-top:4px"><button class="knap" style="flex:none;padding:7px 11px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="hentAnalyse" data-v="'+S.redigerA+'">'+(S.henter===S.redigerA?(EN?'⏳ Fetching…':'⏳ Henter…'):(EN?'🔄 Fetch again — overwrites':'🔄 Hent igen — overskriver'))+'</button></div>';
       h += '<p class="lille" style="margin:4px 0 0">'+(EN?'Only needed if the analysis is wrong or the engine has changed.':'Kun nødvendigt hvis analysen er skæv, eller motoren er ændret.')+'</p>';
     }
-    h += '</div></details>';
-    h += '<details class="dev-fold dev-kant dev-kant-is" data-sf="2"' + (S._sf && S._sf["2"] ? " open" : "") + '><summary><span class="dev-ikon">🏃</span><span><b>' + (EN?"Training":"Træningen") + '</b><small>' + (EN?"Every session with time, quality and notes — consistency in black and white.":"Alle pas med tid, kvalitet og noter — vedholdenheden sort på hvidt.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '</div>';
+    }
+    if (_sp === "traen") {
+    h += '<div class="kort">';
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">🎾 '+(EN?"Training history":"Trænings-historik")+'</h2>';
     if (!S.ttLog.length) {
       h += '<p style="font-size:13px;color:var(--daempet)">'+(EN?"Training sessions are registered under the TRAIN tab — they will appear here.":"Træninger registreres under 🏃 TRÆN-fanen — så dukker de op her.")+'</p>';
@@ -4635,8 +4697,10 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         }).join("") +
         (function(){ var f = (S.ttLog||[]).filter(function(x){ return x._fjern; }).length + (S.fysLog||[]).filter(function(x){ return x._fjern; }).length; return f ? '<p class="lille" style="margin:6px 0 0;padding-top:6px;border-top:1px dashed var(--kant);opacity:.85">📱 ' + f + (EN ? " session(s) were logged on another phone — date and length came along, the note stayed there." : " pas er logget på en anden telefon — dato og længde kom med, noten blev derovre.") + '</p>' : ''; })() + '<p class="lille" style="margin:6px 0 0;opacity:.75">'+(EN?"Edit or delete under the TRAIN tab.":"Redigér eller slet under 🏃 TRÆN-fanen.")+'</p></div>';
     }
-    h += '</div></details>';
-    h += '<details class="dev-fold dev-kant dev-kant-is" data-sf="3"' + (S._sf && S._sf["3"] ? " open" : "") + '><summary><span class="dev-ikon">💾</span><span><b>' + (EN?"Backup & move data":"Backup & flyt data") + '</b><small>' + (EN?"Backup, restore and merge between phones — do it BEFORE deleting home screen shortcuts.":"Sikkerhedskopi, gendan og flet mellem telefoner — gør det FØR genveje slettes.") + '</small></span><span class="dev-pil">▶</span></summary><div class="dev-indhold">';
+    h += '</div>';
+    }
+    if (_sp === "backup") {
+    h += '<div class="kort">';
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">💾 '+(EN?"Backup":"Sikkerhedskopi")+'</h2>' +
       '<div class="raekke"><button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="backupLav">💾 '+(EN?"Create full backup":"Lav fuld backup")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="gendanToggle">♻️ '+(EN?"Restore":"Gendan")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--vundet);color:var(--vundet)" data-a="fletToggle">'+(EN?"🔀 Merge device":"🔀 Flet enhed")+'</button></div>';
     if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and save it in the family chat/notes — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den i familiegruppen/noter — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>' + eksportKnapper('backupTekst', EN);
@@ -4656,7 +4720,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     if (S.gendanBesked && S.gendanBesked.indexOf("OK:") === 0) { const t = S.gendanBesked.split(":"); h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Restored: ":"Gendannet: ")+t[1]+' '+(EN?"matches":"kampe")+' · '+t[2]+' '+(EN?"running sessions":"løbepas")+' · '+t[3]+' '+(EN?"tennis sessions":"tennistræninger")+'</p>'; }
     if (S.eksport) h += '<p class="lille" style="margin-top:10px">'+(EN?"Select, copy and share with your coach:":"Markér, kopiér og del med træneren:")+'</p><textarea id="eksport-boks" readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>' + eksportKnapper('eksport', EN);
   }
-    h += '</div></details>';
+    h += '</div>';
+    }
       if (!LAAST && S.tab === "status") {
     h += '<div class="raekke"><div class="kort" style="flex:1;text-align:center;margin-bottom:0"><div style="font-size:26px;font-weight:800;color:var(--guld)">'+PROFIL.u14rang+'.</div><div style="font-size:11px;color:var(--daempet)">'+(EN?"U14 Boys (of ":"U14 Drenge (af ")+PROFIL.u14af+')</div><div style="font-weight:700;margin-top:2px">'+PROFIL.u14pt+' pt</div></div>' +
          '<div class="kort" style="flex:1;text-align:center;margin-bottom:0"><div style="font-size:26px;font-weight:800">'+PROFIL.seniorrang+'.</div><div style="font-size:11px;color:var(--daempet)">'+(EN?"Senior ranking":"Seniorranglisten")+'</div><div style="font-weight:700;margin-top:2px">WTN '+PROFIL.wtn+'</div></div></div>';

@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.6.3 · 22. august 2026";
+const VERSION = "v4.7.1 · 22. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1200,7 +1200,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -2138,6 +2138,9 @@ const A = {
   // ══ RUMMENE (v4.6.0) — "det skal bare rum.. Hvor der jo sker flere
   // ting i." Serveren (v2.15.0) ejer reglerne; appen viser og spørger.
   doerTjek: () => { inviteretTjek(); },
+  // ⭐ ZONEN ER FLISER (v4.7.0): ét panel ad gangen. Samme flise igen
+  // lukker den — zonen skal kunne staa ren, ikke bare foldet ud.
+  zonePanel: (v) => { S.zonePanel = (S.zonePanel === v ? null : v); render(); },
   grHent: async () => {
     if (S.grHenter || !S.spillerNoegle) return;
     S.grHenter = true;
@@ -3385,12 +3388,6 @@ function render() {
           : '<p class="lille" style="margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--kant)">' + (EN
               ? "Log a session and you are on 1."
               : "Log en træning, så står du på 1.") + '</p>') +
-        '<p class="lille" style="margin:6px 0 0;opacity:.75">' + (EN
-          ? "Every session counts one. More than 10 days without, and you start over."
-          : "Hver træning tæller én. Går der mere end 10 dage uden, starter du forfra.") + '</p>' +
-        '<p class="lille" style="margin:8px 0 0;opacity:.6">' + (EN
-          ? "Counted on this phone. Nothing needed for this."
-          : "Regnet på denne telefon. Der skal ingenting til for det.") + '</p>' +
         '</div>';
       }
 
@@ -3454,22 +3451,44 @@ function render() {
           h += '</div>';
         }
 
-        if (!sd && !S.stigeHenter) h += '<div class="kort"><p class="lille" style="margin:0" data-a="stigeHent">' +
-          (EN?"Tap to fetch the streak.":"Tryk for at hente streaken.") + '</p></div>';
+        // Et tomt kort med én linje i er ikke et kort — det er stoej.
+        if (!sd && !S.stigeHenter) h += '<p class="lille" data-a="stigeHent" style="margin:2px 0 10px;text-align:center;cursor:pointer;opacity:.75">' +
+          (EN?"\ud83c\udfc6 Tap for the club ladder":"\ud83c\udfc6 Tryk for klubbens stige") + '</p>';
       }
       }   // ← slut paa klub-grenen. Venne-rummet staar UDENFOR med vilje.
 
       // ══ VENNE-RUMMET ══════════════════════════════════════════════
       // Venne-lagets hele pointe er, at det gaar PAA TVAERS af klubber.
       // Det stod alligevel bag klub-doeren indtil 21/8 — min fejl.
+        // ══════════════════════════════════════════════════════════════
+        // ⭐ ZONE-FLISERNE (v4.7.0) — "Vi skal holde Tile strukturen."
+        // To fliser, ét tal hver, ét panel ad gangen. Ingen brødtekst:
+        // flisen siger hvad der ER, panelet viser det.
+        // ══════════════════════════════════════════════════════════════
+        var _zp = S.zonePanel;
+        var _nRum = (S.grListe || []).length;
+        var _nVen = (S.venner || []).length;
+        var _zflise = function(v, ik, titel, tal) {
+          return '<button class="dev-flise dev-kant' + (_zp === v ? ' dev-kant-is' : '') + '"'
+            + ' style="min-height:92px' + (_zp === v ? ';border-color:var(--is)' : '') + '"'
+            + ' data-a="zonePanel" data-v="' + v + '">'
+            + '<span class="dev-ikon">' + ik + '</span>'
+            + '<b style="font-size:13px;letter-spacing:1.5px">' + titel + '</b>'
+            + '<small style="color:' + (_zp === v ? 'var(--is)' : 'var(--daempet)') + '">' + tal + '</small></button>';
+        };
+        h += '<div class="dev-grid" style="margin:12px 0">'
+          + _zflise("rum", "\ud83d\udeaa", (EN?"ROOMS":"RUM"),
+              _nRum ? (_nRum + " " + (EN ? (_nRum === 1 ? "room" : "rooms") : "rum")) : (EN?"Gather the crew":"Saml banden"))
+          + _zflise("venner", "\ud83e\udd1d", (EN?"FRIENDS":"VENNER"),
+              _nVen ? (_nVen + " " + (EN ? (_nVen === 1 ? "friend" : "friends") : (_nVen === 1 ? "ven" : "venner"))) : (EN?"Follow a friend":"F\u00f8lg en ven"))
+          + '</div>';
+
         // ⭐ RUMMENE (v4.6.0) — Nicolai: "Man derinde kan se streaks på
         // hinanden, de sidste kampe.. hele tiden med den nyeste data.
         // Inde i rummet kommer der live boards når de spiller så de
         // derinde kan heppe." Teamet (familie) ser — rører ikke.
-        h += '<div class="kort"><h3 style="margin:0 0 2px;font-size:15px">\ud83d\udeaa ' + (EN?"ROOMS":"RUM") + '</h3>';
-        h += '<p class="lille" style="margin:0 0 8px">' + (EN
-          ? "Your friends in one place \u2014 streaks, matches and live boards."
-          : "Vennerne samlet ét sted \u2014 streaks, kampe og livetavler.") + '</p>';
+        if (_zp === "rum") {
+        h += '<div class="kort">';
         (S.grListe || []).forEach(function(rm){
           h += '<div class="kort" style="margin:8px 0;background:#0a1322">' +
             '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
@@ -3519,12 +3538,14 @@ function render() {
         }
         h += (S.grBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.grBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.grBesked.t) + '</p>' : '');
         h += '</div>';
+        }
 
-        h += '<div class="kort"><h3 style="margin:0 0 2px;font-size:15px">\ud83e\udd1d ' + (EN?"FRIENDS":"VENNER") + '</h3>';
+        if (_zp === "venner") {
+        h += '<div class="kort">';
         if (!S.venner.length) {
-          h += '<p class="lille" style="margin:6px 0 10px">' + (EN
-            ? "Follow a friend from another club: their streak, and their match while it is being played."
-            : "F\u00f8lg en ven fra en anden klub \u2014 deres streak, og deres kamp mens den spilles.") + '</p>';
+          h += '<p class="lille" style="margin:0 0 10px">' + (EN
+            ? "A friend from any club: their streak, and their match while it runs."
+            : "En ven fra en hvilken som helst klub \u2014 deres streak, og deres kamp mens den spilles.") + '</p>';
         } else {
           S.venner.forEach(function(v){
             h += '<div style="display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--kant)">' +
@@ -3670,6 +3691,7 @@ function render() {
             ? "A friend sees your first name, your streak and your match while it runs \u2014 never your notes."
             : "En ven ser dit fornavn, din streak og din kamp mens den spilles \u2014 aldrig dine noter.")) + '</p>';
         h += '</div>';
+        }
         // Regel-kortet og drifts-kortet er fjernet 20/8: reglen staar nu ved
         // tallet, den forklarer, og driftslinjen staar nederst i holdkortet.
     } else if (S.tab === "opsaet") {

@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.7.7 · 23. august 2026";
+const VERSION = "v4.7.9 · 23. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1397,6 +1397,9 @@ try {
 const ANALYSE_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-kamp";
 const RIVAL_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-rival";
 const SYNC_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/spiller-sync";
+// ⭐ v4.7.9 · ANALYSER UDEN KLUB. Doeren til analyserne for en familie
+// uden klub: taeller forbruget pr. kamp og udsteder et kortlivet token.
+const LOV_URL     = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-lov";
 // ⭐ DOEREN UD (22/8 nat): en invitation begynder med en voksen, der
 // skriver. Mailen ER kanalen — vi gemmer INTET om nogen, der ikke er
 // lukket ind, og GDPR-notatets loefte ("e-mail, telefon,
@@ -1617,6 +1620,41 @@ function rivalNoegle(navne, grupper) {
 const KAMP_HVIDLISTE = ["dato","spiller","modstander","turnering","sted","resultat","oskarFirst","mtb","saetTil","noAd","facitVandt","afsluttet","justeringer","point"];
 const POINT_HVIDLISTE = ["r","\u00e5","f","l","z","s"];
 
+
+// ══════════════════════════════════════════════════════════════════════
+// ⭐ v4.7.9 · ANALYSER UDEN KLUB (Nicolai 23/8: "En bruger uden klub skal
+// bare kunne lave et kald pr kamp.")
+//
+// Analyserne laa bag en KLUBnoegle, saa en familie uden klub kunne ikke
+// hente en eneste — selv om de var oprettede brugere. Nu er spillerkoden
+// noeglen: `analyse-lov` taeller forbruget og udsteder et token.
+//
+// AFTRYKKET regnes af NYTTELASTEN, ikke af kampen, saa telefonen og
+// serveren regner paa de samme tal. Rettes en bold, er det et nyt aftryk
+// — og en rettet kamp maa gerne analyseres igen.
+async function kampAftryk(nyttelast) {
+  const raa = String(nyttelast.dato || "") + "|" + String(nyttelast.modstander || "") +
+              "|" + String((nyttelast.point || []).length);
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raa));
+  return Array.from(new Uint8Array(h)).map(function(b){ return b.toString(16).padStart(2, "0"); }).join("");
+}
+
+// Har man en klubkode, sker PRAECIS det samme som foer — ingen ekstra
+// netvaerkstur, ingen aendring. Ellers hentes en tilladelse foerst.
+async function analyseAdgang(nyttelast, signal) {
+  if (S.klubKode) return { hoveder: { "x-klub-noegle": S.klubKode } };
+  if (!S.spillerNoegle) return { fejl: "mangler-adgang" };
+  try {
+    const aftryk = await kampAftryk(nyttelast);
+    const r = await fetch(LOV_URL, { method: "POST", signal: signal,
+      headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+      body: JSON.stringify({ aftryk: aftryk }) });
+    const d = await r.json().catch(function(){ return {}; });
+    if (!r.ok || !d.token) return { fejl: d.kode || "netvaerk", status: r.status };
+    return { hoveder: { "x-analyse-token": d.token } };
+  } catch (e) { return { fejl: "netvaerk" }; }
+}
+
 function byggAnalysePayload(k) {
   const ud = {};
   KAMP_HVIDLISTE.forEach(function(f) {
@@ -1636,6 +1674,22 @@ function byggAnalysePayload(k) {
 }
 
 function analyseFejltekst(kode, status, EN) {
+  // ⭐ v4.7.9 · doerens egne svar, i menneskesprog
+  if (kode === "brugt") return EN
+    ? "This match has already been analysed. Correct a point and you can run it again."
+    : "Denne kamp er allerede analyseret. Retter du en bold, kan du k\u00f8re den igen.";
+  if (kode === "loft-maaned") return EN
+    ? "You have used this month\u2019s analyses. They reset in 30 days."
+    : "M\u00e5nedens analyser er brugt op. De fornyes om 30 dage.";
+  if (kode === "mangler-adgang") return EN
+    ? "You need a player code before you can fetch an analysis."
+    : "Du skal have en spiller-kode, f\u00f8r du kan hente en analyse.";
+  // ⚠️ MAALT 23/8: en frisk telefon genererer SELV en spillerkode, saa
+  // "ingen noegle" findes ikke i praksis — det er en UKENDT noegle, en ny
+  // bruger moeder. Beskeden skal derfor sige det samme som doeren paa KAMP.
+  if (kode === "kraever-invitation" || status === 403) return EN
+    ? "StreakTennis needs an invitation. Enter your player code under \u2699 Player code \u2014 or ask whoever invited you."
+    : "StreakTennis kr\u00e6ver en invitation. Indtast din spiller-kode under \u2699 SPILLER-KODE \u2014 eller sp\u00f8rg den, der inviterede dig.";
   if (kode === "adgang" || status === 401) return EN ? "The club code was not accepted. Check it under \u2699 Club code." : "Klubkoden blev ikke godkendt. Tjek den under \u2699 Klubkode.";
   if (kode === "loft" || status === 429) return EN ? "Too many analyses in a short time. Try again in a little while." : "For mange analyser p\u00e5 kort tid. Pr\u00f8v igen om lidt.";
   if (kode === "validering" || status === 422) return EN ? "The match data was rejected by the safety check." : "Kampdata blev afvist af sikkerhedsvagten.";
@@ -2777,18 +2831,24 @@ const A = {
   hentAnalyse: (i) => {
     const n = +i, k = S.gemte[n], EN = S.sprog === "en";
     if (!k) return;
-    if (!S.klubKode) { S.kodeAaben = true; S.kodeUdkast = ""; S.hentBesked = { i: n, fejl: true, t: EN ? "Enter the club code first \u2014 you only do this once on this device." : "Indtast klubkoden f\u00f8rst \u2014 det g\u00f8res kun \u00e9n gang p\u00e5 denne enhed." }; render(); return; }
+    // ⭐ v4.7.9: klubkoden er ikke laengere den eneste vej ind. Har man
+    // hverken klubkode ELLER spillerkode, er der stadig ingen adgang.
+    if (!S.klubKode && !S.spillerNoegle) { S.kodeAaben = true; S.kodeUdkast = ""; S.hentBesked = { i: n, fejl: true, t: EN ? "Enter the club code first \u2014 you only do this once on this device." : "Indtast klubkoden f\u00f8rst \u2014 det g\u00f8res kun \u00e9n gang p\u00e5 denne enhed." }; render(); return; }
     if (S.henter !== null) return;
     S.henter = n; S.hentBesked = null; render(); analysePulsStart();
+    const nyttelast = byggAnalysePayload(k);
     const styring = new AbortController();
     const ur = setTimeout(function(){ styring.abort(); }, 120000);
-    fetch(ANALYSE_URL, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-klub-noegle": S.klubKode },
-      body: JSON.stringify({ sprog: EN ? "en" : "da", kamp: byggAnalysePayload(k) }),
-      signal: styring.signal
-    }).then(function(r) {
-      return r.json().catch(function(){ return {}; }).then(function(d) { return { s: r.status, ok: r.ok, d: d }; });
+    analyseAdgang(nyttelast, styring.signal).then(function(ad) {
+      if (ad.fejl) return { s: ad.status || 0, ok: false, d: { kode: ad.fejl } };
+      return fetch(ANALYSE_URL, {
+        method: "POST",
+        headers: Object.assign({ "content-type": "application/json" }, ad.hoveder),
+        body: JSON.stringify({ sprog: EN ? "en" : "da", kamp: nyttelast }),
+        signal: styring.signal
+      }).then(function(r) {
+        return r.json().catch(function(){ return {}; }).then(function(d) { return { s: r.status, ok: r.ok, d: d }; });
+      });
     }).then(function(sv) {
       clearTimeout(ur);
       if (sv.ok && sv.d && sv.d.analyse) {
@@ -3528,8 +3588,12 @@ function render() {
             h += '<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px">' +
               '<span style="flex:1;min-width:0">' + esc(m.fornavn || "") + (m.dig ? ' <span class="lille" style="color:var(--daempet)">(' + (EN?"you":"dig") + ')</span>' : '') + '</span>' +
               '<span style="flex:none;font-weight:800;font-variant-numeric:tabular-nums;color:' + (m.streak ? 'var(--guld)' : 'var(--daempet)') + '">\ud83d\udd25 ' + (m.streak || 0) + '</span>' +
-              (m.live ? '<button class="knap" style="flex:none;min-height:44px;padding:0 12px;font-size:12px;background:var(--grus)" data-a="rumAabn" data-v="' + esc(m.live.foelgekode + "|" + (m.fornavn || "")) + '">\ud83d\udd34 LIVE</button>' : '') +
-              (!m.live && m.seneste ? '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="rumAabn" data-v="' + esc(m.seneste.foelgekode + "|" + (m.fornavn || "")) + '">' + (EN?"See":"Se") + '</button>' : '') +
+              (m.live ? '<button class="knap" style="flex:none;min-height:44px;padding:0 12px;font-size:12px;background:var(--grus)" data-a="rumAabn" data-v="' + esc(m.live.foelgekode + "|" + (m.fornavn || "")) + '">' + (m.dig
+              ? '\ud83c\udfdf ' + (EN?"Your stand":"Din tribune")
+              : '\ud83d\udd34 ' + (EN?"Watch live":"Se live")) + '</button>' : '') +
+              (!m.live && m.seneste ? '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="rumAabn" data-v="' + esc(m.seneste.foelgekode + "|" + (m.fornavn || "")) + '">' + (m.dig
+              ? (EN?"Your last match":"Din seneste kamp")
+              : (EN?"See the match":"Se kampen")) + '</button>' : '') +
               (rm.ejer && m.id && S.rolle !== "familie" ? '<button class="knap valg" style="flex:none;min-height:44px;padding:0 10px;font-size:12px;color:var(--daempet)" data-a="grFjern" data-v="' + esc(rm.id + "|" + m.id) + '" aria-label="' + (EN?"Remove from room":"Fjern fra rummet") + '">\u2715</button>' : '') +
               '</div>';
             if (!m.dig && m.seneste && m.seneste.resultat) {

@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.7.6 · 23. august 2026";
+const VERSION = "v4.7.7 · 23. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -3837,7 +3837,7 @@ function render() {
         famKrop += (S.famBesked ? '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '');
         const famAntal = S.famKoder ? S.famKoder.filter(function(f){ return f.status === "aktiv"; }).length : 0;
         h += _opsKort("familie", "👪", (EN?"THE TEAM":"TEAMET"),
-          famAntal ? (famAntal === 1 ? (EN?"1 key":"1 nøgle") : famAntal + (EN?" keys":" nøgler")) : (EN?"mum & dad":"mor & far"), "var(--daempet)", famKrop);
+          famAntal ? (famAntal === 1 ? (EN?"1 key":"1 nøgle") : famAntal + (EN?" keys":" nøgler")) : (EN?"Set up your team":"S\u00e6t dit team"), "var(--daempet)", famKrop);
       }
       h += _opsKort("klub", "🏷", (EN?"CLUB CODE":"KLUBKODE"),
         (S.klubKode ? (EN?"connected ✓":"forbundet ✓") : (EN?"no club":"ingen klub")),

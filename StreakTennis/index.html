@@ -290,7 +290,7 @@ const GUIDE = [
   ["3 · Registrér bolden — tre tryk","OSKAR VANDT eller TABT → hvordan endte bolden → duellens længde (kort 1-4 / mellem 5-8 / lang 9+). Scoreboardet regner selv stillingen — og duel-tallene afslører, om bud IV holder."],
   ["4 · Fortryd og alarmer","FORTRYD ruller seneste registrering tilbage. Appen advarer ved store point og efter tre gratis fejl i træk."],
   ["5 · Afslut og analysér","'Afslut & gem' → kampen lander i Historik. Tryk derefter 'Hent analyse' på kampkortet — analysen skrives og lander direkte i appen."],
-  ["📲 Føj til hjemmeskærm","iPhone: Åbn filen i Safari → del-knappen → 'Føj til hjemmeskærm' — så ligger appen som ikon. Data gemmes lokalt på DENNE enhed; eksport-teksten i familiegruppen er jeres fælles database."],
+  ["📲 Føj til hjemmeskærm","iPhone: Åbn filen i Safari → del-knappen → 'Føj til hjemmeskærm' — så ligger appen som ikon. Data gemmes lokalt på DENNE enhed; eksport-teksten er jeres sikkerhedsnet."],
   ["⚙ Midt i kampen?","Kom du for sent i gang, eller røg et parti under en pause? Tryk '⚙ Justér stillingen' i kampbilledet, sæt sæt/partier og hvem der server næste bold — registreringen fortsætter derfra. Pointene i det igangværende parti nulstilles til 0-0."],
   ["🟠🧊 Hvorfor 'Grus & Is'?","Appens tema er hele filosofien i tre ord: GRUS er underlaget — sommergruset på klubbens baner og ved mesterskaberne, Nadal-mønstrenes hjemmebane, og kridtstregen i kampbilledet, hvor pointene sætter fodspor. IS er det kolde hoved — Sinners 'samme ansigt ved 40-0 og 0-40', rutinerne og 🧊-nulstillingen. Underlaget, der spilles på, og temperamentet, der vindes med."],
 ];
@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.7.9 · 23. august 2026";
+const VERSION = "v4.10.0 · 24. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1225,6 +1225,8 @@ let S = {
   // Venne-chatten (v4.3, "vi skal have chats med"): én samtale ad gangen.
   // chatLaest = {haandtag: tidsstempel} — kun prikkens hukommelse, lokalt.
   chatVen: null, chatNavn: "", chatBeskeder: null, chatHenter: false,
+  snakRum: null, snakNavn: "", snakBeskeder: null, snakHenter: false, snakUdkast: "", snakBesked: null, snakAnmeldId: null,
+  mitVenneId: "", budListe: null, budHenter: false,
   chatUdkast: "", chatBesked: null, chatAnmeldId: null, chatLaest: {},
   // Hjemkomsten (v4.4): "oskar"/"teamp" naar den gamle app bor paa
   // telefonen og StreakTennis endnu ikke har en spiller.
@@ -1287,6 +1289,7 @@ try { const rå = JSON.parse(lager.hent("sai-kampe") || "[]"); S.gemte = sorterN
 try { const a = lager.hent("sai-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.parse(a)); } catch(e) {}
 try { const kk = lager.hent("sai-klubkode"); if (kk) S.klubKode = kk; } catch(e) {}
 try { const sn = lager.hent("sai-spillernoegle"); if (sn) S.spillerNoegle = sn; } catch(e) {}
+try { const vid = lager.hent("sai-venne-id"); if (vid) S.mitVenneId = vid; } catch(e) {}
 // ⭐ 22/8: SPILLER-KODEN GENERERES AF TELEFONEN — 128 bit, ikke 32.
 // Uden klubnoegle er koden ALENE identiteten, og saa er 8 hex for lidt.
 // Familien taster aldrig noget; klubbens udleverede kode kan stadig
@@ -1400,6 +1403,10 @@ const SYNC_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/spill
 // ⭐ v4.7.9 · ANALYSER UDEN KLUB. Doeren til analyserne for en familie
 // uden klub: taeller forbruget pr. kamp og udsteder et kortlivet token.
 const LOV_URL     = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-lov";
+// ⭐ v4.9.0 · SNAKKEN I RUMMET — egen funktion, venne-chattens vagter.
+const RUMSNAK_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/rum-snak";
+// ⭐ v4.10.0 · VENNE-ID. Tilfoej hinanden direkte — buddet og svaret.
+const BUD_URL     = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/venne-bud";
 // ⭐ DOEREN UD (22/8 nat): en invitation begynder med en voksen, der
 // skriver. Mailen ER kanalen — vi gemmer INTET om nogen, der ikke er
 // lukket ind, og GDPR-notatets loefte ("e-mail, telefon,
@@ -2141,6 +2148,10 @@ const A = {
     if (S.stigeTilvalgt && !S.stigeHenter) A.stigeHent();
     if (S.spillerNoegle && (S.klubKode || S.venneAktiv) && !S.vennerHenter) A.venneHent();
     if (S.spillerNoegle && (S.klubKode || S.venneAktiv) && !S.grHenter) A.grHent();
+    // ⭐ Bud hentes KUN for familier, der allerede er i det delte lag —
+    // en lokal, uregistreret installation sender NUL kald fra zonen
+    // (loeftet fra v4.7.2: intet sendes, foer familien selv handler).
+    if (S.spillerNoegle && (S.klubKode || S.venneAktiv || lager.hent("sai-inviteret") === "1")) A.budHent();
   },
 // ══════════════════════════════════════════════════════════════════
   // VENNE-RUMMET · design: venne-laget-design-v01
@@ -2220,6 +2231,133 @@ const A = {
   doerTjek: () => { inviteretTjek(); },
   // ⭐ ZONEN ER FLISER (v4.7.0): ét panel ad gangen. Samme flise igen
   // lukker den — zonen skal kunne staa ren, ikke bare foldet ud.
+  // ══ SNAKKEN I RUMMET (v4.9.0, "man skal altid kunne gaa ind og
+  // snakke i den gruppe man er") — venne-chattens moenster, rummets dør.
+  snakKald: async (handling, krop) => {
+    if (!S.spillerNoegle || !S.snakRum) return { fejl: "mangler-adgang" };
+    const st = new AbortController(); const ur = setTimeout(function(){ st.abort(); }, 20000);
+    try {
+      const r = await fetch(RUMSNAK_URL, { method: "POST", signal: st.signal,
+        headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+        body: JSON.stringify(Object.assign({ handling: handling, rum: S.snakRum }, krop || {})) });
+      clearTimeout(ur);
+      const d = await r.json().catch(function(){ return {}; });
+      return r.ok ? d : { fejl: d.kode || "netvaerk" };
+    } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+  },
+  snakAabn: (v) => {
+    const dele = String(v).split("|");
+    S.snakRum = dele[0]; S.snakNavn = dele[1] || "";
+    S.snakBeskeder = null; S.snakUdkast = ""; S.snakBesked = null; S.snakAnmeldId = null;
+    S.tab = "rumsnak";
+    // Blid puls mens rummet er aabent — gaar i staa af sig selv udenfor.
+    if (!window._snakTimer) window._snakTimer = setInterval(function(){
+      if (S.tab === "rumsnak") A.snakHent();
+    }, 10000);
+    render(); A.snakHent();
+  },
+  snakLuk: () => { S.snakRum = null; S.snakBeskeder = null; S.tab = "stige"; S.zonePanel = "rum"; render(); },
+  snakHent: async () => {
+    if (!S.snakRum || S.snakHenter) return;
+    S.snakHenter = true;
+    const r = await A.snakKald("hent", {});
+    S.snakHenter = false;
+    if (!r.fejl) S.snakBeskeder = r.beskeder || [];
+    else if (S.snakBeskeder === null) S.snakBeskeder = [];
+    render();
+  },
+  snakSend: async () => {
+    const t = (S.snakUdkast || "").trim();
+    if (!t || !S.snakRum) return;
+    S.snakUdkast = ""; S.snakBesked = null; render();
+    const r = await A.snakKald("skriv", { art: "t", tekst: t.slice(0, 140) });
+    if (r.fejl) {
+      S.snakBesked = { t: r.fejl === "link"
+        ? (S.sprog === "en" ? "Links are not allowed in the room." : "Links er ikke tilladt i rummet.")
+        : (S.sprog === "en" ? "The message did not go through — try again." : "Beskeden kom ikke afsted — prøv igen.") };
+      render();
+    } else A.snakHent();
+  },
+  snakReager: async (v) => {
+    if (!S.snakRum) return;
+    const r = await A.snakKald("skriv", { art: "r", tekst: v });
+    if (!r.fejl) A.snakHent();
+  },
+  snakAnmeldSpoerg: (v) => { S.snakAnmeldId = Number(v); render(); },
+  snakAnmeldNej: () => { S.snakAnmeldId = null; render(); },
+  snakAnmeldJa: async () => {
+    const id = S.snakAnmeldId; if (!id || !S.snakRum) return;
+    S.snakAnmeldId = null; render();
+    const r = await A.snakKald("anmeld", { id: id });
+    if (!r.fejl) A.snakHent();
+  },
+  // ══ VENNE-ID (v4.10.0, "man skal bare kunne tilfoeje hinanden
+  // direkte fra App'en") — buddet sendes og besvares inde i appen.
+  // Samtykket er STADIG et tryk paa begge sider.
+  budKald: async (handling, krop) => {
+    if (!S.spillerNoegle) return { fejl: "mangler-adgang" };
+    const st = new AbortController(); const ur = setTimeout(function(){ st.abort(); }, 20000);
+    try {
+      const r = await fetch(BUD_URL, { method: "POST", signal: st.signal,
+        headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+        body: JSON.stringify(Object.assign({ handling: handling }, krop || {})) });
+      clearTimeout(ur);
+      const d = await r.json().catch(function(){ return {}; });
+      return r.ok ? d : { fejl: d.kode || "netvaerk" };
+    } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+  },
+  budHent: async () => {
+    if (S.budHenter || !S.spillerNoegle || S.rolle === "familie") return;
+    S.budHenter = true;
+    const [idSvar, listeSvar] = await Promise.all([
+      S.mitVenneId ? Promise.resolve(null) : A.budKald("mit-id", {}),
+      A.budKald("liste", {}),
+    ]);
+    S.budHenter = false;
+    if (idSvar && !idSvar.fejl && idSvar.venne_id) {
+      S.mitVenneId = idSvar.venne_id;
+      lager.gem("sai-venne-id", S.mitVenneId);
+    }
+    if (listeSvar && !listeSvar.fejl && Array.isArray(listeSvar.bud)) S.budListe = listeSvar.bud;
+    render();
+  },
+  budSend: async (id) => {
+    const EN = S.sprog === "en";
+    S.vennerHenter = true; S.vennerBesked = null; render();
+    const r = await A.budKald("send", { id: id });
+    S.vennerHenter = false;
+    if (!r.fejl) {
+      S.venneAaben = false; S.venneUdkast = ""; S.invitHilsen = false;
+      S.vennerBesked = { fejl: false, t: EN
+        ? "Sent! When they accept, you are friends."
+        : "Sendt! Når de accepterer, er I venner." };
+    } else {
+      S.vennerBesked = { fejl: true, t:
+        r.fejl === "ukendt-id" ? (EN ? "That friend ID does not exist — check it." : "Det venne-ID findes ikke — tjek det lige.")
+        : r.fejl === "allerede-venner" ? (EN ? "You are already friends." : "I er allerede venner.")
+        : r.fejl === "modsat-bud" ? (EN ? "They already sent you a request — accept it above." : "De har allerede sendt til dig — acceptér ovenfor.")
+        : r.fejl === "eget-id" ? (EN ? "That is your own ID." : "Det er dit eget ID.")
+        : r.fejl === "loft" ? (EN ? "Too many open requests — wait for answers." : "For mange åbne anmodninger — vent på svar.")
+        : (EN ? "Could not send — try again." : "Kunne ikke sende — prøv igen.") };
+    }
+    render();
+    if (!r.fejl) A.budHent();
+  },
+  budJa: async (v) => {
+    const r = await A.budKald("svar", { id: Number(v), ja: true });
+    if (!r.fejl) {
+      S.budListe = (S.budListe || []).filter(function(b){ return b.id !== Number(v); });
+      render();
+      if (!S.vennerHenter) A.venneHent();
+    }
+  },
+  budNej: async (v) => {
+    const r = await A.budKald("svar", { id: Number(v), ja: false });
+    if (!r.fejl) {
+      S.budListe = (S.budListe || []).filter(function(b){ return b.id !== Number(v); });
+      render();
+    }
+  },
   zonePanel: (v) => { S.zonePanel = (S.zonePanel === v ? null : v); render(); },
   // ⭐ STATISTIK ER FLISER (v4.7.4): ét panel ad gangen, som i zonen.
   statPanel: (v) => { S.statPanel = (S.statPanel === v ? null : v); render(); },
@@ -2544,7 +2682,7 @@ const A = {
     const r = await sync("venne-kode", {});
     S.vennerHenter = false;
     if (r.fejl) S.vennerBesked = { fejl: true, t: r.fejl === "kraever-invitation"
-      ? (EN ? "StreakTennis requires an invitation \u2014 ask a StreakTennis family for a link." : "StreakTennis kr\u00e6ver en invitation \u2014 bed en StreakTennis-familie om et link.")
+      ? (EN ? "StreakTennis requires an invitation \u2014 ask someone who is already in for a link." : "StreakTennis kr\u00e6ver en invitation \u2014 bed en, der allerede er inde, om et link.")
       : (EN ? "Could not create a code." : "Kunne ikke lave en kode.") };
     else {
       S.venneKode = r.kode;
@@ -2559,8 +2697,11 @@ const A = {
 
   venneIndloes: async () => {
     const EN = S.sprog === "en";
-    const k = (S.venneUdkast || "").trim().toUpperCase();
-    if (k.length !== 6) { S.vennerBesked = { fejl: true, t: EN ? "The code is 6 characters." : "Koden er 6 tegn." }; render(); return; }
+    const k = (S.venneUdkast || "").trim().toUpperCase().replace(/\s+/g, "");
+    // ⭐ v4.10.0: feltet sluger BAADE 6-tegns koder OG venne-ID'er —
+    // koden ved selv, hvad den er (samme princip som rum-koderne).
+    if (/^[A-ZÆØÅ0-9]{1,12}-\d{4}$/.test(k)) { A.budSend(k); return; }
+    if (k.length !== 6) { S.vennerBesked = { fejl: true, t: EN ? "Enter a 6-character code or a friend ID." : "Indtast en 6-tegns kode eller et venne-ID." }; render(); return; }
     S.vennerHenter = true; S.vennerBesked = null; render();
     let r = await sync("venne-indloes", { kode: k });
     // ⭐ v4.6.0 · KODEN VED SELV, HVAD DEN ER: en ukendt venne-kode
@@ -2582,7 +2723,7 @@ const A = {
         r.fejl === "selv"     ? (EN ? "That is your own code — send it to a friend." : "Det er din egen kode — send den til en ven.") :
         r.fejl === "ukendt"   ? (EN ? "No such code." : "Den kode findes ikke.") :
         r.fejl === "loft"     ? (EN ? "The room is full." : "Rummet er fuldt.") :
-        r.fejl === "kraever-invitation" ? (EN ? "StreakTennis requires an invitation — ask a StreakTennis family for a link." : "StreakTennis kræver en invitation — bed en StreakTennis-familie om et link.") :
+        r.fejl === "kraever-invitation" ? (EN ? "StreakTennis requires an invitation — ask someone who is already in for a link." : "StreakTennis kræver en invitation — bed en, der allerede er inde, om et link.") :
                                 (EN ? "Could not redeem the code." : "Kunne ikke indløse koden.") };
     } else {
       S.venneAaben = false; S.venneUdkast = ""; S.invitHilsen = false;
@@ -3014,8 +3155,8 @@ function foelgTegn() {
       '<div style="font-size:34px;margin-bottom:8px">🎾</div>' +
       '<h2 style="margin:0 0 6px;font-size:18px">' + (EN?"The match is over":"Kampen er slut") + '</h2>' +
       '<p class="lille" style="margin:0">' + (EN
-        ? "This code no longer works. Ask the family for a new one next time."
-        : "Denne kode virker ikke længere. Spørg familien om en ny næste gang.") + '</p></div>';
+        ? "This code no longer works. Ask for a new one next time."
+        : "Denne kode virker ikke længere. Bed om en ny næste gang.") + '</p></div>';
   } else if (!k) {
     h += '<div class="kort" style="text-align:center;padding:28px 16px">' +
       '<p class="lille" style="margin:0">' + (EN?"Connecting…":"Forbinder…") + '</p></div>';
@@ -3290,8 +3431,8 @@ function render() {
           '<div style="font-size:32px;margin-bottom:6px">🎾</div>' +
           '<h3 style="margin:0 0 6px;font-size:17px">' + (EN?"This match is gone":"Kampen findes ikke længere") + '</h3>' +
           '<p class="lille" style="margin:0">' + (EN
-            ? "The family deleted it — and when a match is deleted, everything in the stand goes with it."
-            : "Familien har slettet den — og når en kamp slettes, følger alt på tribunen med.") + '</p></div>';
+            ? "The match was deleted — and when a match is deleted, everything in the stand goes with it."
+            : "Kampen er slettet — og når en kamp slettes, følger alt på tribunen med.") + '</p></div>';
       } else {
         // ── STILLINGEN ──────────────────────────────────────────────
         const P = ["0","15","30","40"];
@@ -3379,10 +3520,56 @@ function render() {
         }
         h += (S.rumBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.rumBesked.t) + '</p>' : '');
         h += '<p class="lille" style="margin:10px 2px 0;opacity:.7">' + (EN
-          ? "The stand locks when the match ends. Friends can see the result and what was said for 7 days — and the family can delete everything at any time."
-          : "Tribunen låses, når kampen slutter. Venner kan se resultatet og det, der blev sagt, i 7 dage — og familien kan slette det hele når som helst.") + '</p>';
+          ? "The stand locks when the match ends. Friends can see the result and what was said for 7 days — and it can be deleted at any time."
+          : "Tribunen låses, når kampen slutter. Venner kan se resultatet og det, der blev sagt, i 7 dage — og den kan slettes når som helst.") + '</p>';
       }
 
+    } else if (S.tab === "rumsnak") {
+      // ⭐ SNAKKEN I RUMMET (v4.9.0). Venne-chattens skaerm, genbrugt:
+      // samme vagter, samme aerlige fodnote — bare rummets dør.
+      h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' +
+        '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 16px" data-a="snakLuk">←</button>' +
+        '<b style="font-size:16px">🚪 ' + esc(S.snakNavn || (EN?"Room":"Rum")) + '</b></div>';
+      const sb = S.snakBeskeder;
+      h += '<div class="kort">';
+      if (sb === null) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">⏳ …</p>';
+      else if (!sb.length) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (EN
+        ? "Nothing here yet. Say hi — or send a 🔥."
+        : "Her er tomt endnu. Sig hej — eller send en 🔥.") + '</p>';
+      else sb.slice(-60).forEach(function(b){
+        if (b.art === "r") {
+          h += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;' + (b.mig ? 'justify-content:flex-end' : '') + '">' +
+            '<span style="font-size:19px;flex:none">' + esc(b.tekst) + '</span>' +
+            '<span class="lille" style="margin:0">' + esc(b.fornavn) + '</span></div>';
+        } else {
+          h += '<div style="padding:6px 0;border-top:1px solid var(--kant)">' +
+            '<div style="display:flex;align-items:baseline;gap:8px">' +
+            '<b style="font-size:12px;color:' + (b.mig ? 'var(--guld)' : 'var(--is)') + '">' + esc(b.fornavn) + '</b>' +
+            (!b.mig && b.id ? '<button style="margin-left:auto;background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;min-height:24px" data-a="snakAnmeldSpoerg" data-v="' + b.id + '" aria-label="Rapportér">⚑</button>' : '') + '</div>' +
+            '<div style="font-size:13.5px;margin-top:1px;word-break:break-word">' + esc(b.tekst) + '</div>';
+          if (S.snakAnmeldId === b.id) {
+            h += '<div style="margin-top:6px;padding:8px;border:1px dashed var(--kant);border-radius:8px">' +
+              '<p class="lille" style="margin:0 0 7px">' + (EN
+                ? "Report this message? It is hidden for the whole room right away and reviewed by the platform."
+                : "Rapportér beskeden? Den skjules for hele rummet med det samme og gennemses af platformen.") + '</p>' +
+              '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="snakAnmeldJa">' + (EN?"Report":"Rapportér") + '</button>' +
+              '<button class="knap valg" style="min-height:44px" data-a="snakAnmeldNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
+          }
+          h += '</div>';
+        }
+      });
+      h += '</div>';
+      h += '<div class="raekke" style="margin-top:8px">' +
+        ["🔥","👏","🎾","💪"].map(function(i){
+          return '<button class="knap" style="min-height:52px;font-size:24px;padding:0" data-a="snakReager" data-v="' + i + '">' + i + '</button>';
+        }).join("") + '</div>';
+      h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:stretch">' +
+        '<input class="felt" style="flex:1;min-width:0" maxlength="140" placeholder="' + (EN?"Write to the room":"Skriv til rummet") + '" value="' + esc(S.snakUdkast) + '" data-felt="snakUdkast">' +
+        '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="snakSend">' + (EN?"Send":"Send") + '</button></div>';
+      h += (S.snakBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.snakBesked.t) + '</p>' : '');
+      h += '<p class="lille" style="margin:10px 2px 0;opacity:.7">' + (EN
+        ? "Everyone in the room reads along. Messages live for a day — the room stays. At most the last 200. ⚑ hides a message for the whole room right away."
+        : "Alle i rummet læser med. Beskederne lever et døgn — rummet består. Højst de seneste 200. ⚑ skjuler en besked for hele rummet med det samme.") + '</p>';
     } else if (S.tab === "chat") {
       // ⭐ VENNE-CHATTEN (v4.3). Serverens regler er samtalens fodnote:
       // Et døgn + højst 200 (v2.14.0: tunellen består, beskederne er flygtige), Fjern ven sletter for begge, ⚑ skjuler.
@@ -3600,6 +3787,12 @@ function render() {
               h += '<div class="lille" style="padding:0 0 4px;color:var(--daempet)">\ud83d\udd12 ' + (EN?"Last match":"Seneste kamp") + ' \u00b7 <b style="color:var(--kridt)">' + esc(m.seneste.resultat) + '</b>' + (m.seneste.modstander ? ' \u00b7 ' + esc(m.seneste.modstander) : '') + '</div>';
             }
           });
+          // ⭐ v4.9.0 · DOEREN IND. Nicolai i gaar: "Jeg var slet ikke
+          // klar over det var der man skulle trykke" — nu ER der en dør,
+          // og den hedder det, den gør. Familie-rollen ser, rører ikke.
+          if (S.rolle !== "familie") {
+            h += '<button class="knap" style="margin-top:8px;width:100%;min-height:44px;background:var(--grus)" data-a="snakAabn" data-v="' + esc(rm.id + "|" + (rm.navn || "")) + '">\ud83d\udcac ' + (EN?"Enter the room":"Gå ind i rummet") + '</button>';
+          }
           if (S.grKoder && S.grKodeRum === rm.id) {
             h += '<div class="kort dev-kant dev-kant-guld" style="margin-top:8px;padding:10px;text-align:center">' +
               '<p class="lille" style="margin:0 0 6px">' + (EN
@@ -3643,6 +3836,20 @@ function render() {
             '<p class="lille" style="margin:5px 0 0">' + (EN
               ? "The code is filled in below \u2014 tap \u201DAccept friend\u201D, and you are connected."
               : "Koden st\u00e5r klar herunder \u2014 tryk \u201DAccepter ven\u201D, s\u00e5 er I forbundet.") + '</p></div>';
+        }
+        // ⭐ v4.10.0 · INDGAAENDE BUD — svaret er et tryk, og det staar
+        // FOERST: en anmodning er det vigtigste i panelet, naar den er der.
+        if (S.rolle !== "familie" && S.budListe && S.budListe.length) {
+          S.budListe.forEach(function(b){
+            h += '<div class="kort dev-kant dev-kant-guld" style="padding:12px 14px;margin:0 0 8px">' +
+              '<div style="display:flex;align-items:center;gap:9px">' +
+              '<span style="font-size:20px;flex:none">\ud83e\udd1d</span>' +
+              '<div style="flex:1;min-width:0"><b style="font-size:14px">' + esc(b.fornavn || "") + '</b>' +
+              '<div class="lille" style="margin-top:1px">' + esc(b.venne_id || "") + ' \u00b7 ' + (EN?"wants to be friends":"vil v\u00e6re venner") + '</div></div></div>' +
+              '<div class="raekke" style="margin-top:9px">' +
+              '<button class="knap" style="min-height:44px;background:var(--grus)" data-a="budJa" data-v="' + b.id + '">\u2705 ' + (EN?"Accept":"Accept\u00e9r") + '</button>' +
+              '<button class="knap valg" style="min-height:44px" data-a="budNej" data-v="' + b.id + '">' + (EN?"Decline":"Afvis") + '</button></div></div>';
+          });
         }
         h += '<div class="kort">';
         if (!S.venner.length) {
@@ -3765,6 +3972,15 @@ function render() {
           '<button class="knap" style="min-height:44px" data-a="venneNyKode">\ud83e\udd1d ' + (EN?"Add a friend":"Tilf\u00f8j ven") + '</button>' +
           '<button class="knap" style="min-height:44px" data-a="venneAabn">\u2705 ' + (EN?"Accept friend":"Accepter ven") + '</button></div>';
 
+        // ⭐ v4.10.0 · DIT VENNE-ID — det, du deler nu. Koderne bestaar
+        // som vej nr. 2 (rummene bruger dem), men ID'et er permanent.
+        if (S.mitVenneId) {
+          h += '<div class="lille" style="margin:9px 2px 0;display:flex;align-items:center;gap:7px">' +
+            '<span style="flex:none">\ud83c\udd94</span>' +
+            '<span style="flex:1;min-width:0">' + (EN?"Your friend ID: ":"Dit venne-ID: ") + '<b style="color:var(--guld);letter-spacing:1px">' + esc(S.mitVenneId) + '</b></span>' +
+            '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="kopier" data-v="mitVenneId">' + (S.kopieret === "mitVenneId" ? (EN?"Copied \u2713":"Kopieret \u2713") : (EN?"Copy":"Kopi\u00e9r")) + '</button></div>';
+        }
+
         if (S.venneKode) {
           h += '<div class="kort dev-kant dev-kant-guld" style="margin-top:9px;text-align:center;padding:14px">' +
             '<div style="font-size:31px;font-weight:800;letter-spacing:4px;color:var(--guld);font-variant-numeric:tabular-nums">' + esc(S.venneKode) + '</div>' +
@@ -3777,7 +3993,7 @@ function render() {
         }
 
         if (S.venneAaben) {
-          h += '<div style="margin-top:9px"><input placeholder="' + (EN?"6 characters":"6 tegn") + '" value="' + esc(S.venneUdkast) + '" data-felt="venneUdkast" maxlength="6" style="text-transform:uppercase;letter-spacing:3px;text-align:center;font-weight:700">' +
+          h += '<div style="margin-top:9px"><input placeholder="' + (EN?"code or friend ID":"kode eller venne-ID") + '" value="' + esc(S.venneUdkast) + '" data-felt="venneUdkast" maxlength="17" style="text-transform:uppercase;letter-spacing:3px;text-align:center;font-weight:700">' +
             '<button class="knap" style="margin-top:7px;width:100%;min-height:44px" data-a="venneIndloes">' + (S.vennerHenter ? (EN?"\u23f3 \u2026":"\u23f3 \u2026") : (EN?"Accept friend":"Accepter ven")) + '</button>' +
             '<p class="lille" style="margin:7px 0 0;opacity:.75">' + (EN
               ? "A room code? Everyone in the room sees each other&rsquo;s first name, streak and matches \u2014 including friends who join later."
@@ -3878,9 +4094,9 @@ function render() {
             : "Denne telefon har en team-nøgle: den taster og ser data — aldrig beskederne mellem spilleren og vennerne.") + '</p>');
       } else {
         let famKrop = '<p class="lille" style="margin:0 0 8px">' + (EN
-          ? "Give mum or dad their own team key. They enter and see everything — except the messages. The link works once."
-          : "Giv mor eller far deres egen team-nøgle. De taster og ser alt — undtagen beskederne. Linket virker én gang.") + '</p>' +
-          '<input data-felt="famEtiket" maxlength="20" placeholder="' + (EN?"Label, e.g. Mum (optional)":"Etiket, fx Mor (valgfrit)") + '" value="' + esc(S.famEtiket || "") + '">' +
+          ? "Give someone on your team their own key. They enter and see everything — except the messages. The link works once."
+          : "Giv en fra dit team sin egen nøgle. De taster og ser alt — undtagen beskederne. Linket virker én gang.") + '</p>' +
+          '<input data-felt="famEtiket" maxlength="20" placeholder="' + (EN?"Label (optional)":"Etiket (valgfrit)") + '" value="' + esc(S.famEtiket || "") + '">' +
           '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="famNy">' + (S.famHenter ? "⏳ …" : (EN?"Get a team key":"Få en team-nøgle")) + '</button>';
         if (S.famNyKode) {
           famKrop += '<div class="kort dev-kant dev-kant-guld" style="margin-top:9px;padding:12px;text-align:center">' +
@@ -4208,8 +4424,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '</div>';
       } else if (S.delAaben) {
         h += '<p class="lille" style="margin:6px 0 8px">' + (EN
-          ? "Share a code so family and teammates can follow live. The code only opens this match, and it dies when you stop."
-          : "Del en kode, så familie og holdkammerater kan følge med live. Koden åbner kun denne kamp, og den dør, når du stopper.") + '</p>' +
+          ? "Share a code so your team can follow live. The code only opens this match, and it dies when you stop."
+          : "Del en kode, så dit team kan følge med live. Koden åbner kun denne kamp, og den dør, når du stopper.") + '</p>' +
           '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="liveStart">📡 ' +
           (EN?"Share the match":"Del kampen") + '</button></div>';
       }
@@ -4767,7 +4983,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     h += '<div class="kort">';
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">💾 '+(EN?"Backup":"Sikkerhedskopi")+'</h2>' +
       '<div class="raekke"><button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="backupLav">💾 '+(EN?"Create full backup":"Lav fuld backup")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="gendanToggle">♻️ '+(EN?"Restore":"Gendan")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--vundet);color:var(--vundet)" data-a="fletToggle">'+(EN?"🔀 Merge device":"🔀 Flet enhed")+'</button></div>';
-    if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and save it in the family chat/notes — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den i familiegruppen/noter — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>' + eksportKnapper('backupTekst', EN);
+    if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and keep it somewhere safe — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den et sikkert sted — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>' + eksportKnapper('backupTekst', EN);
     if (S.gendanAaben) {
       h += '<p class="lille">'+(EN?"Paste a backup text below. NOTE: restoring REPLACES all data on this device.":"Indsæt en backup-tekst herunder. OBS: Gendannelse ERSTATTER alle data på denne enhed.")+'</p>' +
         '<textarea data-felt="gendanTekst" placeholder="TEAMOSKAR-BACKUP-V1 ..." style="height:80px;color:var(--kridt)">'+esc(S.gendanTekst)+'</textarea>' +

@@ -388,7 +388,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.11.0 · 24. august 2026";
+const VERSION = "v4.13.0 · 24. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1200,7 +1200,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -2173,23 +2173,6 @@ const A = {
   // ── DEL INVITATIONEN ────────────────────────────────────────────
   // Linket goer indtastningen til ét tryk — koden er stadig engangs og
   // udloeber efter 24 timer, praecis som naar den laeses hoejt over haekken.
-  venneDel: () => {
-    if (!S.venneKode) return;
-    const EN = S.sprog === "en";
-    const url = location.origin + location.pathname + "?ven=" + S.venneKode;
-    const tekst = EN
-      ? "Follow me in StreakTennis — tap the link and press ”Add friend”: "
-      : "Følg mig i StreakTennis — tryk på linket og derefter ”Tilføj ven”: ";
-    try {
-      if (navigator.share) { navigator.share({ text: tekst + url }); return; }
-    } catch (e) {}
-    try {
-      navigator.clipboard.writeText(tekst + url);
-      S.kopieret = "venneLink"; render();
-      setTimeout(function(){ S.kopieret = null; render(); }, 1600);
-    } catch (e) {}
-  },
-
   // ── FJERN VEN · vejen ud ────────────────────────────────────────────
   // Skal ALTID kunne lykkes, sker med det samme, og den anden part faar
   // ikke besked: et barn, der klipper en forbindelse, skal ikke forklare
@@ -2282,6 +2265,17 @@ const A = {
       render();
     } else A.snakHent();
   },
+  // ⭐ v4.13.0 · PUF. Skriver en fast linje i rummets egen chat — ingen
+  // ny kontaktvej, ingen notifikation, intet nyt felt. Bare en venlig
+  // albue til en, hvis streak er ved at falde.
+  snakPuf: async (v) => {
+    const navn = String(v || "").trim().slice(0, 24);
+    if (!navn || !S.snakRum) return;
+    const EN = S.sprog === "en";
+    const r = await A.snakKald("skriv", { art: "t",
+      tekst: (EN ? "\ud83d\udc4a nudged " : "\ud83d\udc4a puffede til ") + navn });
+    if (!r.fejl) { S.snakBesked = null; A.snakHent(); }
+  },
   snakReager: async (v) => {
     if (!S.snakRum) return;
     const r = await A.snakKald("skriv", { art: "r", tekst: v });
@@ -2321,6 +2315,13 @@ const A = {
     if (idSvar && !idSvar.fejl && idSvar.venne_id) {
       S.mitVenneId = idSvar.venne_id;
       lager.gem("sai-venne-id", S.mitVenneId);
+      S.mitNavn = idSvar.brugernavn || null;
+      S.minKlub = idSvar.klub || null;
+      if (S.mitNavn) lager.gem("sai-brugernavn", S.mitNavn);
+      // ⭐ Oensket fra velkomstskaermen indloeses FOERSTE gang serveren
+      // kender familien. Foer det kunne navnet ikke reserveres.
+      const oenske = lager.hent("sai-navn-oenske");
+      if (!S.mitNavn && oenske) A.navnGem(oenske);
     }
     if (listeSvar && !listeSvar.fejl && Array.isArray(listeSvar.bud)) S.budListe = listeSvar.bud;
     render();
@@ -2421,6 +2422,60 @@ const A = {
       render();
     }
   },
+  // ══ BRUGERNAVN (v4.12.0) ════════════════════════════════════════
+  // ⭐ v4.13.0 · LEDIG-TJEK. Kraever en spillernoegle, serveren kender —
+  // paa velkomstskaermen findes den ikke endnu, og saa tier vi bare.
+  navnTjek: async () => {
+    const n = String(S.navnUdkast2 || "").trim().toLowerCase();
+    if (!S.spillerNoegle || n.length < 3) { S.navnLedig = null; render(); return; }
+    S.navnTjekker = true; render();
+    const r = await A.budKald("ledig", { navn: n });
+    S.navnTjekker = false;
+    // Skiftede feltet, mens vi spurgte, hoerer svaret til et andet navn.
+    if (String(S.navnUdkast2 || "").trim().toLowerCase() !== n) { render(); return; }
+    S.navnLedig = r.fejl ? null : { ledig: !!r.ledig, grund: r.grund || null, navn: n };
+    render();
+  },
+  navnGem: async (oenske) => {
+    const EN = S.sprog === "en";
+    const n = String(oenske || S.navnUdkast2 || "").trim().toLowerCase();
+    if (!n) return;
+    if (S.navnGemmer) return;
+    S.navnGemmer = true; S.navnBesked = null; render();
+    const r = await A.budKald("saet-navn", { navn: n });
+    S.navnGemmer = false;
+    if (r.fejl) {
+      // Serveren sender sin egen menneskelige begrundelse med — den er
+      // bedre end noget, appen kan gaette sig til, saa den vises ordret.
+      S.navnBesked = { fejl: true, t: r.tekst || (
+        r.fejl === "taget" ? (EN ? "That username is taken \u2014 try another." : "Det brugernavn er taget \u2014 prøv et andet.")
+        : r.fejl === "kort" ? (EN ? "At least 3 characters." : "Mindst 3 tegn.")
+        : r.fejl === "langt" ? (EN ? "At most 20 characters." : "Højst 20 tegn.")
+        : r.fejl === "fredet" ? (EN ? "That name is reserved \u2014 pick another." : "Det navn er reserveret \u2014 vælg et andet.")
+        : r.fejl === "grovt" ? (EN ? "Pick another name." : "Vælg et andet navn.")
+        : (EN ? "Use lowercase letters, numbers, - and _ \u2014 start with a letter." : "Brug små bogstaver, tal, - og _ \u2014 start med et bogstav.")) };
+      // Et oenske, serveren sagde nej til, maa ikke blive ved med at
+      // proeve sig selv ved hver opstart.
+      lager.slet("sai-navn-oenske");
+    } else {
+      S.mitNavn = r.brugernavn;
+      S.navnUdkast2 = ""; S.navnBesked = { fejl: false, t: (EN ? "Your username is " : "Dit brugernavn er ") + r.brugernavn };
+      lager.gem("sai-brugernavn", r.brugernavn);
+      lager.slet("sai-navn-oenske");
+    }
+    render();
+  },
+  soeg: async () => {
+    const q = String(S.soegUdkast || "").trim().toLowerCase();
+    if (q.length < 2) { S.soegTraef = null; render(); return; }
+    S.soegHenter = true; render();
+    const r = await A.budKald("soeg", { q: q });
+    S.soegHenter = false;
+    S.soegTraef = r.fejl ? [] : (r.traef || []);
+    render();
+  },
+  soegRyd: () => { S.soegUdkast = ""; S.soegTraef = null; render(); },
+
   budJa: async (v) => {
     const r = await A.budKald("svar", { id: Number(v), ja: true });
     if (!r.fejl) {
@@ -2486,7 +2541,6 @@ const A = {
   rumInviLuk: () => {
     S.rumInvi = null; S.rumInviVenner = null; S.rumInviUdkast = ""; S.rumInviBesked = null; render();
   },
-  grKoderLuk: () => { S.grKoder = null; S.grKodeRum = ""; render(); },
   grForladValg: (v) => { S.grForladSpoerg = String(v || ""); render(); },
   grForladNej: () => { S.grForladSpoerg = null; render(); },
   grForladJa: async () => {
@@ -2780,11 +2834,18 @@ const A = {
 
   venneIndloes: async () => {
     const EN = S.sprog === "en";
-    const k = (S.venneUdkast || "").trim().toUpperCase().replace(/\s+/g, "");
+    const raa = (S.venneUdkast || "").trim().replace(/\s+/g, "");
+    const k = raa.toUpperCase();
     // ⭐ v4.10.0: feltet sluger BAADE 6-tegns koder OG venne-ID'er —
     // koden ved selv, hvad den er (samme princip som rum-koderne).
+    // ⭐ v4.12.0: OG brugernavne. Raekkefoelgen er vigtig: et venne-ID
+    // kendes paa sit moenster, en gammel kode paa at vaere praecis 6 tegn
+    // — alt andet er et brugernavn og gaar til serveren, som ved bedst.
     if (/^[A-ZÆØÅ0-9]{1,12}-\d{4}$/.test(k)) { A.budSend(k); return; }
-    if (k.length !== 6) { S.vennerBesked = { fejl: true, t: EN ? "Enter a 6-character code or a friend ID." : "Indtast en 6-tegns kode eller et venne-ID." }; render(); return; }
+    if (k.length !== 6) {
+      if (/^[a-zæøå][a-zæøå0-9_-]{2,19}$/.test(raa.toLowerCase())) { A.budSend(raa.toLowerCase()); return; }
+      S.vennerBesked = { fejl: true, t: EN ? "Enter a username, a friend ID or a code." : "Indtast et brugernavn, et venne-ID eller en kode." }; render(); return;
+    }
     S.vennerHenter = true; S.vennerBesked = null; render();
     let r = await sync("venne-indloes", { kode: k });
     // ⭐ v4.6.0 · KODEN VED SELV, HVAD DEN ER: en ukendt venne-kode
@@ -2795,6 +2856,13 @@ const A = {
       const g = await sync("gruppe-indloes", { kode: k });
       if (!g.fejl) { r = g; rumNavn = g.navn || ""; }
       else if (g.fejl === "brugt" || g.fejl === "udloebet" || g.fejl === "loft") r = g;
+    }
+    // ⭐ v4.12.0 · SIDSTE FORSOEG: er de seks tegn hverken en venne-kode
+    // eller en rum-kode, kan de vaere et brugernavn. Serveren afgoer.
+    if (r.fejl === "ukendt" && /^[a-zæøå][a-zæøå0-9_-]{2,19}$/.test(raa.toLowerCase())) {
+      S.vennerHenter = false;
+      A.budSend(raa.toLowerCase());
+      return;
     }
     S.vennerHenter = false;
     if (r.fejl) {
@@ -3018,7 +3086,13 @@ const A = {
     SPILLER = v; lager.gem("sai-spiller", v);
     const k = (S.klubUdkast || "").trim().slice(0, 40);
     if (k) { KLUB = k; lager.gem("sai-klub", k); }
-    S.navnUdkast = ""; S.klubUdkast = ""; render();
+    // ⭐ v4.12.0 · brugernavnet kan ikke reserveres her — serveren kender
+    // os ikke endnu. Oensket gemmes, og appen indloeser det, foerste gang
+    // den taler med serveren (se budHent). Er det taget, spoerger kortet
+    // i VENNER-panelet om et nyt.
+    const bn = (S.navnUdkast2 || "").trim().toLowerCase().slice(0, 20);
+    if (bn) lager.gem("sai-navn-oenske", bn);
+    S.navnUdkast = ""; S.klubUdkast = ""; S.navnUdkast2 = ""; render();
   },
   // ── Klubbens identitet: navn + logo. Begge kun lokalt, begge kan fjernes igen.
   klubAabn: () => { S.klubAaben = !S.klubAaben; S.klubUdkast = KLUB; S.klubBesked = null; render(); },
@@ -3418,6 +3492,13 @@ function render() {
         : "Hvad hedder spilleren til fornavn? Det gemmes kun p&aring; denne enhed og bruges som appens navn.") + '</p>' +
       '<input data-felt="navnUdkast" maxlength="24" placeholder="' + (S.sprog === "en" ? "First name" : "Fornavn") + '" value="' + esc(S.navnUdkast || "") + '">' +
       '<input data-felt="klubUdkast" maxlength="40" style="margin-top:8px" placeholder="' + (S.sprog === "en" ? "Club name (optional)" : "Klubbens navn (valgfrit)") + '" value="' + esc(S.klubUdkast || "") + '">' +
+      // ⭐ v4.12.0 · BRUGERNAVNET. Det er det ENESTE her, andre kommer til
+      // at se — derfor staar det ogsaa i teksten. Fornavnet bliver paa
+      // telefonen; brugernavnet er adressen, venner kan skrive til.
+      '<input data-felt="navnUdkast2" maxlength="20" style="margin-top:8px;text-transform:lowercase" placeholder="' + (S.sprog === "en" ? "Username (e.g. oskar_b93)" : "Brugernavn (fx oskar_b93)") + '" value="' + esc(S.navnUdkast2 || "") + '">' +
+      '<p class="lille" style="margin:6px 0 0;opacity:.75">' + (S.sprog === "en"
+        ? "The username is what friends use to find you. Pick something you are happy for others to see \u2014 not your surname."
+        : "Brugernavnet er dét, venner finder dig p\u00e5. V\u00e6lg noget, du er glad for andre ser \u2014 ikke dit efternavn.") + '</p>' +
       '<div class="raekke" style="margin-top:8px"><button class="knap" style="background:var(--grus)" data-a="spillerGem">' +
       (S.sprog === "en" ? "Continue" : "Videre") + '</button></div></div>';
     return;
@@ -3613,6 +3694,60 @@ function render() {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' +
         '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 16px" data-a="snakLuk">←</button>' +
         '<b style="font-size:16px">🚪 ' + esc(S.snakNavn || (EN?"Room":"Rum")) + '</b></div>';
+
+      // ⭐⭐ v4.13.0 · RUMMET ER MERE END EN CHAT.
+      // Alt herunder er bygget paa data, `gruppe-hent` allerede leverer —
+      // fornavn, streak, live og seneste kamp. Der indsamles INTET nyt.
+      const _rum = (S.grListe || []).find(function(x){ return x.id === S.snakRum; });
+      const _med = (_rum && _rum.medlemmer) ? _rum.medlemmer.slice() : [];
+      if (_med.length) {
+        const _tal = function(x){ return Math.max(0, Number(x) || 0); };
+        const _live = _med.filter(function(m){ return m.live; });
+        const _igang = _med.filter(function(m){ return _tal(m.streak) > 0; }).length;
+        const _bedst = _med.reduce(function(a, m){ return Math.max(a, _tal(m.streak)); }, 0);
+
+        // 🔴 LIVE NU — staar oeverst, for det er det eneste, der ikke kan vente.
+        _live.forEach(function(m){
+          h += '<button class="kort dev-kant dev-kant-guld" style="width:100%;text-align:left;padding:12px 14px;margin:0 0 8px;border:1px solid var(--guld)" data-a="rumAabn" data-v="' + esc((m.live && m.live.foelgekode ? m.live.foelgekode : "") + "|" + (m.fornavn || "")) + '">' +
+            '<div style="display:flex;align-items:center;gap:9px">' +
+            '<span style="flex:none;font-size:18px">🔴</span>' +
+            '<div style="flex:1;min-width:0"><b>' + esc(m.fornavn || "") + (EN ? " is playing now" : " spiller lige nu") + '</b>' +
+            (m.live && m.live.stilling ? '<span class="lille" style="display:block;opacity:.8">' + esc(String(m.live.stilling.saet || "") + " · " + String(m.live.stilling.spil || "")) + '</span>' : '') +
+            '</div><span style="flex:none;opacity:.6">▸</span></div></button>';
+        });
+
+        // 📊 RUMMETS TAL — fire tal, ingen sætninger (princip 24)
+        h += '<div class="dev-grid" style="margin:0 0 8px">' +
+          '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">👥</span><b>' + _med.length + '</b><small>' + (EN?"in the room":"i rummet") + '</small></div>' +
+          '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">🔥</span><b>' + _bedst + '</b><small>' + (EN?"longest streak":"længste streak") + '</small></div>' +
+          '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">💪</span><b>' + _igang + '</b><small>' + (EN?"on a streak":"i gang") + '</small></div>' +
+          '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">🎾</span><b>' + _live.length + '</b><small>' + (EN?"live now":"live nu") + '</small></div>' +
+          '</div>';
+
+        // 🏆 STIGEN — sorteret paa streak. Medaljer til top tre, men KUN
+        // naar der er noget at have dem i: en medalje for nul er en haan.
+        _med.sort(function(a, b){
+          const d = _tal(b.streak) - _tal(a.streak);
+          return d !== 0 ? d : String(a.fornavn || "").localeCompare(String(b.fornavn || ""), "da");
+        });
+        h += '<div class="kort" style="margin:0 0 8px;padding:12px 14px">' +
+          '<b style="display:block;margin-bottom:8px">🏆 ' + (EN?"The ladder":"Stigen") + '</b>';
+        _med.forEach(function(m, i){
+          const st = _tal(m.streak);
+          const medalje = (st > 0 && i < 3) ? ["🥇","🥈","🥉"][i] : '<span style="opacity:.45">' + (i + 1) + '</span>';
+          h += '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--linje)' + (m.dig ? ';background:rgba(226,178,74,.07);margin:0 -14px;padding-left:14px;padding-right:14px' : '') + '">' +
+            '<span style="flex:none;width:22px;text-align:center;font-size:15px">' + medalje + '</span>' +
+            '<span style="flex:1;min-width:0;font-weight:' + (m.dig ? '800' : '600') + '">' + esc(m.fornavn || "") + (m.dig ? ' <span class="lille" style="opacity:.6">(' + (EN?"you":"dig") + ')</span>' : '') + '</span>' +
+            '<span style="flex:none;font-variant-numeric:tabular-nums;font-weight:700;color:' + (st > 0 ? 'var(--guld)' : 'var(--daempet)') + '">🔥 ' + st + '</span>' +
+            // 👊 Puf til alle andre end dig selv. Det er en albue, ikke en
+            // besked: linjen lander i rummets chat, som alle alligevel ser.
+            (m.dig ? '' : '<button class="knap valg" style="flex:none;min-height:44px;padding:0 11px;font-size:15px" data-a="snakPuf" data-v="' + esc(m.fornavn || "") + '" aria-label="' + (EN?"Nudge":"Puf til") + ' ' + esc(m.fornavn || "") + '">👊</button>') +
+            '</div>';
+        });
+        h += '<p class="lille" style="margin:9px 0 0;opacity:.65">' + (EN
+          ? "The ladder counts trainings in a row. A nudge goes into the room chat \u2014 nowhere else."
+          : "Stigen t\u00e6ller tr\u00e6ninger i tr\u00e6k. Et puf lander i rummets chat \u2014 ikke andre steder.") + '</p></div>';
+      }
       const sb = S.snakBeskeder;
       h += '<div class="kort">';
       if (sb === null) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">⏳ …</p>';
@@ -4105,15 +4240,78 @@ function render() {
 
         // ⭐ v4.10.0 · DIT VENNE-ID — det, du deler nu. Koderne bestaar
         // som vej nr. 2 (rummene bruger dem), men ID'et er permanent.
-        if (S.mitVenneId) {
+        // ⭐ v4.12.0 · MANGLER DU ET BRUGERNAVN, ER DET DET FOERSTE, DU SER.
+        // Uden det kan ingen finde dig — saa kortet staar, til det er valgt.
+        if (S.rolle !== "familie" && S.mitVenneId && !S.mitNavn) {
+          h += '<div class="kort dev-kant dev-kant-guld" style="margin-top:9px;padding:13px">' +
+            '<b style="display:block;margin-bottom:4px">\ud83c\udd94 ' + (EN?"Choose your username":"Vælg dit brugernavn") + '</b>' +
+            '<p class="lille" style="margin:0 0 8px">' + (EN
+              ? "It is what friends use to find you. Pick something you are happy for others to see \u2014 not your surname."
+              : "Det er dét, venner finder dig p\u00e5. V\u00e6lg noget, du er glad for andre ser \u2014 ikke dit efternavn.") + '</p>' +
+            '<input placeholder="' + (EN?"e.g. oskar_b93":"fx oskar_b93") + '" value="' + esc(S.navnUdkast2) + '" data-felt="navnUdkast2" maxlength="20" style="text-transform:lowercase;letter-spacing:1px;font-weight:700">' +
+            // ⭐ v4.13.0 · svaret kommer, MENS man skriver
+            (S.navnTjekker
+              ? '<p class="lille" style="margin:6px 0 0;opacity:.7">\u23f3 ' + (EN?"checking\u2026":"tjekker\u2026") + '</p>'
+              : (S.navnLedig
+                ? '<p class="lille" style="margin:6px 0 0;color:' + (S.navnLedig.ledig ? 'var(--vundet)' : 'var(--tabt)') + '">' +
+                  (S.navnLedig.ledig
+                    ? '\u2713 ' + esc(S.navnLedig.navn) + (EN ? " is free" : " er ledigt")
+                    : '\u2715 ' + esc(S.navnLedig.grund || (EN ? "taken \u2014 try another" : "taget \u2014 prøv et andet"))) + '</p>'
+                : '')) +
+            '<button class="knap" style="margin-top:7px;width:100%;min-height:44px' + (S.navnLedig && !S.navnLedig.ledig ? ';opacity:.5' : '') + '" data-a="navnGem">' + (S.navnGemmer ? "\u23f3 \u2026" : (EN?"Save username":"Gem brugernavn")) + '</button>' +
+            (S.navnBesked ? '<p class="lille" style="margin:7px 0 0;color:' + (S.navnBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.navnBesked.t) + '</p>' : '') +
+            '</div>';
+        }
+        if (S.mitNavn) {
           h += '<div class="lille" style="margin:9px 2px 0;display:flex;align-items:center;gap:7px">' +
             '<span style="flex:none">\ud83c\udd94</span>' +
-            '<span style="flex:1;min-width:0">' + (EN?"Your friend ID: ":"Dit venne-ID: ") + '<b style="color:var(--guld);letter-spacing:1px">' + esc(S.mitVenneId) + '</b></span>' +
-            '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="kopier" data-v="mitVenneId">' + (S.kopieret === "mitVenneId" ? (EN?"Copied \u2713":"Kopieret \u2713") : (EN?"Copy":"Kopi\u00e9r")) + '</button></div>';
+            '<span style="flex:1;min-width:0">' + (EN?"You are ":"Du hedder ") + '<b style="color:var(--guld);letter-spacing:1px">' + esc(S.mitNavn) + '</b></span>' +
+            '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="kopier" data-v="mitNavn">' + (S.kopieret === "mitNavn" ? (EN?"Copied \u2713":"Kopieret \u2713") : (EN?"Copy":"Kopi\u00e9r")) + '</button></div>';
+        }
+        if (S.mitVenneId) {
+          // ⚠️ Har man endnu intet brugernavn, er ID'et det ENESTE, man kan
+          // give en ven — saa skal det kunne kopieres. Har man et navn, er
+          // ID'et reserve og staar bare som en linje.
+          h += S.mitNavn
+            ? '<div class="lille" style="margin:5px 2px 0;opacity:.6">' + (EN?"Also works: ":"Virker ogs\u00e5: ") + esc(S.mitVenneId) + '</div>'
+            : '<div class="lille" style="margin:9px 2px 0;display:flex;align-items:center;gap:7px">' +
+              '<span style="flex:1;min-width:0">' + (EN?"Until then: ":"Indtil da: ") + '<b style="color:var(--guld);letter-spacing:1px">' + esc(S.mitVenneId) + '</b></span>' +
+              '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="kopier" data-v="mitVenneId">' + (S.kopieret === "mitVenneId" ? (EN?"Copied \u2713":"Kopieret \u2713") : (EN?"Copy":"Kopi\u00e9r")) + '</button></div>';
+        }
+
+        // ⭐ v4.12.0 · SOEG — KUN INDEN FOR EGEN KLUB.
+        // Et eksakt opslag er en adressebog, du selv fylder. En liste er en
+        // mappe over andres boern. I egen klub har traeneren allerede sagt
+        // god for alle; globalt ville der vaere fremmede. Derfor hegnet.
+        if (S.rolle !== "familie" && S.minKlub && String(S.minKlub).toLowerCase() !== "uden klub") {
+          h += '<div style="margin-top:9px">' +
+            '<input placeholder="' + (EN ? "search in " : "søg i ") + esc(S.minKlub) + '" value="' + esc(S.soegUdkast) + '" data-felt="soegUdkast" maxlength="20" style="text-transform:lowercase">' +
+            '<div class="raekke" style="margin-top:7px">' +
+            '<button class="knap valg" style="min-height:44px" data-a="soeg">' + (S.soegHenter ? "\u23f3 \u2026" : "\ud83d\udd0d " + (EN?"Search":"Søg")) + '</button>' +
+            (S.soegTraef ? '<button class="knap valg" style="min-height:44px" data-a="soegRyd">' + (EN?"Clear":"Ryd") + '</button>' : '') +
+            '</div>';
+          if (S.soegTraef && S.soegTraef.length) {
+            S.soegTraef.forEach(function(v){
+              h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--linje)">' +
+                '<div style="flex:1;min-width:0"><b>' + esc(v.fornavn || "") + '</b>' +
+                '<span class="lille" style="display:block;opacity:.7">' + esc(v.brugernavn || "") + '</span></div>' +
+                (v.ven
+                  ? '<span class="lille" style="flex:none;color:var(--vundet)">\u2713 ' + (EN?"friend":"ven") + '</span>'
+                  : '<button class="knap valg" style="flex:none;min-height:44px;padding:0 13px;font-size:12px" data-a="budSend" data-v="' + esc(v.brugernavn || "") + '">' + (EN?"Add":"Tilføj") + '</button>') +
+                '</div>';
+            });
+          } else if (S.soegTraef) {
+            h += '<p class="lille" style="margin:7px 0 0;opacity:.75">' + (EN
+              ? "Nobody in your club with that username."
+              : "Ingen i din klub med det brugernavn.") + '</p>';
+          }
+          h += '<p class="lille" style="margin:7px 0 0;opacity:.6">' + (EN
+            ? "You can only search within your own club."
+            : "Du kan kun s\u00f8ge inden for din egen klub.") + '</p></div>';
         }
 
         if (S.venneAaben) {
-          h += '<div style="margin-top:9px"><input placeholder="' + (EN?"friend ID":"venne-ID") + '" value="' + esc(S.venneUdkast) + '" data-felt="venneUdkast" maxlength="17" style="text-transform:uppercase;letter-spacing:3px;text-align:center;font-weight:700">' +
+          h += '<div style="margin-top:9px"><input placeholder="' + (EN?"username or friend ID":"brugernavn eller venne-ID") + '" value="' + esc(S.venneUdkast) + '" data-felt="venneUdkast" maxlength="17" style="text-transform:uppercase;letter-spacing:3px;text-align:center;font-weight:700">' +
             '<button class="knap" style="margin-top:7px;width:100%;min-height:44px" data-a="venneIndloes">' + (S.vennerHenter ? "\u23f3 \u2026" : (EN?"Send request":"Send anmodning")) + '</button>' +
             '<p class="lille" style="margin:7px 0 0;opacity:.75">' + (EN
               ? "They see the request and decide for themselves. Nothing is shared until they say yes."
@@ -5292,7 +5490,18 @@ window.__oskarInit = function(){
   rod.addEventListener("pointerdown", function(e){ var kn = e.target.closest('[data-a][data-lp]'); if (!kn) return; _lpFired = false; _lpT = setTimeout(function(){ _lpFired = true; try { if (navigator.vibrate) navigator.vibrate(35); } catch (e2) {} S._kvit = kn.dataset.lp; if (_kvitT) clearTimeout(_kvitT); _kvitT = setTimeout(function(){ S._kvit = ""; render(); }, 2600); if (A[kn.dataset.a]) A[kn.dataset.a](kn.dataset.lp); }, 550); });
   ["pointerup","pointercancel","pointerleave"].forEach(function(ev){ rod.addEventListener(ev, function(){ if (_lpT) { clearTimeout(_lpT); _lpT = null; } }, true); });
   rod.addEventListener("click", function(e){ if (_lpFired) { _lpFired = false; e.preventDefault(); return; } var kn = e.target.closest("[data-a]"); if (kn && A[kn.dataset.a]) A[kn.dataset.a](kn.dataset.v); });
-  rod.addEventListener("input", function(e){ var f = e.target.dataset.felt; if (f) S[f] = e.target.value; });
+  rod.addEventListener("input", function(e){
+    var f = e.target.dataset.felt; if (!f) return;
+    S[f] = e.target.value;
+    // ⭐ v4.13.0 · Er navnet ledigt? Svaret kommer MENS man skriver, ikke
+    // efter man har trykket Gem og glaedet sig. Vent et halvt sekund efter
+    // sidste tast, saa vi ikke spoerger for hvert bogstav.
+    if (f === "navnUdkast2") {
+      S.navnLedig = null; S.navnBesked = null;
+      clearTimeout(window.__navnUr);
+      window.__navnUr = setTimeout(function(){ A.navnTjek(); }, 500);
+    }
+  });
   rod.addEventListener("change", function(e){
     if (e.target.dataset.felt === "nyMod") render();
     if (e.target.dataset.felt === "logoFil") A.logoValgt(e.target);

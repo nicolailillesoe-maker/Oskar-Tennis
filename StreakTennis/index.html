@@ -112,6 +112,10 @@ textarea{width:100%;height:140px;background:var(--dyb);color:var(--is);border:1p
 .bundnav button.aktiv{color:var(--is)}
 @keyframes sai-puls { 0%,100% { opacity:1; transform:scale(1) } 50% { opacity:.35; transform:scale(.78) } }
 .sai-live-prik { animation: sai-puls 1.15s ease-in-out infinite }
+@keyframes sai-flamme { 0%,100% { transform:scale(1) translateY(0); filter:brightness(1) } 50% { transform:scale(1.07) translateY(-3px); filter:brightness(1.18) } }
+.sai-flamme { animation: sai-flamme 2.6s ease-in-out infinite }
+@keyframes sai-op { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
+.sai-op { animation: sai-op .5s ease-out both }
 @keyframes sai-flyv { 0% { opacity:0; transform:translateY(10px) scale(.5) } 22% { opacity:1; transform:translateY(0) scale(1.18) } 60% { opacity:1; transform:translateY(-4px) scale(1) } 100% { opacity:0; transform:translateY(-26px) scale(.9) } }
 .sai-flyv { animation: sai-flyv 1.9s ease-out forwards }
 </style>
@@ -388,7 +392,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.13.0 · 24. august 2026";
+const VERSION = "v4.16.0 · 24. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -401,22 +405,6 @@ const KODEHASH = 1187643301;
 const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
 const LAASTE_FANER = ["stil","rutiner","planer","anbefal","historik","s2026","fysisk","status","strategi","plan","regler"];
 
-const FYSISK = [
-  ["🎾","Tennistræningen — status (opdateret 12. jul)","Klubtræningen følger klubbens eget program — tiderne får I hos jeres træner. Mellem holdtræningerne er banen selvtræningens: passene her i fanen plus våbnene fra Stil-fanen. Registrér hvert pas, så tæller det med i statistikken og i det, træneren kan se."],
-  ["🔥","OPVARMNING — altid først (10 min.)","1) 4 min. sjipning — minimum 1.000 sjip, TÆL dem! · 2) 4 min. stille og roligt løb · 3) 2 min. stræk: for- og bagside af lår + begge lægge. Ingen genveje — opvarmningen ER en del af passet."],
-  ["🏃","PAS 1 · Konditionsløb (38 min.)","2 min. hårdt løb (80-85 %) + 2 min. restitutionsløb (60-65 %) — gentages 4 gange. Så 4 minutters pause. Derefter HELE blokken igen: 4 × (2 min. hårdt + 2 min. roligt). Afslut med 2 min. meget langsomt løb + stræk af lår, lægge og baller."],
-  ["⚡","PAS 2 · Intervaller (ca. 33 min.)","30 sek. hårdt løb + 30 sek. roligt løb — gentages 10 gange. 3 minutters pause. Så 10 gange igen. Afslut med 10 min. roligt løb (60 %). Temposkiftene her er tennis-motoren: eksplosion, ro, eksplosion."],
-  ["🚀","PAS 3 · Hurtighed (25-30 min.)","Pendulsprint: 8 m og retur → 6 m og retur → 4 m og retur → 8 m og retur → 6 m og retur = ét sæt. 10 sæt med 60 sek. pause efter hvert. Derefter: 20 m sprint + 10 m gang, 10 gange i træk, 60 sek. pause — og hele den øvelse 5 gange. De første tre skridt er en tennisspillers vigtigste våben."],
-  ["🗓","Ugerytmen (koblingen til sæsonplanen)","Uge 29-30 er sæsonplanens træningsblok — programmets hjem: fx Pas 1 mandag, Pas 3 onsdag, Pas 2 fredag. Gylden regel: Hurtighed (Pas 3) kræver friske ben — aldrig dagen efter hård kondition. Og på banen ved siden af: wide-serven fra fordelsiden. Fysikken bygger motoren; serven bygger våbnet."],
-];
-const FYSISK_EN = [
-  ["🎾","Tennis training — status (updated 12 Jul)","Club training follows your club's own programme — ask your coach for the times. Between team sessions the court belongs to self-training: the sessions in this tab plus the weapons from the Style tab. Log every session so it counts in your statistics and in what your coach can see."],
-  ["🔥","WARM-UP — always first (10 min.)","1) 4 min. skipping rope — minimum 1,000 skips, COUNT them! · 2) 4 min. easy jogging · 3) 2 min. stretching: front and back of thighs + both calves. No shortcuts — the warm-up IS part of the session."],
-  ["🏃","SESSION 1 · Endurance run (38 min.)","2 min. hard running (80-85 %) + 2 min. recovery pace (60-65 %) — repeat 4 times. Then a 4-minute break. Then the WHOLE block again: 4 × (2 min. hard + 2 min. easy). Finish with 2 min. very slow jogging + stretch thighs, calves and glutes."],
-  ["⚡","SESSION 2 · Intervals (approx. 33 min.)","30 sec. hard + 30 sec. easy — repeat 10 times. 3-minute break. Then 10 more. Finish with 10 min. easy running (60 %). These tempo shifts are the tennis engine: explode, recover, explode."],
-  ["🚀","SESSION 3 · Speed (25-30 min.)","Pendulum sprints: 8 m and back → 6 m and back → 4 m and back → 8 m and back → 6 m and back = one set. 10 sets with 60 sec. rest after each. Then: 20 m sprint + 10 m walk, 10 times in a row, 60 sec. rest — and that whole drill 5 times. The first three steps are a tennis player's most important weapon."],
-  ["🗓","The weekly rhythm (the link to the season plan)","Weeks 29-30 are the season plan's training block — this programme's home: e.g. Session 1 Monday, Session 3 Wednesday, Session 2 Friday. Golden rule: speed work (Session 3) needs fresh legs — never the day after hard endurance. And on court alongside it: the wide serve from the ad side. Fitness builds the engine; the serve builds the weapon."],
-];
 
 // ---------- Trænernes fælles skala (1-10, fra trænerplatformen — MÅ IKKE afvige) ----------
 const TSKALA = [
@@ -1200,7 +1188,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -1292,6 +1280,12 @@ try { const a = lager.hent("sai-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.par
 try { const kk = lager.hent("sai-klubkode"); if (kk) S.klubKode = kk; } catch(e) {}
 try { const sn = lager.hent("sai-spillernoegle"); if (sn) S.spillerNoegle = sn; } catch(e) {}
 try { const vid = lager.hent("sai-venne-id"); if (vid) S.mitVenneId = vid; } catch(e) {}
+// ⚠️ FEJL FANGET AF NICOLAI 24/8: brugernavnet blev SKREVET hertil, men
+// aldrig LAEST tilbage. Appen glemte derfor et navn, serveren havde gemt,
+// og bad om et nyt ved hver start. Maalt i databasen: navnet var der hele
+// tiden. Et felt, der kun skrives, er ikke gemt — det er tabt.
+try { const bn = lager.hent("sai-brugernavn"); if (bn) S.mitNavn = bn; } catch(e) {}
+try { const mk = lager.hent("sai-min-klub"); if (mk) S.minKlub = mk; } catch(e) {}
 // ⭐ 22/8: SPILLER-KODEN GENERERES AF TELEFONEN — 128 bit, ikke 32.
 // Uden klubnoegle er koden ALENE identiteten, og saa er 8 hex for lidt.
 // Familien taster aldrig noget; klubbens udleverede kode kan stadig
@@ -2276,6 +2270,39 @@ const A = {
       tekst: (EN ? "\ud83d\udc4a nudged " : "\ud83d\udc4a puffede til ") + navn });
     if (!r.fejl) { S.snakBesked = null; A.snakHent(); }
   },
+  // ══ SLET OG RET DIN EGEN BESKED (v4.15.0) ═══════════════════════
+  snakSletSpoerg: (v) => { S.snakSletId = Number(v) || null; S.snakRetId = null; render(); },
+  snakSletNej: () => { S.snakSletId = null; render(); },
+  snakSletJa: async () => {
+    const id = S.snakSletId; if (!id) return;
+    S.snakSletId = null; render();
+    const r = await A.snakKald("slet", { id: id });
+    if (r.fejl) {
+      S.snakBesked = { t: S.sprog === "en" ? "Could not delete — try again." : "Kunne ikke slette — prøv igen." };
+      render();
+    } else A.snakHent();
+  },
+  snakRetAabn: (v) => {
+    const id = Number(v) || null;
+    if (S.snakRetId === id) { S.snakRetId = null; S.snakRetUdkast = ""; render(); return; }
+    const b = (S.snakBeskeder || []).find(function(x){ return x.id === id; });
+    S.snakRetId = id; S.snakRetUdkast = b ? String(b.tekst || "") : "";
+    S.snakSletId = null; S.snakBesked = null; render();
+  },
+  snakRetFortryd: () => { S.snakRetId = null; S.snakRetUdkast = ""; render(); },
+  snakRetGem: async () => {
+    const id = S.snakRetId; const t = (S.snakRetUdkast || "").trim();
+    if (!id || !t) return;
+    const r = await A.snakKald("ret", { id: id, tekst: t.slice(0, 140) });
+    if (r.fejl) {
+      S.snakBesked = { t: r.fejl === "link"
+        ? (S.sprog === "en" ? "Links are not allowed in the room." : "Links er ikke tilladt i rummet.")
+        : r.fejl === "anmeldt"
+          ? (S.sprog === "en" ? "A reported message cannot be edited." : "En anmeldt besked kan ikke rettes.")
+          : (S.sprog === "en" ? "Could not save — try again." : "Kunne ikke gemme — prøv igen.") };
+      render();
+    } else { S.snakRetId = null; S.snakRetUdkast = ""; A.snakHent(); }
+  },
   snakReager: async (v) => {
     if (!S.snakRum) return;
     const r = await A.snakKald("skriv", { art: "r", tekst: v });
@@ -2308,7 +2335,10 @@ const A = {
     if (S.budHenter || !S.spillerNoegle || S.rolle === "familie") return;
     S.budHenter = true;
     const [idSvar, listeSvar] = await Promise.all([
-      S.mitVenneId ? Promise.resolve(null) : A.budKald("mit-id", {}),
+      // ⚠️ FEJL 2 (samme fangst): der blev sprunget over, saa snart der
+      // laa et venne-ID — men brugernavnet kommer fra SAMME svar. Havde
+      // man ét gang faaet sit ID, blev navnet aldrig hentet igen.
+      (S.mitVenneId && S.mitNavn) ? Promise.resolve(null) : A.budKald("mit-id", {}),
       A.budKald("liste", {}),
     ]);
     S.budHenter = false;
@@ -2317,6 +2347,7 @@ const A = {
       lager.gem("sai-venne-id", S.mitVenneId);
       S.mitNavn = idSvar.brugernavn || null;
       S.minKlub = idSvar.klub || null;
+      if (S.minKlub) lager.gem("sai-min-klub", S.minKlub);
       if (S.mitNavn) lager.gem("sai-brugernavn", S.mitNavn);
       // ⭐ Oensket fra velkomstskaermen indloeses FOERSTE gang serveren
       // kender familien. Foer det kunne navnet ikke reserveres.
@@ -2436,6 +2467,16 @@ const A = {
     S.navnLedig = r.fejl ? null : { ledig: !!r.ledig, grund: r.grund || null, navn: n };
     render();
   },
+  // ⭐ v4.16.0 · linjen med dit navn ER knappen til at skifte det.
+  // Uden den ville der ikke findes nogen vej, naar kortet er gemt vaek.
+  // ⭐ v4.16.0 · startskaermens to trin
+  velkomstFrem: () => { S.velkomstTrin = 1; render(); },
+  velkomstTilbage: () => { S.velkomstTrin = 0; render(); },
+  navnAabn: () => {
+    S.navnAaben = !S.navnAaben;
+    S.navnUdkast2 = S.navnAaben ? (S.mitNavn || "") : "";
+    S.navnBesked = null; S.navnLedig = null; render();
+  },
   navnGem: async (oenske) => {
     const EN = S.sprog === "en";
     const n = String(oenske || S.navnUdkast2 || "").trim().toLowerCase();
@@ -2459,7 +2500,8 @@ const A = {
       lager.slet("sai-navn-oenske");
     } else {
       S.mitNavn = r.brugernavn;
-      S.navnUdkast2 = ""; S.navnBesked = { fejl: false, t: (EN ? "Your username is " : "Dit brugernavn er ") + r.brugernavn };
+      S.navnUdkast2 = ""; S.navnAaben = false;
+      S.navnBesked = { fejl: false, t: (EN ? "Your username is " : "Dit brugernavn er ") + r.brugernavn };
       lager.gem("sai-brugernavn", r.brugernavn);
       lager.slet("sai-navn-oenske");
     }
@@ -3484,23 +3526,63 @@ function render() {
         '<button class="knap valg" data-a="flytNej">' + (S.sprog === "en" ? "Start fresh" : "Start forfra") + '</button></div></div>';
       return;
     }
-    el.innerHTML = '<div class="topbar"><span class="brand"><span class="brandnavn">STREAKTENNIS</span></span></div>' +
-      '<div class="kort" style="margin:60px 16px 0;border-color:var(--guld)">' +
-      '<h2 style="color:var(--guld);font-size:16px;margin:0 0 10px">' + (S.sprog === "en" ? "Welcome" : "Velkommen") + '</h2>' +
-      '<p class="lille" style="margin:0 0 12px">' + (S.sprog === "en"
-        ? "What is the player&rsquo;s first name? It is stored only on this device and is used as the name of the app."
-        : "Hvad hedder spilleren til fornavn? Det gemmes kun p&aring; denne enhed og bruges som appens navn.") + '</p>' +
-      '<input data-felt="navnUdkast" maxlength="24" placeholder="' + (S.sprog === "en" ? "First name" : "Fornavn") + '" value="' + esc(S.navnUdkast || "") + '">' +
-      '<input data-felt="klubUdkast" maxlength="40" style="margin-top:8px" placeholder="' + (S.sprog === "en" ? "Club name (optional)" : "Klubbens navn (valgfrit)") + '" value="' + esc(S.klubUdkast || "") + '">' +
-      // ⭐ v4.12.0 · BRUGERNAVNET. Det er det ENESTE her, andre kommer til
-      // at se — derfor staar det ogsaa i teksten. Fornavnet bliver paa
-      // telefonen; brugernavnet er adressen, venner kan skrive til.
-      '<input data-felt="navnUdkast2" maxlength="20" style="margin-top:8px;text-transform:lowercase" placeholder="' + (S.sprog === "en" ? "Username (e.g. oskar_b93)" : "Brugernavn (fx oskar_b93)") + '" value="' + esc(S.navnUdkast2 || "") + '">' +
-      '<p class="lille" style="margin:6px 0 0;opacity:.75">' + (S.sprog === "en"
-        ? "The username is what friends use to find you. Pick something you are happy for others to see \u2014 not your surname."
-        : "Brugernavnet er dét, venner finder dig p\u00e5. V\u00e6lg noget, du er glad for andre ser \u2014 ikke dit efternavn.") + '</p>' +
-      '<div class="raekke" style="margin-top:8px"><button class="knap" style="background:var(--grus)" data-a="spillerGem">' +
-      (S.sprog === "en" ? "Continue" : "Videre") + '</button></div></div>';
+    // ⭐⭐ v4.16.0 · STARTSKAERMEN (Nicolai: "skal goeres MEGET mere sexet").
+    // TO TRIN: foerst HVORFOR, saa HVEM ER DU. En formular kan pyntes, men
+    // den er stadig en formular — det, der manglede, var et loefte FOER
+    // arbejdet. Felterne er de samme; der sendes stadig INTET herfra.
+    if (S.velkomstTrin === 0) {
+      el.innerHTML =
+        '<div style="min-height:88vh;display:flex;flex-direction:column;justify-content:center;padding:24px 18px 28px;text-align:center">' +
+          '<div class="sai-op" style="font-size:76px;line-height:1;margin-bottom:6px"><span class="sai-flamme" style="display:inline-block">🔥</span></div>' +
+          '<div class="sai-op" style="animation-delay:.06s;font-size:27px;font-weight:900;letter-spacing:5px;color:var(--guld);margin-bottom:4px">STREAK</div>' +
+          '<div class="sai-op" style="animation-delay:.06s;font-size:27px;font-weight:900;letter-spacing:5px;color:var(--kridt);margin-bottom:14px">TENNIS</div>' +
+          '<p class="sai-op" style="animation-delay:.12s;margin:0 auto 22px;max-width:19em;font-size:15px;line-height:1.55;color:var(--daempet)">' +
+            (S.sprog === "en"
+              ? "Every session counts. Every match tells you something."
+              : "Hver træning tæller. Hver kamp fortæller dig noget.") + '</p>' +
+          '<div class="sai-op dev-grid" style="animation-delay:.18s;margin-bottom:22px">' +
+            '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">🔥</span><b>' + (S.sprog === "en" ? "STREAK" : "STREAK") + '</b><small>' + (S.sprog === "en" ? "sessions in a row" : "træninger i træk") + '</small></div>' +
+            '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">🎾</span><b>' + (S.sprog === "en" ? "MATCH" : "KAMP") + '</b><small>' + (S.sprog === "en" ? "ball by ball" : "bold for bold") + '</small></div>' +
+            '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">📊</span><b>' + (S.sprog === "en" ? "ANALYSIS" : "ANALYSE") + '</b><small>' + (S.sprog === "en" ? "what the numbers say" : "hvad tallene siger") + '</small></div>' +
+            '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">🤝</span><b>' + (S.sprog === "en" ? "FRIENDS" : "VENNER") + '</b><small>' + (S.sprog === "en" ? "follow each other" : "følg hinanden") + '</small></div>' +
+          '</div>' +
+          '<button class="knap sai-op" style="animation-delay:.24s;background:var(--grus);flex:none;height:54px;min-height:54px;font-size:16px;font-weight:800" data-a="velkomstFrem">' +
+            (S.sprog === "en" ? "Get started" : "Kom i gang") + '</button>' +
+          '<p class="lille sai-op" style="animation-delay:.3s;margin:14px auto 0;max-width:22em;opacity:.7">' +
+            (S.sprog === "en"
+              ? "Everything stays on your phone until you share something yourself."
+              : "Alt bliver på din telefon, til du selv deler noget.") + '</p>' +
+        '</div>';
+      return;
+    }
+    el.innerHTML =
+      '<div style="padding:22px 16px 24px">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">' +
+          '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 15px" data-a="velkomstTilbage">←</button>' +
+          '<b style="font-size:17px">' + (S.sprog === "en" ? "So — who are you?" : "Så — hvem er du?") + '</b></div>' +
+        '<div class="kort sai-op" style="border-color:var(--guld);padding:16px">' +
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin-bottom:5px">' + (S.sprog === "en" ? "FIRST NAME" : "FORNAVN") + '</label>' +
+          '<input data-felt="navnUdkast" maxlength="24" placeholder="' + (S.sprog === "en" ? "e.g. Oskar" : "fx Oskar") + '" value="' + esc(S.navnUdkast || "") + '">' +
+          '<p class="lille" style="margin:5px 0 16px;opacity:.72">' + (S.sprog === "en"
+            ? "Stays on this phone. It becomes the name of the app."
+            : "Bliver på denne telefon. Det bliver appens navn.") + '</p>' +
+
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin-bottom:5px">' + (S.sprog === "en" ? "USERNAME" : "BRUGERNAVN") + '</label>' +
+          '<input data-felt="navnUdkast2" maxlength="20" style="text-transform:lowercase;letter-spacing:1px;font-weight:700" placeholder="' + (S.sprog === "en" ? "e.g. oskar_b93" : "fx oskar_b93") + '" value="' + esc(S.navnUdkast2 || "") + '">' +
+          '<p class="lille" style="margin:5px 0 16px;opacity:.72">' + (S.sprog === "en"
+            ? "The only thing others see. Pick something you are happy for others to see — not your surname."
+            : "Det eneste, andre ser. Vælg noget, du er glad for andre ser — ikke dit efternavn.") + '</p>' +
+
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin-bottom:5px">' + (S.sprog === "en" ? "CLUB · OPTIONAL" : "KLUB · VALGFRIT") + '</label>' +
+          '<input data-felt="klubUdkast" maxlength="40" placeholder="' + (S.sprog === "en" ? "Club name" : "Klubbens navn") + '" value="' + esc(S.klubUdkast || "") + '">' +
+          '<p class="lille" style="margin:5px 0 16px;opacity:.72">' + (S.sprog === "en"
+            ? "Can be added later under Settings."
+            : "Kan tilføjes senere under Indstillinger.") + '</p>' +
+
+          '<button class="knap" style="width:100%;min-height:52px;font-size:16px;font-weight:800;background:var(--grus)" data-a="spillerGem">' +
+            (S.sprog === "en" ? "Start my streak 🔥" : "Start min streak 🔥") + '</button>' +
+        '</div>' +
+      '</div>';
     return;
   }
   const FANER = S.verden === "udv"
@@ -3754,17 +3836,51 @@ function render() {
       else if (!sb.length) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (EN
         ? "Nothing here yet. Say hi — or send a 🔥."
         : "Her er tomt endnu. Sig hej — eller send en 🔥.") + '</p>';
-      else sb.slice(-60).forEach(function(b){
+      // ⭐ v4.15.0 · KLOKKESLAET. Beskederne lever kun et doegn, saa der er
+      // aldrig tvivl om dagen — og et klokkeslaet kan man forholde sig til
+      // ("det var FOER traeningen"). Under et minut staar der "nu", fordi
+      // 23.52 ved siden af noget, man lige har skrevet, ser forkert ud.
+      const _klok = function(t){
+        try {
+          const d = new Date(t); if (isNaN(d.getTime())) return "";
+          if (Date.now() - d.getTime() < 60000) return EN ? "now" : "nu";
+          return String(d.getHours()).padStart(2, "0") + "." + String(d.getMinutes()).padStart(2, "0");
+        } catch (e) { return ""; }
+      };
+      if (sb) sb.slice(-60).forEach(function(b){
         if (b.art === "r") {
           h += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;' + (b.mig ? 'justify-content:flex-end' : '') + '">' +
+            (b.mig && b.id ? '<button style="background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;padding:4px 6px;min-height:44px" data-a="snakSletSpoerg" data-v="' + esc(String(b.id)) + '" aria-label="' + (EN?"Delete":"Slet") + '">\ud83d\uddd1</button>' : '') +
+            '<span class="lille" style="margin:0;opacity:.55;flex:none">' + esc(_klok(b.tid)) + '</span>' +
             '<span style="font-size:19px;flex:none">' + esc(b.tekst) + '</span>' +
             '<span class="lille" style="margin:0">' + esc(b.fornavn) + '</span></div>';
         } else {
           h += '<div style="padding:6px 0;border-top:1px solid var(--kant)">' +
             '<div style="display:flex;align-items:baseline;gap:8px">' +
             '<b style="font-size:12px;color:' + (b.mig ? 'var(--guld)' : 'var(--is)') + '">' + esc(b.fornavn) + '</b>' +
+            '<span class="lille" style="margin:0;opacity:.55">' + esc(_klok(b.tid)) + (b.rettet ? ' \u00b7 ' + (EN?"edited":"rettet") : '') + '</span>' +
             (!b.mig && b.id ? '<button style="margin-left:auto;background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;min-height:24px" data-a="snakAnmeldSpoerg" data-v="' + b.id + '" aria-label="Rapportér">⚑</button>' : '') + '</div>' +
-            '<div style="font-size:13.5px;margin-top:1px;word-break:break-word">' + esc(b.tekst) + '</div>';
+            (b.mig && b.id
+              ? '<span style="margin-left:auto;display:flex;gap:2px;flex:none">' +
+                '<button style="background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;padding:4px 6px;min-height:44px" data-a="snakRetAabn" data-v="' + esc(String(b.id)) + '" aria-label="' + (EN?"Edit":"Ret") + '">\u270f\ufe0f</button>' +
+                '<button style="background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;padding:4px 6px;min-height:44px" data-a="snakSletSpoerg" data-v="' + esc(String(b.id)) + '" aria-label="' + (EN?"Delete":"Slet") + '">\ud83d\uddd1</button></span>'
+              : '') +
+            '</div>' +
+            (S.snakRetId === b.id
+              ? '<div style="margin-top:6px">' +
+                '<input value="' + esc(S.snakRetUdkast) + '" data-felt="snakRetUdkast" maxlength="140">' +
+                '<div class="raekke" style="margin-top:6px">' +
+                '<button class="knap" style="min-height:44px;background:var(--grus)" data-a="snakRetGem">' + (EN?"Save":"Gem") + '</button>' +
+                '<button class="knap valg" style="min-height:44px" data-a="snakRetFortryd">' + (EN?"Cancel":"Fortryd") + '</button></div></div>'
+              : '<div style="font-size:13.5px;margin-top:1px;word-break:break-word">' + esc(b.tekst) + '</div>');
+          if (S.snakSletId === b.id) {
+            h += '<div style="margin-top:6px;padding:8px;border:1px dashed var(--kant);border-radius:8px">' +
+              '<p class="lille" style="margin:0 0 7px">' + (EN
+                ? "Delete your message? It is gone for everyone \u2014 and cannot be undone."
+                : "Slet din besked? Den er v\u00e6k for alle \u2014 og kan ikke fortrydes.") + '</p>' +
+              '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="snakSletJa">' + (EN?"Delete":"Slet") + '</button>' +
+              '<button class="knap valg" style="min-height:44px" data-a="snakSletNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
+          }
           if (S.snakAnmeldId === b.id) {
             h += '<div style="margin-top:6px;padding:8px;border:1px dashed var(--kant);border-radius:8px">' +
               '<p class="lille" style="margin:0 0 7px">' + (EN
@@ -4242,14 +4358,29 @@ function render() {
         // som vej nr. 2 (rummene bruger dem), men ID'et er permanent.
         // ⭐ v4.12.0 · MANGLER DU ET BRUGERNAVN, ER DET DET FOERSTE, DU SER.
         // Uden det kan ingen finde dig — saa kortet staar, til det er valgt.
-        if (S.rolle !== "familie" && S.mitVenneId && !S.mitNavn) {
+        // ⭐ v4.14.0 · BRUGERNAVNET BOR I INDSTILLINGER (Nicolai: "det
+        // skal lukkes vaek naar det foerst er valgt"). Her staar KUN dit
+        // navn med en kopiér-knap — det er jo det, du skal give en ven.
+        // Mangler navnet, staar der én linje med vejen derhen.
+        // ⭐ v4.16.0 · TILBAGE HVOR DET HØRER TIL (Nicolai: "lad den blive
+        // hvor den var for dem hvor det ikke er oprettet. Når de har lavet
+        // det gemmes det væk"). Et brugernavn, man endnu IKKE har, er ikke
+        // en indstilling — det er et hul, og det hører hjemme dér, hvor
+        // hullet gør ondt: her, hvor man skal bruge det.
+        if (S.mitNavn && !S.navnAaben) {
+          // Linjen ER knappen til at skifte navnet. Uden den fandtes der
+          // ingen vej, når kortet er gemt væk.
+          h += '<div class="lille" style="margin:9px 2px 0;display:flex;align-items:center;gap:7px">' +
+            '<button style="flex:1;min-width:0;text-align:left;background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:4px 0;min-height:44px" data-a="navnAabn">' +
+            '\ud83c\udd94 ' + (EN?"You are ":"Du hedder ") + '<b style="color:var(--guld);letter-spacing:1px">' + esc(S.mitNavn) + '</b> <span style="opacity:.5">\u270f\ufe0f</span></button>' +
+            '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="kopier" data-v="mitNavn">' + (S.kopieret === "mitNavn" ? (EN?"Copied \u2713":"Kopieret \u2713") : (EN?"Copy":"Kopi\u00e9r")) + '</button></div>';
+        } else if (S.rolle !== "familie" && S.mitVenneId) {
           h += '<div class="kort dev-kant dev-kant-guld" style="margin-top:9px;padding:13px">' +
-            '<b style="display:block;margin-bottom:4px">\ud83c\udd94 ' + (EN?"Choose your username":"Vælg dit brugernavn") + '</b>' +
+            '<b style="display:block;margin-bottom:4px">\ud83c\udd94 ' + (S.mitNavn ? (EN?"Change your username":"Skift dit brugernavn") : (EN?"Choose your username":"Vælg dit brugernavn")) + '</b>' +
             '<p class="lille" style="margin:0 0 8px">' + (EN
               ? "It is what friends use to find you. Pick something you are happy for others to see \u2014 not your surname."
               : "Det er dét, venner finder dig p\u00e5. V\u00e6lg noget, du er glad for andre ser \u2014 ikke dit efternavn.") + '</p>' +
             '<input placeholder="' + (EN?"e.g. oskar_b93":"fx oskar_b93") + '" value="' + esc(S.navnUdkast2) + '" data-felt="navnUdkast2" maxlength="20" style="text-transform:lowercase;letter-spacing:1px;font-weight:700">' +
-            // ⭐ v4.13.0 · svaret kommer, MENS man skriver
             (S.navnTjekker
               ? '<p class="lille" style="margin:6px 0 0;opacity:.7">\u23f3 ' + (EN?"checking\u2026":"tjekker\u2026") + '</p>'
               : (S.navnLedig
@@ -4258,20 +4389,17 @@ function render() {
                     ? '\u2713 ' + esc(S.navnLedig.navn) + (EN ? " is free" : " er ledigt")
                     : '\u2715 ' + esc(S.navnLedig.grund || (EN ? "taken \u2014 try another" : "taget \u2014 prøv et andet"))) + '</p>'
                 : '')) +
-            '<button class="knap" style="margin-top:7px;width:100%;min-height:44px' + (S.navnLedig && !S.navnLedig.ledig ? ';opacity:.5' : '') + '" data-a="navnGem">' + (S.navnGemmer ? "\u23f3 \u2026" : (EN?"Save username":"Gem brugernavn")) + '</button>' +
+            '<div class="raekke" style="margin-top:7px">' +
+            '<button class="knap" style="min-height:44px' + (S.navnLedig && !S.navnLedig.ledig ? ';opacity:.5' : '') + '" data-a="navnGem">' + (S.navnGemmer ? "\u23f3 \u2026" : (EN?"Save":"Gem")) + '</button>' +
+            (S.navnAaben ? '<button class="knap valg" style="min-height:44px" data-a="navnAabn">' + (EN?"Cancel":"Fortryd") + '</button>' : '') +
+            '</div>' +
             (S.navnBesked ? '<p class="lille" style="margin:7px 0 0;color:' + (S.navnBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.navnBesked.t) + '</p>' : '') +
             '</div>';
         }
-        if (S.mitNavn) {
-          h += '<div class="lille" style="margin:9px 2px 0;display:flex;align-items:center;gap:7px">' +
-            '<span style="flex:none">\ud83c\udd94</span>' +
-            '<span style="flex:1;min-width:0">' + (EN?"You are ":"Du hedder ") + '<b style="color:var(--guld);letter-spacing:1px">' + esc(S.mitNavn) + '</b></span>' +
-            '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="kopier" data-v="mitNavn">' + (S.kopieret === "mitNavn" ? (EN?"Copied \u2713":"Kopieret \u2713") : (EN?"Copy":"Kopi\u00e9r")) + '</button></div>';
-        }
         if (S.mitVenneId) {
-          // ⚠️ Har man endnu intet brugernavn, er ID'et det ENESTE, man kan
-          // give en ven — saa skal det kunne kopieres. Har man et navn, er
-          // ID'et reserve og staar bare som en linje.
+          // ⚠️ FANGET AF proev-vennebud: uden brugernavn er ID'et det ENESTE,
+          // man kan give en ven — saa skal det kunne kopieres. Har man et
+          // navn, er ID'et reserve og staar bare som en linje.
           h += S.mitNavn
             ? '<div class="lille" style="margin:5px 2px 0;opacity:.6">' + (EN?"Also works: ":"Virker ogs\u00e5: ") + esc(S.mitVenneId) + '</div>'
             : '<div class="lille" style="margin:9px 2px 0;display:flex;align-items:center;gap:7px">' +
@@ -5013,8 +5141,6 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         '<input placeholder="'+(EN?"Note (optional — e.g. \'intervals\' or \'strength\')":"Note (valgfri — fx \'intervaller\' eller \'styrke\')")+'" value="'+esc(S.fyNote)+'" data-felt="fyNote" style="margin-bottom:8px">' +
         '<div class="raekke"><button class="knap" style="background:'+(S.fyKval&&S.fyType?"var(--grus)":"var(--flade)")+'" data-a="fyGem">💾 '+(EN?"Save session":"Gem passet")+'</button></div></div>';
       }
-      h += '<details style="margin:4px 0 8px"><summary style="font-size:12px;color:var(--daempet);cursor:pointer">📖 '+(EN?"Inspiration — the running programme":"Inspiration — løbeprogrammet")+'</summary>' +
-        (EN?FYSISK_EN:FYSISK).map(function(k){ return '<div class="kort" style="margin-top:6px"><h3 style="font-size:13px">'+k[0]+' '+esc(k[1])+'</h3><p class="lille" style="line-height:1.5">'+esc(k[2])+'</p></div>'; }).join("") + '</details>';
       if (S.fysLog.length) {
         const _fm = S.fysLog.reduce(function(a,e){ return a + (e.m || 0); }, 0); const _fkE = S.fysLog.filter(function(e){ return e.k; }); const _fk = _fkE.length ? (_fkE.reduce(function(a,e){ return a + e.k; }, 0) / _fkE.length).toFixed(1) : null;
         h += '<div class="kort" style="border-left:3px solid var(--vundet)"><h3>📓 '+(EN?"Completed sessions":"Gennemførte pas")+' — '+S.fysLog.length+' '+(EN?"total":"i alt")+'</h3>' +
@@ -5059,7 +5185,6 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
                       : " pas kom fra en anden telefon \u2014 kun dato og l\u00e6ngde.") + '</p>' : ''; })();
         if (S.ttEks) h += '<p class="lille">'+(EN?"Select, copy and share with your coach:":"Markér, kopiér og del med træneren:")+'</p><textarea readonly onfocus="this.select()" style="height:110px">'+esc(S.ttEks)+'</textarea>' + eksportKnapper('ttEks', EN);
       }
-      h += (EN?FYSISK_EN:FYSISK).map(function(f){ return '<div class="kort"'+(f[0]==="🗓"?' style="border-left:3px solid var(--is)"':'')+'><h3>'+f[0]+' '+esc(f[1])+'</h3><p>'+esc(f[2])+'</p></div>'; }).join("");
     
 
       // ══ TRÆNING · SENESTE UGER · spejlet af trænerens kort (1:1) ═════

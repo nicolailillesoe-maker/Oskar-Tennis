@@ -392,7 +392,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.20.0 · 25. august 2026";
+const VERSION = "v4.21.1 · 25. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1188,7 +1188,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, meldNavn: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -1285,6 +1285,9 @@ try { const vid = lager.hent("sai-venne-id"); if (vid) S.mitVenneId = vid; } cat
 // og bad om et nyt ved hver start. Maalt i databasen: navnet var der hele
 // tiden. Et felt, der kun skrives, er ikke gemt — det er tabt.
 try { const bn = lager.hent("sai-brugernavn"); if (bn) S.mitNavn = bn; } catch(e) {}
+// ⭐ v4.21.0 · er der en konto paa denne telefon? Det afgoer, om
+// Indstillinger tilbyder "opret" eller "log ud".
+try { const kk = lager.hent("sai-konto"); if (kk) S.minKonto = kk; } catch(e) {}
 try { const mk = lager.hent("sai-min-klub"); if (mk) S.minKlub = mk; } catch(e) {}
 // ⭐ 22/8: SPILLER-KODEN GENERERES AF TELEFONEN — 128 bit, ikke 32.
 // Uden klubnoegle er koden ALENE identiteten, og saa er 8 hex for lidt.
@@ -1431,6 +1434,10 @@ const RUMBUD_URL  = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/rum-b
 // ⭐ v4.19.0 · PORTEN. Serveren afgør, om du er lukket ind — og om du
 // er den, der lukker andre ind. Appen gætter aldrig på nogen af delene.
 const PORT_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/ejer-port";
+// ⭐ v4.21.0 · KONTOEN. Serveren udleverer spillernøglen, når man har
+// bevist hvem man er. Alle andre funktioner kender stadig kun nøglen —
+// derfor er de urørte.
+const KONTO_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/konto";
 // ⭐ DOEREN UD (22/8 nat): en invitation begynder med en voksen, der
 // skriver. Mailen ER kanalen — vi gemmer INTET om nogen, der ikke er
 // lukket ind, og GDPR-notatets loefte ("e-mail, telefon,
@@ -2253,6 +2260,116 @@ const A = {
   // ══ RUMMENE (v4.6.0) — "det skal bare rum.. Hvor der jo sker flere
   // ting i." Serveren (v2.15.0) ejer reglerne; appen viser og spørger.
   doerTjek: () => { inviteretTjek(); },
+  // ══ KONTOEN (v4.21.0) ════════════════════════════════════════════
+  kontoKald: async (handling, krop) => {
+    const st = new AbortController(); const ur = setTimeout(function(){ st.abort(); }, 20000);
+    try {
+      const hd = { "content-type": "application/json" };
+      if (S.spillerNoegle) hd["x-spiller-noegle"] = S.spillerNoegle;
+      const r = await fetch(KONTO_URL, { method: "POST", signal: st.signal, headers: hd,
+        body: JSON.stringify(Object.assign({ handling: handling }, krop || {})) });
+      clearTimeout(ur);
+      const d = await r.json().catch(function(){ return {}; });
+      return r.ok ? d : { fejl: d.kode || "netvaerk", t: d.fejl || "" };
+    } catch (e) { clearTimeout(ur); return { fejl: "netvaerk", t: "" }; }
+  },
+  kontoAabn: (v) => { S.kontoAaben = (S.kontoAaben === v ? null : v); S.kontoBesked = null; render(); },
+  kontoLuk: () => { S.kontoAaben = null; S.kontoBesked = null; render(); },
+  kodeAabn2: () => { S.kodeAaben2 = !S.kodeAaben2; S.kodeGammel = ""; S.kodeNy = ""; S.kontoBesked = null; render(); },
+  // ⭐ LOG IND — man kan skrive sit brugernavn ELLER forælderens mail.
+  logInd: async () => {
+    const EN = S.sprog === "en";
+    if (!String(S.logNavn || "").trim() || !String(S.logKode || "")) {
+      S.kontoBesked = { fejl: true, t: EN ? "Fill in both fields." : "Udfyld begge felter." };
+      render(); return;
+    }
+    S.kontoHenter = true; S.kontoBesked = null; render();
+    const r = await A.kontoKald("login", { navn: String(S.logNavn).trim(), kode: String(S.logKode) });
+    S.kontoHenter = false;
+    if (r.fejl) {
+      S.kontoBesked = { fejl: true, t: r.t || (EN ? "Could not log in." : "Kunne ikke logge ind.") };
+      render(); return;
+    }
+    // ⭐ NØGLEN ER SVARET. Alt andet i appen kender kun den.
+    S.spillerNoegle = r.noegle; lager.gem("sai-spillernoegle", r.noegle);
+    S.mitNavn = r.brugernavn || null; S.minKonto = r.brugernavn || null;
+    if (S.mitNavn) lager.gem("sai-brugernavn", S.mitNavn);
+    lager.gem("sai-konto", r.brugernavn || "1");
+    S.logKode = ""; S.kontoAaben = null;
+    // Hent alt hjem igen: den nye telefon ved endnu ingenting.
+    try { A.synkroniser(); } catch (e) {}
+    S.portStatus = null; inviteretTjek();
+    render();
+  },
+  // ⭐⭐ OPRET KONTO. Noeglen sendes MED — serveren adopterer den, saa
+  // streaken og arkivet foelger med over i kontoen. Uden det ville en
+  // eksisterende spiller starte forfra i samme sekund, han oprettede sig.
+  opretKonto: async () => {
+    const EN = S.sprog === "en";
+    S.kontoHenter = true; S.kontoBesked = null; render();
+    const r = await A.kontoKald("opret", {
+      brugernavn: String(S.opretNavn || S.mitNavn || "").trim().toLowerCase(),
+      kode: String(S.opretKode || ""), mail: String(S.opretMail || "").trim(),
+      fornavn: SPILLER || "",
+    });
+    S.kontoHenter = false;
+    if (r.fejl) {
+      S.kontoBesked = { fejl: true, t: r.t || (EN ? "Could not create the account." : "Kunne ikke oprette kontoen.") };
+      render(); return;
+    }
+    S.spillerNoegle = r.noegle; lager.gem("sai-spillernoegle", r.noegle);
+    S.mitNavn = r.brugernavn; S.minKonto = r.brugernavn;
+    lager.gem("sai-brugernavn", r.brugernavn); lager.gem("sai-konto", r.brugernavn);
+    S.opretKode = ""; S.opretMail = ""; S.kontoAaben = null;
+    S.kontoBesked = { fejl: false, t: r.adopteret
+      ? (EN ? "Done — everything on this phone came along." : "Færdig — alt på denne telefon kom med.")
+      : (EN ? "Account created." : "Kontoen er oprettet.") };
+    try { A.synkroniser(); } catch (e) {}
+    S.portStatus = null; inviteretTjek();
+    render();
+  },
+  glemtKode: async () => {
+    const EN = S.sprog === "en";
+    S.kontoHenter = true; render();
+    await A.kontoKald("glemt", { navn: String(S.logNavn || "").trim() });
+    S.kontoHenter = false;
+    // ⚠️ Samme svar uanset om navnet findes. Ellers kan man afsøge, hvem
+    // der er i appen, ved at skrive navne her.
+    S.kontoBesked = { fejl: false, t: EN
+      ? "If the username exists, help is on the way. A grown-up will hear from us."
+      : "Findes brugernavnet, er hjælpen på vej. En voksen hører fra os." };
+    render();
+  },
+  kodeSkift: async () => {
+    const EN = S.sprog === "en";
+    S.kontoHenter = true; S.kontoBesked = null; render();
+    const r = await A.kontoKald("skift-kode", { gammel: String(S.kodeGammel || ""), ny: String(S.kodeNy || "") });
+    S.kontoHenter = false;
+    S.kodeGammel = ""; S.kodeNy = "";
+    S.kontoBesked = r.fejl
+      ? { fejl: true, t: r.t || (EN ? "Could not change it." : "Kunne ikke skiftes.") }
+      : { fejl: false, t: EN ? "New password saved." : "Nyt kodeord gemt." };
+    if (!r.fejl) S.kodeAaben2 = false;
+    render();
+  },
+  logUdSpoerg: () => { S.logUdSpoerg = true; S.kontoBesked = null; render(); },
+  logUdNej: () => { S.logUdSpoerg = false; render(); },
+  // ⭐⭐ LOG UD · SYNKRONISÉR FØRST, RYD BAGEFTER.
+  // Rydder man før synk, er det, der ikke nåede frem, væk for altid.
+  // Synkroniserer man uden at rydde, kan den næste, der låner telefonen,
+  // se den forriges træningslog. Begge dele er uacceptable.
+  logUdJa: async () => {
+    S.kontoHenter = true; render();
+    try { await A.synkroniser(); } catch (e) {}
+    const BLIVER = ["sai-sprog", "sai-skala10", "sai-zoner", "sai-tryk", "sai-haand", "sai-benchmark"];
+    try {
+      const gem = {};
+      BLIVER.forEach(function(k){ try { const v = localStorage.getItem(k); if (v !== null) gem[k] = v; } catch (e) {} });
+      localStorage.clear();
+      Object.keys(gem).forEach(function(k){ try { localStorage.setItem(k, gem[k]); } catch (e) {} });
+    } catch (e) {}
+    location.reload();
+  },
   // ══ EJER-PORTEN (v4.19.0) ════════════════════════════════════════
   portKald: async (handling, krop) => {
     if (!S.spillerNoegle) return { fejl: "mangler-adgang" };
@@ -3378,6 +3495,27 @@ const A = {
 // ---------- Rendering ----------
 const esc = (t) => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+// ⭐⭐ v4.21.0 · LOGIN-KORTET. Bruges BAADE paa velkomstskaermen og i
+// Indstillinger — én kilde, saa de to aldrig kan komme til at sige
+// noget forskelligt om, hvad man skal skrive.
+const _loginKort = function(EN){
+  return '<div class="kort dev-kant dev-kant-is" style="margin-top:10px;padding:14px;text-align:left">' +
+    '<b style="display:block;margin-bottom:4px">🔑 ' + (EN?"Log in":"Log ind") + '</b>' +
+    '<p class="lille" style="margin:0 0 9px">' + (EN
+      ? "Your username, or the email on the account."
+      : "Dit brugernavn — eller mailen på kontoen.") + '</p>' +
+    '<input placeholder="' + (EN?"username or email":"brugernavn eller mail") + '" value="' + esc(S.logNavn) + '" data-felt="logNavn" maxlength="80" autocapitalize="off" spellcheck="false" style="text-transform:lowercase">' +
+    '<input type="password" placeholder="' + (EN?"password":"kodeord") + '" value="' + esc(S.logKode) + '" data-felt="logKode" maxlength="200" autocomplete="current-password" style="margin-top:7px">' +
+    '<button class="knap" style="margin-top:8px;width:100%;min-height:48px;background:var(--grus)" data-a="logInd">' +
+      (S.kontoHenter ? "⏳ …" : (EN?"Log in":"Log ind")) + '</button>' +
+    '<div class="raekke" style="margin-top:7px">' +
+      '<button class="knap valg" style="min-height:44px;font-size:12px" data-a="glemtKode">' + (EN?"Forgot password":"Glemt kodeord") + '</button>' +
+      '<button class="knap valg" style="min-height:44px;font-size:12px" data-a="kontoLuk">' + (EN?"Cancel":"Fortryd") + '</button>' +
+    '</div>' +
+    (S.kontoBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.kontoBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.kontoBesked.t) + '</p>' : '') +
+    '</div>';
+};
+
 // ⭐ v4.18.0 · HVOR LAENGE HAR DEN VENTET.
 // Et klokkeslaet siger intet om, hvorvidt man skal spoerge igen. "3 dage"
 // goer. Derfor dage, ikke tidspunkt.
@@ -3741,6 +3879,13 @@ function render() {
 
           '<button class="knap" style="width:100%;min-height:52px;font-size:16px;font-weight:800;background:var(--grus)" data-a="spillerGem">' +
             (S.sprog === "en" ? "Start my streak 🔥" : "Start min streak 🔥") + '</button>' +
+          // ⭐⭐ v4.21.0 · VEJEN TILBAGE. Uden den er en ny telefon en
+          // blindgyde for en, der ALLEREDE er bruger — man kunne kun
+          // starte forfra. Det var præcis det, der skete for Julie.
+          (S.kontoAaben === "log"
+            ? _loginKort(S.sprog === "en")
+            : '<button class="knap valg" style="margin-top:9px;width:100%;min-height:44px;font-size:13px;background:transparent;border:1px dashed var(--kant);color:var(--is)" data-a="kontoAabn" data-v="log">' +
+              (S.sprog === "en" ? "Already have an account? Log in" : "Har du allerede en konto? Log ind") + '</button>') +
         '</div>' +
       '</div>';
     return;
@@ -4430,9 +4575,16 @@ function render() {
           h += '<div class="kort dev-kant dev-kant-guld" style="margin:0 0 10px;padding:13px 14px">' +
             '<div style="font-size:23px;line-height:1">\uD83D\uDC8C</div>' +
             '<b style="display:block;font-size:15px;margin-top:5px">' + (EN?"You are invited":"Du er inviteret") + '</b>' +
+            // ⚠️ FEJL FANGET AF JULIE 25/8: "jeg har ingen accepter ven knap
+            // at trykke paa og den foreslaar stadig kode." Hilsenen pegede paa
+            // en knap, der blev omdoebt i v4.11.0, da engangskoderne forsvandt.
+            // Hun ledte efter "Accepter ven" og fandt "Send anmodning".
+            // ⭐ Teksten siger nu, hvad der FAKTISK staar paa knappen — og at
+            // det er en ANMODNING, den anden skal sige ja til. Det er ikke
+            // pynt: modellen aendrede sig, og loeftet skal foelge med.
             '<p class="lille" style="margin:5px 0 0">' + (EN
-              ? "The code is filled in below \u2014 tap \u201DAccept friend\u201D, and you are connected."
-              : "Koden st\u00e5r klar herunder \u2014 tryk \u201DAccepter ven\u201D, s\u00e5 er I forbundet.") + '</p></div>';
+              ? "The code is filled in below \u2014 tap \u201DSend request\u201D. They decide, and when they say yes you are connected."
+              : "Koden st\u00e5r klar herunder \u2014 tryk \u201DSend anmodning\u201D. De bestemmer selv, og n\u00e5r de siger ja, er I forbundet.") + '</p></div>';
         }
         // ⭐ v4.10.0 · INDGAAENDE BUD — svaret er et tryk, og det staar
         // FOERST: en anmodning er det vigtigste i panelet, naar den er der.
@@ -4795,6 +4947,67 @@ function render() {
         h += _opsKort("ejer", "\ud83d\udd10", (EN?"WHO GETS IN":"HVEM KOMMER IND"),
           (_venter.length ? _venter.length + " " + (EN?"waiting":"venter") : (_k ? (_k.inde || 0) + " " + (EN?"inside":"inde") : "\u2014")),
           _venter.length ? "var(--guld)" : "var(--daempet)", _ekrop);
+      }
+      // ⭐⭐ v4.21.0 · KONTOEN. Nicolai 25/8: "De skal kunne logge ind og
+      // logge ud på forskellige enheder." Julie sad fast som Philip på sin
+      // egen telefon, fordi der ikke fandtes en log ud.
+      if (S.rolle !== "familie") {
+        var _kk;
+        if (S.minKonto) {
+          _kk = '<p class="lille" style="margin:0 0 9px">' + (EN
+              ? "You are logged in as <b>" + esc(S.minKonto) + "</b>. Log in with the same username on any phone \u2014 everything follows you."
+              : "Du er logget ind som <b>" + esc(S.minKonto) + "</b>. Log ind med samme brugernavn p\u00e5 en hvilken som helst telefon \u2014 alt f\u00f8lger med.") + '</p>';
+          if (S.kodeAaben2) {
+            _kk += '<input type="password" placeholder="' + (EN?"current password":"nuværende kodeord") + '" value="' + esc(S.kodeGammel) + '" data-felt="kodeGammel" maxlength="200" autocomplete="current-password">' +
+              '<input type="password" placeholder="' + (EN?"new password (min 8)":"nyt kodeord (mindst 8)") + '" value="' + esc(S.kodeNy) + '" data-felt="kodeNy" maxlength="200" autocomplete="new-password" style="margin-top:7px">' +
+              '<div class="raekke" style="margin-top:7px">' +
+              '<button class="knap" style="min-height:44px" data-a="kodeSkift">' + (S.kontoHenter ? "\u23f3 \u2026" : (EN?"Save":"Gem")) + '</button>' +
+              '<button class="knap valg" style="min-height:44px" data-a="kodeAabn2">' + (EN?"Cancel":"Fortryd") + '</button></div>';
+          } else {
+            _kk += '<button class="knap valg" style="min-height:44px;padding:8px 15px" data-a="kodeAabn2">' + (EN?"Change password":"Skift kodeord") + '</button>';
+          }
+          if (S.logUdSpoerg) {
+            // ⚠️ Log ud rydder telefonen. Det SKAL stå, før man trykker —
+            // og synkroniseringen sker først, så intet går tabt.
+            _kk += '<div style="margin-top:10px;padding:10px;border:1px dashed var(--tabt);border-radius:9px">' +
+              '<p class="lille" style="margin:0 0 8px">' + (EN
+                ? "Log out? Everything is saved to your account first, and then this phone is wiped clean \u2014 so the next person cannot see your log. You get it all back when you log in again."
+                : "Log ud? Alt gemmes p\u00e5 din konto f\u00f8rst, og derefter ryddes telefonen \u2014 s\u00e5 den n\u00e6ste ikke kan se din log. Du f\u00e5r det hele igen, n\u00e5r du logger ind.") + '</p>' +
+              '<div class="raekke">' +
+              '<button class="knap" style="min-height:44px;background:var(--tabt)" data-a="logUdJa">' + (S.kontoHenter ? "\u23f3 \u2026" : (EN?"Log out":"Log ud")) + '</button>' +
+              '<button class="knap valg" style="min-height:44px" data-a="logUdNej">' + (EN?"Stay":"Bliv") + '</button></div></div>';
+          } else {
+            _kk += '<div style="margin-top:9px"><button class="knap valg" style="min-height:44px;padding:8px 15px;color:var(--daempet)" data-a="logUdSpoerg">' + (EN?"Log out":"Log ud") + '</button></div>';
+          }
+        } else if (S.kontoAaben === "opret") {
+          _kk = '<p class="lille" style="margin:0 0 9px">' + (EN
+              ? "Everything on this phone comes along \u2014 your streak, your matches, all of it."
+              : "Alt p\u00e5 denne telefon kommer med \u2014 din streak, dine kampe, det hele.") + '</p>' +
+            '<input placeholder="' + (EN?"username":"brugernavn") + '" value="' + esc(S.opretNavn || S.mitNavn || "") + '" data-felt="opretNavn" maxlength="20" autocapitalize="off" spellcheck="false" style="text-transform:lowercase">' +
+            '<input type="password" placeholder="' + (EN?"password (min 8)":"kodeord (mindst 8)") + '" value="' + esc(S.opretKode) + '" data-felt="opretKode" maxlength="200" autocomplete="new-password" style="margin-top:7px">' +
+            '<input placeholder="' + (EN?"your email":"din mail") + '" value="' + esc(S.opretMail) + '" data-felt="opretMail" maxlength="80" autocapitalize="off" spellcheck="false" style="margin-top:7px;text-transform:lowercase">' +
+            '<p class="lille" style="margin:7px 0 0;opacity:.75">' + (EN
+              ? "Only used to get back in if the password is forgotten. It is not shown to anyone, and it is not the login. Under 18? Use a grown-up\u2019s."
+              : "Bruges KUN til at komme ind igen, hvis kodeordet gl\u00e6mmes. Den vises ikke for nogen, og den er ikke login. Er du under 18, s\u00e5 brug en voksens.") + '</p>' +
+            '<div class="raekke" style="margin-top:8px">' +
+            '<button class="knap" style="min-height:44px;background:var(--grus)" data-a="opretKonto">' + (S.kontoHenter ? "\u23f3 \u2026" : (EN?"Create account":"Opret konto")) + '</button>' +
+            '<button class="knap valg" style="min-height:44px" data-a="kontoLuk">' + (EN?"Cancel":"Fortryd") + '</button></div>';
+        } else if (S.kontoAaben === "log") {
+          _kk = _loginKort(EN);
+        } else {
+          _kk = '<p class="lille" style="margin:0 0 9px">' + (EN
+              ? "Right now this phone IS the account. Get a login, and you can be yourself on any phone \u2014 and log out again."
+              : "Lige nu ER denne telefon kontoen. F\u00e5 et login, s\u00e5 kan du v\u00e6re dig selv p\u00e5 en hvilken som helst telefon \u2014 og logge ud igen.") + '</p>' +
+            '<div class="raekke">' +
+            '<button class="knap" style="min-height:44px;background:var(--grus)" data-a="kontoAabn" data-v="opret">' + (EN?"Create account":"Opret konto") + '</button>' +
+            '<button class="knap valg" style="min-height:44px" data-a="kontoAabn" data-v="log">' + (EN?"Log in":"Log ind") + '</button></div>';
+        }
+        if (S.kontoBesked && S.kontoAaben !== "log") {
+          _kk += '<p class="lille" style="margin:8px 0 0;color:' + (S.kontoBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.kontoBesked.t) + '</p>';
+        }
+        h += _opsKort("konto", "\ud83d\udc64", (EN?"YOUR ACCOUNT":"DIN KONTO"),
+          S.minKonto ? esc(S.minKonto) : (EN?"this phone only":"kun denne telefon"),
+          S.minKonto ? "var(--vundet)" : "var(--daempet)", _kk);
       }
       h += _opsKort("noegle", "🔑", (EN?"PLAYER CODE":"SPILLER-KODE"),
         (S.spillerNoegle ? (EN?"saved ✓":"gemt ✓") : (EN?"not set":"ikke sat")),

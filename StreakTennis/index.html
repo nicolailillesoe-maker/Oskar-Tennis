@@ -392,7 +392,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.21.1 · 25. august 2026";
+const VERSION = "v4.22.0 · 25. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1188,7 +1188,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -1846,7 +1846,7 @@ function lavEksport(k) {
 // ---------- Handlinger ----------
 const A = {
   tab: (id) => {
-    S.tab = id;
+    S.tab = id; S.passBesked = null;
     // Doeren spoerger foerst, naar brugeren selv vil registrere en kamp.
     // Ét opslag i alt: et ja huskes, og saa spoerges der aldrig igen.
     if (id === "kamp") { try { if (lager.hent("sai-inviteret") !== "1") inviteretTjek(); } catch (e) {} }
@@ -1897,20 +1897,48 @@ const A = {
   fyMinJust: (v) => { S.fyMin = Math.max(10, Math.min(240, S.fyMin + (+v))); render(); },
   fyKvalVaelg: (v) => { S.fyKval = +v; render(); },
   fyTypeVaelg: (v) => { S.fyType = +v; render(); },
-  fyGem: () => { if (!S.fyKval || !S.fyType) return;
+  fyGem: () => {
+    if (!S.fyKval || !S.fyType) {
+      const EN = S.sprog === "en";
+      S.passBesked = { fejl: true, t: !S.fyKval
+        ? (EN ? "Choose how it went \u2014 tap a number from 1 to 10."
+              : "Vælg hvordan det gik \u2014 tryk et tal fra 1 til 10.")
+        : (EN ? "Choose what kind of session it was." : "Vælg hvilken slags pas det var.") };
+      render(); return;
+    }
+    S.passBesked = null;
     S.fysLog.unshift({ id: nytPasId(), d: new Date().toISOString().slice(0, 10), m: S.fyMin, k: S.fyKval, t: S.fyType, n: (S.fyNote || "").trim() });
     if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);   // auto-transport 19/8
     lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
-    S.fyKval = 0; S.fyNote = ""; render(); },
+    S.fyKval = 0; S.fyNote = "";
+    S.passBesked = { fejl: false, t: S.sprog === "en" ? "Session saved \u2705" : "Passet er gemt \u2705" };
+    render(); },
   ttMinJust: (v) => { S.ttMin = Math.max(15, Math.min(300, S.ttMin + (+v))); render(); },
   ttKvalVaelg: (v) => { S.ttKval = +v; render(); },
   ttTypeVaelg: (v) => { S.ttType = +v; render(); },
   ttGem: () => {
-    if (!S.ttKval || !S.ttType) return;
+    // ⚠️ FEJL FANGET AF JULIE 25/8: her stod bare `return`. Knappen
+    // gjorde INTET, og hun troede appen var i stykker. Samme fejlklasse
+    // som 🗑 i går: en knap, der ikke gør noget, er værre end ingen knap.
+    if (!S.ttKval || !S.ttType) {
+      const EN = S.sprog === "en";
+      S.passBesked = { fejl: true, t: !S.ttKval && !S.ttType
+        ? (EN ? "Choose how it went, and whether it was on your own or with a coach."
+              : "Vælg hvordan det gik, og om det var selv-træning eller med træner.")
+        : (!S.ttKval
+          ? (EN ? "Choose how it went \u2014 tap a number from 1 to 10."
+                : "Vælg hvordan det gik \u2014 tryk et tal fra 1 til 10.")
+          : (EN ? "Choose: on your own, or with a coach?"
+                : "Vælg: selv-træning eller med træner?")) };
+      render(); return;
+    }
+    S.passBesked = null;
     S.ttLog.unshift({ id: nytPasId(), d: new Date().toISOString().slice(0, 10), m: S.ttMin, k: S.ttKval, t: S.ttType, n: (S.ttNote || "").trim() });
     if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);   // auto-transport 19/8
     lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
-    S.ttKval = 0; S.ttType = 0; S.ttNote = ""; S.ttEks = null; render();
+    S.ttKval = 0; S.ttType = 0; S.ttNote = ""; S.ttEks = null;
+    S.passBesked = { fejl: false, t: S.sprog === "en" ? "Session saved \u2705" : "Passet er gemt \u2705" };
+    render();
   },
   ttSletSpoerg: (i) => { S.ttSletB = +i; render(); },
   ttSletFortryd: () => { S.ttSletB = null; render(); },
@@ -2605,6 +2633,15 @@ const A = {
         : r.fejl === "modsat-bud" ? (EN ? "They already sent you a request — accept it above." : "De har allerede sendt til dig — acceptér ovenfor.")
         : r.fejl === "eget-id" ? (EN ? "That is your own ID." : "Det er dit eget ID.")
         : r.fejl === "loft" ? (EN ? "Too many open requests — wait for answers." : "For mange åbne anmodninger — vent på svar.")
+        // ⚠️ FANGET AF JULIE 25/8. Hun fik "prøv igen" — men det var
+        // ikke afsendelsen, der fejlede. Hendes telefon var ikke lukket
+        // ind. "Prøv igen" kan hun blive ved med i timevis.
+        : r.fejl === "kraever-invitation" ? (EN
+            ? "This phone is not let in yet. Open MATCH and ask to be let in."
+            : "Denne telefon er ikke lukket ind endnu. Åbn KAMP og bed om at komme ind.")
+        : r.fejl === "afventer-godkendelse" ? (EN
+            ? "You are on the list — friends open when someone says yes."
+            : "Du står på listen — venner åbner, når nogen siger ja.")
         : (EN ? "Could not send — try again." : "Kunne ikke sende — prøv igen.") };
     }
     render();
@@ -2727,6 +2764,16 @@ const A = {
         : r.fejl === "langt" ? (EN ? "At most 20 characters." : "Højst 20 tegn.")
         : r.fejl === "fredet" ? (EN ? "That name is reserved \u2014 pick another." : "Det navn er reserveret \u2014 vælg et andet.")
         : r.fejl === "grovt" ? (EN ? "Pick another name." : "Vælg et andet navn.")
+        // ⚠️ SAMME HUL SOM JULIE FALDT I 25/8: en telefon, der ikke er
+        // lukket ind, faar en generisk fejl paa et navn, der er helt i
+        // orden. Julie valgte "julie17", fik en fejl, og navnet naaede
+        // aldrig databasen. Sandheden skal staa der.
+        : r.fejl === "kraever-invitation" ? (EN
+            ? "This phone is not let in yet. Open MATCH and ask to be let in."
+            : "Denne telefon er ikke lukket ind endnu. Åbn KAMP og bed om at komme ind.")
+        : r.fejl === "afventer-godkendelse" ? (EN
+            ? "You are on the list — this opens when someone says yes."
+            : "Du står på listen — det åbner, når nogen siger ja.")
         : (EN ? "Use lowercase letters, numbers, - and _ \u2014 start with a letter." : "Brug små bogstaver, tal, - og _ \u2014 start med et bogstav.")) };
       // Et oenske, serveren sagde nej til, maa ikke blive ved med at
       // proeve sig selv ved hver opstart.
@@ -5656,7 +5703,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '<button class="knap valg '+(S.fyType===1?"til":"")+'" style="padding:11px 2px" data-a="fyTypeVaelg" data-v="1">🏃 '+(EN?"Self-practice":"Selv-træning")+'</button>' +
           '<button class="knap valg '+(S.fyType===2?"til":"")+'" style="padding:11px 2px" data-a="fyTypeVaelg" data-v="2">🧑‍🏫 '+(EN?"With coach":"Med træner")+'</button></div>' +
         '<input placeholder="'+(EN?"Note (optional — e.g. \'intervals\' or \'strength\')":"Note (valgfri — fx \'intervaller\' eller \'styrke\')")+'" value="'+esc(S.fyNote)+'" data-felt="fyNote" style="margin-bottom:8px">' +
-        '<div class="raekke"><button class="knap" style="background:'+(S.fyKval&&S.fyType?"var(--grus)":"var(--flade)")+'" data-a="fyGem">💾 '+(EN?"Save session":"Gem passet")+'</button></div></div>';
+        '<div class="raekke"><button class="knap" style="background:'+(S.fyKval&&S.fyType?"var(--grus)":"var(--flade)")+'" data-a="fyGem">💾 '+(EN?"Save session":"Gem passet")+'</button></div>' +
+          (S.passBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.passBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.passBesked.t) + '</p>' : '') + '</div>';
       }
       if (S.fysLog.length) {
         const _fm = S.fysLog.reduce(function(a,e){ return a + (e.m || 0); }, 0); const _fkE = S.fysLog.filter(function(e){ return e.k; }); const _fk = _fkE.length ? (_fkE.reduce(function(a,e){ return a + e.k; }, 0) / _fkE.length).toFixed(1) : null;
@@ -5686,7 +5734,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '<button class="knap valg '+(S.ttType===1?"til":"")+'" style="padding:11px 2px" data-a="ttTypeVaelg" data-v="1">🎾 '+(EN?"Self-practice":"Selv-træning")+'</button>' +
           '<button class="knap valg '+(S.ttType===2?"til":"")+'" style="padding:11px 2px" data-a="ttTypeVaelg" data-v="2">🧑‍🏫 '+(EN?"With coach":"Med træner")+'</button></div>' +
         '<input placeholder="'+(EN?"Note (optional — e.g. \'wide serve drills\')":"Note (valgfri — fx \'wide-serv træning\')")+'" value="'+esc(S.ttNote)+'" data-felt="ttNote" style="margin-bottom:8px">' +
-        '<div class="raekke"><button class="knap" style="background:'+(S.ttKval&&S.ttType?"var(--grus)":"var(--flade)")+'" data-a="ttGem">💾 '+(EN?"Save training":"Gem træningen")+'</button></div></div>';
+        '<div class="raekke"><button class="knap" style="background:'+(S.ttKval&&S.ttType?"var(--grus)":"var(--flade)")+'" data-a="ttGem">💾 '+(EN?"Save training":"Gem træningen")+'</button></div>' +
+          (S.passBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.passBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.passBesked.t) + '</p>' : '') + '</div>';
       }
       if (S.ttLog.length) {
         h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(ttTot/60).toFixed(1)+' '+(EN?"hours":"timer")+' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+ttGk+'/10</h3>' +

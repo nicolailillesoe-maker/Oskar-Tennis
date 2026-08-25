@@ -392,7 +392,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.22.0 · 25. august 2026";
+const VERSION = "v4.22.1 · 25. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1341,7 +1341,11 @@ async function inviteretTjek() {
     r = sv.ok ? d : { fejl: d.kode || "netvaerk" };
   } catch (e) {}
   S.portHenter = false;
-  if (!r.fejl) {
+  // ⭐⭐ v4.22.1 · KUN ET RIGTIGT SVAR TAELLER.
+  // `kendt` SKAL vaere en boolean. Er den det ikke, er kroppen ikke et
+  // svar fra porten — den er tom, HTML fra en cache, eller noget helt
+  // tredje — og saa maa vi ikke konkludere noget som helst.
+  if (!r.fejl && typeof r.kendt === "boolean") {
     S.portStatus = r;
     const inde = !!r.kendt && r.status === "godkendt";
     S.doerKamp = !inde;

@@ -404,7 +404,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.26.0 · 26. august 2026";
+const VERSION = "v4.28.0 · 26. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1230,6 +1230,8 @@ let S = {
   snakRum: null, snakNavn: "", snakBeskeder: null, snakHenter: false, snakUdkast: "", snakBesked: null, snakAnmeldId: null,
   mitVenneId: "", budListe: null, budHenter: false,
   chatUdkast: "", chatBesked: null, chatAnmeldId: null, chatLaest: {},
+  chatRetId: null, chatRetUdkast: "", chatSletId: null,
+  kortLaver: null, kortBesked: null,
   // Hjemkomsten (v4.4): "oskar"/"teamp" naar den gamle app bor paa
   // telefonen og StreakTennis endnu ikke har en spiller.
   flytTilbud: null,
@@ -1455,6 +1457,10 @@ const PORT_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/ejer-
 const PUSH_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/push";
 // ⭐ v4.26.0 · BILLEDER. Et billede kan KUN haenge paa en kamp eller et pas.
 const BILLEDE_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/billede";
+// ⭐ v4.27.0 · VENNE-CHATTEN FLYTTER UD AF spiller-sync og faar rummets
+// vagter ordret. Den gamle vej i spiller-sync roeres ikke — den bliver
+// bare ikke brugt mere. Samme tabel, samme beskeder, samme par-orden.
+const VENNESNAK_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/venne-snak";
 const LAGER_URL   = "https://dihzphfsffritfszqkko.supabase.co/storage/v1";
 const BIL_MAKS_KANT = 1600;   // px paa laengste led
 const BIL_KVALITET  = 0.82;
@@ -3330,6 +3336,45 @@ const A = {
   // ⭐ FIRE KONTAKTER, IKKE ÉN. Rummet kan slaas fra, uden at streaken
   // holder op med at sige til.
   // ══ BILLEDER (v4.26.0) ═════════════════════════════════════════════
+  // ⭐⭐ v4.28.0 · DEL KAMPKORTET.
+  // Billedet bliver til paa telefonen og gaar ingen steder, foer barnet
+  // selv vaelger hvorhen. Vi ser det aldrig.
+  kortDel: async (v) => {
+    const i = Number(v);
+    const k = S.gemte[i];
+    if (!k || S.kortLaver !== null) return;
+    const EN = S.sprog === "en";
+    S.kortLaver = i; S.kortBesked = null; render();
+    try {
+      const l = _kortTegn(k, statistik(k), SPILLER || "", EN);
+      const klump = await new Promise(function (svar) { l.toBlob(svar, "image/png"); });
+      if (!klump) throw new Error("intet billede");
+      const filnavn = "streaktennis-" + String(k.dato || "kamp").replace(/[^0-9]/g, "") + ".png";
+      const fil = new File([klump], filnavn, { type: "image/png" });
+      // Del-arket foerst: det er dét, der faktisk faar kortet i et feed.
+      if (navigator.canShare && navigator.canShare({ files: [fil] }) && navigator.share) {
+        await navigator.share({ files: [fil] });
+        S.kortLaver = null; render(); return;
+      }
+      // Ellers gemmes det. En browser uden del-ark skal ikke ende blindt.
+      const url = URL.createObjectURL(klump);
+      const a2 = document.createElement("a");
+      a2.href = url; a2.download = filnavn;
+      document.body.appendChild(a2); a2.click(); a2.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      S.kortLaver = null;
+      S.kortBesked = { t: EN ? "Card saved \u2705" : "Kortet er gemt \u2705" };
+      render();
+    } catch (e) {
+      S.kortLaver = null;
+      // Trykker man Annuller i del-arket, er det ikke en fejl.
+      const afbrudt = e && (e.name === "AbortError" || /abort/i.test(String(e.message || "")));
+      S.kortBesked = afbrudt ? null : { fejl: true, t: EN
+        ? "Could not make the card." : "Kunne ikke lave kortet." };
+      render();
+    }
+  },
+
   bilKald: async (handling, krop) => {
     if (!S.spillerNoegle) return { fejl: "mangler-adgang" };
     const st = new AbortController(); const ur = setTimeout(function(){ st.abort(); }, 30000);
@@ -3442,6 +3487,7 @@ const A = {
     const dele = String(v).split("|");
     S.chatVen = dele[0]; S.chatNavn = dele[1] || ""; S.chatBeskeder = null; S._chatSig = null;
     S.chatUdkast = ""; S.chatBesked = null; S.chatAnmeldId = null;
+    S.chatRetId = null; S.chatRetUdkast = ""; S.chatSletId = null;
     S.tab = "chat";
     // Læst nu — prikken slukker. Kun et tidsstempel, kun lokalt.
     try { S.chatLaest[S.chatVen] = new Date().toISOString();
@@ -3453,10 +3499,24 @@ const A = {
     render(); A.chatHent();
   },
   chatLuk: () => { S.chatVen = null; S.chatBeskeder = null; S.tab = "stige"; render(); },
+  // ⭐ v4.27.0 · Chatten har sin egen funktion nu — rummets vagter ordret.
+  // Den gamle vej i spiller-sync roeres ikke; den bruges bare ikke mere.
+  chatKald: async (handling, krop) => {
+    if (!S.spillerNoegle || !S.chatVen) return { fejl: "mangler-adgang" };
+    const st = new AbortController(); const ur = setTimeout(function(){ st.abort(); }, 20000);
+    try {
+      const r = await fetch(VENNESNAK_URL, { method: "POST", signal: st.signal,
+        headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+        body: JSON.stringify(Object.assign({ handling: handling, ven: S.chatVen }, krop || {})) });
+      clearTimeout(ur);
+      const d = await r.json().catch(function(){ return {}; });
+      return r.ok ? d : { fejl: d.kode || "netvaerk" };
+    } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+  },
   chatHent: async (puls) => {
     if (!S.chatVen || S.chatHenter) return;
     S.chatHenter = true;
-    const r = await sync("chat-hent", { ven: S.chatVen });
+    const r = await A.chatKald("hent", {});
     S.chatHenter = false;
     if (!r.fejl) {
       S.chatBeskeder = r.beskeder || [];
@@ -3477,7 +3537,7 @@ const A = {
     const t = (S.chatUdkast || "").trim();
     if (!t || !S.chatVen) return;
     S.chatUdkast = ""; S.chatBesked = null; render();
-    const r = await sync("chat-skriv", { ven: S.chatVen, art: "t", tekst: t.slice(0, 140) });
+    const r = await A.chatKald("skriv", { art: "t", tekst: t.slice(0, 140) });
     if (r.fejl) {
       S.chatBesked = { t: r.fejl === "link"
         ? (S.sprog === "en" ? "Links are not allowed in the chat." : "Links er ikke tilladt i chatten.")
@@ -3487,7 +3547,37 @@ const A = {
   },
   chatReager: async (v) => {
     if (!S.chatVen) return;
-    const r = await sync("chat-skriv", { ven: S.chatVen, art: "r", tekst: v });
+    const r = await A.chatKald("skriv", { art: "r", tekst: v });
+    if (!r.fejl) A.chatHent();
+  },
+  // ⭐⭐ v4.27.0 · RET OG SLET — ordret rummets. Serveren siger nej til alt
+  // andet end dine egne, saa knapperne her er en bekvemmelighed, ikke en
+  // vagt. Vagten staar i `venne-snak`.
+  chatRetAabn: (v) => {
+    const id = Number(v);
+    const b = (S.chatBeskeder || []).find(function(x){ return x.id === id; });
+    S.chatRetId = id; S.chatRetUdkast = b ? String(b.tekst || "") : "";
+    S.chatSletId = null; S.chatAnmeldId = null; render();
+  },
+  chatRetFortryd: () => { S.chatRetId = null; S.chatRetUdkast = ""; render(); },
+  chatRetGem: async () => {
+    const id = S.chatRetId; const tekst = (S.chatRetUdkast || "").trim();
+    if (!id || !tekst) return;
+    S.chatRetId = null; S.chatRetUdkast = ""; render();
+    const r = await A.chatKald("ret", { id: id, tekst: tekst.slice(0, 140) });
+    if (r.fejl) {
+      S.chatBesked = { t: r.fejl === "link"
+        ? (S.sprog === "en" ? "Links are not allowed in the chat." : "Links er ikke tilladt i chatten.")
+        : (S.sprog === "en" ? "The change did not go through." : "Rettelsen kom ikke afsted.") };
+      render();
+    } else A.chatHent();
+  },
+  chatSletSpoerg: (v) => { S.chatSletId = Number(v); S.chatRetId = null; S.chatAnmeldId = null; render(); },
+  chatSletNej: () => { S.chatSletId = null; render(); },
+  chatSletJa: async () => {
+    const id = S.chatSletId; if (!id) return;
+    S.chatSletId = null; render();
+    const r = await A.chatKald("slet", { id: id });
     if (!r.fejl) A.chatHent();
   },
   chatAnmeldSpoerg: (v) => { S.chatAnmeldId = Number(v); render(); },
@@ -3495,7 +3585,7 @@ const A = {
   chatAnmeldJa: async () => {
     const id = S.chatAnmeldId; if (!id || !S.chatVen) return;
     S.chatAnmeldId = null; render();
-    const r = await sync("chat-anmeld", { ven: S.chatVen, id });
+    const r = await A.chatKald("anmeld", { id: id });
     if (!r.fejl) A.chatHent();
   },
   venneHent: async () => {
@@ -4197,6 +4287,164 @@ function render() {
   } catch (_e) {}
 }
 
+// ⭐⭐ v4.28.0 · KAMPKORTET
+//
+// Appen tegner et billede af kampen, som barnet SELV gemmer og deler.
+// Vi hoster ingenting, modererer ingenting og aabner ingen ny kanal —
+// billedet forlader telefonen kun, hvis barnet selv sender det.
+//
+// ⚠️⚠️ MODSTANDEREN STAAR IKKE PAA KORTET. Et kampkort er lavet til at
+// blive delt, og et opslag ER tredjepart. Modstanderen har ikke sagt ja
+// til noget. Kortet handler om spillerens egen praestation.
+//
+// 1080x1350 — det format, der fylder mest i et feed uden at blive skaaret.
+function _kortTegn(k, s, navn, EN) {
+  const B = 1080, H = 1350;
+  const l = document.createElement("canvas");
+  l.width = B; l.height = H;
+  const c = l.getContext("2d");
+
+  c.fillStyle = "#070D19"; c.fillRect(0, 0, B, H);
+  // Et svagt skaer, saa kortet ikke er en flad sort firkant i et feed.
+  const g = c.createRadialGradient(B / 2, 300, 40, B / 2, 300, 900);
+  g.addColorStop(0, "rgba(46,86,214,.28)"); g.addColorStop(1, "rgba(7,13,25,0)");
+  c.fillStyle = g; c.fillRect(0, 0, B, H);
+
+  const midt = function (tekst, y, px, farve, vaegt, spor) {
+    c.font = (vaegt || 800) + " " + px + "px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+    c.fillStyle = farve; c.textAlign = "center";
+    if (spor) {
+      // Manuel bogstavafstand: canvas kan ikke selv, og overskriften skal
+      // ligne appens.
+      const bogst = String(tekst).split("");
+      const bred = bogst.reduce(function (a, x) { return a + c.measureText(x).width + spor; }, -spor);
+      let x = B / 2 - bred / 2;
+      bogst.forEach(function (x2) { c.fillText(x2, x + c.measureText(x2).width / 2, y); x += c.measureText(x2).width + spor; });
+      return;
+    }
+    c.fillText(String(tekst), B / 2, y);
+  };
+
+  midt("\ud83d\udd25", 190, 118, "#F0CF61", 400);
+  midt("STREAK", 300, 62, "#F0CF61", 900, 16);
+  midt("TENNIS", 372, 62, "#EDF2FA", 900, 16);
+
+  const vandt = !!k.facitVandt;
+  midt(vandt ? (EN ? "WON" : "VANDT") : (EN ? "PLAYED" : "SPILLET"), 520, 44,
+    vandt ? "#7BD88F" : "#9FD8E8", 900, 8);
+  midt(String(k.resultat || ""), 630, 96, "#EDF2FA", 900);
+
+  if (k.turnering) midt(String(k.turnering).slice(0, 38), 700, 34, "#8B99B5", 600);
+  midt(String(k.dato || ""), 748, 30, "#8B99B5", 600);
+
+  // ── TRE TAL, INGEN SAETNINGER (princip 24) ─────────────────────────
+  const tal = [
+    [String(s.v) + "/" + String(s.v + s.t), EN ? "points won" : "point vundet"],
+    [String(s.vindere), EN ? "winners" : "vindere"],
+    [String(s.serve[0]) + "/" + String(s.serve[1]), EN ? "on serve" : "paa serv"],
+  ];
+  const kolB = B / 3;
+  tal.forEach(function (par, i) {
+    const x = kolB * i + kolB / 2;
+    c.textAlign = "center";
+    c.font = "900 76px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+    c.fillStyle = "#F0CF61"; c.fillText(par[0], x, 940);
+    c.font = "600 26px -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif";
+    c.fillStyle = "#8B99B5"; c.fillText(par[1], x, 984);
+  });
+
+  c.strokeStyle = "rgba(255,255,255,.10)"; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(90, 1060); c.lineTo(B - 90, 1060); c.stroke();
+
+  midt(String(navn || "").slice(0, 24), 1150, 46, "#EDF2FA", 800);
+  midt("tennis.sportsainalytics.com", 1230, 26, "#2E56D6", 700, 2);
+  return l;
+}
+
+// ⭐ v4.27.0 · KLOKKESLAETTET. Beskederne lever kun et doegn, saa der er
+// aldrig tvivl om dagen. Under et minut staar der "nu", fordi 23.52 ved
+// siden af noget, man lige har skrevet, ser forkert ud.
+function _klokPaa(tid, EN) {
+  try {
+    const d = new Date(tid); if (isNaN(d.getTime())) return "";
+    if (Date.now() - d.getTime() < 60000) return EN ? "now" : "nu";
+    return String(d.getHours()).padStart(2, "0") + "." + String(d.getMinutes()).padStart(2, "0");
+  } catch (e) { return ""; }
+}
+
+// ⭐⭐ v4.27.0 · ÉN BESKEDLISTE — RUMMETS OG VENNE-CHATTENS.
+//
+// Nicolai 26/8: "Chat imellem venner skal kunne helt det samme som i rum.
+// Det ene er bare sikret 1:1 - det andet er for flere."
+//
+// ⚠️ HVORFOR ÉN FUNKTION OG IKKE EN KOPI: forskellen mellem de to opstod,
+// fordi rummet fik slet/ret/klokkeslaet og chatten ikke gjorde. Kopierede
+// jeg markupen ind i chatten nu, ville de drive fra hinanden igen ved
+// naeste aendring. Med én kilde kan de ikke.
+//
+// `p.pre` er handlingernes praefiks ("snak" eller "chat"), saa de to
+// samtaler rammer hver deres handlinger — men tegnes af samme kode.
+// `p.alle` afgoer ordlyden: et rum har vidner, en 1:1 har det ikke.
+function _snakListe(liste, p, EN) {
+  let h = "";
+  (liste || []).slice(-60).forEach(function (b) {
+    const kl = _klokPaa(b.tid, EN);
+    if (b.art === "r") {
+      // En reaktion kan SLETTES, men ikke rettes. En 🔥 er ikke en saetning.
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;' + (b.mig ? 'justify-content:flex-end' : '') + '">' +
+        (b.mig && b.id ? '<button style="background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;padding:4px 6px;min-height:44px" data-a="' + p.pre + 'SletSpoerg" data-v="' + esc(String(b.id)) + '" aria-label="' + (EN?"Delete":"Slet") + '">\ud83d\uddd1</button>' : '') +
+        '<span class="lille" style="margin:0;opacity:.55;flex:none">' + esc(kl) + '</span>' +
+        '<span style="font-size:19px;flex:none">' + esc(b.tekst) + '</span>' +
+        '<span class="lille" style="margin:0">' + esc(b.fornavn) + '</span></div>';
+      if (p.sletId === b.id) {
+        h += '<div style="margin:2px 0 6px;padding:8px;border:1px dashed var(--kant);border-radius:8px">' +
+          '<p class="lille" style="margin:0 0 7px">' + (EN ? "Delete your reaction?" : "Slet din reaktion?") + '</p>' +
+          '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="' + p.pre + 'SletJa">' + (EN?"Delete":"Slet") + '</button>' +
+          '<button class="knap valg" style="min-height:44px" data-a="' + p.pre + 'SletNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
+      }
+      return;
+    }
+    h += '<div style="padding:6px 0;border-top:1px solid var(--kant)">' +
+      '<div style="display:flex;align-items:baseline;gap:8px">' +
+      '<b style="font-size:12px;color:' + (b.mig ? 'var(--guld)' : 'var(--is)') + '">' + esc(b.fornavn) + '</b>' +
+      // ⭐ Maerket foelger en rettet besked. Uden det kunne man skrive
+      // historien om — ogsaa i en samtale mellem to.
+      '<span class="lille" style="margin:0;opacity:.55">' + esc(kl) + (b.rettet ? ' \u00b7 ' + (EN?"edited":"rettet") : '') + '</span>' +
+      (!b.mig && b.id ? '<button style="margin-left:auto;background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;min-height:24px" data-a="' + p.pre + 'AnmeldSpoerg" data-v="' + b.id + '" aria-label="Rapport\u00e9r">\u2691</button>' : '') + '</div>' +
+      (b.mig && b.id
+        ? '<span style="margin-left:auto;display:flex;gap:2px;flex:none">' +
+          '<button style="background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;padding:4px 6px;min-height:44px" data-a="' + p.pre + 'RetAabn" data-v="' + esc(String(b.id)) + '" aria-label="' + (EN?"Edit":"Ret") + '">\u270f\ufe0f</button>' +
+          '<button style="background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;padding:4px 6px;min-height:44px" data-a="' + p.pre + 'SletSpoerg" data-v="' + esc(String(b.id)) + '" aria-label="' + (EN?"Delete":"Slet") + '">\ud83d\uddd1</button></span>'
+        : '') +
+      '</div>' +
+      (p.retId === b.id
+        ? '<div style="margin-top:6px">' +
+          '<input value="' + esc(p.retUdkast || "") + '" data-felt="' + p.pre + 'RetUdkast" maxlength="140">' +
+          '<div class="raekke" style="margin-top:6px">' +
+          '<button class="knap" style="min-height:44px;background:var(--grus)" data-a="' + p.pre + 'RetGem">' + (EN?"Save":"Gem") + '</button>' +
+          '<button class="knap valg" style="min-height:44px" data-a="' + p.pre + 'RetFortryd">' + (EN?"Cancel":"Fortryd") + '</button></div></div>'
+        : '<div style="font-size:13.5px;margin-top:1px;word-break:break-word">' + esc(b.tekst) + '</div>');
+    if (p.sletId === b.id) {
+      h += '<div style="margin-top:6px;padding:8px;border:1px dashed var(--kant);border-radius:8px">' +
+        '<p class="lille" style="margin:0 0 7px">' + (EN
+          ? "Delete your message? It is gone for " + (p.alle ? "everyone" : "both of you") + " \u2014 and cannot be undone."
+          : "Slet din besked? Den er v\u00e6k for " + (p.alle ? "alle" : "jer begge") + " \u2014 og kan ikke fortrydes.") + '</p>' +
+        '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="' + p.pre + 'SletJa">' + (EN?"Delete":"Slet") + '</button>' +
+        '<button class="knap valg" style="min-height:44px" data-a="' + p.pre + 'SletNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
+    }
+    if (p.anmeldId === b.id) {
+      h += '<div style="margin-top:6px;padding:8px;border:1px dashed var(--kant);border-radius:8px">' +
+        '<p class="lille" style="margin:0 0 7px">' + (EN
+          ? "Report this message? It is hidden for " + (p.alle ? "the whole room" : "both of you") + " right away and reviewed by the platform."
+          : "Rapport\u00e9r beskeden? Den skjules for " + (p.alle ? "hele rummet" : "jer begge") + " med det samme og gennemses af platformen.") + '</p>' +
+        '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="' + p.pre + 'AnmeldJa">' + (EN?"Report":"Rapport\u00e9r") + '</button>' +
+        '<button class="knap valg" style="min-height:44px" data-a="' + p.pre + 'AnmeldNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
+    }
+    h += '</div>';
+  });
+  return h;
+}
+
 // ⭐⭐ v4.26.0 · BILLED-STRIMLEN. Samme komponent paa en kamp og paa et
 // pas — ellers ville de to komme til at opfoere sig forskelligt, og et
 // billede paa en traening ville faa andre regler end et paa en kamp.
@@ -4650,72 +4898,12 @@ function _tegn() {
       else if (!sb.length) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (EN
         ? "Nothing here yet. Say hi — or send a 🔥."
         : "Her er tomt endnu. Sig hej — eller send en 🔥.") + '</p>';
-      // ⭐ v4.15.0 · KLOKKESLAET. Beskederne lever kun et doegn, saa der er
-      // aldrig tvivl om dagen — og et klokkeslaet kan man forholde sig til
-      // ("det var FOER traeningen"). Under et minut staar der "nu", fordi
-      // 23.52 ved siden af noget, man lige har skrevet, ser forkert ud.
-      const _klok = function(t){
-        try {
-          const d = new Date(t); if (isNaN(d.getTime())) return "";
-          if (Date.now() - d.getTime() < 60000) return EN ? "now" : "nu";
-          return String(d.getHours()).padStart(2, "0") + "." + String(d.getMinutes()).padStart(2, "0");
-        } catch (e) { return ""; }
-      };
-      if (sb) sb.slice(-60).forEach(function(b){
-        if (b.art === "r") {
-          h += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;' + (b.mig ? 'justify-content:flex-end' : '') + '">' +
-            (b.mig && b.id ? '<button style="background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;padding:4px 6px;min-height:44px" data-a="snakSletSpoerg" data-v="' + esc(String(b.id)) + '" aria-label="' + (EN?"Delete":"Slet") + '">\ud83d\uddd1</button>' : '') +
-            '<span class="lille" style="margin:0;opacity:.55;flex:none">' + esc(_klok(b.tid)) + '</span>' +
-            '<span style="font-size:19px;flex:none">' + esc(b.tekst) + '</span>' +
-            '<span class="lille" style="margin:0">' + esc(b.fornavn) + '</span></div>';
-          // ⚠️ v4.17.0 · FEJL FANGET AF NICOLAI: 🗑 paa en reaktion satte
-          // id'et, men bekraeftelsen blev kun tegnet i TEKST-grenen — saa
-          // der skete INGENTING. En knap, der ikke goer noget, er vaerre
-          // end ingen knap.
-          if (S.snakSletId === b.id) {
-            h += '<div style="margin:2px 0 6px;padding:8px;border:1px dashed var(--kant);border-radius:8px">' +
-              '<p class="lille" style="margin:0 0 7px">' + (EN ? "Delete your reaction?" : "Slet din reaktion?") + '</p>' +
-              '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="snakSletJa">' + (EN?"Delete":"Slet") + '</button>' +
-              '<button class="knap valg" style="min-height:44px" data-a="snakSletNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
-          }
-        } else {
-          h += '<div style="padding:6px 0;border-top:1px solid var(--kant)">' +
-            '<div style="display:flex;align-items:baseline;gap:8px">' +
-            '<b style="font-size:12px;color:' + (b.mig ? 'var(--guld)' : 'var(--is)') + '">' + esc(b.fornavn) + '</b>' +
-            '<span class="lille" style="margin:0;opacity:.55">' + esc(_klok(b.tid)) + (b.rettet ? ' \u00b7 ' + (EN?"edited":"rettet") : '') + '</span>' +
-            (!b.mig && b.id ? '<button style="margin-left:auto;background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;min-height:24px" data-a="snakAnmeldSpoerg" data-v="' + b.id + '" aria-label="Rapportér">⚑</button>' : '') + '</div>' +
-            (b.mig && b.id
-              ? '<span style="margin-left:auto;display:flex;gap:2px;flex:none">' +
-                '<button style="background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;padding:4px 6px;min-height:44px" data-a="snakRetAabn" data-v="' + esc(String(b.id)) + '" aria-label="' + (EN?"Edit":"Ret") + '">\u270f\ufe0f</button>' +
-                '<button style="background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;padding:4px 6px;min-height:44px" data-a="snakSletSpoerg" data-v="' + esc(String(b.id)) + '" aria-label="' + (EN?"Delete":"Slet") + '">\ud83d\uddd1</button></span>'
-              : '') +
-            '</div>' +
-            (S.snakRetId === b.id
-              ? '<div style="margin-top:6px">' +
-                '<input value="' + esc(S.snakRetUdkast) + '" data-felt="snakRetUdkast" maxlength="140">' +
-                '<div class="raekke" style="margin-top:6px">' +
-                '<button class="knap" style="min-height:44px;background:var(--grus)" data-a="snakRetGem">' + (EN?"Save":"Gem") + '</button>' +
-                '<button class="knap valg" style="min-height:44px" data-a="snakRetFortryd">' + (EN?"Cancel":"Fortryd") + '</button></div></div>'
-              : '<div style="font-size:13.5px;margin-top:1px;word-break:break-word">' + esc(b.tekst) + '</div>');
-          if (S.snakSletId === b.id) {
-            h += '<div style="margin-top:6px;padding:8px;border:1px dashed var(--kant);border-radius:8px">' +
-              '<p class="lille" style="margin:0 0 7px">' + (EN
-                ? "Delete your message? It is gone for everyone \u2014 and cannot be undone."
-                : "Slet din besked? Den er v\u00e6k for alle \u2014 og kan ikke fortrydes.") + '</p>' +
-              '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="snakSletJa">' + (EN?"Delete":"Slet") + '</button>' +
-              '<button class="knap valg" style="min-height:44px" data-a="snakSletNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
-          }
-          if (S.snakAnmeldId === b.id) {
-            h += '<div style="margin-top:6px;padding:8px;border:1px dashed var(--kant);border-radius:8px">' +
-              '<p class="lille" style="margin:0 0 7px">' + (EN
-                ? "Report this message? It is hidden for the whole room right away and reviewed by the platform."
-                : "Rapportér beskeden? Den skjules for hele rummet med det samme og gennemses af platformen.") + '</p>' +
-              '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="snakAnmeldJa">' + (EN?"Report":"Rapportér") + '</button>' +
-              '<button class="knap valg" style="min-height:44px" data-a="snakAnmeldNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
-          }
-          h += '</div>';
-        }
-      });
+      // ⭐⭐ v4.27.0 · SAMME LISTE SOM VENNE-CHATTEN. Se _snakListe.
+      // Rummet og 1:1 tegnes af ÉN funktion, saa de ikke kan drive fra
+      // hinanden igen. `alle: true` — her er der vidner.
+      if (sb) h += _snakListe(sb, { pre: "snak", retId: S.snakRetId,
+        retUdkast: S.snakRetUdkast, sletId: S.snakSletId,
+        anmeldId: S.snakAnmeldId, alle: true }, EN);
       h += '</div>';
       h += '<div class="raekke" style="margin-top:8px">' +
         ["🔥","👏","🎾","💪"].map(function(i){
@@ -4740,28 +4928,13 @@ function _tegn() {
       else if (!cb.length) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (EN
         ? "Nothing here yet. Say hi — or send a 🔥."
         : "Her er tomt endnu. Sig hej — eller send en 🔥.") + '</p>';
-      else cb.slice(-60).forEach(function(b){
-        if (b.art === "r") {
-          h += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;' + (b.mig ? 'justify-content:flex-end' : '') + '">' +
-            '<span style="font-size:19px;flex:none">' + esc(b.tekst) + '</span>' +
-            '<span class="lille" style="margin:0">' + esc(b.fornavn) + '</span></div>';
-        } else {
-          h += '<div style="padding:6px 0;border-top:1px solid var(--kant)">' +
-            '<div style="display:flex;align-items:baseline;gap:8px">' +
-            '<b style="font-size:12px;color:' + (b.mig ? 'var(--guld)' : 'var(--is)') + '">' + esc(b.fornavn) + '</b>' +
-            (!b.mig && b.id ? '<button style="margin-left:auto;background:none;border:0;color:var(--daempet);font-size:12px;cursor:pointer;min-height:24px" data-a="chatAnmeldSpoerg" data-v="' + b.id + '" aria-label="Rapportér">⚑</button>' : '') + '</div>' +
-            '<div style="font-size:13.5px;margin-top:1px;word-break:break-word">' + esc(b.tekst) + '</div>';
-          if (S.chatAnmeldId === b.id) {
-            h += '<div style="margin-top:6px;padding:8px;border:1px dashed var(--kant);border-radius:8px">' +
-              '<p class="lille" style="margin:0 0 7px">' + (EN
-                ? "Report this message? It is hidden for both of you right away and reviewed by the platform."
-                : "Rapportér beskeden? Den skjules for jer begge med det samme og gennemses af platformen.") + '</p>' +
-              '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="chatAnmeldJa">' + (EN?"Report":"Rapportér") + '</button>' +
-              '<button class="knap valg" style="min-height:44px" data-a="chatAnmeldNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
-          }
-          h += '</div>';
-        }
-      });
+      // ⭐⭐ v4.27.0 · SAMME LISTE SOM RUMMET. Nicolai: "Chat imellem
+      // venner skal kunne helt det samme som i rum." Klokkeslæt, ret,
+      // slet og rettet-mærket kommer med, fordi det er ÉN funktion.
+      // `alle: false` — her er der ingen vidner, kun jer to.
+      else h += _snakListe(cb, { pre: "chat", retId: S.chatRetId,
+        retUdkast: S.chatRetUdkast, sletId: S.chatSletId,
+        anmeldId: S.chatAnmeldId, alle: false }, EN);
       h += '</div>';
       h += '<div class="raekke" style="margin-top:8px">' +
         ["🔥","👏","🎾","💪"].map(function(i){
@@ -4772,8 +4945,8 @@ function _tegn() {
         '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="chatSend">' + (EN?"Send":"Send") + '</button></div>';
       h += (S.chatBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.chatBesked.t) + '</p>' : '');
       h += '<p class="lille" style="margin:10px 2px 0;opacity:.7">' + (EN
-        ? "Messages live for a day — the friendship stays. The chat keeps at most your last 200. Remove friend deletes it for both of you. ⚑ hides a message for both right away."
-        : "Beskederne lever et døgn — venskabet består. Chatten gemmer højst jeres seneste 200. Fjern ven sletter den for jer begge. ⚑ skjuler en besked for begge med det samme.") + '</p>';
+        ? "Messages live for a day — the friendship stays. At most the last 200. You can edit and delete your own; an edited message is marked. Remove friend deletes it for both. ⚑ hides a message for both right away."
+        : "Beskederne lever et døgn — venskabet består. Højst de seneste 200. Du kan rette og slette dine egne; en rettet besked bærer mærket. Fjern ven sletter for jer begge. ⚑ skjuler en besked for begge med det samme.") + '</p>';
     } else if (S.tab === "traener") {
       // 22/8: ABSORBERET I TRÆN. Gamle stier (og gammel gemt tilstand)
       // lander i det samme indhold — intet doer, det flytter bare hjem.
@@ -6484,7 +6657,13 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         (S.sletBekraeft === i
           ? '<button class="knap" style="flex:none;padding:8px 14px;background:var(--tabt);font-size:12px" data-a="slet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet);font-size:12px" data-a="sletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
           : '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--tabt);color:var(--tabt);font-size:12px" data-a="sletSpoerg" data-v="'+i+'">🗑 '+(EN?"Delete":"Slet")+'</button>') +
+        // ⭐⭐ v4.28.0 · KAMPKORTET. Billedet laves paa telefonen og gaar
+        // ingen steder, foer barnet selv vaelger hvorhen.
+        '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="kortDel" data-v="'+i+'">' +
+          (S.kortLaver === i ? '\u23f3 \u2026' : '\ud83d\udce4 ' + (EN?"Match card":"Kampkort")) + '</button>' +
         '</div>' +
+        (S.kortBesked && S.kortLaver === null
+          ? '<p class="lille" style="margin:6px 0 0;color:' + (S.kortBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.kortBesked.t) + '</p>' : '') +
         // ⭐ v4.26.0 · BILLEDER PAA KAMPEN. Knappen findes HER, fordi
         // billedet hoerer til en kamp, der ER spillet. Der findes ikke et
         // andet sted i appen, hvor den kan staa.

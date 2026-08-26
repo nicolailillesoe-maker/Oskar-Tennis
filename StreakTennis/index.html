@@ -10,6 +10,15 @@
 <title>StreakTennis</title>
 <meta name="theme-color" content="#101B26">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- ⭐ v4.24.0 · HJEMMESKAERMEN. Paa iPhone kan der KUN sendes beskeder til
+     en app, der ligger paa hjemmeskaermen. Manifestet er dét, der goer den
+     til en app i stedet for en fane. Ikonerne er rigtige filer, fordi et
+     manifest ikke kan pege paa data. -->
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="StreakTennis">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
@@ -392,7 +401,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.22.1 · 25. august 2026";
+const VERSION = "v4.25.0 · 26. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1188,7 +1197,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -1438,6 +1447,41 @@ const RUMBUD_URL  = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/rum-b
 // ⭐ v4.19.0 · PORTEN. Serveren afgør, om du er lukket ind — og om du
 // er den, der lukker andre ind. Appen gætter aldrig på nogen af delene.
 const PORT_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/ejer-port";
+// ⭐ v4.24.0 · BESKEDER. Funktionen holder styr paa, hvem der har sagt ja,
+// og til hvad. Den sender ingenting — det gør `push-puls`.
+const PUSH_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/push";
+// VAPID-noeglens OFFENTLIGE halvdel. Den ER lavet til at staa i en app og
+// kan kun bruges til at MODTAGE. Den private halvdel ligger som hemmelighed
+// paa serveren og forlader den aldrig.
+const PUSH_NOEGLE = "BM3rYuPXorripqStkGXLYF18P9Zypi7TR71MSdcO1hHR2hdwBEJ_uAKGCGUKX5-dF9_1HpqW6lkVbpFRbT7ARcE";
+
+// ⭐ DE TRE SPOERGSMAAL. Uden dem ville appen love en besked, den aldrig
+// kan sende — og brugeren ville tro, det var hans egen skyld.
+function pushMulig() {
+  try { return ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window); }
+  catch (_e) { return false; }
+}
+function erIOS() {
+  try {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  } catch (_e) { return false; }
+}
+// ⚠️ DEN AFGOERENDE. Ligger appen paa hjemmeskaermen? Paa iPhone er svaret
+// paa dét ogsaa svaret paa, om der overhovedet kan komme en besked.
+function paaHjemmeskaerm() {
+  try {
+    return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+      || window.navigator.standalone === true;
+  } catch (_e) { return false; }
+}
+function b64uTilBytes(s) {
+  const pad = "=".repeat((4 - (s.length % 4)) % 4);
+  const raa = atob((s + pad).replace(/-/g, "+").replace(/_/g, "/"));
+  const u = new Uint8Array(raa.length);
+  for (let i = 0; i < raa.length; i++) u[i] = raa.charCodeAt(i);
+  return u;
+}
 // ⭐ v4.21.0 · KONTOEN. Serveren udleverer spillernøglen, når man har
 // bevist hvem man er. Alle andre funktioner kender stadig kun nøglen —
 // derfor er de urørte.
@@ -1865,6 +1909,10 @@ const A = {
     // rejser der intet. En ejer HAR raakt ud, saa panelet naas alligevel.
     if (id === "opsaet" && S.portStatus === null && S.spillerNoegle
         && (S.klubKode || S.venneAktiv || lager.hent("sai-inviteret") === "1")) inviteretTjek();
+    // ⭐ v4.24.0 · Samme hegn, samme grund: uden klub og uden venner
+    // rejser der intet. Ét opslag — svaret gemmes ogsaa naar det er nej.
+    if (id === "opsaet" && S.push === null && S.spillerNoegle && pushMulig()
+        && (S.klubKode || S.venneAktiv || lager.hent("sai-inviteret") === "1")) A.pushHent();
     render();
   },
   devgaa: (v) => { const p = v.split(":"); S.verden = p[0]; S.tab = p[1]; render(); },
@@ -2482,22 +2530,32 @@ const A = {
   snakAabn: (v) => {
     const dele = String(v).split("|");
     S.snakRum = dele[0]; S.snakNavn = dele[1] || "";
-    S.snakBeskeder = null; S.snakUdkast = ""; S.snakBesked = null; S.snakAnmeldId = null;
+    S.snakBeskeder = null; S.snakUdkast = ""; S.snakBesked = null; S.snakAnmeldId = null; S._snakSig = null;
     S.tab = "rumsnak";
     // Blid puls mens rummet er aabent — gaar i staa af sig selv udenfor.
     if (!window._snakTimer) window._snakTimer = setInterval(function(){
-      if (S.tab === "rumsnak") A.snakHent();
+      if (S.tab === "rumsnak") A.snakHent(1);
     }, 10000);
     render(); A.snakHent();
   },
   snakLuk: () => { S.snakRum = null; S.snakBeskeder = null; S.tab = "stige"; S.zonePanel = "rum"; render(); },
-  snakHent: async () => {
+  snakHent: async (puls) => {
     if (!S.snakRum || S.snakHenter) return;
     S.snakHenter = true;
     const r = await A.snakKald("hent", {});
     S.snakHenter = false;
     if (!r.fejl) S.snakBeskeder = r.beskeder || [];
     else if (S.snakBeskeder === null) S.snakBeskeder = [];
+    // ⭐ v4.23.0 · Pulsen tegner KUN, naar der faktisk er sket noget — og
+    // aldrig midt i et ord. Egne handlinger (send, ret, reager) tegner
+    // stadig med det samme, for de kalder uden puls.
+    const _sig = JSON.stringify(S.snakBeskeder);
+    const _nyt = _sig !== S._snakSig;
+    S._snakSig = _sig;
+    if (puls) {
+      if (!_nyt) return;
+      if (_skriver()) { S._udskudt = true; return; }
+    }
     render();
   },
   snakSend: async () => {
@@ -2914,13 +2972,13 @@ const A = {
   rumAabn: (v) => {
     const d = String(v || "").split("|");
     S.rumKode = d[0] || null; S.rumNavn = d[1] || "";
-    S.tab = "rum"; S.rumData = null; S.rumBeskeder = []; S.rumBesked = null; S.rumUdkast = "";
+    S.tab = "rum"; S.rumData = null; S.rumBeskeder = []; S.rumBesked = null; S.rumUdkast = ""; S._rumSig = null;
     render();
     A.rumHent();
     if (_rumTimer) clearInterval(_rumTimer);
     _rumTimer = setInterval(function(){
       if (S.tab !== "rum" || !S.rumKode) { clearInterval(_rumTimer); _rumTimer = null; return; }
-      A.rumHent();
+      A.rumHent(1);
     }, 6000);
   },
 
@@ -2931,7 +2989,7 @@ const A = {
     if (S.spillerNoegle && (S.klubKode || S.venneAktiv) && !S.vennerHenter) A.venneHent();
   },
 
-  rumHent: async () => {
+  rumHent: async (puls) => {
     if (!S.rumKode || S.rumHenter) return;
     S.rumHenter = true;
     const [k, b] = await Promise.all([
@@ -2947,6 +3005,15 @@ const A = {
     S.rumHenter = false;
     if (k && k.kamp) S.rumData = k.kamp;
     if (b && !b.fejl) S.rumBeskeder = b.beskeder || [];
+    // ⭐ v4.23.0 · se snakHent. Stillingen taeller med i sammenligningen —
+    // falder der en bold, SKAL tavlen opdateres.
+    const _sig = JSON.stringify([S.rumData, S.rumBeskeder]);
+    const _nyt = _sig !== S._rumSig;
+    S._rumSig = _sig;
+    if (puls) {
+      if (!_nyt) return;
+      if (_skriver()) { S._udskudt = true; return; }
+    }
     render();
   },
 
@@ -3114,10 +3181,124 @@ const A = {
     location.reload();
   },
   flytNej: () => { S.flytTilbud = null; render(); },
+
+  // ══ BESKEDER (v4.24.0) ═════════════════════════════════════════════
+  pushKald: async (handling, krop) => {
+    if (!S.spillerNoegle) return { fejl: "mangler-adgang" };
+    const st = new AbortController(); const ur = setTimeout(function(){ st.abort(); }, 20000);
+    try {
+      const r = await fetch(PUSH_URL, { method: "POST", signal: st.signal,
+        headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+        body: JSON.stringify(Object.assign({ handling: handling }, krop || {})) });
+      clearTimeout(ur);
+      const d = await r.json().catch(function(){ return {}; });
+      return r.ok ? d : { fejl: d.kode || "netvaerk" };
+    } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+  },
+  // Svaret gemmes OGSAA naar det er et nej — ellers ville appen spoerge
+  // forfra, hver gang Indstillinger blev aabnet. Én tur, ikke ti.
+  pushHent: async () => {
+    if (S.pushHenter) return;
+    S.pushHenter = true;
+    const r = await A.pushKald("status", {});
+    S.pushHenter = false;
+    S.push = r.fejl ? { tilmeldt: false, enheder: 0, typer: null, fejl: r.fejl } : r;
+    render();
+  },
+  pushTil: async () => {
+    if (S.pushSender) return;
+    const EN = S.sprog === "en";
+    S.pushBesked = null;
+    if (!pushMulig()) {
+      S.pushBesked = { fejl: true, t: EN
+        ? "This browser cannot send notifications."
+        : "Denne browser kan ikke sende beskeder." };
+      render(); return;
+    }
+    // ⚠️ iPhone: uden hjemmeskaerm er der ingen kanal. Sig det, i stedet
+    // for at aabne en tilladelse, der aldrig bliver til noget.
+    if (erIOS() && !paaHjemmeskaerm()) {
+      S.pushBesked = { fejl: true, t: EN
+        ? "On iPhone the app must be on the Home Screen first."
+        : "På iPhone skal appen ligge på hjemmeskærmen først." };
+      render(); return;
+    }
+    S.pushSender = true; render();
+    try {
+      const lov = await Notification.requestPermission();
+      if (lov !== "granted") {
+        S.pushSender = false;
+        S.pushBesked = { fejl: true, t: EN
+          ? "You said no to notifications. It can be changed in your phone settings."
+          : "Du sagde nej til beskeder. Det kan laves om i telefonens indstillinger." };
+        render(); return;
+      }
+      const reg = await navigator.serviceWorker.ready;
+      let ab = await reg.pushManager.getSubscription();
+      if (!ab) {
+        ab = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: b64uTilBytes(PUSH_NOEGLE),
+        });
+      }
+      const r = await A.pushKald("tilmeld", { abonnement: ab.toJSON() });
+      S.pushSender = false;
+      if (r.fejl) {
+        S.pushBesked = { fejl: true, t: r.fejl === "kraever-invitation"
+          ? (EN ? "This phone is not let in yet." : "Denne telefon er ikke lukket ind endnu.")
+          : (EN ? "Could not turn notifications on — try again." : "Kunne ikke slå beskeder til — prøv igen.") };
+      } else {
+        S.push = { tilmeldt: true, enheder: ((S.push && S.push.enheder) || 0) + 1, typer: r.typer };
+        S.pushBesked = { t: EN ? "Notifications are on ✅" : "Beskeder er slået til ✅" };
+      }
+      render();
+    } catch (e) {
+      S.pushSender = false;
+      S.pushBesked = { fejl: true, t: EN
+        ? "Could not turn notifications on — try again."
+        : "Kunne ikke slå beskeder til — prøv igen." };
+      render();
+    }
+  },
+  // Slaar man fra, skal BAADE telefonen og serveren glemme det. Ellers
+  // ligger der et abonnement tilbage, som ingen kan se og ingen kan slette.
+  pushFra: async () => {
+    if (S.pushSender) return;
+    const EN = S.sprog === "en";
+    S.pushSender = true; S.pushBesked = null; render();
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const ab = await reg.pushManager.getSubscription();
+      if (ab) { try { await ab.unsubscribe(); } catch (_e) {} }
+    } catch (_e) {}
+    const r = await A.pushKald("afmeld", {});
+    S.pushSender = false;
+    S.push = { tilmeldt: false, enheder: 0, typer: (S.push && S.push.typer) || null };
+    S.pushBesked = r.fejl
+      ? { fejl: true, t: EN ? "Turned off on this phone, but the server did not answer." : "Slået fra på denne telefon, men serveren svarede ikke." }
+      : { t: EN ? "Notifications are off." : "Beskeder er slået fra." };
+    render();
+  },
+  // ⭐ FIRE KONTAKTER, IKKE ÉN. Rummet kan slaas fra, uden at streaken
+  // holder op med at sige til.
+  pushType: async (v) => {
+    const n = String(v || "");
+    if (!S.push || !S.push.typer || !(n in S.push.typer)) return;
+    const typer = Object.assign({}, S.push.typer);
+    typer[n] = !typer[n];
+    S.push = Object.assign({}, S.push, { typer: typer });
+    S.pushBesked = null; render();
+    const r = await A.pushKald("typer", { typer: typer });
+    if (r.fejl) {
+      S.pushBesked = { fejl: true, t: S.sprog === "en"
+        ? "The change did not reach the server." : "Ændringen nåede ikke serveren." };
+      render();
+    }
+  },
   // ══ VENNE-CHATTEN (v4.3, "vi skal have chats med") ════════════════
   chatAabn: (v) => {
     const dele = String(v).split("|");
-    S.chatVen = dele[0]; S.chatNavn = dele[1] || ""; S.chatBeskeder = null;
+    S.chatVen = dele[0]; S.chatNavn = dele[1] || ""; S.chatBeskeder = null; S._chatSig = null;
     S.chatUdkast = ""; S.chatBesked = null; S.chatAnmeldId = null;
     S.tab = "chat";
     // Læst nu — prikken slukker. Kun et tidsstempel, kun lokalt.
@@ -3125,12 +3306,12 @@ const A = {
       lager.gem("sai-chat-laest", JSON.stringify(S.chatLaest)); } catch(e) {}
     // Blid puls mens samtalen er åben — går i stå af sig selv udenfor.
     if (!window._chatTimer) window._chatTimer = setInterval(function(){
-      if (S.tab === "chat") A.chatHent();
+      if (S.tab === "chat") A.chatHent(1);
     }, 10000);
     render(); A.chatHent();
   },
   chatLuk: () => { S.chatVen = null; S.chatBeskeder = null; S.tab = "stige"; render(); },
-  chatHent: async () => {
+  chatHent: async (puls) => {
     if (!S.chatVen || S.chatHenter) return;
     S.chatHenter = true;
     const r = await sync("chat-hent", { ven: S.chatVen });
@@ -3140,6 +3321,14 @@ const A = {
       try { S.chatLaest[S.chatVen] = new Date().toISOString();
         lager.gem("sai-chat-laest", JSON.stringify(S.chatLaest)); } catch(e) {}
     } else if (S.chatBeskeder === null) S.chatBeskeder = [];
+    // ⭐ v4.23.0 · se snakHent.
+    const _sig = JSON.stringify(S.chatBeskeder);
+    const _nyt = _sig !== S._chatSig;
+    S._chatSig = _sig;
+    if (puls) {
+      if (!_nyt) return;
+      if (_skriver()) { S._udskudt = true; return; }
+    }
     render();
   },
   chatSend: async () => {
@@ -3836,7 +4025,37 @@ function foelgTegn() {
   el.innerHTML = h;
 }
 
+// ⭐⭐ v4.23.0 · SKRIVER FINGEREN LIGE NU?
+// Et felt med data-felt er det eneste sted, man kan taste. Har det fokus,
+// maa skaermen ikke bygges om under haenderne paa en.
+function _skriver() {
+  const a = document.activeElement;
+  return !!(a && a.dataset && a.dataset.felt);
+}
+
+// ⭐⭐ v4.23.0 · TASTATURET BLIVER STAAENDE.
+// Nicolai 25/8: "naar man skriver i rummet saa forsvinder tastaturet hele
+// tiden". Aarsagen er, at hele skaermen saettes med innerHTML — feltet, man
+// skriver i, findes ikke laengere bagefter. Her huskes hvilket felt der
+// havde fokus og hvor markoeren stod, og det gives tilbage med det samme,
+// i SAMME opgave, saa telefonen aldrig naar at lukke tastaturet.
 function render() {
+  const a = document.activeElement;
+  const f = a && a.dataset ? a.dataset.felt : "";
+  let m0 = null, m1 = null;
+  if (f) { try { m0 = a.selectionStart; m1 = a.selectionEnd; } catch (_e) {} }
+  _tegn();
+  if (!f) return;
+  const n = document.querySelector('[data-felt="' + f + '"]');
+  if (!n || n === document.activeElement) return;
+  try {
+    n.focus({ preventScroll: true });
+    // Tal- og filfelter kaster paa setSelectionRange. Derfor try.
+    if (m0 !== null && n.setSelectionRange) n.setSelectionRange(m0, m1);
+  } catch (_e) {}
+}
+
+function _tegn() {
   // Følges en kamp, vises KUN den. Ingen af appens egne data er tilgængelige.
   if (FOELG_KODE) {
     if (!_foelgTimer) { foelgHent(); _foelgTimer = setInterval(foelgHent, 10000); }
@@ -4998,6 +5217,75 @@ function render() {
         h += _opsKort("ejer", "\ud83d\udd10", (EN?"WHO GETS IN":"HVEM KOMMER IND"),
           (_venter.length ? _venter.length + " " + (EN?"waiting":"venter") : (_k ? (_k.inde || 0) + " " + (EN?"inside":"inde") : "\u2014")),
           _venter.length ? "var(--guld)" : "var(--daempet)", _ekrop);
+      }
+      // ⭐⭐ v4.24.0 · BESKEDER. Nicolai 25/8: "Det må være muligt at lave
+      // push beskeder via Safari?" Ja — men på iPhone KUN når appen ligger
+      // på hjemmeskærmen. Kortet siger dét højt i stedet for at lade
+      // brugeren trykke på en knap, der ikke kan virke.
+      // ⭐ Kun for en godkendt spiller. En telefon, der ikke er lukket ind,
+      // skal ikke have en kanal ind til sig.
+      if (S.rolle !== "familie" && S.portStatus && S.portStatus.kendt
+          && S.portStatus.status === "godkendt") {
+        const _p = S.push || {}, _typer = _p.typer || {};
+        const _paa = !!_p.tilmeldt;
+        var _pkrop = "", _pstatus = "\u2014", _pfarve = "var(--daempet)";
+        if (!pushMulig()) {
+          _pkrop = '<p class="lille" style="margin:0">' + (EN
+            ? "This browser cannot send notifications."
+            : "Denne browser kan ikke sende beskeder.") + '</p>';
+        } else if (erIOS() && !paaHjemmeskaerm()) {
+          // ⚠️ DEN VIGTIGSTE BESKED I HELE KORTET.
+          _pstatus = EN ? "needs Home Screen" : "kræver hjemmeskærm";
+          _pfarve = "var(--guld)";
+          _pkrop = '<p class="lille" style="margin:0 0 8px">' + (EN
+            ? "On iPhone, notifications only work when the app sits on the Home Screen. A Safari tab never gets one."
+            : "På iPhone virker beskeder kun, når appen ligger på hjemmeskærmen. En fane i Safari får aldrig en.") + '</p>' +
+            '<div class="lille" style="line-height:1.9;opacity:.85">' +
+            '1. ' + (EN ? "Tap the Share button" : "Tryk på Del-knappen") + ' <b>\u2934\ufe0f</b><br>' +
+            '2. ' + (EN ? "Choose \u00abAdd to Home Screen\u00bb" : "Vælg \u00abFøj til hjemmeskærm\u00bb") + '<br>' +
+            '3. ' + (EN ? "Open the app from there \u2014 then come back here" : "Åbn appen derfra \u2014 og kom tilbage hertil") + '</div>';
+        } else if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+          _pstatus = EN ? "blocked" : "afvist";
+          _pkrop = '<p class="lille" style="margin:0">' + (EN
+            ? "You said no to notifications for this app. It can only be changed in your phone settings."
+            : "Du har sagt nej til beskeder for denne app. Det kan kun laves om i telefonens indstillinger.") + '</p>';
+        } else if (_paa) {
+          _pstatus = EN ? "on" : "til"; _pfarve = "var(--vundet)";
+          // ⭐ v4.25.0 · SEKS KONTAKTER. Nicolai 26/8: "pr. besked og hvem
+          // der har skrevet". Hver linje er én slags begivenhed — og hver
+          // enkelt kan slukkes uden at tage de andre med.
+          const _valg = [
+            ["streak", "\ud83d\udd25", EN ? "Your streak is about to break" : "Din streak er ved at falde"],
+            ["rum", "\ud83d\udcac", EN ? "When someone writes in a room" : "N\u00e5r nogen skriver i et rum"],
+            ["chat", "\u2709\ufe0f", EN ? "When a friend writes to you" : "N\u00e5r en ven skriver til dig"],
+            ["traener", "\ud83c\udfbe", EN ? "When the coach writes" : "N\u00e5r tr\u00e6neren skriver"],
+            ["bud", "\ud83e\udd1d", EN ? "Friend requests and yes-thanks" : "Venneanmodninger og ja tak"],
+            ["analyse", "\ud83d\udcca", EN ? "Your analysis is ready" : "Din analyse er klar"],
+          ];
+          _valg.forEach(function(v){
+            const _til = !!_typer[v[0]];
+            _pkrop += '<button class="knap valg" style="width:100%;min-height:44px;margin-bottom:6px;justify-content:flex-start;text-align:left;font-size:13px;' +
+              (_til ? "border-color:var(--grus)" : "opacity:.55") + '" data-a="pushType" data-v="' + v[0] + '">' +
+              (_til ? "\u2705" : "\u2b1c") + ' ' + v[1] + ' ' + v[2] + '</button>';
+          });
+          _pkrop += '<p class="lille" style="margin:8px 0 9px;opacity:.7">' + (EN
+            ? "One notification per message, with the sender name \u2014 never the message itself. Nothing between 21 and 07."
+            : "Én besked pr. begivenhed, med navnet på den, der skrev \u2014 aldrig selve teksten. Intet mellem 21 og 07.") + '</p>' +
+            '<button class="knap valg" style="min-height:44px" data-a="pushFra">' +
+            (S.pushSender ? "\u23f3 \u2026" : (EN ? "Turn notifications off" : "Slå beskeder fra")) + '</button>';
+        } else {
+          _pkrop = '<p class="lille" style="margin:0 0 9px">' + (EN
+            ? "A short message when someone writes to you, the coach has news, or your streak is about to break. You choose which \u2014 and the message itself is never shown."
+            : "En kort besked når nogen skriver til dig, træneren har noget nyt, eller din streak er ved at falde. Du vælger selv hvilke \u2014 og selve teksten vises aldrig.") + '</p>' +
+            '<button class="knap" style="min-height:46px;background:var(--grus)" data-a="pushTil">' +
+            (S.pushSender ? "\u23f3 \u2026" : (EN ? "Turn notifications on" : "Slå beskeder til")) + '</button>';
+        }
+        if (S.pushBesked) {
+          _pkrop += '<p class="lille" style="margin:8px 0 0;color:' +
+            (S.pushBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.pushBesked.t) + '</p>';
+        }
+        h += _opsKort("beskeder", "\ud83d\udd14", (EN ? "NOTIFICATIONS" : "BESKEDER"),
+          _pstatus, _pfarve, _pkrop);
       }
       // ⭐⭐ v4.21.0 · KONTOEN. Nicolai 25/8: "De skal kunne logge ind og
       // logge ud på forskellige enheder." Julie sad fast som Philip på sin
@@ -6203,6 +6491,13 @@ window.__oskarInit = function(){
       clearTimeout(window.__navnUr);
       window.__navnUr = setTimeout(function(){ A.navnTjek(); }, 500);
     }
+  });
+  // ⭐⭐ v4.23.0 · Det, pulsen udskoed, tegnes i det oejeblik man er faerdig
+  // med at skrive. De 60 ms er, fordi focusout kommer FOER det naeste felt
+  // faar fokus — springer man fra felt til felt, skal skaermen stadig staa.
+  rod.addEventListener("focusout", function(){
+    if (!S._udskudt) return;
+    setTimeout(function(){ if (!_skriver()) { S._udskudt = false; render(); } }, 60);
   });
   rod.addEventListener("change", function(e){
     if (e.target.dataset.felt === "nyMod") render();

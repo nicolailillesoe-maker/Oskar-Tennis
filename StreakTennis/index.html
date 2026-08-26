@@ -130,6 +130,9 @@ textarea{width:100%;height:140px;background:var(--dyb);color:var(--is);border:1p
 </style>
 
 <div class="wrap" id="app"></div>
+<!-- ⭐ v4.26.0 · ÉN filvaelger til hele appen. Etiketten paa strimlen
+     peger paa den, saa der aldrig ligger tyve skjulte felter i DOM'en. -->
+<input type="file" id="bil-fil" accept="image/*" capture="environment" data-felt="bilFil" style="display:none">
 
 <script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:860},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#2E56D6&quot;,&quot;options&quot;:[&quot;#2E56D6&quot;,&quot;#4B17B6&quot;,&quot;#1D958E&quot;,&quot;#9D2E7B&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Tema&quot;},&quot;glaskort&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Tema&quot;}}">
 class Component extends DCLogic {
@@ -401,7 +404,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.25.0 · 26. august 2026";
+const VERSION = "v4.26.0 · 26. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1197,7 +1200,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -1450,6 +1453,51 @@ const PORT_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/ejer-
 // ⭐ v4.24.0 · BESKEDER. Funktionen holder styr paa, hvem der har sagt ja,
 // og til hvad. Den sender ingenting — det gør `push-puls`.
 const PUSH_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/push";
+// ⭐ v4.26.0 · BILLEDER. Et billede kan KUN haenge paa en kamp eller et pas.
+const BILLEDE_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/billede";
+const LAGER_URL   = "https://dihzphfsffritfszqkko.supabase.co/storage/v1";
+const BIL_MAKS_KANT = 1600;   // px paa laengste led
+const BIL_KVALITET  = 0.82;
+
+// ⚠️⚠️ HER FORSVINDER GPS'EN.
+// Et billede fra en telefon baerer EXIF: banens position, tidspunktet,
+// kameramodellen. Ofte ogsaa hjemmet, hvis det er taget der.
+//
+// Billedet tegnes paa et LAERRED og eksporteres som en HELT NY JPEG.
+// Et laerred kender ikke til EXIF og kan ikke skrive den videre. Den raa
+// fil forlader derfor aldrig telefonen — kun den gen-kodede.
+//
+// Samtidig skrumper det: 4 MB fra en iPhone bliver til ca. 250 KB. Det er
+// forskellen paa, om en upload virker paa en klubs daarlige wifi.
+function bilKlargoer(fil) {
+  return new Promise(function (svar, afvis) {
+    if (!fil || !/^image\//.test(fil.type || "")) { afvis(new Error("ikke et billede")); return; }
+    const laeser = new FileReader();
+    laeser.onerror = function () { afvis(new Error("kunne ikke laese")); };
+    laeser.onload = function () {
+      const bil = new Image();
+      bil.onerror = function () { afvis(new Error("kunne ikke aabne")); };
+      bil.onload = function () {
+        try {
+          let b = bil.naturalWidth, h = bil.naturalHeight;
+          const f = Math.min(1, BIL_MAKS_KANT / Math.max(b, h));
+          b = Math.round(b * f); h = Math.round(h * f);
+          const l = document.createElement("canvas");
+          l.width = b; l.height = h;
+          const c = l.getContext("2d");
+          c.fillStyle = "#000"; c.fillRect(0, 0, b, h);
+          c.drawImage(bil, 0, 0, b, h);
+          l.toBlob(function (klump) {
+            if (!klump) { afvis(new Error("kunne ikke gemme")); return; }
+            svar(klump);
+          }, "image/jpeg", BIL_KVALITET);
+        } catch (e) { afvis(e); }
+      };
+      bil.src = laeser.result;
+    };
+    laeser.readAsDataURL(fil);
+  });
+}
 // VAPID-noeglens OFFENTLIGE halvdel. Den ER lavet til at staa i en app og
 // kan kun bruges til at MODTAGE. Den private halvdel ligger som hemmelighed
 // paa serveren og forlader den aldrig.
@@ -3281,6 +3329,100 @@ const A = {
   },
   // ⭐ FIRE KONTAKTER, IKKE ÉN. Rummet kan slaas fra, uden at streaken
   // holder op med at sige til.
+  // ══ BILLEDER (v4.26.0) ═════════════════════════════════════════════
+  bilKald: async (handling, krop) => {
+    if (!S.spillerNoegle) return { fejl: "mangler-adgang" };
+    const st = new AbortController(); const ur = setTimeout(function(){ st.abort(); }, 30000);
+    try {
+      const r = await fetch(BILLEDE_URL, { method: "POST", signal: st.signal,
+        headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+        body: JSON.stringify(Object.assign({ handling: handling }, krop || {})) });
+      clearTimeout(ur);
+      const d = await r.json().catch(function(){ return {}; });
+      return r.ok ? d : { fejl: d.kode || "netvaerk" };
+    } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+  },
+  // Emnet saettes paa KLIKKET, uden at tegne. Tegner vi her, forsvinder
+  // det felt, browseren er ved at aabne filvaelgeren fra.
+  bilEmne: (v) => { S.bilEmne = String(v || ""); S.bilBesked = null; },
+  bilValgt: async (felt) => {
+    const fil = felt && felt.files && felt.files[0];
+    try { felt.value = ""; } catch (_e) {}
+    if (!fil || !S.bilEmne || S.bilSender) return;
+    const EN = S.sprog === "en";
+    const dele = S.bilEmne.split("|");
+    const emneType = dele[0], emneId = dele[1] || "";
+    S.bilSender = true; S.bilBesked = { t: EN ? "Preparing…" : "Gør billedet klar…" }; render();
+    try {
+      const klump = await bilKlargoer(fil);
+      const lov = await A.bilKald("lov", { emne_type: emneType, emne_id: emneId, bytes: klump.size });
+      if (lov.fejl) {
+        S.bilSender = false;
+        S.bilBesked = { fejl: true, t: lov.fejl === "loft-emne"
+          ? (EN ? "There are enough pictures on this one." : "Der er billeder nok på den her.")
+          : lov.fejl === "stort" ? (EN ? "The picture is too big." : "Billedet er for stort.")
+          : (EN ? "Could not save — try again." : "Kunne ikke gemme — prøv igen.") };
+        render(); return;
+      }
+      // Filen gaar DIREKTE til lageret med en underskrevet adresse. Den
+      // passerer aldrig en edge-funktion — og havner derfor aldrig i en log.
+      const op = await fetch(LAGER_URL + "/object/upload/sign/billeder/" + lov.sti + "?token=" + encodeURIComponent(lov.token),
+        { method: "PUT", headers: { "content-type": "image/jpeg" }, body: klump });
+      if (!op.ok) throw new Error("upload " + op.status);
+      const f = await A.bilKald("faerdig", { id: lov.id });
+      S.bilSender = false;
+      if (f.fejl) {
+        S.bilBesked = { fejl: true, t: EN ? "The picture did not arrive — try again." : "Billedet kom ikke frem — prøv igen." };
+      } else {
+        S.bilBesked = { t: EN ? "Picture saved ✅" : "Billedet er gemt ✅" };
+        delete S.bilPr[S.bilEmne];
+        A.bilHent(S.bilEmne);
+      }
+      render();
+    } catch (e) {
+      S.bilSender = false;
+      S.bilBesked = { fejl: true, t: EN ? "Could not save the picture." : "Kunne ikke gemme billedet." };
+      render();
+    }
+  },
+  bilHent: async (v) => {
+    const n = String(v || "");
+    if (!n || S.bilHenter[n]) return;
+    const dele = n.split("|");
+    S.bilHenter[n] = true;
+    const r = await A.bilKald("liste", { emne_type: dele[0], emne_id: dele[1] || "" });
+    S.bilHenter[n] = false;
+    S.bilPr[n] = r.fejl ? [] : (r.billeder || []);
+    render();
+  },
+  bilSletSpoerg: (v) => { S.bilSletB = String(v || ""); S.bilDelId = null; render(); },
+  bilSletFortryd: () => { S.bilSletB = null; render(); },
+  bilSlet: async (v) => {
+    const id = String(v || "");
+    S.bilSletB = null; render();
+    const r = await A.bilKald("slet", { id: id });
+    if (!r.fejl) {
+      Object.keys(S.bilPr).forEach(function(n){
+        S.bilPr[n] = (S.bilPr[n] || []).filter(function(b){ return b.id !== id; }); });
+    }
+    render();
+  },
+  // ⭐ FRA PRIVAT TIL ET RUM — OG TILBAGE IGEN. Et billede er privat, til
+  // nogen aktivt vaelger andet. Vejen tilbage er lige saa kort.
+  bilDelAabn: (v) => { S.bilDelId = String(v || ""); S.bilSletB = null; A.grHent(); render(); },
+  bilDelLuk: () => { S.bilDelId = null; render(); },
+  bilDel: async (v) => {
+    const dele = String(v || "").split("|");
+    const id = dele[0], rum = dele[1] || "";
+    S.bilDelId = null; render();
+    const r = await A.bilKald("del", { id: id, rum: rum });
+    if (!r.fejl) {
+      Object.keys(S.bilPr).forEach(function(n){
+        (S.bilPr[n] || []).forEach(function(b){ if (b.id === id) b.delt_i = rum || null; }); });
+    }
+    render();
+  },
+
   pushType: async (v) => {
     const n = String(v || "");
     if (!S.push || !S.push.typer || !(n in S.push.typer)) return;
@@ -4053,6 +4195,91 @@ function render() {
     // Tal- og filfelter kaster paa setSelectionRange. Derfor try.
     if (m0 !== null && n.setSelectionRange) n.setSelectionRange(m0, m1);
   } catch (_e) {}
+}
+
+// ⭐⭐ v4.26.0 · BILLED-STRIMLEN. Samme komponent paa en kamp og paa et
+// pas — ellers ville de to komme til at opfoere sig forskelligt, og et
+// billede paa en traening ville faa andre regler end et paa en kamp.
+//
+// ⚠️ HELE POINTEN: denne funktion kaldes KUN fra en kamp og fra et pas.
+// Der findes ikke et tredje sted i appen, hvor den kan kaldes fra.
+// ⚠️⚠️ FANGET AF PROEVEN: EN KAMP HAR INGEN ID.
+// `rensKamp` gemmer kun spillets egne felter, og listen sorteres efter dato.
+// Bandt vi billedet til pladsen i listen, ville det hoppe over paa en anden
+// kamp, saa snart en kamp blev slettet eller tilfoejet. Et billede af Oskar
+// ville pludselig haenge paa en andens kamp.
+//
+// At give kampe et id ville aendre lagerformatet seks dage foer pilotstart.
+// I stedet udledes en STABIL noegle af kampens EGET indhold: dato,
+// modstander og resultat. Den er den samme hver gang, uanset hvordan
+// listen sorteres, og uanset hvad der ellers slettes.
+function _kampNoegle(k, i) {
+  try {
+    const raa = String(k.dato || "") + "|" + String(k.modstander || "") + "|" + String(k.resultat || "");
+    let h = 5381;
+    for (let n = 0; n < raa.length; n++) h = ((h * 33) ^ raa.charCodeAt(n)) >>> 0;
+    return "k" + String(k.dato || "").replace(/[^0-9]/g, "") + "-" + h.toString(36);
+  } catch (_e) { return "k" + i; }
+}
+
+// Maa DENNE telefon overhovedet laegge et billede? Samme hegn som resten:
+// har man aldrig raakt ud, rejser der intet (O2-loeftet), og der spoerges
+// ikke om noget her — der laeses kun.
+function _maaBillede() {
+  if (S.rolle === "familie" || !S.spillerNoegle) return false;
+  if (S.portStatus) return !!S.portStatus.kendt && S.portStatus.status === "godkendt";
+  try { return lager.hent("sai-inviteret") === "1"; } catch (_e) { return false; }
+}
+
+function _bilStrimmel(emneType, emneId, EN) {
+  const n = emneType + "|" + emneId;
+  const liste = S.bilPr[n];
+  if (liste === undefined && !S.bilHenter[n]) setTimeout(function(){ A.bilHent(n); }, 0);
+  let h = '<div style="margin-top:8px">';
+  (liste || []).forEach(function (b) {
+    const delt = !!b.delt_i;
+    h += '<div style="display:inline-block;position:relative;margin:0 6px 6px 0;vertical-align:top">' +
+      '<img src="' + esc(b.url) + '" alt="" style="width:88px;height:88px;object-fit:cover;border-radius:10px;border:1.5px solid ' +
+        (delt ? 'var(--guld)' : 'var(--kant)') + '">' +
+      '<div style="display:flex;gap:4px;margin-top:3px">' +
+        '<button class="knap valg" style="flex:1;min-height:0;padding:3px 0;font-size:10px" data-a="bilDelAabn" data-v="' + esc(b.id) + '">' +
+          (delt ? "\ud83d\udc65" : "\ud83d\udd12") + '</button>' +
+        '<button class="knap valg" style="flex:1;min-height:0;padding:3px 0;font-size:10px;border-color:var(--tabt);color:var(--tabt)" data-a="bilSletSpoerg" data-v="' + esc(b.id) + '">\ud83d\uddd1</button>' +
+      '</div>' +
+      (S.bilSletB === b.id
+        ? '<div style="position:absolute;left:0;top:0;width:88px;background:var(--dyb);border:1.5px solid var(--tabt);border-radius:10px;padding:6px;z-index:3">' +
+          '<p class="lille" style="margin:0 0 5px;font-size:10px">' + (EN ? "Delete for good?" : "Slet for altid?") + '</p>' +
+          '<button class="knap" style="width:100%;min-height:0;padding:4px 0;font-size:10px;background:var(--tabt);margin-bottom:3px" data-a="bilSlet" data-v="' + esc(b.id) + '">' + (EN ? "Delete" : "Slet") + '</button>' +
+          '<button class="knap valg" style="width:100%;min-height:0;padding:4px 0;font-size:10px" data-a="bilSletFortryd">' + (EN ? "Cancel" : "Fortryd") + '</button></div>'
+        : '') +
+      (S.bilDelId === b.id
+        ? '<div style="position:absolute;left:0;top:0;width:150px;background:var(--dyb);border:1.5px solid var(--guld);border-radius:10px;padding:7px;z-index:3">' +
+          // ⚠️ LINJEN, DER SKAL STAA DER. Den, der uploader, er ikke den
+          // eneste paa billedet.
+          '<p class="lille" style="margin:0 0 6px;font-size:10px;line-height:1.4">' + (EN
+            ? "Anyone else in the picture? Their parents must have said yes."
+            : "Er der andre med p\u00e5 billedet? S\u00e5 skal deres for\u00e6ldre have sagt ja.") + '</p>' +
+          (delt
+            ? '<button class="knap valg" style="width:100%;min-height:0;padding:5px 0;font-size:10px;margin-bottom:3px" data-a="bilDel" data-v="' + esc(b.id) + '|">' + (EN ? "Make private again" : "G\u00f8r privat igen") + '</button>'
+            : ((S.grListe || []).map(function (g) {
+                return '<button class="knap valg" style="width:100%;min-height:0;padding:5px 0;font-size:10px;margin-bottom:3px" data-a="bilDel" data-v="' + esc(b.id + "|" + g.id) + '">' + esc(g.navn || "rummet") + '</button>';
+              }).join("") || '<p class="lille" style="margin:0 0 5px;font-size:10px;opacity:.7">' + (EN ? "You have no rooms yet." : "Du har ingen rum endnu.") + '</p>')) +
+          '<button class="knap valg" style="width:100%;min-height:0;padding:5px 0;font-size:10px" data-a="bilDelLuk">' + (EN ? "Close" : "Luk") + '</button></div>'
+        : '') +
+      '</div>';
+  });
+  h += '<label for="bil-fil" class="knap valg" data-a="bilEmne" data-v="' + esc(n) + '" ' +
+       'style="display:inline-flex;align-items:center;justify-content:center;width:88px;height:88px;min-height:88px;' +
+       'border-style:dashed;font-size:11px;line-height:1.3;text-align:center;cursor:pointer;vertical-align:top">' +
+       (S.bilSender ? "\u23f3" : "\ud83d\udcf7<br>" + (EN ? "Add" : "Tilf\u00f8j")) + '</label>';
+  if (S.bilBesked && S.bilEmne === n) {
+    h += '<p class="lille" style="margin:4px 0 0;color:' +
+      (S.bilBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.bilBesked.t) + '</p>';
+  }
+  h += '<p class="lille" style="margin:4px 0 0;opacity:.6;font-size:10px">' + (EN
+    ? "\ud83d\udd12 only you and your family \u00b7 \ud83d\udc65 shared in a room"
+    : "\ud83d\udd12 kun dig og din familie \u00b7 \ud83d\udc65 delt i et rum") + '</p>';
+  return h + '</div>';
 }
 
 function _tegn() {
@@ -6258,6 +6485,16 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           ? '<button class="knap" style="flex:none;padding:8px 14px;background:var(--tabt);font-size:12px" data-a="slet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet);font-size:12px" data-a="sletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
           : '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--tabt);color:var(--tabt);font-size:12px" data-a="sletSpoerg" data-v="'+i+'">🗑 '+(EN?"Delete":"Slet")+'</button>') +
         '</div>' +
+        // ⭐ v4.26.0 · BILLEDER PAA KAMPEN. Knappen findes HER, fordi
+        // billedet hoerer til en kamp, der ER spillet. Der findes ikke et
+        // andet sted i appen, hvor den kan staa.
+        // ⚠️ FANGET AF PROEVEN: porten spoerges kun fra KAMP og Indstillinger.
+        // Gaar man direkte til STATISTIK, er S.portStatus stadig null — og
+        // saa ville kameraet vaere der eller ikke vaere der afhaengigt af,
+        // hvilken fane man kom fra. Samme knap skal opfoere sig ens.
+        // Derfor: det GEMTE ja gaelder, til serveren siger andet. Serveren
+        // er alligevel den, der afgoer det — `lov` siger nej til resten.
+        (_maaBillede() ? _bilStrimmel("kamp", _kampNoegle(k, i), EN) : '') +
         (S.hentBesked && S.hentBesked.i === i ? '<p class="lille" style="margin:8px 0 0;color:'+(S.hentBesked.fejl?'var(--tabt)':'var(--vundet)')+'">'+esc(S.hentBesked.t)+'</p>' : '') +
         '</div>';
     }).join("");
@@ -6503,6 +6740,17 @@ window.__oskarInit = function(){
     if (e.target.dataset.felt === "nyMod") render();
     if (e.target.dataset.felt === "logoFil") A.logoValgt(e.target);
   });
+  // ⚠️⚠️ FANGET AF PROEVEN: filvaelgeren ligger UDEN FOR #app (den skal, for
+  // ellers ville den blive slettet ved hver tegning). Derfor naar dens
+  // change-haendelse aldrig app-lytteren, og billedet blev aldrig sendt.
+  // Den faar sin egen lytter — én gang, ikke én pr. tegning.
+  try {
+    const _bf = document.getElementById("bil-fil");
+    if (_bf && !_bf.__lyt) {
+      _bf.__lyt = true;
+      _bf.addEventListener("change", function(){ A.bilValgt(_bf); });
+    }
+  } catch (e) {}
   render();
 };
 window.__oskarInit();

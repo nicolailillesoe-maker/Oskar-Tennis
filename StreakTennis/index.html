@@ -410,7 +410,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.37.0 · 27. august 2026";
+const VERSION = "v4.38.0 · 27. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -446,7 +446,7 @@ const fysTekst = (e, EN) => e.p !== undefined
 const DTFRANG = {};
 const OSKARRANG = {};
 const BENCHMARKS = {
-  sinner:   { navn: "Sinner",   emoji: "🧊", s1in: 64, s1won: 79, s2won: 58, bpSave: 74, bpConv: 46, df: 1.2, fokusMaal: { felt: "bud", label: "Bud IV — gratis fejl i korte dueller", maal: 2, ned: true, forklaring: "Gratis fejl i dueller på 1-4 slag. Sinners spil bygger på at IKKE forære point væk tidligt — hold dem under 2 pr. kamp." },
+  sinner:   { navn: "Sinner",   emoji: "🧊", s1in: 64, s1won: 79, s2won: 58, bpSave: 74, bpConv: 46, df: 1.2, fokusMaal: { felt: "bal", label: "Skabt-balance pr. kamp", maal: 0, ned: false, forklaring: "Skabt minus foræret — motorens eget hovedtal. Sinners margin ligger i, at regnskabet er positivt: flere vindere og fremtvungne fejl end gratis fejl. Hold den over nul." },
     dna: "Tempo og præcision — afslutter dueller tidligt, næsten ingen gratis fejl. Marginen ligger i timing, ikke risiko.",
     bud: [["I","Tag bolden på vej op","Stå på eller inde i baglinjen. Tempoet kommer fra TIMING — at tage bolden tidligt, ikke fra at slå hårdere."],
           ["II","Dybde, ikke linjer","Sigt efter den bageste tredjedel med god luft over nettet. Marginen ligger i højden over nettet."],
@@ -567,12 +567,18 @@ function statTabel(s, EN) {
   r += statRk(EN ? "Return points won" : "Returpoint vundet", rt === null ? "–" : rt + " %", rt, null, niv(rt, 45, 30));
   if (s.bpFor[1]) r += statRk(EN ? "Break points converted" : "Breakbolde udnyttet", s.bpFor[0] + "/" + s.bpFor[1], bpF, B.bpConv, niv(bpF, 40, 25));
   if (s.bpMod[1]) r += statRk(EN ? "Break points saved" : "Breakbolde afværget", s.bpMod[0] + "/" + s.bpMod[1], bpM, B.bpSave, niv(bpM, 60, 40));
-  [[s.dK, EN ? "Short rallies (1-4)" : "Korte dueller (1-4)"], [s.dM, EN ? "Medium (5-8)" : "Mellem (5-8)"], [s.dL, EN ? "Long (9+)" : "Lange (9+)"]].forEach(function(par){
-    const q = par[0]; if (!q[1]) return;
-    const pd = Math.round(q[0] / q[1] * 100);
-    r += statRk(par[1], q[0] + "/" + q[1], pd, null, niv(pd, 55, 40));
-  });
-  r += statRk(EN ? "Free errors, short rallies" : "Gratis fejl i korte dueller", String(s.budIVbrud), null, null, s.budIVbrud <= 1 ? 2 : s.budIVbrud <= 3 ? 1 : 0, "BUD IV");
+  // ⭐ v4.38.0 · FH/BH ved siden af fejl-zonerne. Tæller OG nævner.
+  const _H = s.haand || { medSide: 0 };
+  if (_H.medSide > 0) {
+    r += statRk(EN ? "Free errors · FH / BH" : "Gratis fejl · forhånd / baghånd", _H.ufFH + " / " + _H.ufBH, null, null,
+      Math.abs(_H.ufFH - _H.ufBH) <= 1 ? 2 : Math.abs(_H.ufFH - _H.ufBH) <= 3 ? 1 : 0, "🎾");
+    if (_H.vinderFH + _H.vinderBH > 0)
+      r += statRk(EN ? "Winners · FH / BH" : "Vinderslag · forhånd / baghånd", _H.vinderFH + " / " + _H.vinderBH, null, null, 2, "🎾");
+    if (_H.returFH + _H.returBH > 0)
+      r += statRk(EN ? "Return errors · FH / BH" : "Returfejl · forhånd / baghånd", _H.returFH + " / " + _H.returBH, null, null, 1, "🎾");
+    r += statRk(EN ? "Balls logged with a side" : "Bolde logget med side", _H.medSide + "/" + _H.muligIalt, null, null,
+      _H.medSide >= _H.muligIalt * 0.8 ? 2 : 1, "◐");
+  }
   if ((s.zN || 0) + (s.zL || 0) + (s.zB || 0) > 0) r += statRk(EN ? "Error zones (net·long·wide)" : "Fejl-zoner (net·lang·bred)", s.zN + " · " + s.zL + " · " + s.zB, null, null, 1, "🗺");
   return '<table style="width:100%;border-collapse:collapse;margin:6px 0 2px">' + r +
     '<tr><td colspan="4" style="font-size:10px;color:var(--daempet);padding-top:4px">▎ ' + (EN ? "gold line = "+((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner")+" level (ATP 25/26) · ✓ strong · ● okay · ⚠ sharpen" : "guldstreg = "+((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner")+"-niveau (ATP 25/26) · ✓ stærkt · ● okay · ⚠ skal skærpes") + '</td></tr></table>';
@@ -982,10 +988,12 @@ function rivalRecord(liste) {
   return [w, t];
 }
 function rivalAgg(liste) {
-  const a = { v:0, t:0, uf:0, vindere:0, serve:[0,0], s1:[0,0], s2:[0,0], retur:[0,0], bpFor:[0,0], bpMod:[0,0], dK:[0,0], dM:[0,0], dL:[0,0], budIVbrud:0, zN:0, zL:0, zB:0, perSaet:[], s1in:0 };
+  const a = { v:0, t:0, uf:0, vindere:0, serve:[0,0], s1:[0,0], s2:[0,0], retur:[0,0], bpFor:[0,0], bpMod:[0,0], ufFH:0, ufBH:0, vinderFH:0, vinderBH:0, hMed:0, hMulig:0, zN:0, zL:0, zB:0, perSaet:[], s1in:0 };
   liste.forEach(function(k){ const s = statistik(k);
-    a.v+=s.v; a.t+=s.t; a.uf+=s.uf; a.vindere+=s.vindere; a.budIVbrud+=s.budIVbrud; a.zN+=s.zN; a.zL+=s.zL; a.zB+=s.zB;
-    [["serve",s.serve],["s1",s.s1],["s2",s.s2],["retur",s.retur],["bpFor",s.bpFor],["bpMod",s.bpMod],["dK",s.dK],["dM",s.dM],["dL",s.dL]].forEach(function(p){ a[p[0]][0]+=p[1][0]; a[p[0]][1]+=p[1][1]; });
+    a.v+=s.v; a.t+=s.t; a.uf+=s.uf; a.vindere+=s.vindere; a.zN+=s.zN; a.zL+=s.zL; a.zB+=s.zB;
+    a.ufFH+=s.haand.ufFH; a.ufBH+=s.haand.ufBH; a.vinderFH+=s.haand.vinderFH; a.vinderBH+=s.haand.vinderBH;
+    a.hMed+=s.haand.medSide; a.hMulig+=s.haand.muligIalt;
+    [["serve",s.serve],["s1",s.s1],["s2",s.s2],["retur",s.retur],["bpFor",s.bpFor],["bpMod",s.bpMod]].forEach(function(p){ a[p[0]][0]+=p[1][0]; a[p[0]][1]+=p[1][1]; });
     a.s1in += Math.round(s.s1pct * s.serve[1] / 100);
   });
   a.s1pct = a.serve[1] ? Math.round(a.s1in / a.serve[1] * 100) : 0;
@@ -1067,17 +1075,24 @@ function livAnalyse(EN) {
   const rp = pc(s.retur[0], s.retur[1]);
   const chips = [];
   const chip = (ok, txt) => chips.push('<span style="display:inline-block;border:1.5px solid var(--'+(ok?"vundet":"tabt")+');color:var(--'+(ok?"vundet":"tabt")+');border-radius:14px;padding:3px 10px;font-size:11.5px;font-weight:700;margin:0 6px 6px 0">'+(ok?"✓ ":"⚠ ")+txt+'</span>');
-  chip(s.budIVbrud <= 1, (EN?"Rule IV: ":"Bud IV: ")+s.budIVbrud+(EN?" free err. short rallies":" gratis fejl i korte"));
+  const H = s.haand;
+  if (H.medSide >= 3) chip(Math.abs(H.ufFH - H.ufBH) <= 1, (EN?"Free errors FH/BH ":"Gratis fejl FH/BH ")+H.ufFH+"/"+H.ufBH);
   chip(s.uf <= s.vindere + 1, (EN?"Winners/errors ":"Vindere/fejl ")+s.vindere+"/"+s.uf);
   if (s.serve[1] >= 6 && s.s1pct !== null) chip(s.s1pct >= 55, (EN?"1st serve ":"1. serv ")+s.s1pct+" %");
   if (s.retur[1] >= 6 && rp !== null) chip(rp >= 30, (EN?"Return ":"Retur ")+rp+" %");
   if (s.bpFor[1] >= 1) chip(s.bpFor[0] > 0, (EN?"BP converted ":"BP udnyttet ")+s.bpFor[0]+"/"+s.bpFor[1]);
   const raad = [];
-  if (s.budIVbrud >= 2) raad.push(EN?("RULE IV: "+s.budIVbrud+" free errors in short rallies. The first two balls MUST go in — deep serve/return + deep cross, zero risk. Pressure is built, not forced."):("BUD IV: "+s.budIVbrud+" gratis fejl i de korte dueller. De to første bolde SKAL ind — dyb serv/retur + dyb cross, nul risiko. Presset bygges op, det forceres ikke."));
+  // ⭐⭐ v4.38.0 · KRYDSET ER RÅDET. Nicolai 19/8: "hvor den uprovokerede
+  // fejl i nettet den ligger. På forhånden eller baghånden."
+  if (H.ufFH + H.ufBH >= 4 && Math.abs(H.ufFH - H.ufBH) >= 2) {
+    const _bh = H.ufBH > H.ufFH, _n = _bh ? H.ufBH : H.ufFH, _i = H.ufFH + H.ufBH, _net = _bh ? H.ufBHnet : H.ufFHnet;
+    raad.push(EN
+      ? (_n + " of " + _i + " free errors are hit on the " + (_bh ? "backhand" : "forehand") + "." + (_net >= 2 ? " " + _net + " of them died in the net — half a metre more air on exactly that side." : " Play that side with margin: depth and cross, no lines."))
+      : (_n + " af " + _i + " gratis fejl bliver slået på " + (_bh ? "baghånden" : "forhånden") + "." + (_net >= 2 ? " " + _net + " af dem døde i nettet — en halv meter mere luft på netop den side." : " Spil den side med margin: dybde og cross, ingen linjer.")));
+  }
   if (s.uf > s.vindere + 2) raad.push(EN?("The error count ("+s.uf+") beats the winners ("+s.vindere+"). Rules II+III: depth over lines, cross as standard — let the opponent take the risk."):("Fejlkontoen ("+s.uf+") overstiger vinderne ("+s.vindere+"). Bud II+III: dybde frem for linjer, cross som standard — lad modstanderen tage risikoen."));
   if (s.serve[1] >= 6 && s.s1pct !== null && s.s1pct < 55) raad.push(EN?("First serve at "+s.s1pct+" % — take pace off and spin it in. Placement beats power today."):("1. serven er på "+s.s1pct+" % — træk tempoet af og spin den ind. Placering slår kraft i dag."));
   if (s.zN >= 3 && s.zN > s.zL && s.zN > s.zB) raad.push(EN?("The errors die in the NET ("+s.zN+"). More air over the net — aim for the back third (rule II)."):("Fejlene dør i NETTET ("+s.zN+"). Mere luft over nettet — sigt efter den bageste tredjedel (bud II)."));
-  if (s.dM[1] >= 5 && s.dM[0] / s.dM[1] < 0.4) raad.push(EN?("Medium rallies (5-8) are being lost ("+s.dM[0]+"/"+s.dM[1]+"). Hold the cross pattern — only change direction on the short ball (rule III)."):("Mellemduellerne (5-8) tabes ("+s.dM[0]+"/"+s.dM[1]+"). Hold cross-mønsteret — skift kun retning på den korte bold (bud III)."));
   if (s.bpFor[1] >= 2 && s.bpFor[0] / s.bpFor[1] < 0.5) raad.push(EN?("Break points not converted ("+s.bpFor[0]+"/"+s.bpFor[1]+"). Big point = run the weapon pattern: set up the forehand into the open court."):("Breakboldene udnyttes ikke ("+s.bpFor[0]+"/"+s.bpFor[1]+"). Stort point = kør våben-mønsteret: byg op til forehanden i det åbne felt."));
   if (s.retur[1] >= 6 && rp !== null && rp < 30) raad.push(EN?("The return gives too little ("+rp+" %). One step back, deep return through the middle — make the rally long."):("Returspillet giver for lidt ("+rp+" %). Et skridt tilbage, dyb retur gennem midten — gør duellen lang."));
   const top = raad.slice(0, 3);
@@ -1097,7 +1112,7 @@ function anbefalinger(EN) {
   if (vl.liste.length < 2) return null;
   const kron = vl.liste.slice().reverse();
   const serier = kron.map(function(k){ const s = statistik(k); const pcx = function(p){ return p[1] ? Math.round(p[0] / p[1] * 100) : null; };
-    return { uf: s.uf, vin: s.vindere, s1: s.s1pct, s2: pcx(s.s2), bpF: pcx(s.bpFor), bpM: pcx(s.bpMod), bud: s.budIVbrud }; });
+    return { uf: s.uf, vin: s.vindere, s1: s.s1pct, s2: pcx(s.s2), bpF: pcx(s.bpFor), bpM: pcx(s.bpMod), bal: s.balance }; });
   const sen = serier.slice(-3);
   const felt = function(navn){ const alle = serier.map(function(x){ return x[navn]; }).filter(function(v){ return v !== null; });
     const s3 = sen.map(function(x){ return x[navn]; }).filter(function(v){ return v !== null; });
@@ -1108,7 +1123,7 @@ function anbefalinger(EN) {
     { label: EN ? "Won on 2nd serve" : "Vundet på 2. serven", f: felt("s2"), maal: 50, ned: false, enhed: " %", sinner: ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].s2won+" %":"58 %"), hvorfor: EN ? "The key number separating the top from the rest — 50 %+ means the serve holds under pressure." : "Nøgletallet, der skiller toppen fra resten — 50 %+ betyder, serven holder under pres." },
     { label: EN ? "Break points converted" : "Breakbolde udnyttet", f: felt("bpF"), maal: 40, ned: false, enhed: " %", sinner: ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].bpConv+" %":"46 %"), hvorfor: EN ? "Convert the big points. Tight matches are decided on these." : "Veksl de store point. Tætte kampe afgøres på disse." },
     { label: EN ? "Break points saved" : "Breakbolde afværget", f: felt("bpM"), maal: 60, ned: false, enhed: " %", sinner: ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].bpSave+" %":"74 %"), hvorfor: EN ? "Defend your own service games when it matters most." : "Forsvar egne servepartier, når det gælder mest." },
-    (function(){ const B = (typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark]:null; const fm = B&&B.fokusMaal?B.fokusMaal:{felt:"bud",label:(EN?"Rule IV breaches":"Bud IV-brud pr. kamp"),maal:2,ned:true,forklaring:""}; return { label: fm.label, f: felt(fm.felt), maal: fm.maal, ned: fm.ned, enhed: fm.felt==="s1"||fm.felt==="s2"?" %":"", sinner: "", benchForklaring: fm.forklaring }; })(),
+    (function(){ const B = (typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark]:null; const fm = B&&B.fokusMaal?B.fokusMaal:{felt:"bal",label:(EN?"Created-balance per match":"Skabt-balance pr. kamp"),maal:0,ned:false,forklaring:""}; return { label: fm.label, f: felt(fm.felt), maal: fm.maal, ned: fm.ned, enhed: fm.felt==="s1"||fm.felt==="s2"?" %":"", sinner: "", benchForklaring: fm.forklaring }; })(),
   ];
   const virker = [], arbejd = [];
   M.forEach(function(m){
@@ -1159,8 +1174,8 @@ function rivalUdvidet(navn, liste, rec, dummy) {
   ht += emne((BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).emoji + " " + (EN ? (BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).navn.toUpperCase()+" RULES" : (BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).navn.toUpperCase()+"-BUDENE I DUELLEN")) + tb(
     duoRk(EN ? "Winners vs gifts" : "Vindere mod gaver", ag.vindere + " / " + ag.uf, ag.vindere >= ag.uf ? 2 : ag.uf - ag.vindere <= 8 ? 1 : 0,
       EN ? "Sinner rule I: points should be ENDED with winners, not given away as errors. Totals across these matches — the ratio should favour the winners." : "Sinner-bud I: point skal AFSLUTTES med vindere, ikke foræres væk som fejl. Summen på tværs af kampene — forholdet skal helst være i vinder-favør.") +
-    duoRk(EN ? "Rule IV breaches per match" : "Bud IV-brud pr. kamp", String(Math.round(ag.budIVbrud / antal)), ag.budIVbrud / antal <= 2 ? 2 : ag.budIVbrud / antal <= 4 ? 1 : 0,
-      EN ? "Free errors in SHORT rallies (1-4 shots) — the most expensive gifts in tennis, because the point had barely started. Goal: max 2 per match." : "Gratis fejl i KORTE dueller (1-4 slag) — de dyreste gaver i tennis, for pointet var knap nok begyndt. Mål: højst 2 pr. kamp.") +
+    duoRk(EN ? "Free errors forehand / backhand" : "Gratis fejl forhånd / baghånd", ag.hMed ? (ag.ufFH + " / " + ag.ufBH) : "—", !ag.hMed ? null : Math.abs(ag.ufFH - ag.ufBH) <= 1 ? 2 : 1,
+      (EN ? "WHICH side the free errors were hit from, across these matches (" + ag.hMed + " of " + ag.hMulig + " possible balls logged with a side). A clear skew points to where the margin belongs." : "HVILKEN side de gratis fejl blev slået på, på tværs af kampene (" + ag.hMed + " af " + ag.hMulig + " mulige bolde logget med side). En tydelig skævhed peger på, hvor marginen skal lægges.")) +
     duoRk(EN ? "Where the errors land" : "Hvor fejlene lander", (EN ? "net " : "net ") + ag.zN + (EN ? " · long " : " · lang ") + ag.zL + (EN ? " · wide " : " · bred ") + ag.zB, (ag.zN + ag.zL + ag.zB) === 0 ? null : ag.zN >= ag.zL && ag.zN >= ag.zB ? 0 : 1,
       (EN ? "WHERE the own errors land: " + ag.zN + " in the net · " + ag.zL + " long over the baseline · " + ag.zB + " wide. " : "HVOR de egne fejl lander: " + ag.zN + " i nettet · " + ag.zL + " ud over baglinjen · " + ag.zB + " ud i siderne. ") +
       (ag.zN >= ag.zL && ag.zN >= ag.zB ? (EN ? "Most in the net → play with more height and margin." : "Flest i nettet → spil med mere højde og margin over nettet.") : ag.zL >= ag.zB ? (EN ? "Most long → dose the power, keep the direction." : "Flest lange → dosér kraften, behold retningen.") : (EN ? "Most wide → aim half a metre further in." : "Flest brede → sigt en halv meter længere ind."))));
@@ -1206,7 +1221,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -1290,11 +1305,12 @@ const rensKamp = (g) => {
     dato: g.dato || new Date().toISOString().slice(0,10),
     oskarFirst: typeof g.oskarFirst === "boolean" ? g.oskarFirst : true,
     mtb: typeof g.mtb === "boolean" ? g.mtb : true, saetTil: g.saetTil === 4 ? 4 : 6, noAd: g.noAd === true, afsluttet: g.afsluttet === true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : vandtIflgResultat(g.resultat), resultat: g.resultat || "", analyse: g.analyse || "", justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
-    point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1, l: [1,2,3].indexOf(q.l) >= 0 ? q.l : 0, z: [1,2,3].indexOf(q.z) >= 0 ? q.z : 0 })) };
+    point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1, l: [1,2,3].indexOf(q.l) >= 0 ? q.l : 0, h: [1,2].indexOf(q.h) >= 0 ? q.h : 0, z: [1,2,3].indexOf(q.z) >= 0 ? q.z : 0 })) };
 };
 try { const sp = lager.hent("sai-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
 try { if (lager.hent("sai-laas") === "op") S.laast = false; } catch(e) {}
-try { if (lager.hent("sai-tryk") === "3") S.tryk3 = true; } catch(e) {}
+// v4.38.0: duel-laengde-togglen findes ikke mere. Noeglen "sai-tryk"
+// bliver liggende i lageret — den laeses bare aldrig igen.
 try { if (lager.hent("sai-zoner") === "1") S.zoner = true; } catch(e) {}
 try { const fl = JSON.parse(lager.hent("sai-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = sikrePasId(sorterNyestFoerst(fl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d")); } catch(e) {}
 try { const tl = JSON.parse(lager.hent("sai-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = sikrePasId(sorterNyestFoerst(tl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d")); } catch(e) {}
@@ -1770,7 +1786,7 @@ function rivalNoegle(navne, grupper) {
   return navne.slice().sort().map(function(n){ return n + ":" + ((grupper[n]||[]).length); }).join("|");
 }
 const KAMP_HVIDLISTE = ["dato","spiller","modstander","turnering","sted","resultat","oskarFirst","mtb","saetTil","noAd","facitVandt","afsluttet","justeringer","point"];
-const POINT_HVIDLISTE = ["r","\u00e5","f","l","z","s"];
+const POINT_HVIDLISTE = ["r","\u00e5","f","l","h","z","s"];
 
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1925,11 +1941,24 @@ function statistik(k) {
       else { ps.s2 += 1; if (p.r === "V") ps.s2v += 1; }
     }
   });
-  const dl = (n) => { const q = k.point.filter(p => p.l === n); return [q.filter(p => p.r === "V").length, q.length]; };
-  const budIVbrud = k.point.filter(p => p.l === 1 && p.r === "T" && (p.å === "uf" || p.å === "dobbelt" || p.å === "returfejl")).length;
+  // ⭐ v4.38.0 · FORHÅND/BAGHÅND. Samme tre årsager som motoren tæller
+  // (analyse-kamp prompt v1.6): vinder · uf · returfejl. Es og dobbeltfejl er
+  // serv og har ingen fløj; tvunget dømmes for subjektivt til også at bære
+  // et sidetal. ⚠️ NÆVNEREN (muligIalt) står ALTID ved siden af tælleren —
+  // en halvt logget kamp må aldrig læses som en hel. Samme vagt som zonerne.
+  const _hMulig = k.point.filter(p => (p.r === "V" && p.å === "vinder") || (p.r === "T" && (p.å === "uf" || p.å === "returfejl")));
+  const _hSide = (p) => (p.h === 1 ? 1 : p.h === 2 ? 2 : 0);
+  const _hT = (r, aa, side) => _hMulig.filter(p => p.r === r && p.å === aa && _hSide(p) === side).length;
+  const _ufZ = (side, z) => k.point.filter(p => p.r === "T" && p.å === "uf" && _hSide(p) === side && p.z === z).length;
+  const haand = { muligIalt: _hMulig.length, medSide: _hMulig.filter(p => _hSide(p)).length,
+    vinderFH: _hT("V","vinder",1), vinderBH: _hT("V","vinder",2),
+    ufFH: _hT("T","uf",1), ufBH: _hT("T","uf",2),
+    returFH: _hT("T","returfejl",1), returBH: _hT("T","returfejl",2),
+    ufFHnet: _ufZ(1,1), ufFHlang: _ufZ(1,2), ufFHbred: _ufZ(1,3),
+    ufBHnet: _ufZ(2,1), ufBHlang: _ufZ(2,2), ufBHbred: _ufZ(2,3) };
   const oFejl = k.point.filter(p => p.r === "T" && (p.å === "uf" || p.å === "tvunget" || p.å === "returfejl"));
   const zN = oFejl.filter(p => p.z === 1).length, zL = oFejl.filter(p => p.z === 2).length, zB = oFejl.filter(p => p.z === 3).length;
-  return { st, v, t, uf, vindere, perSaet, skabt: vindere + modTv, balance: vindere + modTv - uf, modEs, zN, zL, zB, dK: dl(1), dM: dl(2), dL: dl(3), budIVbrud,
+  return { st, v, t, uf, vindere, perSaet, skabt: vindere + modTv, balance: vindere + modTv - uf, modEs, zN, zL, zB, haand,
     serve: [oServe.filter(p=>p.r==="V").length, oServe.length],
     retur: [retur.filter(p=>p.r==="V").length, retur.length],
     s1pct: oServe.length ? Math.round(oServe1.length / oServe.length * 100) : 0,
@@ -1951,10 +1980,34 @@ function lavEksport(k) {
     "Skabt-balance: " + (s.balance > 0 ? "+" : "") + s.balance + " (skabt " + s.skabt + " · foræret " + s.uf + ")" + (s.modEs ? " · modstander-esser: " + s.modEs : ""),
     "Pr. sæt: " + s.perSaet.map((ps, si) => "S" + (si + 1) + " " + ps.v + "-" + ps.t + " (UE " + ps.uf + ", vindere " + ps.vin + (ps.sp ? ", 1.serv " + Math.round(ps.s1 / ps.sp * 100) + " %" : "") + ")").join(" · "),
     ((s.zN || 0) + (s.zL || 0) + (s.zB || 0) > 0 ? ("Fejl-zoner ("+SPILLER+"s"+" fejl): net ") + s.zN + " · ud lang " + s.zL + " · ud bred " + s.zB : null),
-    "Dueller (vundet/spillet): korte(1-4) " + s.dK[0] + "/" + s.dK[1] + " · mellem(5-8) " + s.dM[0] + "/" + s.dM[1] + " · lange(9+) " + s.dL[0] + "/" + s.dL[1] + (" · "+SPILLER+"s"+" gratis fejl i KORTE dueller (bud IV-brud): ") + s.budIVbrud,
-    "Rå sekvens (V/T:årsag:serv:duel K/M/L): " + k.point.map(p => p.r + ":" + p.å + ":" + p.f + ":" + (p.l === 1 ? "K" : p.l === 2 ? "M" : p.l === 3 ? "L" : "?")).join(" "),
+    (s.haand.medSide > 0 ? ("Forhånd/baghånd (" + s.haand.medSide + " af " + s.haand.muligIalt + " mulige bolde logget med side): gratis fejl " + s.haand.ufFH + " FH / " + s.haand.ufBH + " BH · vinderslag " + s.haand.vinderFH + " FH / " + s.haand.vinderBH + " BH · returfejl " + s.haand.returFH + " FH / " + s.haand.returBH + " BH") : null),
+    (s.haand.ufFHnet + s.haand.ufFHlang + s.haand.ufFHbred + s.haand.ufBHnet + s.haand.ufBHlang + s.haand.ufBHbred > 0 ? ("Hvor de gratis fejl sad: forhånd → net " + s.haand.ufFHnet + " · ud lang " + s.haand.ufFHlang + " · ud bred " + s.haand.ufFHbred + " · baghånd → net " + s.haand.ufBHnet + " · ud lang " + s.haand.ufBHlang + " · ud bred " + s.haand.ufBHbred) : null),
+    "Rå sekvens (V/T:årsag:serv:hånd F/B): " + k.point.map(p => p.r + ":" + p.å + ":" + p.f + ":" + (p.h === 1 ? "F" : p.h === 2 ? "B" : "?")).join(" "),
     ("("+SPILLER+" servede først: ") + (k.oskarFirst ? "ja" : "nej") + " · 3. sæt = MTB: " + (k.mtb ? "ja" : "nej") + ")",
   ].join("\n");
+}
+
+// ⭐ v4.38.0 · HVILKEN EFTER-SKÆRM HØRER TIL EN ÅRSAG?
+// Hånden spørges KUN på de tre årsager, motoren tæller (analyse-kamp v1.6):
+// vinder · uf · returfejl. Zonen spørges som før på egne ketsjerfejl.
+// Falder begge sammen, bliver de ÉT gitter — ikke to skærme.
+const _HAAND_AARSAG = { vinder: 1, uf: 1, returfejl: 1 };
+const _ZONE_AARSAG  = { uf: 1, tvunget: 1, returfejl: 1 };
+function _efterSkaerm(id, vundet) {
+  const haand = !!_HAAND_AARSAG[id] && (id === "vinder" ? !!vundet : !vundet);
+  const zone  = !!S.zoner && !vundet && !!_ZONE_AARSAG[id];
+  if (haand && zone) return "haandzone";
+  if (haand) return "haand";
+  if (zone) return "zone";
+  return null;
+}
+// ⚠️ Bolden bærer IKKE `l` mere. Gamle kampes l-tal står urørt i lageret,
+// og motoren hvidlister stadig feltet — så en gammel kamp analyseres som før.
+function _gemBold(aarsag, h, z) {
+  if (!S.aktiv || !S.afventer) return;
+  S.aktiv.point.push({ r: S.afventer === "vundet" ? "V" : "T", å: aarsag, f: S.serv, h: h || 0, z: z || 0 });
+  liveSend();
+  S.afventer = null; S.aarsagValgt = null; S.efterTryk = null; S.serv = 1; gemAktiv(); render();
 }
 
 // ---------- Handlinger ----------
@@ -2151,11 +2204,10 @@ const A = {
     lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
     render();
   },
-  trykToggle: () => { S.tryk3 = !S.tryk3; S.aarsagValgt = null; S.laengdeValgt = null; lager.gem("sai-tryk", S.tryk3 ? "3" : "2"); render(); },
   vaelgHaand: (hd) => { if (hd === "venstre" || hd === "hoejre") { S.haand = hd; lager.gem("sai-haand", hd); render(); } },
   vaelgBenchmark: (b) => { if (BENCHMARKS[b]) { S.benchmark = b; lager.gem("sai-benchmark", b); render(); } },
   sammenlignToggle: (n) => { const i = S.sammenlign.indexOf(n); if (i >= 0) S.sammenlign.splice(i, 1); else { if (S.sammenlign.length >= 2) S.sammenlign.shift(); S.sammenlign.push(n); } render(); },
-  zonerToggle: () => { S.zoner = !S.zoner; S.laengdeValgt = null; lager.gem("sai-zoner", S.zoner ? "1" : "0"); render(); },
+  zonerToggle: () => { S.zoner = !S.zoner; S.aarsagValgt = null; S.efterTryk = null; lager.gem("sai-zoner", S.zoner ? "1" : "0"); render(); },
   jAnvend: () => {
     if (!S.aktiv || !S.j) return;
     S.aktiv.justeringer = (S.aktiv.justeringer || []).concat([{ i: S.aktiv.point.length, sO: S.j.sO, sM: S.j.sM, gO: S.j.gO, gM: S.j.gM, server: S.j.server }]);
@@ -2186,35 +2238,26 @@ const A = {
   udfald: (v) => { S.afventer = v; render(); },
   aarsag: (id) => {
     if (!S.aktiv || !S.afventer) return;
-    if (!S.tryk3) {
-      if (S.zoner && S.afventer === "tabt" && (id === "uf" || id === "tvunget" || id === "returfejl")) {
-        S.aarsagValgt = id; S.laengdeValgt = 0; render(); return;
-      }
-      S.aktiv.point.push({ r: S.afventer === "vundet" ? "V" : "T", å: id, f: S.serv, l: 0, z: 0 });
-      liveSend();
-      S.afventer = null; S.serv = 1; gemAktiv(); render(); return;
-    }
-    S.aarsagValgt = id; render();
+    const naeste = _efterSkaerm(id, S.afventer === "vundet");
+    if (naeste) { S.aarsagValgt = id; S.efterTryk = naeste; render(); return; }
+    _gemBold(id, 0, 0);
   },
-  laengde: (v) => {
+  haand: (v) => {
     if (!S.aktiv || !S.afventer || !S.aarsagValgt) return;
-    const l = [1,2,3].indexOf(+v) >= 0 ? +v : 0;
-    if (S.zoner && S.afventer === "tabt" && (S.aarsagValgt === "uf" || S.aarsagValgt === "tvunget")) {
-      S.laengdeValgt = l; render(); return;
-    }
-    S.aktiv.point.push({ r: S.afventer === "vundet" ? "V" : "T", å: S.aarsagValgt, f: S.serv, l: l, z: 0 });
-      liveSend();
-    S.afventer = null; S.aarsagValgt = null; S.serv = 1; gemAktiv(); render();
+    _gemBold(S.aarsagValgt, +v === 1 ? 1 : +v === 2 ? 2 : 0, 0);
   },
   zone: (v) => {
-    if (!S.aktiv || !S.afventer || !S.aarsagValgt || S.laengdeValgt === null) return;
-    S.aktiv.point.push({ r: "T", å: S.aarsagValgt, f: S.serv, l: S.laengdeValgt, z: [1,2,3].indexOf(+v) >= 0 ? +v : 0 });
-      liveSend();
-    S.afventer = null; S.aarsagValgt = null; S.laengdeValgt = null; S.serv = 1; gemAktiv(); render();
+    if (!S.aktiv || !S.afventer || !S.aarsagValgt) return;
+    _gemBold(S.aarsagValgt, 0, [1,2,3].indexOf(+v) >= 0 ? +v : 0);
+  },
+  haandzone: (v) => {
+    if (!S.aktiv || !S.afventer || !S.aarsagValgt) return;
+    const d = String(v).split("-");
+    _gemBold(S.aarsagValgt, [1,2].indexOf(+d[0]) >= 0 ? +d[0] : 0, [1,2,3].indexOf(+d[1]) >= 0 ? +d[1] : 0);
   },
   fortryd: () => {
     if (!S.aktiv) return;
-    if (S.laengdeValgt !== null) { S.laengdeValgt = null; if (!S.tryk3) S.aarsagValgt = null; render(); return; }
+    if (S.efterTryk) { S.efterTryk = null; S.aarsagValgt = null; render(); return; }
     if (S.aarsagValgt) { S.aarsagValgt = null; render(); return; }
     if (S.afventer) { S.afventer = null; render(); return; }
     if (S.aktiv.point.length) { S.aktiv.point.pop(); S.serv = 1; gemAktiv(); }
@@ -6496,10 +6539,9 @@ function _tegn() {
         '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--daempet)">⚙️ '+(EN?"ADVANCED — OPTIONAL":"AVANCERET — VALGFRIT")+'</div>' +
         '<p class="lille" style="margin:3px 0 9px">'+(EN?"Extra taps, extra data. Both can be toggled mid-match.":"Ekstra tryk, ekstra data. Begge kan slås til/fra midt i kampen.")+'</p>' +
         '<div class="raekke" style="margin-bottom:0">' +
-        '<button class="knap valg '+(S.tryk3?"til":"")+'" data-a="trykToggle">⏱ '+(EN?"Rally length":"Duel-længde")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.tryk3?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+'</span></button>' +
         '<button class="knap valg '+(S.zoner?"til":"")+'" data-a="zonerToggle">🗺 '+(EN?"Error zones":"Fejl-zoner")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.zoner?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+'</span></button>' +
         '</div></div>';
-      h += '<p class="lille" style="margin:2px 0 10px;opacity:.8">'+(EN?"Advanced = a third tap per ball registers rally length (rule IV data). Can be switched mid-match.":"Avanceret = et tredje tryk pr. bold registrerer duel-længden (bud IV-data). Kan skiftes midt i kampen.")+'</p>';
+      h += '<p class="lille" style="margin:2px 0 10px;opacity:.8">'+(EN?"Forehand or backhand is always asked on winners, free errors and return errors — one tap, and Skip is always there. With zones on it becomes ONE grid: the side and where the ball went, together.":"Forhånd eller baghånd spørges altid på vinderslag, gratis fejl og returfejl — ét tryk, og Spring over står der altid. Med zoner til bliver det ÉT gitter: siden og hvor bolden røg, på én gang.")+'</p>';
       h += '<div class="raekke"><button class="knap stor" style="background:var(--grus)" data-a="start">'+(EN?"Start match":"Start kamp")+'</button></div>';
         h += _wtilb(2);
       }
@@ -6528,7 +6570,6 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
 
       if (!st.done) {
         h += '<div class="raekke" style="margin-bottom:6px">' +
-          '<button class="knap valg'+(S.tryk3?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="trykToggle">⏱ '+(S.tryk3?(EN?"Length ON":"Længde TIL"):(EN?"Length OFF":"Længde FRA"))+'</button>' +
           '<button class="knap valg'+(S.zoner?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="zonerToggle">🗺 '+(S.zoner?(EN?"Zones ON":"Zoner TIL"):(EN?"Zones OFF":"Zoner FRA"))+'</button></div>';
         h += '<div class="raekke"><button class="knap valg '+(S.serv===1?"til":"")+'" data-a="serv" data-v="1">'+(EN?"1st serve":"1. serv")+'</button><button class="knap valg '+(S.serv===2?"gul":"")+'" data-a="serv" data-v="2">'+(EN?"2nd serve (first serve missed)":"2. serv (førsteserv fejlet)")+'</button></div>';
         if (!S.afventer) {
@@ -6543,18 +6584,30 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           if (!S.aarsagValgt) {
             h += '<p class="lille">'+(EN?'How did the ball end?':'Hvordan endte bolden?')+'</p><div class="raekke" style="flex-wrap:wrap">' +
               liste.map(([id,l,lp]) => '<button class="knap" style="flex:1 1 45%;padding:15px 6px;background:'+(vundet?"var(--vundet-dyb)":"var(--tabt-dyb)")+'" data-a="aarsag" data-v="'+id+'"'+(lp?' data-lp="'+lp+'"':"")+'>'+l+'</button>').join("") + '</div>';
-          } else if (S.laengdeValgt !== null) {
+          } else if (S.efterTryk === "zone") {
             h += '<p class="lille">'+(EN?'Where did the ball go?':'Hvor røg bolden?')+'</p><div class="raekke">' +
               '<button class="knap" style="padding:15px 6px;background:var(--flade)" data-a="zone" data-v="1">🥅<br>'+(EN?'Net':'Net')+'</button>' +
               '<button class="knap" style="padding:15px 6px;background:var(--flade)" data-a="zone" data-v="2">📏<br>'+(EN?'Out long':'Ud lang')+'</button>' +
               '<button class="knap" style="padding:15px 6px;background:var(--flade)" data-a="zone" data-v="3">↔️<br>'+(EN?'Out wide':'Ud bred')+'</button></div>' +
               '<div class="raekke"><button class="knap" style="padding:9px 6px;background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px" data-a="zone" data-v="0">'+(EN?'Skip':'Spring over')+'</button></div>';
+          } else if (S.efterTryk === "haandzone") {
+            // ⭐ v4.38.0 · ÉT GITTER I STEDET FOR TO SKÆRME. Siden og stedet
+            // hører sammen — det er krydset, motoren regner på, og det er
+            // dét, bestillingen handlede om: hvor fejlen i nettet ligger.
+            const _hz = function(sd, navn){ return '<div class="raekke" style="margin-bottom:6px">' +
+              '<div style="flex:0 0 46px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;letter-spacing:.5px;color:var(--is);background:var(--dyb);border-radius:10px;min-height:48px">'+navn+'</div>' +
+              [[1,'🥅',(EN?'Net':'Net')],[2,'📏',(EN?'Long':'Lang')],[3,'↔️',(EN?'Wide':'Bred')]].map(function(z){
+                return '<button class="knap" style="flex:1;min-height:48px;padding:8px 4px;font-size:11.5px;background:var(--flade)" data-a="haandzone" data-v="'+sd+'-'+z[0]+'">'+z[1]+'<br>'+z[2]+'</button>'; }).join("") + '</div>'; };
+            h += '<p class="lille">'+(EN?'Which side — and where did the ball go?':'Hvilken side — og hvor røg bolden?')+'</p>' +
+              _hz(1, EN?'FH':'FH') + _hz(2, EN?'BH':'BH') +
+              '<div class="raekke"><button class="knap" style="min-height:44px;padding:9px 6px;background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px" data-a="haandzone" data-v="1-0">'+(EN?'Forehand only':'Kun forhånd')+'</button>' +
+              '<button class="knap" style="min-height:44px;padding:9px 6px;background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px" data-a="haandzone" data-v="2-0">'+(EN?'Backhand only':'Kun baghånd')+'</button></div>' +
+              '<div class="raekke"><button class="knap" style="min-height:44px;padding:9px 6px;background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px" data-a="haandzone" data-v="0-0">'+(EN?'Skip — just save the point':'Spring over — gem bare pointet')+'</button></div>';
           } else {
-            h += '<p class="lille">'+(EN?'How long was the rally?':'Hvor lang var duellen?')+'</p><div class="raekke">' +
-              '<button class="knap" style="padding:15px 6px;background:var(--flade)" data-a="laengde" data-v="1">'+(EN?'Short<br>1-4 shots':'Kort<br>1-4 slag')+'</button>' +
-              '<button class="knap" style="padding:15px 6px;background:var(--flade)" data-a="laengde" data-v="2">'+(EN?'Medium<br>5-8':'Mellem<br>5-8')+'</button>' +
-              '<button class="knap" style="padding:15px 6px;background:var(--flade)" data-a="laengde" data-v="3">'+(EN?'Long<br>9+':'Lang<br>9+')+'</button></div>' +
-              '<div class="raekke"><button class="knap" style="padding:9px 6px;background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px" data-a="laengde" data-v="0">'+(EN?'Skip — just save the point':'Spring over — gem bare pointet')+'</button></div>';
+            h += '<p class="lille">'+(EN?'Forehand or backhand?':'Forhånd eller baghånd?')+'</p><div class="raekke">' +
+              '<button class="knap" style="padding:15px 6px;background:var(--flade)" data-a="haand" data-v="1">🎾<br>'+(EN?'Forehand':'Forhånd')+'</button>' +
+              '<button class="knap" style="padding:15px 6px;background:var(--flade)" data-a="haand" data-v="2">🎾<br>'+(EN?'Backhand':'Baghånd')+'</button></div>' +
+              '<div class="raekke"><button class="knap" style="min-height:44px;padding:9px 6px;background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px" data-a="haand" data-v="0">'+(EN?'Skip — just save the point':'Spring over — gem bare pointet')+'</button></div>';
           }
         }
       }
@@ -6611,7 +6664,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         '<p class="lille" style="margin:8px 0 4px">'+(EN?"Who serves the next ball?":"Hvem server næste bold?")+'</p>' +
         '<div class="raekke"><button class="knap valg '+(S.j.server?"til":"")+('" data-a="jServer" data-v="1">'+SPILLER+'</button><button class="knap valg ')+(!S.j.server?"til":"")+'" data-a="jServer" data-v="0">'+(EN?"Opponent":"Modstander")+'</button></div>' +
         '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="jAnvend">✔ '+(EN?"Apply adjustment":"Anvend justeringen")+'</button></div></div>' : '');
-      h += '<div class="kort statlinje">'+(EN?'Serve points won: ':'Serve vundet: ')+'<b>'+s.serve[0]+'/'+s.serve[1]+'</b> · '+(EN?'1st serve in: ':'1. serv i spil: ')+'<b>'+s.s1pct+' %</b> · '+(EN?'Return: ':'Retur: ')+'<b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>'+(EN?'Winners: ':'Vindere: ')+'<b style="color:var(--vundet)">'+s.vindere+'</b> · '+(EN?'Unforced errors: ':'Gratis fejl: ')+'<b style="color:'+(s.uf>s.vindere?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b> · '+(EN?'Break points: ':'Breakbolde: ')+'<b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b>'+(EN?' converted, ':' udnyttet, ')+'<b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b>'+(EN?' saved':' afværget')+'<br>'+(EN?'Rallies (won/played) — short: ':'Dueller (vundet/spillet) — korte: ')+'<b>'+s.dK[0]+'/'+s.dK[1]+'</b>'+(EN?' · medium: ':' · mellem: ')+'<b>'+s.dM[0]+'/'+s.dM[1]+'</b>'+(EN?' · long: ':' · lange: ')+'<b>'+s.dL[0]+'/'+s.dL[1]+'</b>'+(function(){ const sn = s.st.setsO + s.st.setsM + 1; const ps = s.perSaet[sn-1] || { v: 0, t: 0, uf: 0, vin: 0 }; return '<br>'+(EN?'This set: ':'Dette sæt: ')+'<b>'+ps.v+'-'+ps.t+'</b> · '+(EN?'UE ':'gratis fejl ')+'<b>'+ps.uf+'</b> · '+(EN?'winners ':'vindere ')+'<b>'+ps.vin+'</b>'; })()+(s.budIVbrud>1?' <span style="color:var(--tabt)">'+(EN?'· free errors in short rallies: ':'· gratis fejl i korte dueller: ')+s.budIVbrud+' (rule IV!)</span>':'')+'</div>';
+      h += '<div class="kort statlinje">'+(EN?'Serve points won: ':'Serve vundet: ')+'<b>'+s.serve[0]+'/'+s.serve[1]+'</b> · '+(EN?'1st serve in: ':'1. serv i spil: ')+'<b>'+s.s1pct+' %</b> · '+(EN?'Return: ':'Retur: ')+'<b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>'+(EN?'Winners: ':'Vindere: ')+'<b style="color:var(--vundet)">'+s.vindere+'</b> · '+(EN?'Unforced errors: ':'Gratis fejl: ')+'<b style="color:'+(s.uf>s.vindere?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b> · '+(EN?'Break points: ':'Breakbolde: ')+'<b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b>'+(EN?' converted, ':' udnyttet, ')+'<b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b>'+(EN?' saved':' afværget')+'<br>'+(s.haand.medSide?((EN?'<br>Free errors — forehand: ':'<br>Gratis fejl — forhånd: ')+'<b>'+s.haand.ufFH+'</b>'+(EN?' · backhand: ':' · baghånd: ')+'<b>'+s.haand.ufBH+'</b>'+' <span style="opacity:.65">('+s.haand.medSide+'/'+s.haand.muligIalt+')</span>'):'')+(function(){ const sn = s.st.setsO + s.st.setsM + 1; const ps = s.perSaet[sn-1] || { v: 0, t: 0, uf: 0, vin: 0 }; return '<br>'+(EN?'This set: ':'Dette sæt: ')+'<b>'+ps.v+'-'+ps.t+'</b> · '+(EN?'UE ':'gratis fejl ')+'<b>'+ps.uf+'</b> · '+(EN?'winners ':'vindere ')+'<b>'+ps.vin+'</b>'; })()+((s.haand.ufFH+s.haand.ufBH>=4 && Math.abs(s.haand.ufBH-s.haand.ufFH)>=2)?' <span style="color:var(--tabt)">'+(EN?'· mostly on the ':'· mest på ')+(s.haand.ufBH>s.haand.ufFH?(EN?'backhand':'baghånden'):(EN?'forehand':'forhånden'))+'</span>':'')+'</div>';
       h += '<input placeholder="'+(EN?'Result (auto-filled if empty)':'Resultat (udfyldes automatisk hvis tomt)')+'" value="'+esc(S.resInput)+'" data-felt="resInput">';
       h += '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="afslut">'+(EN?"✔ Finish &amp; save the match":"✔ Afslut &amp; gem kampen")+'</button></div>';
     }
@@ -6713,7 +6766,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
               kolon(EN?"Won 2nd serve %":"Vundet 2. serv %", pc(agA.s2), pc(agB.s2), true, pc(agAlle.s2)) +
               kolon(EN?"BP converted %":"BP udnyttet %", pc(agA.bpFor), pc(agB.bpFor), true, pc(agAlle.bpFor)) +
               kolon(EN?"BP saved %":"BP afværget %", pc(agA.bpMod), pc(agB.bpMod), true, pc(agAlle.bpMod)) +
-              kolon(EN?"Rule IV/match":"Bud IV/kamp", Math.round(agA.budIVbrud/(grAlle[A].length)), Math.round(agB.budIVbrud/(grAlle[Bn].length)), false, Math.round(agAlle.budIVbrud/nAlle));
+              kolon(EN?"Free errors BH/match":"Gratis fejl baghånd/kamp", Math.round(agA.ufBH/(grAlle[A].length)), Math.round(agB.ufBH/(grAlle[Bn].length)), false, Math.round(agAlle.ufBH/nAlle));
             })() +
             '</table></div>';
           // Hvem kræver hvad — automatisk tekst
@@ -7004,7 +7057,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       dom(EN?"Winners":"Vindere", sa.vindere, sb.vindere, true);
       dom("1. serv", sa.s1pct, sb.s1pct, true, " pp");
       dom(EN?"BP converted":"BP udnyttet", pctAf(sa.bpFor), pctAf(sb.bpFor), true, " pp");
-      dom(EN?"Rule IV breaches":"Bud IV-brud", sa.budIVbrud, sb.budIVbrud, false);
+      if (sa.haand.medSide && sb.haand.medSide) dom(EN?"Free errors backhand":"Gratis fejl på baghånden", sa.haand.ufBH, sb.haand.ufBH, false);
       const pille = function(t, farve){ return '<span style="display:inline-block;background:transparent;border:1.5px solid '+farve+';color:'+farve+';font-size:11px;font-weight:700;padding:3px 8px;border-radius:12px;margin:2px 4px 2px 0">'+t+'</span>'; };
       h += '<div class="kort" style="border-left:3px solid var(--is)"><h3><span class="badge-ai">AI</span> 🧭 '+(EN?"Latest match vs previous":"Seneste kamp mod forrige")+'</h3>' +
         (frem.length ? '<p style="margin-bottom:2px;font-size:11px;color:var(--daempet)">'+(EN?"THE RIGHT WAY":"DEN RIGTIGE VEJ")+'</p><p style="margin-bottom:6px">'+frem.map(function(t){return pille("✓ "+t, "var(--vundet)");}).join("")+'</p>' : '') +

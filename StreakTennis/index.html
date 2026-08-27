@@ -423,7 +423,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.39.0 · 27. august 2026";
+const VERSION = "v4.41.0 · 27. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1234,7 +1234,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -1325,6 +1325,13 @@ try { if (lager.hent("sai-laas") === "op") S.laast = false; } catch(e) {}
 // v4.38.0: duel-laengde-togglen findes ikke mere. Noeglen "sai-tryk"
 // bliver liggende i lageret — den laeses bare aldrig igen.
 try { if (lager.hent("sai-zoner") === "1") S.zoner = true; } catch(e) {}
+// ⭐⭐ v4.41.0 · SKADEN BOR PAA TELEFONEN OG INTET ANDET STED.
+// `gdpr-notat-v01.md` afsnit 2 lover skriftligt, at SKADESREGISTRERING
+// ikke behandles og er teknisk blokeret. Det loefte holder kun, hvis
+// tilstanden aldrig rejser. Den gemmes derfor som en DATO i lageret —
+// ingen diagnose, ingen fritekst, ingen kropsdel. Kun: fra hvornaar.
+try { const _sk = lager.hent("sai-skadet");
+  if (_sk && /^\d{4}-\d{2}-\d{2}$/.test(_sk)) S.skadet = _sk; } catch(e) {}
 try { const fl = JSON.parse(lager.hent("sai-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = sikrePasId(sorterNyestFoerst(fl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d")); } catch(e) {}
 try { const tl = JSON.parse(lager.hent("sai-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = sikrePasId(sorterNyestFoerst(tl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d")); } catch(e) {}
 try { S.stigeTilvalgt = lager.hent("sai-stige-tilvalgt") === "1"; } catch(e) {}
@@ -1505,6 +1512,13 @@ const VENNESNAK_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/ven
 const LAGER_URL   = "https://dihzphfsffritfszqkko.supabase.co/storage/v1";
 const BIL_MAKS_KANT = 1600;   // px paa laengste led
 const BIL_KVALITET  = 0.82;
+// ⭐ v4.40.0 · ET BILLEDE I EN CHAT ER MINDRE END ET PAA EN KAMP.
+// Et kampbillede skal kunne zoomes i; en chatbesked skal kunne SENDES
+// paa en klubs daarlige wifi og ses én gang. Motoren afviser over
+// 1,2 MB paa en samtale — saa maaler vi det HER i stedet for at lade
+// barnet vente paa et 413.
+const BIL_CHAT_KANT = 1280;
+const BIL_CHAT_MAKS = 1200000;
 
 // ⚠️⚠️ HER FORSVINDER GPS'EN.
 // Et billede fra en telefon baerer EXIF: banens position, tidspunktet,
@@ -1516,7 +1530,7 @@ const BIL_KVALITET  = 0.82;
 //
 // Samtidig skrumper det: 4 MB fra en iPhone bliver til ca. 250 KB. Det er
 // forskellen paa, om en upload virker paa en klubs daarlige wifi.
-function bilKlargoer(fil) {
+function bilKlargoer(fil, kant, loft) {
   return new Promise(function (svar, afvis) {
     if (!fil || !/^image\//.test(fil.type || "")) { afvis(new Error("ikke et billede")); return; }
     const laeser = new FileReader();
@@ -1527,17 +1541,29 @@ function bilKlargoer(fil) {
       bil.onload = function () {
         try {
           let b = bil.naturalWidth, h = bil.naturalHeight;
-          const f = Math.min(1, BIL_MAKS_KANT / Math.max(b, h));
+          const f = Math.min(1, (kant || BIL_MAKS_KANT) / Math.max(b, h));
           b = Math.round(b * f); h = Math.round(h * f);
           const l = document.createElement("canvas");
           l.width = b; l.height = h;
           const c = l.getContext("2d");
           c.fillStyle = "#000"; c.fillRect(0, 0, b, h);
           c.drawImage(bil, 0, 0, b, h);
-          l.toBlob(function (klump) {
-            if (!klump) { afvis(new Error("kunne ikke gemme")); return; }
-            svar(klump);
-          }, "image/jpeg", BIL_KVALITET);
+          // ⭐ v4.40.0 · Rammer vi ikke loftet, saenkes kvaliteten og der
+          // proeves igen. Fem forsoeg er rigeligt: 0.82 → 0.34 halverer
+          // filen flere gange. Under 0.34 bliver et ansigt til gryn, og
+          // saa er det bedre at sige fra end at sende noget grimt.
+          const gulv = 0.34;
+          const proev = function (kval) {
+            l.toBlob(function (klump) {
+              if (!klump) { afvis(new Error("kunne ikke gemme")); return; }
+              if (loft && klump.size > loft && kval > gulv) {
+                proev(Math.round((kval - 0.12) * 100) / 100); return;
+              }
+              if (loft && klump.size > loft) { afvis(new Error("for stort")); return; }
+              svar(klump);
+            }, "image/jpeg", kval);
+          };
+          proev(BIL_KVALITET);
         } catch (e) { afvis(e); }
       };
       bil.src = laeser.result;
@@ -3495,10 +3521,21 @@ const A = {
     const EN = S.sprog === "en";
     const dele = S.bilEmne.split("|");
     const emneType = dele[0], emneId = dele[1] || "";
+    // ⭐⭐ v4.40.0 · EN SAMTALE ER ET EMNE — men dens adresse regnes paa
+    // SERVEREN. Appen sender et vennehaandtag eller et rum-id; motoren
+    // laver selv den symmetriske adresse ud af de to spillernoegler, den
+    // er den eneste der kender. Sendte appen adressen, skulle den kende
+    // begge noegler — og det maa den ikke.
+    const samtale = (emneType === "snak" || emneType === "rum");
+    const pege = emneType === "snak" ? { ven: emneId }
+               : emneType === "rum" ? { rum: emneId }
+               : { emne_id: emneId };
     S.bilSender = true; S.bilBesked = { t: EN ? "Preparing…" : "Gør billedet klar…" }; render();
     try {
-      const klump = await bilKlargoer(fil);
-      const lov = await A.bilKald("lov", { emne_type: emneType, emne_id: emneId, bytes: klump.size });
+      const klump = await bilKlargoer(fil,
+        samtale ? BIL_CHAT_KANT : BIL_MAKS_KANT,
+        samtale ? BIL_CHAT_MAKS : 0);
+      const lov = await A.bilKald("lov", Object.assign({ emne_type: emneType, bytes: klump.size }, pege));
       if (lov.fejl) {
         S.bilSender = false;
         S.bilBesked = { fejl: true, t: lov.fejl === "loft-emne"
@@ -3512,14 +3549,21 @@ const A = {
       const op = await fetch(LAGER_URL + "/object/upload/sign/billeder/" + lov.sti + "?token=" + encodeURIComponent(lov.token),
         { method: "PUT", headers: { "content-type": "image/jpeg" }, body: klump });
       if (!op.ok) throw new Error("upload " + op.status);
-      const f = await A.bilKald("faerdig", { id: lov.id });
+      const f = await A.bilKald("faerdig", Object.assign({ id: lov.id }, pege));
       S.bilSender = false;
       if (f.fejl) {
         S.bilBesked = { fejl: true, t: EN ? "The picture did not arrive — try again." : "Billedet kom ikke frem — prøv igen." };
       } else {
-        S.bilBesked = { t: EN ? "Picture saved ✅" : "Billedet er gemt ✅" };
-        delete S.bilPr[S.bilEmne];
-        A.bilHent(S.bilEmne);
+        if (samtale) {
+          // ⭐ Ingen kvittering med et flueben her: beskedboblen ER
+          // kvitteringen, og den kommer af sig selv ved genhentningen.
+          S.bilBesked = null;
+          _samtaleGenhent(emneType);
+        } else {
+          S.bilBesked = { t: EN ? "Picture saved ✅" : "Billedet er gemt ✅" };
+          delete S.bilPr[S.bilEmne];
+          A.bilHent(S.bilEmne);
+        }
       }
       render();
     } catch (e) {
@@ -3537,6 +3581,69 @@ const A = {
     S.bilHenter[n] = false;
     S.bilPr[n] = r.fejl ? [] : (r.billeder || []);
     render();
+  },
+  // ⭐⭐ v4.40.0 · AABN ÉN GANG. Svaret er ikke JSON og ikke et link —
+  // det er selve billedet. Et link kunne sendes videre og virke bagefter;
+  // bytes kan ikke. Serveren sletter filen i samme aandedrag, den sender
+  // den, naar den sidste modtager har aabnet.
+  //
+  // ⚠️ Adressen (URL.createObjectURL) lever KUN i denne fane og doer med
+  // `bilLuk`. Den peger paa hukommelse, ikke paa noget paa serveren.
+  bilAabn: async (v) => {
+    const id = String(v || "");
+    const pege = _bilPeg();
+    if (!id || !pege || S.bilVisHenter || !S.spillerNoegle) return;
+    const EN = S.sprog === "en";
+    S.bilVisHenter = id; S.bilVisBesked = null; S.bilTraekId = null; render();
+    const st = new AbortController(); const ur = setTimeout(function(){ st.abort(); }, 30000);
+    try {
+      const r = await fetch(BILLEDE_URL, { method: "POST", signal: st.signal,
+        headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+        body: JSON.stringify(Object.assign({ handling: "se", id: id }, pege)) });
+      clearTimeout(ur);
+      if (!r.ok) {
+        // ⭐ 404 er ikke en fejl her — det er reglen, der har virket.
+        S.bilVisHenter = null;
+        S.bilVisBesked = { fejl: true, t: EN ? "The picture is gone." : "Billedet er væk." };
+        render(); _samtaleGenhent(); return;
+      }
+      const klump = await r.blob();
+      if (S.bilVisUrl) { try { URL.revokeObjectURL(S.bilVisUrl); } catch (_e) {} }
+      S.bilVisUrl = URL.createObjectURL(klump);
+      S.bilVisId = id; S.bilVisHenter = null; render();
+    } catch (e) {
+      clearTimeout(ur);
+      S.bilVisHenter = null;
+      S.bilVisBesked = { fejl: true, t: EN ? "Could not open the picture." : "Kunne ikke åbne billedet." };
+      render();
+    }
+  },
+  bilLuk: () => {
+    if (S.bilVisUrl) { try { URL.revokeObjectURL(S.bilVisUrl); } catch (_e) {} }
+    S.bilVisUrl = null; S.bilVisId = null; render();
+    // Boblen skal skifte til "Set" med det samme — ellers ser det ud, som
+    // om billedet stadig kan aabnes, og det kan det ikke.
+    _samtaleGenhent();
+  },
+  bilTraekSpoerg: (v) => { S.bilTraekId = String(v || ""); render(); },
+  bilTraekNej: () => { S.bilTraekId = null; render(); },
+  bilTraekJa: async () => {
+    const id = S.bilTraekId; const pege = _bilPeg();
+    S.bilTraekId = null; render();
+    if (!id || !pege) return;
+    const EN = S.sprog === "en";
+    const r = await A.bilKald("traek", Object.assign({ id: id }, pege));
+    if (r.fejl === "set") {
+      S.bilVisBesked = { fejl: true, t: EN
+        ? "Too late — it has been seen." : "For sent — den er allerede set." };
+    }
+    _samtaleGenhent(); render();
+  },
+  bilAnmeld: async (v) => {
+    const id = String(v || ""); const pege = _bilPeg();
+    if (!id || !pege) return;
+    await A.bilKald("anmeld", Object.assign({ id: id }, pege));
+    _samtaleGenhent();
   },
   bilSletSpoerg: (v) => { S.bilSletB = String(v || ""); S.bilDelId = null; render(); },
   bilSletFortryd: () => { S.bilSletB = null; render(); },
@@ -3564,6 +3671,58 @@ const A = {
         (S.bilPr[n] || []).forEach(function(b){ if (b.id === id) b.delt_i = rum || null; }); });
     }
     render();
+  },
+
+  // ⭐⭐ v4.41.0 · SKADET TIL/FRA.
+  //
+  // ⚠️⚠️ DER SENDES INGEN SKADE TIL SERVEREN. Det eneste, der rejser, er
+  // en BESKEDINDSTILLING, der fandtes i forvejen: streak-kontakten slaas
+  // fra. Den siger intet om helbred — den kunne lige saa godt betyde
+  // ferie — og `gdpr-notat`s loefte om, at skadesregistrering ikke
+  // behandles, staar dermed uroert.
+  //
+  // ⭐ Og hvis telefonen ikke har notifikationer slaaet til, sker der
+  // bare ingenting paa serveren. Kortet virker alligevel.
+  skadetTil: async () => {
+    const idag = new Date().toISOString().slice(0, 10);
+    S.skadet = idag;
+    try { lager.gem("sai-skadet", idag); } catch (e) {}
+    S.skadetSender = true; render();
+    await A.skadetKontakt(false);
+    S.skadetSender = false; render();
+  },
+  skadetFra: async () => {
+    S.skadet = null;
+    try { lager.fjern ? lager.fjern("sai-skadet") : localStorage.removeItem("sai-skadet"); }
+    catch (e) { try { localStorage.removeItem("sai-skadet"); } catch (_e) {} }
+    S.skadetSender = true; render();
+    await A.skadetKontakt(true);
+    S.skadetSender = false; render();
+  },
+  // Én vej ind til den ene kontakt, saa de to knapper ikke kan komme til
+  // at goere to forskellige ting.
+  skadetKontakt: async (til) => {
+    try {
+      // ⚠️⚠️ FANGET AF PRØVEN: `S.push` HENTES KUN I INDSTILLINGER.
+      // Skadekortet staar paa TRAEN, hvor `S.push` var null — og saa
+      // faldt hele funktionen stiltiende igennem. Fredagens streak-besked
+      // ville altsaa vaere gaaet ud til et skadet barn ALLIGEVEL, selv om
+      // knappen sagde, den var slaaet fra. En knap, der lyver, er vaerre
+      // end ingen knap.
+      // ⭐ Hegnet foelger med: samme O2-betingelse som i `tab()` — har man
+      // aldrig raakt ud, rejser der stadig intet.
+      if (S.push === null && S.spillerNoegle && pushMulig()
+          && (S.klubKode || S.venneAktiv || lager.hent("sai-inviteret") === "1")) {
+        await A.pushHent();
+      }
+      // Har telefonen slet ikke sagt ja til notifikationer, er der intet
+      // at slaa fra — og kortet virker alligevel.
+      if (!S.push || !S.push.typer || !("streak" in S.push.typer)) return;
+      if (S.push.typer.streak === !!til) return;
+      const typer = Object.assign({}, S.push.typer, { streak: !!til });
+      S.push = Object.assign({}, S.push, { typer: typer });
+      await A.pushKald("typer", { typer: typer });
+    } catch (e) {}
   },
 
   pushType: async (v) => {
@@ -3679,6 +3838,10 @@ const A = {
       S.chatVenLaest = r.ven_laest || null;
       // ⭐ v4.30.0 · begge sider af 1:1'eren, regnet ét sted.
       S.chatKort = r.kort || null;
+      // ⭐ v4.41.0 · Kommer man fra en notifikation, er vennelisten
+      // maaske ikke hentet endnu, og overskriften stod tom. Navnet
+      // ligger i det spillerkort, serveren lige har sendt.
+      if (!S.chatNavn && r.kort && r.kort.ven && r.kort.ven.navn) S.chatNavn = r.kort.ven.navn;
       // At hente samtalen ER at laese den — derfor nulstilles taelleren
       // her og ikke ved et tryk paa noget.
       if (S.ulaest && S.ulaest[S.chatVen]) {
@@ -4707,6 +4870,143 @@ function _dagPaa(tid, EN) {
 // `p.pre` er handlingernes praefiks ("snak" eller "chat"), saa de to
 // samtaler rammer hver deres handlinger — men tegnes af samme kode.
 // `p.alle` afgoer ordlyden: et rum har vidner, en 1:1 har det ikke.
+// ⭐ v4.40.0 · KAMERAKNAPPEN. Samme mekanik som paa kampkortet: en
+// <label>, der peger paa den ene filvaelger, som ligger UDEN FOR #app og
+// derfor overlever en tegning. `bilEmne` saettes paa klikket uden at
+// tegne — tegner vi her, forsvinder det element, browseren er ved at
+// aabne vaelgeren fra.
+// ══════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v4.41.0 · RUTEN — HVOR EN NOTIFIKATION LANDER
+//
+// Nicolai 27/8: «Pop-up beskederne går ikke ind på et relevant sted. Så
+// når Oskar har sendt en besked åbner den bare appen. Den skal jo gå til
+// beskeder. Og så fremdeles.»
+//
+// ⭐ Fejlen sad TO steder, og begge er rettet:
+//   · `push-puls` sendte `sti: "./"` paa ALLE syv kilder (v7 sender nu
+//     en rigtig rute)
+//   · `sw.js` kaldte `focus()` og smed stien vaek (v5 sender den ind
+//     til appen med postMessage)
+// Denne funktion er den tredje del: den, der tager imod.
+//
+// ⚠️ RUTEN ER EN LUKKET LISTE. Der er ingen «gaa til det, der staar i
+// adressen» — kun disse ord. En rute udefra kan derfor ikke pege et barn
+// et sted hen, appen ikke selv har defineret. Kendes ordet ikke, sker
+// der ingenting, og man bliver staaende, hvor man er.
+function __saiRute(raa) {
+  var v = String(raa || "").trim();
+  if (!v) return false;
+  try {
+    if (v.indexOf("gaa=") >= 0) {
+      var q = v.indexOf("?") >= 0 ? v.slice(v.indexOf("?")) : "?" + v;
+      v = new URLSearchParams(q).get("gaa") || "";
+    }
+  } catch (_e) {}
+  v = String(v || "").trim();
+  if (!v) return false;
+  var d = v.split(":"), hvad = d[0], arg = d.slice(1).join(":");
+  try {
+    // ⭐ En samtale aabnes med det HAANDTAG, appen i forvejen kender.
+    // Ruten baerer aldrig en spillernoegle — telefonen holder ikke et
+    // andet barns noegle, og en notifikation maa ikke aendre paa det.
+    if (hvad === "chat" && /^[0-9a-f]{16}$/.test(arg)) {
+      if (S.rolle === "familie") return false;   // Signe-reglen
+      var _v = (S.venner || []).filter(function (x) { return x && x.id === arg; })[0];
+      A.chatAabn(arg + "|" + ((_v && _v.fornavn) || ""));
+      return true;
+    }
+    if (hvad === "rum" && /^[0-9a-f-]{36}$/.test(arg)) {
+      if (S.rolle === "familie") return false;
+      var _g = (S.grListe || []).filter(function (x) { return x && x.id === arg; })[0];
+      A.snakAabn(arg + "|" + ((_g && _g.navn) || ""));
+      return true;
+    }
+    // ⚠️⚠️ FANGET AF PRØVEN: EN RUTE SKAL BRUGE APPENS EGNE DØRE.
+    // Første udkast satte bare `S.tab` og tegnede. Skærmen kom frem — TOM.
+    // `stigeAabn()` og `tab()` gør nemlig mere end at skifte faneblad: de
+    // henter vennelisten, rummene, buddene og porten, og de bærer hvert
+    // deres O2-hegn («har man aldrig rakt ud, rejser der intet»).
+    // ⭐ En genvej, der springer døren over, springer også hegnet over.
+    S.verden = "udv";
+    if (hvad === "venner") {
+      A.stigeAabn(); S.zonePanel = "venner";
+      render(); if (A.ulaestHent) A.ulaestHent(); return true;
+    }
+    if (hvad === "stige")   { A.stigeAabn(); return true; }
+    if (hvad === "traen")   { A.tab("fysisk"); return true; }
+    if (hvad === "traener") { A.tab("traener"); return true; }
+    if (hvad === "stats")   { A.tab("historik"); return true; }
+    if (hvad === "port") {
+      A.tab("opsaet"); S.opsAaben = "ejer"; render();
+      if (A.ejerHent && S.portStatus && S.portStatus.ejer) A.ejerHent();
+      return true;
+    }
+  } catch (_e) {}
+  return false;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ⭐⭐ v4.41.0 · «JEG ER SKADET» — OG HVORFOR DET IKKE ER EN PAUSE
+//
+// Nicolai 27/8: «det er faktisk vigtig man træner imens man er skadet.
+// Måske ikke tennis - men styrke. Det skal app'en gøre spilleren
+// opmærksom på.»
+//
+// ⭐⭐ MAALT FOERST, OG DET AENDREDE HELE OPGAVEN: `_streakDage()` taeller
+// `fysLog` OG `ttLog`. `_traeningsLog()` sender begge arter op. `push-puls`
+// taeller alle poster. **Styrke holder ALLEREDE streaken i live** — i
+// appen og paa serveren. Der var ingen mekanik at bygge om.
+//
+// ⇒ Skaden er derfor et KORT, ikke en ombygning. Det eneste, der manglede,
+//   var at appen sagde det hoejt paa det tidspunkt, hvor det betyder noget.
+//
+// ⚠️ OG DET, KORTET IKKE GOER: det stiller ingen diagnose, spoerger ikke
+// hvad man fejler, og fortaeller ikke nogen, hvad de maa traene. Det ene
+// menneske, der kan svare paa dét, er ikke en app.
+function _skadetKort(EN) {
+  if (S.skadet) {
+    return '<div class="kort" style="border:1.5px solid var(--guld);margin-bottom:10px">' +
+      '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--guld);margin-bottom:6px">' +
+      '\ud83e\ude79 ' + (EN ? "INJURED \u2014 BUT NOT OUT" : "SKADET \u2014 MEN IKKE UDE") + '</div>' +
+      '<p class="lille" style="margin:0 0 8px;line-height:1.55">' + (EN
+        ? "<b>Strength counts in your streak \u2014 exactly like tennis.</b> Three sessions a week; they do not have to be on court. Your streak keeps running while you get well."
+        : "<b>Styrke t\u00e6ller i din streak \u2014 pr\u00e6cis som tennis.</b> Tre pas om ugen, og de beh\u00f8ver ikke at v\u00e6re p\u00e5 banen. Din streak l\u00f8ber videre, mens du bliver rask.") + '</p>' +
+      '<p class="lille" style="margin:0 0 10px;opacity:.7;line-height:1.5">' + (EN
+        ? "Ask your coach or physio what you may train. And: we do not store what is wrong \u2014 only that you turned the streak reminders off."
+        : "Sp\u00f8rg din tr\u00e6ner eller fysioterapeut, hvad du m\u00e5 tr\u00e6ne. Og: vi gemmer ikke, hvad du fejler \u2014 kun at du har slukket streak-p\u00e5mindelserne.") + '</p>' +
+      '<button class="knap valg" style="min-height:44px" data-a="skadetFra">' +
+      (S.skadetSender ? "\u23f3 \u2026" : (EN ? "I am well again" : "Jeg er rask igen")) + '</button></div>';
+  }
+  return '<p class="lille" style="margin:0 0 10px;text-align:right">' +
+    '<span data-a="skadetTil" style="cursor:pointer;opacity:.65;text-decoration:underline">\ud83e\ude79 ' +
+    (EN ? "I am injured" : "Jeg er skadet") + '</span></p>';
+}
+
+function _kameraKnap(EN) {
+  const emne = _bilEmneNu();
+  if (!emne || !_maaBillede()) return "";
+  return '<label for="bil-fil" class="knap valg" data-a="bilEmne" data-v="' + esc(emne) + '" ' +
+    'style="flex:none;display:inline-flex;align-items:center;justify-content:center;' +
+    'width:52px;min-height:44px;padding:0;font-size:19px;cursor:pointer" ' +
+    'title="' + (EN ? "Send a picture" : "Send et billede") + '">' +
+    (S.bilSender ? "\u23f3" : "\ud83d\udcf7") + '</label>';
+}
+
+// ⚠️⚠️ LINJEN, DER IKKE MAA FJERNES.
+// Vi kan slette filen. Vi kan IKKE forhindre et skaermbillede. Staar der
+// kun \u00abslettes naar den er set\u00bb, har vi lovet noget, vi ikke kan holde —
+// og det er praecis den slags, Julie skal kunne staa inde for.
+function _billedLoefte(EN) {
+  if (!_bilEmneNu() || !_maaBillede()) return "";
+  const b = (S.bilBesked && S.bilEmne === _bilEmneNu()) ? S.bilBesked : null;
+  return (b ? '<p class="lille" style="margin:6px 2px 0;color:' +
+      (b.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(b.t) + '</p>' : '') +
+    (S.bilVisBesked ? '<p class="lille" style="margin:6px 2px 0;color:var(--tabt)">' + esc(S.bilVisBesked.t) + '</p>' : '') +
+    '<p class="lille" style="margin:6px 2px 0;opacity:.6;font-size:10.5px;line-height:1.45">\ud83d\udcf7 ' + (EN
+      ? "A picture can be seen once and is deleted then. We do not keep it \u2014 but we cannot stop a screenshot."
+      : "Et billede kan ses \u00e9n gang og slettes s\u00e5. Vi gemmer det ikke \u2014 men vi kan ikke forhindre et sk\u00e6rmbillede.") + '</p>';
+}
+
 function _snakListe(liste, p, EN) {
   const L = (liste || []).slice(-60);
   if (!L.length) return "";
@@ -4791,6 +5091,58 @@ function _snakListe(liste, p, EN) {
       if (p.sletId === b.id) {
         h += spoerg(EN ? "Delete your reaction?" : "Slet din reaktion?", P + "SletJa", EN ? "Delete" : "Slet", P + "SletNej");
       }
+      return;
+    }
+
+    // ── ET BILLEDE ER EN BESKED, IKKE ET ARKIV (v4.40.0) ─────────────
+    // Boblen baerer ikke billedet — den baerer en DOER til det. Bytes
+    // kommer foerst, naar man trykker, og kun én gang. Derfor er der
+    // heller ingen forhaandsvisning: en forhaandsvisning ER at have set
+    // det, og saa ville reglen vaere brudt, foer nogen roerte noget.
+    if (b.art === "b") {
+      sidsteAf = null;
+      const bid = esc(String(b.tekst || ""));
+      const st = String(b.billede || "vaek");
+      const henter = S.bilVisHenter === String(b.tekst);
+      const vaek = (st !== "klar");
+      const linje = st === "set" ? (EN ? "Seen \u00b7 the picture is gone" : "Set \u00b7 billedet er v\u00e6k")
+        : st === "vaek" ? (EN ? "The picture is gone" : "Billedet er v\u00e6k")
+        : mig ? (EN ? "Sent \u00b7 not opened yet" : "Sendt \u00b7 ikke \u00e5bnet endnu")
+        : (EN ? "Can be seen once" : "Kan ses \u00e9n gang");
+      h += '<div style="display:flex;justify-content:' + (mig ? "flex-end" : "flex-start") + ';margin-top:7px">' +
+        '<div style="max-width:82%;min-width:0;display:flex;flex-direction:column;align-items:' +
+          (mig ? "flex-end" : "flex-start") + '">' +
+        (!mig ? '<span class="lille" style="margin:0 0 3px 11px;color:var(--is);font-weight:700">' + esc(b.fornavn) + '</span>' : '') +
+        '<div style="background:' + (mig ? "var(--grus)" : "var(--flade)") + ';border:1px solid ' +
+          (vaek ? "var(--kant)" : (mig ? "var(--grus)" : "var(--is)")) +
+          ';border-radius:16px;padding:9px 12px;' + (vaek ? "opacity:.6" : "") + '">' +
+        '<div style="font-size:14.5px;font-weight:700;margin-bottom:2px">\ud83d\udcf7 ' +
+          (EN ? "Picture" : "Billede") + '</div>' +
+        '<div class="lille" style="margin:0">' + linje + '</div>' +
+        (vaek ? '' :
+          '<button class="knap" style="margin-top:7px;min-height:44px;padding:0 14px;background:var(--grus)" ' +
+          'data-a="bilAabn" data-v="' + bid + '">' +
+          (henter ? "\u23f3 \u2026" : (mig ? (EN ? "See it" : "Se det") : (EN ? "Open" : "\u00c5bn"))) + '</button>') +
+        (!vaek && mig ?
+          '<button class="knap valg" style="margin-top:5px;min-height:44px;padding:0 12px;font-size:12.5px;color:var(--tabt);border-color:var(--tabt)" ' +
+          'data-a="bilTraekSpoerg" data-v="' + bid + '">\ud83d\uddd1 ' + (EN ? "Take back" : "Tr\u00e6k tilbage") + '</button>' : '') +
+        '</div>' +
+        '<span class="lille" style="margin:3px 3px 0;opacity:.6">' + esc(_klokPaa(b.tid, EN)) + '</span>' +
+        (S.bilTraekId === String(b.tekst)
+          ? spoerg(EN ? "Take the picture back? It is gone for good."
+                      : "Tr\u00e6k billedet tilbage? Det er v\u00e6k for altid.",
+                   "bilTraekJa", EN ? "Take back" : "Tr\u00e6k tilbage", "bilTraekNej")
+          : '') +
+        // ⚠️⚠️ FANGET AF PRØVEN: ⚑ SKAL OGSÅ STÅ PÅ EN «SET» BOBLE.
+        // Første udkast viste kun ⚑ på et UÅBNET billede. Men i et rum med
+        // fem er det netop DEN, der lige har åbnet, som ved, at der er noget
+        // galt — og de fire andre har stadig deres åbning til gode. Kunne
+        // han ikke anmelde bagefter, kunne han ikke beskytte dem.
+        // (Er billedet allerede væk, svarer motoren 404, og intet sker.)
+        (!mig && st !== "vaek"
+          ? '<button class="knap valg" style="margin-top:4px;min-height:44px;padding:0 12px;font-size:12.5px;color:var(--tabt);border-color:var(--tabt)" data-a="bilAnmeld" data-v="' + bid + '">\u2691 ' + (EN ? "Report" : "Rapport\u00e9r") + '</button>'
+          : '') +
+        '</div></div>';
       return;
     }
 
@@ -4909,6 +5261,57 @@ function _maaBillede() {
   if (S.rolle === "familie" || !S.spillerNoegle) return false;
   if (S.portStatus) return !!S.portStatus.kendt && S.portStatus.status === "godkendt";
   try { return lager.hent("sai-inviteret") === "1"; } catch (_e) { return false; }
+}
+
+// ⭐⭐ v4.40.0 · DE ENESTE TO STEDER, HVOR NAVNENE OVERSAETTES.
+//
+// ⚠️⚠️ motorens "snak" = VENNE-chatten · appens "snak" = RUMMETS chat.
+// Ordene peger modsat, og det er en faelde, der kun kan undgaas ved at
+// have ét sted, hvor oversaettelsen staar. Det er her.
+//
+//   skaerm S.tab = "chat"     → S.chatVen  (16 hex) → motor { ven }   → emne_type "snak"
+//   skaerm S.tab = "rumsnak"  → S.snakRum  (uuid)   → motor { rum }   → emne_type "rum"
+//
+// ⭐ Og bemaerk HVORFOR appen ikke selv kan regne adressen: telefonen
+// holder ALDRIG et andet barns spillernoegle. Den har kun et haandtag.
+// Adressen udledes derfor paa serveren, af noegler kun den kender.
+function _bilPeg() {
+  if (S.tab === "chat" && S.chatVen) return { ven: S.chatVen };
+  if (S.tab === "rumsnak" && S.snakRum) return { rum: S.snakRum };
+  return null;
+}
+function _bilEmneNu() {
+  if (S.tab === "chat" && S.chatVen) return "snak|" + S.chatVen;
+  if (S.tab === "rumsnak" && S.snakRum) return "rum|" + S.snakRum;
+  return "";
+}
+function _samtaleGenhent(emneType) {
+  const t = emneType || (S.tab === "chat" ? "snak" : S.tab === "rumsnak" ? "rum" : "");
+  if (t === "snak" && A.chatHent) A.chatHent();
+  else if (t === "rum" && A.snakHent) A.snakHent();
+}
+
+// ⭐⭐ v4.40.0 · BILLEDET PAA SKAERMEN. Det ligger over alt andet, fordi
+// det er dét, man kom for — og fordi der ikke skal kunne trykkes paa noget
+// bagved, mens det staar aabent.
+//
+// ⚠️ Der er INGEN gem-knap og ingen deling. Ikke fordi det ville vaere
+// svaert, men fordi loeftet er, at billedet forsvinder. En gem-knap ville
+// goere loeftet usandt paa den ene skaerm, hvor det betyder mest.
+function _bilVis(EN) {
+  if (!S.bilVisUrl) return "";
+  // ⚠️ FANGET AF PRØVEN: uden et id ramte prøven appens LOGO (en data:-PNG)
+  // i stedet for billedet. En prøve, der maaler det forkerte element, staar
+  // groen uden daekning — derfor har baade rammen og billedet et navn.
+  return '<div id="bil-vis" style="position:fixed;inset:0;z-index:60;background:rgba(4,8,14,.96);' +
+    'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px">' +
+    '<img id="bil-vis-billede" src="' + esc(S.bilVisUrl) + '" alt="" style="max-width:100%;max-height:76vh;' +
+    'border-radius:14px;border:1px solid var(--kant);object-fit:contain">' +
+    '<p class="lille" style="margin:10px 6px 0;text-align:center;max-width:420px;line-height:1.5">' + (EN
+      ? "Seen once — it is deleted now. We do not keep it. We cannot stop a screenshot."
+      : "Set én gang — det er slettet nu. Vi gemmer det ikke. Vi kan ikke forhindre et skærmbillede.") + '</p>' +
+    '<button class="knap" style="margin-top:12px;max-width:260px;min-height:48px;background:var(--grus)" data-a="bilLuk">' +
+    (EN ? "Close" : "Luk") + '</button></div>';
 }
 
 function _bilStrimmel(emneType, emneId, EN) {
@@ -5342,12 +5745,14 @@ function _tegn() {
         retUdkast: S.snakRetUdkast, sletId: S.snakSletId,
         anmeldId: S.snakAnmeldId, valgtId: S.snakValgtId, alle: true }, EN);
       h += '</div>';
+      h += _billedLoefte(EN);
       h += '<div class="raekke" style="margin-top:8px">' +
         ["🔥","👏","🎾","💪"].map(function(i){
           return '<button class="knap" style="min-height:44px;font-size:21px;padding:0" data-a="snakReager" data-v="' + i + '">' + i + '</button>';
         }).join("") + '</div>';
       h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:stretch">' +
         '<input class="felt" style="flex:1;min-width:0" maxlength="140" placeholder="' + (EN?"Write to the room":"Skriv til rummet") + '" value="' + esc(S.snakUdkast) + '" data-felt="snakUdkast">' +
+        _kameraKnap(EN) +
         '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="snakSend">' + (EN?"Send":"Send") + '</button></div>';
       h += (S.snakBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.snakBesked.t) + '</p>' : '');
     } else if (S.tab === "chat") {
@@ -5391,12 +5796,17 @@ function _tegn() {
       // skrivefeltet OP, hver gang den kom — og saa var vi tilbage,
       // hvor vi startede. Her koster den listen plads i stedet.
       h += (S.chatBesked ? '<p class="lille" style="flex:none;margin:6px 2px 0;color:var(--tabt)">' + esc(S.chatBesked.t) + '</p>' : '');
+      // ⚠️ Samme sted som statuslinjen, og af samme grund: alt hvad der
+      // staar UNDER skrivefeltet, skubber feltet op — og saa er vi tilbage,
+      // hvor v4.34.0 startede.
+      h += _billedLoefte(EN);
       h += '<div class="raekke" style="margin-top:8px;flex:none">' +
         ["🔥","👏","🎾","💪"].map(function(i){
           return '<button class="knap" style="min-height:44px;font-size:21px;padding:0" data-a="chatReager" data-v="' + i + '">' + i + '</button>';
         }).join("") + '</div>';
       h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:stretch;flex:none">' +
         '<input class="felt" style="flex:1;min-width:0" maxlength="140" placeholder="' + (EN?"Write to your friend":"Skriv til din ven") + '" value="' + esc(S.chatUdkast) + '" data-felt="chatUdkast">' +
+        _kameraKnap(EN) +
         '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="chatSend">' + (EN?"Send":"Send") + '</button></div>';
       h += '</div>';
     } else if (S.tab === "traener") {
@@ -6909,6 +7319,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '</div>';
       })();
 
+      h += _skadetKort(EN);
       h += '<p class="lille">'+(EN?"Log physical training exactly like tennis training — with the coaches' 1-10 scale, so everything can be compared.":"Registrér fysisk træning på samme måde som tennistræningen — med trænernes 1-10-skala, så alt kan sammenlignes.")+'</p>';
       (function(){
         const m = ugeMaal(S.fysLog);
@@ -7321,6 +7732,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
 
   // ⭐ v4.34.0 · Ikke i venne-chatten. Der er skrivefeltet det sidste,
   // der staar — en fod under det ville skubbe det op igen.
+  // ⭐ v4.40.0 · Billedet ligger OVER alt andet — derfor sidst i strengen.
+  h += _bilVis(EN);
   if (S.tab !== "chat") h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses are fetched from the club's service with your club code. StreakTennis · SportsAInalytics · "+VERSION:"Data gemmes lokalt i browseren på denne enhed. Analyserne hentes hos klubbens tjeneste med jeres klubkode. StreakTennis · SportsAInalytics · "+VERSION)+'</p>';
   h += bundNav();
   el.innerHTML = h;
@@ -7551,6 +7964,31 @@ window.__oskarInit = function(){
   // ellers ville den blive slettet ved hver tegning). Derfor naar dens
   // change-haendelse aldrig app-lytteren, og billedet blev aldrig sendt.
   // Den faar sin egen lytter — én gang, ikke én pr. tegning.
+  // ⭐⭐⭐ v4.41.0 · TAG IMOD RUTEN. To veje ind, fordi der er to
+  // situationer:
+  //   ① KOLD START — appen var lukket. Service workeren aabnede et vindue
+  //     med ruten i adressen. Den laeses her og fjernes bagefter, saa en
+  //     genindlaesning ikke sender én det samme sted hen igen.
+  //   ② APPEN VAR AABEN — og det er den naesten altid paa en hjemmeskaerm.
+  //     Saa kommer ruten som en besked fra service workeren, og appen
+  //     flytter sig UDEN at genindlaese. Det er med vilje: en forael,
+  //     der taster point, maa ikke miste sin skaerm, fordi nogen skriver.
+  try {
+    const _g = new URLSearchParams(location.search).get("gaa");
+    if (_g) {
+      history.replaceState(null, "", location.pathname);
+      setTimeout(function () { __saiRute(_g); }, 60);
+    }
+  } catch (e) {}
+  try {
+    if ("serviceWorker" in navigator && navigator.serviceWorker) {
+      navigator.serviceWorker.addEventListener("message", function (b) {
+        const d = (b && b.data) || {};
+        if (d && d.sai === "gaa") __saiRute(d.sti);
+      });
+    }
+  } catch (e) {}
+
   try {
     const _bf = document.getElementById("bil-fil");
     if (_bf && !_bf.__lyt) {

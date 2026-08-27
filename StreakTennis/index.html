@@ -404,7 +404,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.30.0 · 26. august 2026";
+const VERSION = "v4.31.0 · 27. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -2615,7 +2615,7 @@ const A = {
     S._snakSig = _sig;
     if (puls) {
       if (!_nyt) return;
-      if (_skriver()) { S._udskudt = true; return; }
+      if (_skriver() || _svejper()) { S._udskudt = true; return; }
     }
     render();
   },
@@ -3074,7 +3074,7 @@ const A = {
     S._rumSig = _sig;
     if (puls) {
       if (!_nyt) return;
-      if (_skriver()) { S._udskudt = true; return; }
+      if (_skriver() || _svejper()) { S._udskudt = true; return; }
     }
     render();
   },
@@ -3513,6 +3513,26 @@ const A = {
   // Den gamle vej i spiller-sync roeres ikke; den bruges bare ikke mere.
   // ⭐ v4.29.0 · Ét tryk paa en boble folder dens handlinger ud. Andet
   // tryk folder dem sammen. Ingen knapper staar og raaber imens.
+  // ⭐⭐ v4.31.0 · MARKÉR SOM ULAEST.
+  // Der findes ingen ulaest-markering pr. besked — `venne_laest` er ét
+  // tidsstempel pr. person pr. samtale, og at markere er at spole det
+  // bogmaerke tilbage til lige foer beskeden.
+  //
+  // ⚠️ SAMTALEN LUKKES BAGEFTER. At hente ER at laese, saa bliver man
+  // staaende, ville naeste puls straks laese den igen — og markeringen
+  // ville vaere en loegn tre sekunder senere. Mail goer det samme.
+  chatUlaestFra: async (v) => {
+    const id = Number(v);
+    if (!id || !S.chatVen) return;
+    const r = await A.chatKald("ulaest-fra", { id: id });
+    if (r.fejl) {
+      S.chatBesked = { t: S.sprog === "en"
+        ? "Could not mark it unread." : "Kunne ikke markere den som ulæst." };
+      render(); return;
+    }
+    A.chatLuk();
+  },
+
   chatVaelg: (v) => {
     const id = Number(v);
     S.chatValgtId = S.chatValgtId === id ? null : id;
@@ -3584,7 +3604,7 @@ const A = {
     S._chatSig = _sig;
     if (puls) {
       if (!_nyt) return;
-      if (_skriver()) { S._udskudt = true; return; }
+      if (_skriver() || _svejper()) { S._udskudt = true; return; }
     }
     render();
   },
@@ -4315,6 +4335,17 @@ function foelgTegn() {
 // ⭐⭐ v4.23.0 · SKRIVER FINGEREN LIGE NU?
 // Et felt med data-felt er det eneste sted, man kan taste. Har det fokus,
 // maa skaermen ikke bygges om under haenderne paa en.
+// ⭐⭐ v4.31.0 · SVEJPET. Ligger her ved siden af `_skriver`, fordi de
+// loeser praecis samme problem: en gentegning midt i noget, en finger er
+// i gang med. Tastaturet laerte os det 25/8 — en puls maa aldrig rive
+// taeppet vaek under en haandbevaegelse.
+var _sv = null;          // {node, kol, hint, x0, y0, dx, aktiv, id, pre, mig}
+var _svFired = false;    // saa et svejp ikke ogsaa taeller som et tryk
+const SV_GRAENSE = 62;   // px foer en handling udloeses
+const SV_LOFT = 108;     // saa langt kan boblen traekkes
+
+function _svejper() { return !!(_sv && _sv.aktiv); }
+
 function _skriver() {
   const a = document.activeElement;
   return !!(a && a.dataset && a.dataset.felt);
@@ -4566,7 +4597,7 @@ function _snakListe(liste, p, EN) {
     if (b.art === "r") {
       sidsteAf = null;
       const rValgt = p.valgtId === b.id;
-      h += '<div ' + (mig && b.id ? 'data-a="' + P + 'Vaelg" data-v="' + id + '" style="cursor:pointer;' : 'style="') +
+      h += '<div ' + (b.id ? 'data-a="' + P + 'Vaelg" data-v="' + id + '" data-mig="' + (mig ? "1" : "0") + '" style="cursor:pointer;touch-action:pan-y;-webkit-user-select:none;user-select:none;' : 'style="') +
         'display:flex;align-items:center;gap:7px;margin:3px 0;justify-content:' + (mig ? "flex-end" : "flex-start") + '">' +
         '<span style="font-size:21px;line-height:1;flex:none">' + esc(b.tekst) + '</span>' +
         '<span class="lille" style="margin:0;opacity:.55">' + esc(b.fornavn) + ' \u00b7 ' + esc(_klokPaa(b.tid, EN)) + '</span>' +
@@ -4618,7 +4649,8 @@ function _snakListe(liste, p, EN) {
     } else {
       // ⭐ Handlingerne gemmer sig, til man trykker. Foer stod ✏️ og 🗑
       // paa HVER besked hele tiden — det var halvdelen af rodet.
-      h += '<div data-a="' + P + 'Vaelg" data-v="' + id + '" style="cursor:pointer;background:' +
+      h += '<div data-a="' + P + 'Vaelg" data-v="' + id + '" data-mig="' + (mig ? "1" : "0") + '"' +
+        ' style="cursor:pointer;touch-action:pan-y;-webkit-user-select:none;user-select:none;background:' +
         (mig ? "var(--grus)" : "var(--flade)") + ';color:var(--kridt);border:1px solid ' +
         (mig ? "var(--grus)" : "var(--kant)") + ';border-radius:' + hj +
         ';padding:8px 12px;font-size:14.5px;line-height:1.36;word-break:break-word;white-space:pre-wrap">' +
@@ -5134,8 +5166,8 @@ function _tegn() {
         '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="snakSend">' + (EN?"Send":"Send") + '</button></div>';
       h += (S.snakBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.snakBesked.t) + '</p>' : '');
       h += '<p class="lille" style="margin:10px 2px 0;opacity:.65;line-height:1.5">' + (EN
-        ? "Tap a message to edit, delete or report it. · Everyone in the room reads along. Messages live for a day, at most 200 — the room stays. ⚑ hides it for everyone."
-        : "Tryk på en besked for at rette, slette eller rapportere den. · Alle i rummet læser med. Beskederne lever et døgn, højst 200 — rummet består. ⚑ skjuler den for alle.") + '</p>';
+        ? "Tap a message to edit it, or swipe left to delete or report. · Everyone in the room reads along. Messages live for a day, at most 200 — the room stays. ⚑ hides it for everyone."
+        : "Tryk på en besked for at rette den, eller træk den til venstre for at slette eller rapportere. · Alle i rummet læser med. Beskederne lever et døgn, højst 200 — rummet består. ⚑ skjuler den for alle.") + '</p>';
     } else if (S.tab === "chat") {
       // ⭐ VENNE-CHATTEN (v4.3). Serverens regler er samtalens fodnote:
       // Et døgn + højst 200 (v2.14.0: tunellen består, beskederne er flygtige), Fjern ven sletter for begge, ⚑ skjuler.
@@ -5171,8 +5203,8 @@ function _tegn() {
         '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="chatSend">' + (EN?"Send":"Send") + '</button></div>';
       h += (S.chatBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.chatBesked.t) + '</p>' : '');
       h += '<p class="lille" style="margin:10px 2px 0;opacity:.65;line-height:1.5">' + (EN
-        ? "Tap a message to edit, delete or report it. · Messages live for a day, at most 200 — the friendship stays. Delete, ⚑ and Remove friend all delete it for both of you."
-        : "Tryk på en besked for at rette, slette eller rapportere den. · Beskederne lever et døgn, højst 200 — venskabet består. Slet, ⚑ og Fjern ven sletter for jer begge.") + '</p>';
+        ? "Tap a message to edit it. Swipe left to delete or report — swipe a friend\u2019s message right to mark it unread. · Messages live for a day, at most 200 — the friendship stays. Delete, ⚑ and Remove friend all delete it for both of you."
+        : "Tryk på en besked for at rette den. Træk den til venstre for at slette eller rapportere — og en besked fra din ven til højre for at markere den ulæst. · Beskederne lever et døgn, højst 200 — venskabet består. Slet, ⚑ og Fjern ven sletter for jer begge.") + '</p>';
     } else if (S.tab === "traener") {
       // 22/8: ABSORBERET I TRÆN. Gamle stier (og gammel gemt tilstand)
       // lander i det samme indhold — intet doer, det flytter bare hjem.
@@ -7127,7 +7159,92 @@ window.__oskarInit = function(){
   var _kvitT = null;
   rod.addEventListener("pointerdown", function(e){ var kn = e.target.closest('[data-a][data-lp]'); if (!kn) return; _lpFired = false; _lpT = setTimeout(function(){ _lpFired = true; try { if (navigator.vibrate) navigator.vibrate(35); } catch (e2) {} S._kvit = kn.dataset.lp; if (_kvitT) clearTimeout(_kvitT); _kvitT = setTimeout(function(){ S._kvit = ""; render(); }, 2600); if (A[kn.dataset.a]) A[kn.dataset.a](kn.dataset.lp); }, 550); });
   ["pointerup","pointercancel","pointerleave"].forEach(function(ev){ rod.addEventListener(ev, function(){ if (_lpT) { clearTimeout(_lpT); _lpT = null; } }, true); });
-  rod.addEventListener("click", function(e){ if (_lpFired) { _lpFired = false; e.preventDefault(); return; } var kn = e.target.closest("[data-a]"); if (kn && A[kn.dataset.a]) A[kn.dataset.a](kn.dataset.v); });
+  // ══ SVEJP ═══════════════════════════════════════════════════════
+  // Lytterne sidder paa #app, ikke paa boblerne: render() erstatter
+  // innerHTML hvert tiende sekund, saa en lytter paa en boble ville
+  // forsvinde under fingeren.
+  var _svRyd = function (spring) {
+    if (!_sv) return;
+    var s = _sv; _sv = null;
+    if (s.node) {
+      s.node.style.transition = spring ? "transform .16s ease-out" : "";
+      s.node.style.transform = "";
+      setTimeout(function(){ try { s.node.style.transition = ""; } catch(e){} }, 200);
+    }
+    if (s.hint && s.hint.parentNode) s.hint.parentNode.removeChild(s.hint);
+    if (s.kol) s.kol.style.position = "";
+  };
+
+  rod.addEventListener("pointerdown", function(e){
+    var kn = e.target.closest('[data-a$="Vaelg"]');
+    if (!kn || !kn.dataset.v) return;
+    var pre = kn.dataset.a.slice(0, -5);          // "chatVaelg" -> "chat"
+    _sv = { node: kn, kol: kn.parentElement, hint: null, x0: e.clientX, y0: e.clientY,
+            dx: 0, aktiv: false, id: kn.dataset.v, pre: pre, mig: kn.dataset.mig === "1" };
+  });
+
+  rod.addEventListener("pointermove", function(e){
+    if (!_sv) return;
+    // ⭐ Grib bevaegelsen med det samme. Maalt 27/8: venter vi til vores
+    // egen graense paa 10 px, naar browseren at beslutte, at gestussen er
+    // dens — og svarer `pointercancel`. Lodret rulning er uroert:
+    // `touch-action:pan-y` giver browseren den, og en pan, browseren
+    // ejer, kan preventDefault ikke tage fra den.
+    if (e.cancelable) e.preventDefault();
+    var dx = e.clientX - _sv.x0, dy = e.clientY - _sv.y0;
+    if (!_sv.aktiv) {
+      // ⭐ Retningen afgoeres én gang. Er fingeren paa vej NED, er det en
+      // rulning, og saa slipper vi den helt — ellers ville en samtale,
+      // man ruller i, hele tiden vippe til siderne.
+      if (Math.abs(dy) > Math.abs(dx)) { if (Math.abs(dy) > 8) _sv = null; return; }
+      if (Math.abs(dx) < 10) return;
+      // Hoejre-svejp giver kun mening paa en besked, JEG har modtaget —
+      // og kun i en 1:1, hvor der findes et bogmaerke at spole tilbage.
+      var maaHoejre = !_sv.mig && _sv.pre === "chat";
+      if (dx > 0 && !maaHoejre) { _sv = null; return; }
+      _sv.aktiv = true;
+      try { _sv.node.setPointerCapture(e.pointerId); } catch (_e) {}
+      var venstre = dx < 0;
+      var ikon = venstre ? (_sv.mig ? "\ud83d\uddd1" : "\u2691") : "\ud83d\udce9";
+      var farve = venstre ? "var(--tabt)" : "var(--guld)";
+      var s = document.createElement("span");
+      s.setAttribute("data-svejp-hint", "1");
+      s.textContent = ikon;
+      s.style.cssText = "position:absolute;top:50%;transform:translateY(-50%);" +
+        (venstre ? "right:2px" : "left:2px") +
+        ";font-size:20px;opacity:0;pointer-events:none;color:" + farve;
+      if (_sv.kol) { _sv.kol.style.position = "relative"; _sv.kol.appendChild(s); }
+      _sv.hint = s;
+    }
+    _sv.dx = Math.max(-SV_LOFT, Math.min(SV_LOFT, dx));
+    _sv.node.style.transform = "translateX(" + _sv.dx + "px)";
+    if (_sv.hint) {
+      var t2 = Math.min(1, Math.abs(_sv.dx) / SV_GRAENSE);
+      _sv.hint.style.opacity = String(t2);
+      // Over graensen vokser ikonet — saa man kan MAERKE, hvornaar det tæller.
+      _sv.hint.style.transform = "translateY(-50%) scale(" + (0.8 + t2 * 0.35) + ")";
+    }
+  });
+
+  var _svSlip = function(e){
+    if (!_sv) return;
+    if (!_sv.aktiv) { _sv = null; return; }
+    var dx = _sv.dx, id = _sv.id, pre = _sv.pre, mig = _sv.mig;
+    _svFired = true;
+    _svRyd(true);
+    if (dx <= -SV_GRAENSE) {
+      // ⚠️ AABNER spoergsmaalet — udfoerer ikke. Der er ingen fortryd.
+      var h = pre + (mig ? "SletSpoerg" : "AnmeldSpoerg");
+      if (A[h]) A[h](id);
+    } else if (dx >= SV_GRAENSE && !mig && pre === "chat") {
+      if (A.chatUlaestFra) A.chatUlaestFra(id);
+    }
+    setTimeout(function(){ _svFired = false; }, 60);
+  };
+  rod.addEventListener("pointerup", _svSlip);
+  rod.addEventListener("pointercancel", function(){ _svRyd(true); });
+
+  rod.addEventListener("click", function(e){ if (_lpFired) { _lpFired = false; e.preventDefault(); return; } if (_svFired) { e.preventDefault(); return; } var kn = e.target.closest("[data-a]"); if (kn && A[kn.dataset.a]) A[kn.dataset.a](kn.dataset.v); });
   rod.addEventListener("input", function(e){
     var f = e.target.dataset.felt; if (!f) return;
     S[f] = e.target.value;

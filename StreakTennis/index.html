@@ -27,6 +27,12 @@
 :root{--nat:#111C33;--dyb:#070D19;--kort:rgba(255,255,255,.05);--kant:rgba(255,255,255,.12);--kant2:#31415F;--flade:#1B2A44;--kridt:#EDF2FA;--daempet:#8B99B5;--is:#9FD8E8;--grus:#2E56D6;--gruslys:#7B9BFF;--guld:#F0CF61;--vundet:#22995A;--tabt:#D2484E;--vundet-dyb:#1E5B3C;--tabt-dyb:#6E3040;--guld-dyb:#332B12;--is-dyb:#16324A;--tekst2:#B9C6D8;--fod:#4A5A78;--svag:#3C4C6E}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:'Helvetica Neue',Arial,sans-serif;background:radial-gradient(120% 55% at 50% -8%,#14264A 0%,#0B1220 55%) fixed #0B1220;color:var(--kridt);padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+/* ⭐ v4.34.0 · I VENNE-CHATTEN ER FLADEN DET SIDSTE, DER STAAR.
+   Polstringen nedenunder er der kun for at holde indhold fri af
+   bundbjaelken — og fladen stopper allerede over den. Maalt: uden det
+   her kunne siden rulle 47 px, og saa flyttede skrivefeltet sig igen. */
+body.flade{padding-bottom:0}
+body.flade .wrap{padding-bottom:0}
 a{color:var(--is)}a:hover{color:#C6EAF5}
 .wrap{max-width:520px;margin:0 auto;padding:16px 16px 40px}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;position:sticky;top:0;z-index:60;background:radial-gradient(120% 55% at 50% -8%,#14264A 0%,#0B1220 55%) fixed #0B1220;margin:0 -14px;padding:10px 14px}
@@ -404,7 +410,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.32.0 · 27. august 2026";
+const VERSION = "v4.37.0 · 27. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1200,7 +1206,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, tryk3: false, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, laengdeValgt: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -2346,7 +2352,15 @@ const A = {
   // Streaks altid, kampe naar der er nogen. Et rum med kun kampe er
   // tomt 95 % af tiden — streaken er dét, der holder det i live.
   // ══════════════════════════════════════════════════════════════════
-  opsFold: (v) => { S.opsAaben = S.opsAaben === v ? null : v; render(); },
+  opsFold: (v) => {
+    S.opsAaben = S.opsAaben === v ? null : v;
+    // \u2b50\u2b50 v4.35.0 \u00b7 EN LISTE OVER MENNESKER, DER VENTER, BLIVER GAMMEL.
+    // Foer blev koeen hentet \u00e9n gang pr. app-start. Nicolais skaerm viste
+    // 27/8 kl. 11.39 "1 venter", mens databasen havde nul \u2014 en ansoeger,
+    // der var fjernet timer foer. Nu hentes den, hver gang kortet aabnes.
+    if (S.opsAaben === "ejer" && S.portStatus && S.portStatus.ejer) A.ejerHent();
+    render();
+  },
 
   // ⭐ v4.32.0 · § i vennelisten. Aabner det kort, der ALLEREDE staar
   // med hele forklaringen — vi skriver den ikke to steder.
@@ -2529,7 +2543,11 @@ const A = {
   },
   // ⭐ MELD DIG. Uden denne vej ville en ny familie vaere USYNLIG for
   // den, der skal sige ja — og en lukket dør uden en dørklokke er bare
-  // en mur. Der sendes ét fornavn. Intet andet.
+  // en mur.
+  // ⭐⭐ v4.36.0 · OG NU MED EN HILSEN. Nicolai 27/8: "aner ikke hvem
+  // det er". Et fornavn alene er ikke nok til at sige ja til et barn.
+  // Hilsnen er FRIVILLIG — en tom hilsen er ikke en fejl — og serveren
+  // sletter den i samme skrivning som svaret.
   meldDig: async () => {
     const EN = S.sprog === "en";
     const navn = String(S.meldNavn || SPILLER || "").trim();
@@ -2538,11 +2556,18 @@ const A = {
       render(); return;
     }
     S.meldSender = true; S.meldBesked = null; render();
-    const r = await A.portKald("meld", { fornavn: navn.slice(0, 40), klub: S.minKlub || "" });
+    const r = await A.portKald("meld", { fornavn: navn.slice(0, 40), klub: S.minKlub || "",
+      hilsen: String(S.meldHilsen || "").trim().slice(0, 120) });
     S.meldSender = false;
     if (r.fejl) {
       S.meldBesked = { fejl: true, t: r.fejl === "koe-fuld"
         ? (EN ? "There is a queue right now — try again later." : "Der er kø lige nu — prøv igen om lidt.")
+        // ⭐ v4.36.0 · serverens nej til links siges med mennesketekst.
+        // En doer er det bedste sted i appen at plante et link: én
+        // modtager, som netop nu er indstillet paa at reagere.
+        : r.fejl === "link"
+        ? (EN ? "Links are not allowed here — say in words who you are."
+              : "Links er ikke tilladt her — skriv med ord, hvem du er.")
         : (EN ? "Could not send — try again." : "Kunne ikke sende — prøv igen.") };
     } else {
       S.meldBesked = { fejl: false, t: EN
@@ -2554,7 +2579,7 @@ const A = {
   },
   ejerHent: async () => {
     if (S.ejerHenter) return;
-    S.ejerHenter = true;
+    S.ejerHenter = true; S.ejerBesked = null; render();
     const r = await A.portKald("liste", {});
     S.ejerHenter = false;
     if (!r.fejl) S.ejerKoe = r;
@@ -2567,6 +2592,11 @@ const A = {
     S.ejerSender = d[0]; render();
     const r = await A.portKald("saet", { h: d[0], status: d[1] });
     S.ejerSender = null;
+    // \u26d4 v4.35.0 \u00b7 "findes ikke i k\u00f8en" (404) betyder, at listen paa
+    // skaermen er aeldre end virkeligheden \u2014 fx fordi ansoegeren er
+    // lukket ind fra en anden telefon. Foer skete der ingenting, og
+    // knappen saa ud til at vaere i stykker. Nu hentes listen forfra.
+    if (r.fejl === "ukendt") { render(); await A.ejerHent(); return; }
     if (!r.fejl && S.ejerKoe) {
       S.ejerKoe = Object.assign({}, S.ejerKoe, {
         venter: (S.ejerKoe.venter || []).filter(function(x){ return x.h !== d[0]; }),
@@ -3502,6 +3532,7 @@ const A = {
     S.chatRetId = null; S.chatRetUdkast = ""; S.chatSletId = null;
     S.chatValgtId = null; S.chatVenLaest = null; S.chatKort = null;
     S.tab = "chat";
+    try { window.scrollTo(0, 0); } catch (_e) {}
     // Læst nu — prikken slukker. Kun et tidsstempel, kun lokalt.
     try { S.chatLaest[S.chatVen] = new Date().toISOString();
       lager.gem("sai-chat-laest", JSON.stringify(S.chatLaest)); } catch(e) {}
@@ -4070,13 +4101,36 @@ const _loginKort = function(EN){
 // ⭐ v4.18.0 · HVOR LAENGE HAR DEN VENTET.
 // Et klokkeslaet siger intet om, hvorvidt man skal spoerge igen. "3 dage"
 // goer. Derfor dage, ikke tidspunkt.
+// \u2b50\u2b50 v4.37.0 \u00b7 HVORN\u00c5R BANKEDE DE P\u00c5?
+// Nicolai 27/8: "der er ikke tidspunkt paa". Koeen sagde "i dag", og
+// det er ikke en oplysning, naar man kigger samme dag.
+//
+// \u26d4 OG DEN GAMLE UDGAVE HAVDE EN FEJL, INGEN HAVDE SET: den regnede
+// i 24-TIMERS-VINDUER, ikke i kalenderdage. En, der bankede paa i gaar
+// kl. 23.50, stod som "i dag" til kl. 23.50 i DAG. Ejeren tror, der lige
+// er kommet en ny \u2014 og der er gaaet et helt doegn.
+//
+// \u2b50 Klokkeslaettet regnes af `_klokPaa`, som chatten allerede bruger.
+// \u00c9N SANDHEDSKILDE PR. TING: to opskrifter paa det samme klokkeslaet
+// driver fra hinanden, praecis som rummet og venne-chatten gjorde.
 const _ventet = function(t){
   try {
     const d = new Date(t); if (isNaN(d.getTime())) return "";
-    const dage = Math.floor((Date.now() - d.getTime()) / 86400000);
     const E = S.sprog === "en";
-    if (dage <= 0) return E ? "today" : "i dag";
-    if (dage === 1) return E ? "1 day" : "1 dag";
+    const nu = new Date();
+    const sammeDag = function(a, b){
+      return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
+        && a.getDate() === b.getDate();
+    };
+    if (sammeDag(d, nu)) {
+      const k = _klokPaa(t, E);
+      // "kl. nu" ville laese forkert \u2014 `_klokPaa` siger selv "nu"/"now"
+      // det foerste minut.
+      return (k === "nu" || k === "now" || !k) ? k : (E ? k : "kl. " + k);
+    }
+    const igaar = new Date(nu.getTime()); igaar.setDate(nu.getDate() - 1);
+    if (sammeDag(d, igaar)) return (E ? "yesterday " : "i g\u00e5r ") + _klokPaa(t, E);
+    const dage = Math.max(2, Math.floor((nu.getTime() - d.getTime()) / 86400000));
     return dage + (E ? " days" : " dage");
   } catch (e) { return ""; }
 };
@@ -4355,6 +4409,43 @@ function _skriver() {
   return !!(a && a.dataset && a.dataset.felt);
 }
 
+// ⭐⭐ v4.34.0 · SKRIVEFELTET STAAR NEDERST — ALTID.
+// Nicolai 27/8: "Skrive feltet skal vaere nederst - altid."
+//
+// MAALT FOER: feltets top sprang mellem 331 og 659 px, alt efter om
+// spillerkortet var kommet, og hvor mange beskeder der var hentet.
+// Listen havde sin EGEN hoejde (46vh), og alt andet lagde sig oven paa.
+//
+// Nu er det omvendt: fladen faar pladsen mellem sin egen top og
+// bundbjaelken, og listen tager resten (flex:1). Bundbjaelken MAALES —
+// den er position:fixed, saa dens top er vinduets bund minus dens
+// hoejde, uanset hvor siden er rullet hen. Intet tal er gaettet.
+//
+// ⚠️ Der regnes i DOKUMENT-koordinater for fladens top (rect + rullen)
+// og i VINDUES-koordinater for bjaelken (den er fixed). Blander man de
+// to, faar man en hoejde, der aendrer sig, naar man ruller.
+function _fladeMaal() {
+  const f = document.getElementById("snak-flade");
+  // ⚠️ Klassen skal ryge af IGEN, naar man forlader chatten — ellers
+  // mangler resten af appen sin plads til bundbjaelken.
+  try { document.body.classList.toggle("flade", !!f); } catch (_e) {}
+  if (!f) return;
+  try {
+    const nav = document.querySelector(".bundnav");
+    const LUFT = 12;
+    const bund = nav
+      ? (window.innerHeight - nav.getBoundingClientRect().top + LUFT)
+      : 79;
+    const top = f.getBoundingClientRect().top + (window.pageYOffset || 0);
+    f.style.height = Math.max(320, Math.round(window.innerHeight - bund - top)) + "px";
+  } catch (_e) {}
+}
+// Drejer telefonen, maales der forfra.
+try {
+  window.addEventListener("resize", _fladeMaal);
+  window.addEventListener("orientationchange", function () { setTimeout(_fladeMaal, 120); });
+} catch (_e) {}
+
 // ⭐⭐ v4.23.0 · TASTATURET BLIVER STAAENDE.
 // Nicolai 25/8: "naar man skriver i rummet saa forsvinder tastaturet hele
 // tiden". Aarsagen er, at hele skaermen saettes med innerHTML — feltet, man
@@ -4375,6 +4466,7 @@ function render() {
     if (r) { _rPos = r.scrollTop; _rNed = (r.scrollHeight - r.scrollTop - r.clientHeight) < 48; }
   }
   _tegn();
+  _fladeMaal();
   {
     const r = document.getElementById("snak-rul");
     if (r) { try { r.scrollTop = _rNed ? r.scrollHeight : _rPos; } catch (_e) {} }
@@ -4498,7 +4590,7 @@ function _spillerkort(k, EN) {
     ["\u26a1", EN ? "IN A ROW" : "I TR\u00c6K", k.mig.stime, k.ven.stime, ""],
     ["\ud83c\udfc6", EN ? "WON" : "VUNDET", k.mig.pct, k.ven.pct, "%"],
   ];
-  let h = '<div style="background:var(--kort);border:1px solid var(--kant);border-radius:16px;padding:11px 13px;margin:0 0 10px">';
+  let h = '<div id="spillerkort" style="background:var(--kort);border:1px solid var(--kant);border-radius:16px;padding:11px 13px;margin:0 0 10px">';
   h += '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">' +
     '<b style="flex:1;font-size:12.5px;color:var(--guld);text-align:left;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(k.mig.navn) + '</b>' +
     '<span class="lille" style="margin:0;flex:none;opacity:.5;letter-spacing:1px">1:1</span>' +
@@ -4579,8 +4671,21 @@ function _snakListe(liste, p, EN) {
   // rullen, hvor den var (se render).
   // ⚠️ Er der et spillerkort over samtalen, faar listen mindre plads —
   // ellers skubbes skrivefeltet ned bag bundbjaelken paa en lille telefon.
-  const hoejde = p.kort ? "34vh" : "46vh";
-  let h = '<div id="snak-rul" style="display:flex;flex-direction:column;max-height:' + hoejde + ';overflow-y:auto;padding:2px 2px 4px;-webkit-overflow-scrolling:touch">';
+  // ⭐⭐ v4.34.0 · `fyld` = "du er i en flade, tag det, der er tilbage".
+  // Venne-chatten er en HEL skaerm og saetter fyld. Rummet har en stige
+  // og fire tal ovenover, som skal kunne rulle — det beholder sit loft.
+  const hoejde = p.fyld ? null : (p.kort ? "34vh" : "46vh");
+  let h = '<div id="snak-rul" style="display:flex;flex-direction:column;' +
+    (hoejde ? "max-height:" + hoejde : "flex:1 1 auto;min-height:0") +
+    ';overflow-y:auto;padding:2px 2px 4px;-webkit-overflow-scrolling:touch">';
+  // \u2b50 v4.34.0 \u00b7 SAMTALEN HVILER PAA SKRIVEFELTET.
+  // Med faa beskeder klistrede den foer op i toppen med et tomt hul
+  // nedenunder. `margin-top:auto` skubber den ned, naar der er plads,
+  // og goer ingenting, naar der ikke er.
+  // \u26a0\ufe0f IKKE justify-content:flex-end \u2014 den klipper toppen af,
+  // naar samtalen bliver laengere end kassen, og saa kan man ikke rulle
+  // op til den aeldste besked.
+  if (p.fyld) h += '<div style="display:flex;flex-direction:column;margin-top:auto">';
   let sidsteDag = "", sidsteAf = null;
 
   L.forEach(function (b, i) {
@@ -4697,6 +4802,7 @@ function _snakListe(liste, p, EN) {
     h += '</div></div>';
   });
 
+  if (p.fyld) h += '</div>';
   h += '</div>';
   return h;
 }
@@ -5149,6 +5255,11 @@ function _tegn() {
           : "Stigen t\u00e6ller tr\u00e6ninger i tr\u00e6k. Et puf lander i rummets chat \u2014 ikke andre steder.") + '</p></div>';
       }
       const sb = S.snakBeskeder;
+      // ⭐ v4.34.0 · DEN ENE SAETNING, DER AENDRER ADFAERD, STAAR FOER
+      // MAN SKRIVER — ikke som fodnote bagefter. Resten af reglerne
+      // (doegnet, de 200, ⚑) bor under 📱 DINE DATA.
+      h += '<p class="lille" style="margin:4px 2px 2px;opacity:.7">\ud83d\udc40 ' + (EN
+        ? "Everyone in the room reads along." : "Alle i rummet l\u00e6ser med.") + '</p>';
       h += '<div style="padding:2px 0">';
       if (sb === null) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">⏳ …</p>';
       else if (!sb.length) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (EN
@@ -5169,13 +5280,20 @@ function _tegn() {
         '<input class="felt" style="flex:1;min-width:0" maxlength="140" placeholder="' + (EN?"Write to the room":"Skriv til rummet") + '" value="' + esc(S.snakUdkast) + '" data-felt="snakUdkast">' +
         '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="snakSend">' + (EN?"Send":"Send") + '</button></div>';
       h += (S.snakBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.snakBesked.t) + '</p>' : '');
-      h += '<p class="lille" style="margin:10px 2px 0;opacity:.65;line-height:1.5">' + (EN
-        ? "Tap a message to edit it, or swipe left to delete or report. · Everyone in the room reads along. Messages live for a day, at most 200 — the room stays. ⚑ hides it for everyone."
-        : "Tryk på en besked for at rette den, eller træk den til venstre for at slette eller rapportere. · Alle i rummet læser med. Beskederne lever et døgn, højst 200 — rummet består. ⚑ skjuler den for alle.") + '</p>';
     } else if (S.tab === "chat") {
-      // ⭐ VENNE-CHATTEN (v4.3). Serverens regler er samtalens fodnote:
-      // Et døgn + højst 200 (v2.14.0: tunellen består, beskederne er flygtige), Fjern ven sletter for begge, ⚑ skjuler.
-      h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' +
+      // ⭐ VENNE-CHATTEN (v4.3).
+      //
+      // ⭐⭐ v4.34.0 · EN HEL SKÆRM, IKKE ET AFSNIT PÅ EN SIDE.
+      // Nicolai 27/8: "Skrive feltet skal være nederst - altid."
+      // Fladen får pladsen mellem sin egen top og bundbjælken
+      // (_fladeMaal), og listen tager det, der bliver til overs. Derfor
+      // kan skrivefeltet ikke flytte sig, uanset hvad serveren svarer.
+      //
+      // ⚠️ Reglerne — døgnet, de 200, og at Slet / ⚑ / Fjern ven
+      // sletter for JER BEGGE — stod som fodnote her og skubbede feltet
+      // rundt. Løftet er ikke væk: det bor nu under 📱 DINE DATA.
+      h += '<div id="snak-flade" style="display:flex;flex-direction:column">';
+      h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px;flex:none">' +
         '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 16px" data-a="chatLuk">←</button>' +
         '<b style="font-size:16px">💬 ' + esc(S.chatNavn || (EN?"Friend":"Ven")) + '</b></div>';
       const cb = S.chatBeskeder;
@@ -5184,7 +5302,7 @@ function _tegn() {
       h += _spillerkort(S.chatKort, EN);
       // ⭐ v4.29.0 · ingen kasse om samtalen laengere. Boblerne er selv
       // flader; en kasse om flader er to rammer om det samme.
-      h += '<div style="padding:2px 0">';
+      h += '<div style="padding:2px 0;flex:1 1 auto;min-height:0;display:flex;flex-direction:column">';
       if (cb === null) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">⏳ …</p>';
       else if (!cb.length) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (EN
         ? "Nothing here yet. Say hi — or send a 🔥."
@@ -5196,19 +5314,21 @@ function _tegn() {
       else h += _snakListe(cb, { pre: "chat", retId: S.chatRetId,
         retUdkast: S.chatRetUdkast, sletId: S.chatSletId,
         anmeldId: S.chatAnmeldId, valgtId: S.chatValgtId,
-        venLaest: S.chatVenLaest, kort: !!S.chatKort, alle: false }, EN);
+        venLaest: S.chatVenLaest, kort: !!S.chatKort, alle: false, fyld: true }, EN);
       h += '</div>';
-      h += '<div class="raekke" style="margin-top:8px">' +
+      // ⭐⭐ STATUSLINJEN STAAR OVER EMOJIERNE, IKKE UNDER FELTET.
+      // Stod den under, ville "Beskeden kom ikke afsted" skubbe
+      // skrivefeltet OP, hver gang den kom — og saa var vi tilbage,
+      // hvor vi startede. Her koster den listen plads i stedet.
+      h += (S.chatBesked ? '<p class="lille" style="flex:none;margin:6px 2px 0;color:var(--tabt)">' + esc(S.chatBesked.t) + '</p>' : '');
+      h += '<div class="raekke" style="margin-top:8px;flex:none">' +
         ["🔥","👏","🎾","💪"].map(function(i){
           return '<button class="knap" style="min-height:44px;font-size:21px;padding:0" data-a="chatReager" data-v="' + i + '">' + i + '</button>';
         }).join("") + '</div>';
-      h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:stretch">' +
+      h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:stretch;flex:none">' +
         '<input class="felt" style="flex:1;min-width:0" maxlength="140" placeholder="' + (EN?"Write to your friend":"Skriv til din ven") + '" value="' + esc(S.chatUdkast) + '" data-felt="chatUdkast">' +
         '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="chatSend">' + (EN?"Send":"Send") + '</button></div>';
-      h += (S.chatBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.chatBesked.t) + '</p>' : '');
-      h += '<p class="lille" style="margin:10px 2px 0;opacity:.65;line-height:1.5">' + (EN
-        ? "Tap a message to edit it. Swipe left to delete or report — swipe a friend\u2019s message right to mark it unread. · Messages live for a day, at most 200 — the friendship stays. Delete, ⚑ and Remove friend all delete it for both of you."
-        : "Tryk på en besked for at rette den. Træk den til venstre for at slette eller rapportere — og en besked fra din ven til højre for at markere den ulæst. · Beskederne lever et døgn, højst 200 — venskabet består. Slet, ⚑ og Fjern ven sletter for jer begge.") + '</p>';
+      h += '</div>';
     } else if (S.tab === "traener") {
       // 22/8: ABSORBERET I TRÆN. Gamle stier (og gammel gemt tilstand)
       // lander i det samme indhold — intet doer, det flytter bare hjem.
@@ -5890,15 +6010,33 @@ function _tegn() {
               '<div style="display:flex;align-items:center;gap:8px">' +
               '<div style="flex:1;min-width:0"><b style="font-size:14px">' + esc(v.fornavn || "") + '</b>' +
               '<span class="lille" style="display:block;opacity:.7">' + esc(v.klub || "") + ' \u00b7 ' + _ventet(v.oprettet) + '</span></div></div>' +
+              // \u2b50\u2b50 v4.36.0 \u00b7 HILSNEN. Den staar mellem navnet og
+              // knapperne, fordi det er DEN, beslutningen traeffes paa \u2014
+              // ikke klubnavnet. `esc` er ikke pynt her: det er fritekst
+              // fra en, ingen har sagt ja til endnu.
+              (v.hilsen ? '<p class="lille" style="margin:6px 0 0;padding:7px 9px;background:var(--flade);border-left:2px solid var(--guld);border-radius:0 8px 8px 0;line-height:1.45">\u201c' + esc(v.hilsen) + '\u201d</p>' : '') +
               '<div class="raekke" style="margin-top:7px">' +
               '<button class="knap" style="min-height:44px;background:var(--vundet)" data-a="ejerSaet" data-v="' + esc(v.h + "|godkendt") + '">' +
                 (S.ejerSender === v.h ? "\u23f3 \u2026" : "\u2705 " + (EN?"Let in":"Luk ind")) + '</button>' +
               '<button class="knap valg" style="min-height:44px" data-a="ejerSaet" data-v="' + esc(v.h + "|afvist") + '">' + (EN?"Decline":"Afvis") + '</button>' +
               '</div></div>';
           });
-          _ekrop += '<p class="lille" style="margin:9px 0 0;opacity:.7">' + (EN
-            ? "Until you say yes they can look, log trainings and build a streak \u2014 nothing else."
-            : "Indtil du siger ja kan de kigge, logge træninger og bygge streak \u2014 intet andet.") + '</p>';
+          // \u2b50\u2b50 v4.35.0 \u00b7 MAALT, IKKE HUSKET.
+          // Den gamle tekst sagde "kigge, logge traeninger og bygge
+          // streak". Maalt 27/8 mod produktion med en rigtig
+          // afventer-noegle: `spiller-sync` svarer 403 paa BAADE `hent`
+          // og `gem`. De ser intet af nogen andens, og deres traeninger
+          // naar aldrig serveren \u2014 streaken bygges paa telefonen.
+          // Samme dag blev `venne-bud` og `rum-bud` lukket (de manglede
+          // porten helt), saa nu er svaret det samme overalt.
+          _ekrop += '<p class="lille" style="margin:9px 0 0;opacity:.7;line-height:1.55">' + (EN
+            ? "Until you say yes nothing reaches us. They can train and build a streak on their own phone \u2014 matches, analyses, friends, rooms and messages are all closed, and they can neither see nor contact anyone in here."
+            : "Indtil du siger ja n\u00e5r intet ind til os. De kan tr\u00e6ne og bygge streak p\u00e5 deres egen telefon \u2014 kampe, analyser, venner, rum og beskeder er lukkede, og de kan hverken se eller kontakte nogen herinde.") + '</p>' +
+            // \u26a0\ufe0f Listen kan vaere gammel: en ansoeger kan vaere lukket
+            // ind fra en anden telefon, siden kortet blev tegnet.
+            '<div class="raekke" style="margin-top:9px">' +
+            '<button class="knap valg" style="min-height:44px" data-a="ejerHent">' +
+            (S.ejerHenter ? "\u23f3 \u2026" : (EN ? "Refresh the list" : "Hent listen igen")) + '</button></div>';
         }
         h += _opsKort("ejer", "\ud83d\udd10", (EN?"WHO GETS IN":"HVEM KOMMER IND"),
           (_venter.length ? _venter.length + " " + (EN?"waiting":"venter") : (_k ? (_k.inde || 0) + " " + (EN?"inside":"inde") : "\u2014")),
@@ -5948,6 +6086,17 @@ function _tegn() {
             ["bud", "\ud83e\udd1d", EN ? "Friend requests and yes-thanks" : "Venneanmodninger og ja tak"],
             ["analyse", "\ud83d\udcca", EN ? "Your analysis is ready" : "Din analyse er klar"],
           ];
+          // ⭐⭐ v4.33.0 · DEN SYVENDE — OG DEN VISES KUN FOR EJEREN.
+          // Nicolai 27/8: "naar der er nye spillere der gerne vil paa —
+          // saa kun linket til min konto."
+          //
+          // ⚠️ Kontakten er en KOMFORT, ikke en adgang. Vagten ligger i
+          // `push-puls`, som kun samler modtagere blandt dem, der ER
+          // ejere. Et flag i en telefon aabner ingen port.
+          if ((S.push && S.push.ejer)) {
+            _valg.push(["ejer", "\ud83d\udeaa",
+              EN ? "When someone asks to join" : "N\u00e5r nogen vil ind i StreakTennis"]);
+          }
           _valg.forEach(function(v){
             const _til = !!_typer[v[0]];
             _pkrop += '<button class="knap valg" style="width:100%;min-height:44px;margin-bottom:6px;justify-content:flex-start;text-align:left;font-size:13px;' +
@@ -5956,7 +6105,10 @@ function _tegn() {
           });
           _pkrop += '<p class="lille" style="margin:8px 0 9px;opacity:.7">' + (EN
             ? "One notification per message, with the sender name \u2014 never the message itself. Nothing between 21 and 07."
-            : "Én besked pr. begivenhed, med navnet på den, der skrev \u2014 aldrig selve teksten. Intet mellem 21 og 07.") + '</p>' +
+            : "Én besked pr. begivenhed, med navnet på den, der skrev \u2014 aldrig selve teksten. Intet mellem 21 og 07." +
+              // ⭐ Porten er den ene undtagelse fra navne-reglen, og det skal
+              // staa der: en, der endnu ikke er lukket ind, faar intet navn.
+              ((S.push && S.push.ejer) ? " Ved porten st\u00e5r der kun et tal \u2014 aldrig et navn." : "")) + '</p>' +
             '<button class="knap valg" style="min-height:44px" data-a="pushFra">' +
             (S.pushSender ? "\u23f3 \u2026" : (EN ? "Turn notifications off" : "Slå beskeder fra")) + '</button>';
         } else {
@@ -6169,6 +6321,20 @@ function _tegn() {
         '<p class="lille" style="margin:8px 0 0;opacity:.75">' + (EN
           ? "Friends see only your first name, your streak and your live match — nothing else."
           : "Venner ser kun dit fornavn, din streak og din live-kamp — intet andet.") + '</p>';
+      // ⭐⭐ v4.34.0 · BESKEDERNES REGLER BOR HER NU.
+      // De stod som fodnote under skrivefeltet i chatten OG i rummet og
+      // skubbede feltet rundt, hver gang skaermen skiftede hoejde.
+      // UX vandt i HVORDAN, ikke i OM: loeftet er ikke vaek — det har
+      // faaet én adresse i stedet for to.
+      if (S.venneAktiv) _kData +=
+        '<p class="lille" style="margin:10px 0 4px;padding-top:8px;border-top:1px dashed var(--kant)"><b>💬 ' + (EN
+          ? "Messages" : "Beskeder") + '</b></p>' +
+        '<p class="lille" style="margin:0;line-height:1.55">' + (EN
+          ? "Messages live for a day, at most 200 — the friendship stays. Delete, ⚑ and Remove friend all delete them for both of you. In the room, everyone reads along."
+          : "Beskeder lever et døgn, højst 200 — venskabet består. Slet, ⚑ og Fjern ven sletter for jer begge. I rummet læser alle med.") + '</p>' +
+        '<p class="lille" style="margin:6px 0 0;opacity:.7;line-height:1.55">' + (EN
+          ? "Tap a message to edit it. Swipe left to delete or report — swipe a friend&rsquo;s message right to mark it unread."
+          : "Tryk på en besked for at rette den. Træk den til venstre for at slette eller rapportere — og en besked fra din ven til højre for at markere den ulæst.") + '</p>';
       // 🏛 JERES KLUB (v4.4.6): kortet bor nu HER — efter klubkoden, som
       // det hoerer sammen med, og ikke oeverst paa skaermen (Nicolai:
       // "den ligger for hoejt under indstillinger"). Vises altid — ogsaa
@@ -6275,11 +6441,19 @@ function _tegn() {
       // ⭐ DOERKLOKKEN. En lukket dør uden den er bare en mur.
       (!_venter && S.rolle !== "familie" ? '<div style="max-width:290px;margin:0 auto 12px">' +
         '<input placeholder="' + (EN?"your first name":"dit fornavn") + '" value="' + esc(S.meldNavn || SPILLER || "") + '" data-felt="meldNavn" maxlength="40" style="text-align:center">' +
-        '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="meldDig">' +
+        // \u2b50\u2b50 v4.36.0 \u00b7 HILSNEN. Nicolai 27/8: "aner ikke hvem det
+        // er". Frivillig \u2014 men det er den, der goer det muligt at sige ja.
+        // Loftet staar i appen OG paa serveren: skriver man 300 tegn og
+        // faar dem klippet i blinde, er det os, der har spildt tiden.
+        '<input placeholder="' + (EN?"who are you? (optional)":"sig hvem du er (frivilligt)") + '" value="' + esc(S.meldHilsen || "") + '" data-felt="meldHilsen" maxlength="120" style="text-align:center;margin-top:7px">' +
+        '<p class="lille" style="margin:5px 0 0;opacity:.55;text-align:center">' + (EN
+          ? "\u201cPhilip A. \u2014 plays with Oskar at B.93\u201d"
+          : "\u201cPhilip A. \u2014 spiller med Oskar i B.93\u201d") + '</p>' +
+        '<button class="knap" style="margin-top:9px;width:100%;min-height:44px;background:var(--grus)" data-a="meldDig">' +
         (S.meldSender ? "\u23f3 \u2026" : "\ud83d\udd14 " + (EN?"Ask to be let in":"Bed om at komme ind")) + '</button>' +
         '<p class="lille" style="margin:6px 0 0;opacity:.7">' + (EN
-          ? "Only your first name is sent. Nothing else."
-          : "Der sendes kun dit fornavn. Intet andet.") + '</p></div>' : '') +
+          ? "Your first name and your line are sent \u2014 to one person, who decides. The line is deleted the moment they answer. Nothing else is sent."
+          : "Dit fornavn og din linje sendes \u2014 til \u00e9n person, som beslutter. Linjen slettes i samme \u00f8jeblik, der bliver svaret. Intet andet sendes.") + '</p></div>' : '') +
       (S.meldBesked ? '<p class="lille" style="margin:0 auto 10px;max-width:290px;color:' + (S.meldBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.meldBesked.t) + '</p>' : '') +
       '<button class="knap" style="width:auto;padding:9px 18px" data-a="doerTjek">' + (S.portHenter ? "\u23f3 \u2026" : (EN?"Check again":"Tjek igen")) + '</button>' +
       '<div style="margin-top:10px"><a class="knap" style="width:auto;padding:9px 18px;display:inline-block;text-decoration:none;background:transparent;border:1px solid var(--kant);color:var(--is)" href="' + DOER_MAIL + '">' + (EN?"\u2709 Write to us":"\u2709 Skriv til os") + '</a></div>' +
@@ -7065,7 +7239,9 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
          '<a href="https://dtf.tournamentsoftware.com/ranking/category.aspx?id=52585&amp;category=2531" target="_blank" rel="noopener noreferrer" style="display:block;text-align:center;background:var(--grus);color:var(--kridt);font-weight:700;font-size:13px;border-radius:8px;padding:12px 0;text-decoration:none;margin-top:12px">📊 '+(EN?(SPILLER+"\'s current DTF ranking"):(SPILLER+"s"+" aktuelle rangliste hos DTF"))+'</a>';
   }
 
-  h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses are fetched from the club's service with your club code. StreakTennis · SportsAInalytics · "+VERSION:"Data gemmes lokalt i browseren på denne enhed. Analyserne hentes hos klubbens tjeneste med jeres klubkode. StreakTennis · SportsAInalytics · "+VERSION)+'</p>';
+  // ⭐ v4.34.0 · Ikke i venne-chatten. Der er skrivefeltet det sidste,
+  // der staar — en fod under det ville skubbe det op igen.
+  if (S.tab !== "chat") h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses are fetched from the club's service with your club code. StreakTennis · SportsAInalytics · "+VERSION:"Data gemmes lokalt i browseren på denne enhed. Analyserne hentes hos klubbens tjeneste med jeres klubkode. StreakTennis · SportsAInalytics · "+VERSION)+'</p>';
   h += bundNav();
   el.innerHTML = h;
   devFoldning();

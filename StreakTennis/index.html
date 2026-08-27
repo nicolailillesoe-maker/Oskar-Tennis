@@ -404,7 +404,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.29.0 · 26. august 2026";
+const VERSION = "v4.30.0 · 26. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1235,6 +1235,7 @@ let S = {
   // v4.29.0: hvilken boble er trykket paa, modpartens laest-tid,
   // og ulaest pr. ven (haandtag -> tal).
   chatValgtId: null, snakValgtId: null, chatVenLaest: null,
+  chatKort: null,
   ulaest: {}, ulaestIAlt: 0,
   // Hjemkomsten (v4.4): "oskar"/"teamp" naar den gamle app bor paa
   // telefonen og StreakTennis endnu ikke har en spiller.
@@ -3495,7 +3496,7 @@ const A = {
     S.chatVen = dele[0]; S.chatNavn = dele[1] || ""; S.chatBeskeder = null; S._chatSig = null;
     S.chatUdkast = ""; S.chatBesked = null; S.chatAnmeldId = null;
     S.chatRetId = null; S.chatRetUdkast = ""; S.chatSletId = null;
-    S.chatValgtId = null; S.chatVenLaest = null;
+    S.chatValgtId = null; S.chatVenLaest = null; S.chatKort = null;
     S.tab = "chat";
     // Læst nu — prikken slukker. Kun et tidsstempel, kun lokalt.
     try { S.chatLaest[S.chatVen] = new Date().toISOString();
@@ -3507,7 +3508,7 @@ const A = {
     render(); A.chatHent();
   },
   chatLuk: () => { S.chatVen = null; S.chatBeskeder = null; S.chatValgtId = null;
-    S.chatVenLaest = null; S.tab = "stige"; render(); A.ulaestHent(); },
+    S.chatVenLaest = null; S.chatKort = null; S.tab = "stige"; render(); A.ulaestHent(); },
   // ⭐ v4.27.0 · Chatten har sin egen funktion nu — rummets vagter ordret.
   // Den gamle vej i spiller-sync roeres ikke; den bruges bare ikke mere.
   // ⭐ v4.29.0 · Ét tryk paa en boble folder dens handlinger ud. Andet
@@ -3565,6 +3566,8 @@ const A = {
       // ⭐ v4.29.0 · modpartens tidsstempel. Appen regner selv ud, hvilken
       // af MINE beskeder der er naaet frem til oejnene.
       S.chatVenLaest = r.ven_laest || null;
+      // ⭐ v4.30.0 · begge sider af 1:1'eren, regnet ét sted.
+      S.chatKort = r.kort || null;
       // At hente samtalen ER at laese den — derfor nulstilles taelleren
       // her og ikke ved et tryk paa noget.
       if (S.ulaest && S.ulaest[S.chatVen]) {
@@ -3575,7 +3578,8 @@ const A = {
         lager.gem("sai-chat-laest", JSON.stringify(S.chatLaest)); } catch(e) {}
     } else if (S.chatBeskeder === null) S.chatBeskeder = [];
     // ⭐ v4.23.0 · se snakHent.
-    const _sig = JSON.stringify(S.chatBeskeder) + "|" + String(S.chatVenLaest || "");
+    const _sig = JSON.stringify(S.chatBeskeder) + "|" + String(S.chatVenLaest || "")
+      + "|" + JSON.stringify(S.chatKort || null);
     const _nyt = _sig !== S._chatSig;
     S._chatSig = _sig;
     if (puls) {
@@ -4435,6 +4439,49 @@ function _klokPaa(tid, EN) {
   } catch (e) { return ""; }
 }
 
+// ⭐⭐ v4.30.0 · SPILLERKORTET — 1:1 ØVERST I VENNE-CHATTEN.
+//
+// Nicolai 26/8: "der maa gerne vaere en sammenligning af deres stats
+// oeverst. Saa lidt 1:1."
+//
+// ⭐ FIRE TAL, DER KOMMER FRA SERVEREN — BEGGE SIDER. Appen regner ikke
+// sin egen halvdel, selvom den sagtens kunne: to opskrifter paa det
+// samme tal driver fra hinanden. Det har vi allerede laert én gang i dag.
+//
+// ⭐ STREAKEN STAAR OEVERST, fordi den beloenner at MOEDE OP — ikke at
+// vinde. Vundet-procenten staar nederst. Princip 41: spoerg hvad
+// mekanikken beloenner, ikke hvad den handler om.
+//
+// ⚠️ INGEN TABER. Foereren faar guld, den anden faar almindelig tekst.
+// Ingen roede tal og ingen kryds — en 14-aarig i en daarlig periode skal
+// kunne aabne en chat med sin ven uden at blive maalt og fundet for let.
+function _spillerkort(k, EN) {
+  if (!k || !k.mig || !k.ven) return "";
+  const R = [
+    ["\ud83d\udd25", EN ? "STREAK" : "STREAK", k.mig.streak, k.ven.streak, ""],
+    ["\ud83c\udfbe", EN ? "MATCHES" : "KAMPE", k.mig.kampe, k.ven.kampe, ""],
+    ["\u26a1", EN ? "IN A ROW" : "I TR\u00c6K", k.mig.stime, k.ven.stime, ""],
+    ["\ud83c\udfc6", EN ? "WON" : "VUNDET", k.mig.pct, k.ven.pct, "%"],
+  ];
+  let h = '<div style="background:var(--kort);border:1px solid var(--kant);border-radius:16px;padding:11px 13px;margin:0 0 10px">';
+  h += '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">' +
+    '<b style="flex:1;font-size:12.5px;color:var(--guld);text-align:left;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(k.mig.navn) + '</b>' +
+    '<span class="lille" style="margin:0;flex:none;opacity:.5;letter-spacing:1px">1:1</span>' +
+    '<b style="flex:1;font-size:12.5px;color:var(--is);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(k.ven.navn) + '</b></div>';
+  R.forEach(function (r) {
+    const a = Number(r[2]) || 0, b = Number(r[3]) || 0;
+    // Uafgjort har ingen foerer. To ens tal maa ikke se ud som en sejr.
+    const aF = a > b, bF = b > a;
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:3px 0">' +
+      '<span style="flex:1;text-align:left;font-size:17px;font-weight:800;color:' + (aF ? "var(--guld)" : "var(--tekst2)") + '">' + esc(String(a) + r[4]) + '</span>' +
+      '<span class="lille" style="margin:0;flex:none;width:96px;text-align:center;opacity:.65;letter-spacing:.5px">' + r[0] + ' ' + r[1] + '</span>' +
+      '<span style="flex:1;text-align:right;font-size:17px;font-weight:800;color:' + (bF ? "var(--guld)" : "var(--tekst2)") + '">' + esc(String(b) + r[4]) + '</span>' +
+      '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+
 // ⭐ v4.29.0 · DAGEN. Beskederne lever et doegn, saa der er hoejst ét
 // skel — men netop derfor skal det staa der: "i gaar 23.50" og "i dag
 // 00.10" ligner ellers to minutters forskel.
@@ -4495,7 +4542,10 @@ function _snakListe(liste, p, EN) {
   // ⭐ Egen rullekasse. Foer laa samtalen frit ned ad siden og endte bag
   // bundbjaelken; nu bliver skrivefeltet staaende, og render() holder
   // rullen, hvor den var (se render).
-  let h = '<div id="snak-rul" style="display:flex;flex-direction:column;max-height:46vh;overflow-y:auto;padding:2px 2px 4px;-webkit-overflow-scrolling:touch">';
+  // ⚠️ Er der et spillerkort over samtalen, faar listen mindre plads —
+  // ellers skubbes skrivefeltet ned bag bundbjaelken paa en lille telefon.
+  const hoejde = p.kort ? "34vh" : "46vh";
+  let h = '<div id="snak-rul" style="display:flex;flex-direction:column;max-height:' + hoejde + ';overflow-y:auto;padding:2px 2px 4px;-webkit-overflow-scrolling:touch">';
   let sidsteDag = "", sidsteAf = null;
 
   L.forEach(function (b, i) {
@@ -5093,6 +5143,9 @@ function _tegn() {
         '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 16px" data-a="chatLuk">←</button>' +
         '<b style="font-size:16px">💬 ' + esc(S.chatNavn || (EN?"Friend":"Ven")) + '</b></div>';
       const cb = S.chatBeskeder;
+      // ⭐⭐ v4.30.0 · 1:1'EREN ØVERST. Den staar FØR beskederne, fordi
+      // det er dét, man kommer for at se, naar man aabner en vens chat.
+      h += _spillerkort(S.chatKort, EN);
       // ⭐ v4.29.0 · ingen kasse om samtalen laengere. Boblerne er selv
       // flader; en kasse om flader er to rammer om det samme.
       h += '<div style="padding:2px 0">';
@@ -5107,7 +5160,7 @@ function _tegn() {
       else h += _snakListe(cb, { pre: "chat", retId: S.chatRetId,
         retUdkast: S.chatRetUdkast, sletId: S.chatSletId,
         anmeldId: S.chatAnmeldId, valgtId: S.chatValgtId,
-        venLaest: S.chatVenLaest, alle: false }, EN);
+        venLaest: S.chatVenLaest, kort: !!S.chatKort, alle: false }, EN);
       h += '</div>';
       h += '<div class="raekke" style="margin-top:8px">' +
         ["🔥","👏","🎾","💪"].map(function(i){
@@ -5711,7 +5764,7 @@ function _tegn() {
             : "Teamet kigger med \u2014 venner inviteres fra spillerens egen telefon. Live-kampe kan altid deles fra tavlen.")
           : (EN
             ? "A friend sees your first name, your streak and your match while it runs \u2014 never your notes."
-            : "En ven ser dit fornavn, din streak og din kamp mens den spilles \u2014 aldrig dine noter.")) + '</p>';
+            : "En ven ser dit fornavn, din streak, dine sæsontal (kampe og sejre) og din kamp mens den spilles \u2014 aldrig dine noter og aldrig dine modstandere.")) + '</p>';
         h += '</div>';
         }
         // Regel-kortet og drifts-kortet er fjernet 20/8: reglen staar nu ved
@@ -6037,7 +6090,7 @@ function _tegn() {
           _pkt(false, (EN?"your own assessments":"dine egne vurderinger")) +
           '<p class="lille" style="margin:10px 0 0;padding-top:8px;border-top:1px dashed var(--kant)">' + (EN
           ? "A friend sees your first name and your streak — and your match while it is being played, if you turn that on yourself."
-          : "En ven ser dit fornavn og din streak — og din kamp mens den spilles, hvis du selv slår det til.") + '</p>' +
+          : "En ven ser dit fornavn, din streak og dine sæsontal — og din kamp mens den spilles, hvis du selv slår det til.") + '</p>' +
           '<p class="lille" style="margin:8px 0 0;opacity:.75">' + (EN
           ? "This started when you added or accepted a friend. Nothing was sent before that."
           : "Det begyndte, da du tilføjede eller accepterede en ven. Før det blev der ikke sendt noget.") + '</p>';

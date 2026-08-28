@@ -151,7 +151,14 @@ textarea{width:100%;height:140px;background:var(--dyb);color:var(--is);border:1p
 <div class="wrap" id="app"></div>
 <!-- ⭐ v4.26.0 · ÉN filvaelger til hele appen. Etiketten paa strimlen
      peger paa den, saa der aldrig ligger tyve skjulte felter i DOM'en. -->
-<input type="file" id="bil-fil" accept="image/*" capture="environment" data-felt="bilFil" style="display:none">
+<!-- ⭐⭐ v4.44.0 · INGEN `capture`. Med den sprang iOS og Android
+     fotobiblioteket over og åbnede kameraet direkte — man kunne kun
+     tage et NYT billede. Uden den viser telefonen alle vejene:
+     Fotobibliotek · Tag billede · Gennemse.
+     ⚠️ EXIF-beskyttelsen er uberørt: `bilKlargoer` gen-koder ALTID på
+     et lærred, og et lærred kan ikke bære EXIF videre — uanset om
+     billedet kom fra kameraet eller fra albummet. -->
+<input type="file" id="bil-fil" accept="image/*" data-felt="bilFil" style="display:none">
 
 <script type="text/x-dc" data-dc-script="" data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:860},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#2E56D6&quot;,&quot;options&quot;:[&quot;#2E56D6&quot;,&quot;#4B17B6&quot;,&quot;#1D958E&quot;,&quot;#9D2E7B&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Tema&quot;},&quot;glaskort&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Tema&quot;}}">
 class Component extends DCLogic {
@@ -423,7 +430,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.43.0 · 27. august 2026";
+const VERSION = "v4.44.0 · 28. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1234,7 +1241,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -2707,6 +2714,7 @@ const A = {
     const dele = String(v).split("|");
     S.snakRum = dele[0]; S.snakNavn = dele[1] || "";
     S.snakBeskeder = null; S.snakUdkast = ""; S.snakBesked = null; S.snakAnmeldId = null; S._snakSig = null;
+    S.kortAaben = false; S.reakAaben = false;
     S.tab = "rumsnak";
     // Blid puls mens rummet er aabent — gaar i staa af sig selv udenfor.
     if (!window._snakTimer) window._snakTimer = setInterval(function(){
@@ -2792,6 +2800,7 @@ const A = {
     } else { S.snakRetId = null; S.snakRetUdkast = ""; A.snakHent(); }
   },
   snakReager: async (v) => {
+    S.reakAaben = false;
     if (!S.snakRum) return;
     const r = await A.snakKald("skriv", { art: "r", tekst: v });
     if (!r.fejl) A.snakHent();
@@ -3240,6 +3249,9 @@ const A = {
   // ⭐ v4.42.0 · Ét tryk på en ven folder hendes handlinger ud. Samme
   // mønster som en besked i chatten — og samme grund: en destruktiv
   // knap skal koste ét tryk mere end den, man bruger hver dag.
+  // ⭐ v4.44.0 · De to folde, der giver samtalen sin plads tilbage.
+  kortSkift: () => { S.kortAaben = !S.kortAaben; render(); },
+  reakSkift: () => { S.reakAaben = !S.reakAaben; render(); },
   venneVaelg: (v) => {
     const id = String(v || "");
     S.venneValgtId = (S.venneValgtId === id) ? null : id;
@@ -3769,6 +3781,7 @@ const A = {
     S.chatUdkast = ""; S.chatBesked = null; S.chatAnmeldId = null;
     S.chatRetId = null; S.chatRetUdkast = ""; S.chatSletId = null;
     S.chatValgtId = null; S.chatVenLaest = null; S.chatKort = null;
+    S.kortAaben = false; S.reakAaben = false;
     S.tab = "chat";
     try { window.scrollTo(0, 0); } catch (_e) {}
     // Læst nu — prikken slukker. Kun et tidsstempel, kun lokalt.
@@ -3899,6 +3912,7 @@ const A = {
   },
   chatReager: async (v) => {
     if (!S.chatVen) return;
+    S.reakAaben = false; render();
     const r = await A.chatKald("skriv", { art: "r", tekst: v });
     if (!r.fejl) A.chatHent();
   },
@@ -4861,12 +4875,23 @@ function _spillerkort(k, EN) {
     ["\u26a1", EN ? "IN A ROW" : "I TR\u00c6K", k.mig.stime, k.ven.stime, ""],
     ["\ud83c\udfc6", EN ? "WON" : "VUNDET", k.mig.pct, k.ven.pct, "%"],
   ];
-  let h = '<div id="spillerkort" style="background:var(--kort);border:1px solid var(--kant);border-radius:16px;padding:11px 13px;margin:0 0 10px">';
-  h += '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px">' +
-    '<b style="flex:1;font-size:12.5px;color:var(--guld);text-align:left;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(k.mig.navn) + '</b>' +
+  // ⭐⭐ v4.44.0 · FOLDET SOM UDGANGSPUNKT. Målt: kortet fyldte 160 px,
+  // og på en 667 px telefon var samtalen kun 163 px — kortet var altså
+  // større end den samtale, det stod over. Foldet fylder det 44 px.
+  // Ét tryk åbner det, og valget huskes, mens man er i chatten.
+  const _aab = !!S.kortAaben;
+  let h = '<div id="spillerkort" style="background:var(--kort);border:1px solid var(--kant);border-radius:16px;padding:' +
+    (_aab ? '11px 13px' : '4px 13px') + ';margin:0 0 8px">';
+  h += '<button data-a="kortSkift" style="width:100%;min-height:44px;display:flex;align-items:center;gap:8px;background:none;border:0;padding:0;cursor:pointer;color:inherit;font-family:inherit' +
+    (_aab ? ';margin-bottom:4px' : '') + '">' +
+    '<b style="flex:1;font-size:12.5px;color:var(--guld);text-align:left;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(k.mig.navn) +
+      (_aab ? '' : ' <span style="font-weight:800;color:var(--tekst2)">\ud83d\udd25 ' + (Number(k.mig.streak) || 0) + '</span>') + '</b>' +
     '<span class="lille" style="margin:0;flex:none;opacity:.5;letter-spacing:1px">1:1</span>' +
-    '<b style="flex:1;font-size:12.5px;color:var(--is);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(k.ven.navn) + '</b></div>';
-  R.forEach(function (r) {
+    '<b style="flex:1;font-size:12.5px;color:var(--is);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+      (_aab ? '' : '<span style="font-weight:800;color:var(--tekst2)">\ud83d\udd25 ' + (Number(k.ven.streak) || 0) + '</span> ') + esc(k.ven.navn) + '</b>' +
+    '<span style="flex:none;color:var(--daempet);font-size:10px;transition:transform .15s;transform:rotate(' + (_aab ? '90' : '0') + 'deg)">\u25b6</span>' +
+    '</button>';
+  if (_aab) R.forEach(function (r) {
     const a = Number(r[2]) || 0, b = Number(r[3]) || 0;
     // Uafgjort har ingen foerer. To ens tal maa ikke se ud som en sejr.
     const aF = a > b, bF = b > a;
@@ -5034,6 +5059,30 @@ function _zoneTitel(ikon, tekst, tal) {
       ? '<span style="flex:none;font-size:12px;font-weight:800;color:var(--daempet);font-variant-numeric:tabular-nums">' + tal + '</span>'
       : '') +
     '</div>';
+}
+
+// ⭐⭐ v4.44.0 · REAKTIONERNE BAG EN KNAP.
+// Nicolai: «vi skal fjerne reaktionerne fra bunden». Målt kostede rækken
+// 60 px permanent — på en 667 px telefon var det over en tredjedel af
+// den samtale, der var tilbage. Nu ligger de bag 😊 i skrivelinjen.
+//
+// ⚠️ De er FOLDET, ikke fjernet: åbnet står de præcis som før, med de
+// samme fire tegn og de samme handlinger. Serveren kender kun de fire
+// (REAKTIONER i venne-snak og rum-snak) — der er ikke kommet en femte.
+function _reakRaekke(pre, EN) {
+  if (!S.reakAaben) return "";
+  return '<div class="raekke" style="margin-top:8px;flex:none">' +
+    ["\ud83d\udd25", "\ud83d\udc4f", "\ud83c\udfbe", "\ud83d\udcaa"].map(function (i) {
+      return '<button class="knap" style="min-height:44px;font-size:21px;padding:0" data-a="' + pre + 'Reager" data-v="' + i + '">' + i + '</button>';
+    }).join("") + '</div>';
+}
+
+// ⭐ Knappen, der folder dem ud. Står ved siden af kameraet, fordi de to
+// er det samme spørgsmål: «hvad kan jeg sende ud over tekst?»
+function _reakKnap(EN) {
+  return '<button class="knap valg" style="flex:none;min-height:44px;width:52px;padding:0;font-size:19px' +
+    (S.reakAaben ? ';border-color:var(--is);color:var(--is)' : '') + '" data-a="reakSkift" ' +
+    'aria-label="' + (EN ? "Reactions" : "Reaktioner") + '">\ud83d\ude0a</button>';
 }
 
 function _kameraKnap(EN) {
@@ -5834,12 +5883,10 @@ function _tegn() {
       h += '<p class="lille" style="flex:none;margin:6px 2px 0;opacity:.7">\ud83d\udc40 ' + (EN
         ? "Everyone in the room reads along." : "Alle i rummet l\u00e6ser med.") + '</p>';
       h += _billedLoefte(EN);
-      h += '<div class="raekke" style="margin-top:8px;flex:none">' +
-        ["🔥","👏","🎾","💪"].map(function(i){
-          return '<button class="knap" style="min-height:44px;font-size:21px;padding:0" data-a="snakReager" data-v="' + i + '">' + i + '</button>';
-        }).join("") + '</div>';
+      h += _reakRaekke("snak", EN);
       h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:stretch;flex:none">' +
         '<input class="felt" style="flex:1;min-width:0" maxlength="140" placeholder="' + (EN?"Write to the room":"Skriv til rummet") + '" value="' + esc(S.snakUdkast) + '" data-felt="snakUdkast">' +
+        _reakKnap(EN) +
         _kameraKnap(EN) +
         '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="snakSend">' + (EN?"Send":"Send") + '</button></div>';
       h += '</div>';   // ⭐ #snak-flade slutter
@@ -5888,12 +5935,10 @@ function _tegn() {
       // staar UNDER skrivefeltet, skubber feltet op — og saa er vi tilbage,
       // hvor v4.34.0 startede.
       h += _billedLoefte(EN);
-      h += '<div class="raekke" style="margin-top:8px;flex:none">' +
-        ["🔥","👏","🎾","💪"].map(function(i){
-          return '<button class="knap" style="min-height:44px;font-size:21px;padding:0" data-a="chatReager" data-v="' + i + '">' + i + '</button>';
-        }).join("") + '</div>';
+      h += _reakRaekke("chat", EN);
       h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:stretch;flex:none">' +
         '<input class="felt" style="flex:1;min-width:0" maxlength="140" placeholder="' + (EN?"Write to your friend":"Skriv til din ven") + '" value="' + esc(S.chatUdkast) + '" data-felt="chatUdkast">' +
+        _reakKnap(EN) +
         _kameraKnap(EN) +
         '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="chatSend">' + (EN?"Send":"Send") + '</button></div>';
       h += '</div>';

@@ -430,7 +430,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.48.0 · 28. august 2026";
+const VERSION = "v4.49.0 · 28. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1241,7 +1241,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilBesked: null, nulstilHenter: false, skiftSpoerg: false,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilBesked: null, nulstilHenter: false, skiftSpoerg: false, vennePanel: null,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -4191,7 +4191,24 @@ const A = {
   // samtykket — hvem der end holdt den, kom ind. Nu aabner knappen bare
   // feltet, hvor man skriver vennens ID. Der sendes en ANMODNING, som
   // den anden skal sige ja til. Intet forlader telefonen foer da.
+  // ⭐ v4.49.0 · ÉT PANEL AD GANGEN — husets egen regel fra #60.
+  // Trykker man på den, der allerede er åben, lukker den. Intet valgt =
+  // ren skærm, præcis som i zonen og i statistikken.
+  vennePanel: (v) => {
+    S.vennePanel = (S.vennePanel === v ? null : v);
+    // ⚠️ FANGET AF ET SKAERMBILLEDE: flisen lyste op, men panelet var tomt.
+    // Feltet er gemt bag `S.venneAaben` (v4.11.0) — flisen skal saette
+    // BEGGE, ellers taender man et lys i et rum uden moebler.
+    S.venneAaben = (S.vennePanel === "tilfoej");
+    // ⭐ Samme regel som `venneNyKode` (v4.45.0): en ubrugt invitation staar
+    // klar, uanset HVILKEN vej man aabner folden. To indgange til det samme
+    // felt maa ikke opfoere sig forskelligt.
+    if (S.venneAaben && S.invitFra && !String(S.venneUdkast || "").trim()) S.venneUdkast = _invitVis(S.invitFra);
+    S.vennerBesked = null;
+    render();
+  },
   venneNyKode: () => {
+    S.vennePanel = "tilfoej";
     S.venneAaben = true; S.vennerBesked = null; S.venneKode = null;
     // ⭐ v4.45.0 · en ubrugt invitation staar klar, hver gang folden
     // aabnes — ikke kun den ene gang, hilsenen viste sig.
@@ -6762,7 +6779,39 @@ function _tegn() {
         // koder udstedes og indløses kun på spillerens egen telefon.
         // Serveren håndhæver (v2.14.1: 403 rolle); UI'et er ærligt.
         if (S.rolle !== "familie") {
-        h += '<button class="knap" style="width:100%;min-height:44px" data-a="venneNyKode">\ud83e\udd1d ' + (EN?"Add a friend":"Tilf\u00f8j ven") + '</button>';
+        // ⭐⭐⭐ v4.49.0 · TRE FLISER I STEDET FOR FIRE KNAPPER OVEN PÅ
+        // HINANDEN. Nicolai 28/8: «Hele det område er altså stadig super
+        // rodet.» Han har ret — og de tre ting er tre FORSKELLIGE opgaver.
+        // ⚠️ Mangler man et brugernavn, tvinges ID-panelet åbent: uden et
+        // navn kan ingen finde dig, og v4.12.0-reglen siger, at kortet
+        // står, til det er valgt.
+        // ⚠️ FANGET AF PRØVEN: den foerste udgave laaste ID-panelet fast,
+        // naar man manglede et brugernavn — og saa kunne man IKKE naa de to
+        // andre fliser. En, der ikke har valgt navn endnu, skal stadig kunne
+        // sende appen til en ven. Reglen er derfor et UDGANGSPUNKT, ikke et
+        // hegn: ID-panelet staar aabent af sig selv, men et tryk vinder.
+        const _vp2 = S.vennePanel || (S.mitNavn ? null : "id");
+        const _vFlise = function (v, ik, titel, under, bred) {
+          return '<button class="dev-flise dev-kant' + (_vp2 === v ? ' dev-kant-is' : '') +
+            '" data-a="vennePanel" data-v="' + v + '" style="min-height:88px' + (bred ? ';width:100%' : '') + '">' +
+            '<span class="dev-ikon" style="font-size:20px">' + ik + '</span>' +
+            '<b style="font-size:11px;letter-spacing:1.2px">' + titel + '</b>' +
+            '<small style="opacity:.7">' + under + '</small></button>';
+        };
+        h += '<div class="dev-grid" style="margin:10px 0 0">' +
+          _vFlise("send", "\ud83d\udce9", (EN ? "SEND THE APP" : "SEND APPEN"),
+                  (EN ? "to someone new" : "til en uden appen")) +
+          _vFlise("tilfoej", "\ud83e\udd1d", (EN ? "ADD A FRIEND" : "TILFØJ VEN"),
+                  (EN ? "they already have it" : "de har den i forvejen")) +
+          '</div>' +
+          '<div style="margin-top:8px">' +
+          _vFlise("id", "\ud83c\udd94", (EN ? "YOUR ID" : "DIT ID"),
+                  esc(S.mitNavn || S.mitVenneId || (EN ? "not ready yet" : "ikke klar endnu")), true) +
+          '</div>';
+        // ⚠️ `venneNyKode` findes stadig og saetter baade flisen og feltet
+        // — den kaldes ogsaa fra invitationen (v4.45.0) og fra hilsenen.
+
+        if (_vp2 === "id") {
 
         // ⭐ v4.10.0 · DIT VENNE-ID — det, du deler nu. Koderne bestaar
         // som vej nr. 2 (rummene bruger dem), men ID'et er permanent.
@@ -6819,12 +6868,13 @@ function _tegn() {
               '<span style="flex:1;min-width:0">' + (EN?"Until then: ":"Indtil da: ") + '<b style="color:var(--guld);letter-spacing:1px">' + esc(S.mitVenneId) + '</b></span>' +
               '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="kopier" data-v="mitVenneId">' + (S.kopieret === "mitVenneId" ? (EN?"Copied \u2713":"Kopieret \u2713") : (EN?"Copy":"Kopi\u00e9r")) + '</button></div>';
         }
+        }   // ⭐ v4.49.0 · ID-panelet slutter her.
 
         // ⭐ v4.45.0 · SEND STREAKTENNIS TIL EN VEN.
         // Den staar HER og ikke i indstillinger: det er den skaerm, hvor
         // man i forvejen er i gang med at faa fat i nogen. Fredningsreglen
         // holder — forsiden er urørt, funktionen bor i et rum, der findes.
-        if (S.mitNavn || S.mitVenneId) {
+        if (_vp2 === "send" && (S.mitNavn || S.mitVenneId)) {
           h += '<button class="knap" style="width:100%;margin-top:11px;min-height:44px" data-a="appDel">📩 ' +
             (S.kopieret === "delAppTekst"
               ? (EN ? "Link copied ✓" : "Link kopieret ✓")
@@ -6838,7 +6888,8 @@ function _tegn() {
         // Et eksakt opslag er en adressebog, du selv fylder. En liste er en
         // mappe over andres boern. I egen klub har traeneren allerede sagt
         // god for alle; globalt ville der vaere fremmede. Derfor hegnet.
-        if (S.rolle !== "familie" && S.minKlub && String(S.minKlub).toLowerCase() !== "uden klub") {
+        // ⭐ v4.49.0 · soegningen hoerer sammen med feltet, ikke med fliserne.
+        if (_vp2 === "tilfoej" && S.rolle !== "familie" && S.minKlub && String(S.minKlub).toLowerCase() !== "uden klub") {
           h += '<div style="margin-top:9px">' +
             '<input placeholder="' + (EN ? "search in " : "søg i ") + esc(S.minKlub) + '" value="' + esc(S.soegUdkast) + '" data-felt="soegUdkast" maxlength="20" style="text-transform:lowercase">' +
             '<div class="raekke" style="margin-top:7px">' +

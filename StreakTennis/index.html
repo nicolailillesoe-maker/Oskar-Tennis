@@ -430,7 +430,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.45.0 · 28. august 2026";
+const VERSION = "v4.46.0 · 28. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -5580,7 +5580,12 @@ function _bilVis(EN) {
     '<p class="lille" style="margin:10px 6px 0;text-align:center;max-width:420px;line-height:1.5">' + (EN
       ? "Seen once — it is deleted now. We do not keep it. We cannot stop a screenshot."
       : "Set én gang — det er slettet nu. Vi gemmer det ikke. Vi kan ikke forhindre et skærmbillede.") + '</p>' +
-    '<button class="knap" style="margin-top:12px;max-width:260px;min-height:48px;background:var(--grus)" data-a="bilLuk">' +
+    // ⭐⭐ v4.46.0 · `flex:none` ER HELE RETTELSEN. Uden den arver knappen
+    // `.knap{flex:1}` og vokser LODRET i denne kolonne-flexboks — 60 px
+    // bred, en halv skærm høj (målt paa Nicolais telefon 28/8).
+    // `width:100%` giver den bredden tilbage, som `flex-basis:0%` tog.
+    '<button class="knap" style="margin-top:12px;flex:none;width:100%;max-width:260px;' +
+    'min-height:48px;height:48px;background:var(--grus)" data-a="bilLuk">' +
     (EN ? "Close" : "Luk") + '</button></div>';
 }
 

@@ -423,7 +423,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.42.0 · 27. august 2026";
+const VERSION = "v4.43.0 · 27. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -4694,6 +4694,21 @@ function _fladeMaal() {
     // Gulvet skal kun fange det negative, ikke bestemme hoejden.
     const top = f.getBoundingClientRect().top + (window.pageYOffset || 0);
     f.style.height = Math.max(120, Math.round(window.innerHeight - bund - top)) + "px";
+    // ⭐⭐ v4.43.0 · NÅR DER IKKE ER PLADS TIL BEGGE, VINDER SKRIVEFELTET.
+    // Kun venne-chatten har et spillerkort som fast barn; rummet lagde
+    // sit hoved ind i rullekassen og kan derfor ikke havne her.
+    // ⚠️ Der måles på VIRKNINGEN (ligger feltet under kanten?) — ikke på
+    // et gættet grænsetal. Et tal ville være forkert på den næste telefon.
+    try {
+      const kort = document.getElementById("spillerkort");
+      const felt = f.querySelector('[data-felt$="Udkast"]');
+      if (kort && felt) {
+        kort.style.display = "";
+        if (felt.getBoundingClientRect().bottom > window.innerHeight + 2) {
+          kort.style.display = "none";
+        }
+      }
+    } catch (_e) {}
   } catch (_e) {}
 }
 // Drejer telefonen, maales der forfra.
@@ -5046,9 +5061,16 @@ function _billedLoefte(EN) {
       : "Et billede kan ses \u00e9n gang og slettes s\u00e5. Vi gemmer det ikke \u2014 men vi kan ikke forhindre et sk\u00e6rmbillede.") + '</p>';
 }
 
+// ⭐⭐ v4.43.0 · TO NYE VALG, SÅ RUMMET KAN VÆRE EN FLADE:
+//   `foer` — det, der hører til samtalen uden at være en besked
+//            (rummets live-kort, de fire tal og stigen). Det tegnes INDE
+//            i rullekassen, over beskederne.
+//   `tom`  — teksten, når der ikke er nogen beskeder. Før stod den uden
+//            for listen, og så forsvandt hovedet i et tomt rum.
+// ⚠️ Venne-chatten sender ingen af dem og opfører sig præcis som før.
 function _snakListe(liste, p, EN) {
   const L = (liste || []).slice(-60);
-  if (!L.length) return "";
+  if (!L.length && !p.foer && !p.tom) return "";
 
   // ⭐⭐ LAEST-KVITTERINGEN regnes ud HER, ikke paa serveren.
   // Serveren sender ÉT tidsstempel — hvornaar modparten sidst saa
@@ -5087,6 +5109,12 @@ function _snakListe(liste, p, EN) {
   let h = '<div id="snak-rul" style="display:flex;flex-direction:column;' +
     (hoejde ? "max-height:" + hoejde : "flex:1 1 auto;min-height:0") +
     ';overflow-y:auto;padding:2px 2px 4px;-webkit-overflow-scrolling:touch">';
+  // \u2b50\u2b50 v4.43.0 \u00b7 HOVEDET LIGGER I RULLEKASSEN, IKKE OVER DEN.
+  // \u00c9n ruller \u2014 to ville sl\u00e5s om fingeren, og skrivefeltet skulle
+  // stadig have en fast plads forneden. S\u00e5dan ruller stigen v\u00e6k af sig
+  // selv, n\u00e5r man l\u00e6ser, og kommer tilbage, n\u00e5r man ruller op.
+  if (p.foer) h += p.foer;
+  if (!L.length) { h += (p.tom || ""); return h + '</div>'; }
   // \u2b50 v4.34.0 \u00b7 SAMTALEN HVILER PAA SKRIVEFELTET.
   // Med faa beskeder klistrede den foer op i toppen med et tomt hul
   // nedenunder. `margin-top:auto` skubber den ned, naar der er plads,
@@ -5709,13 +5737,22 @@ function _tegn() {
     } else if (S.tab === "rumsnak") {
       // ⭐ SNAKKEN I RUMMET (v4.9.0). Venne-chattens skaerm, genbrugt:
       // samme vagter, samme aerlige fodnote — bare rummets dør.
-      h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' +
+      // ⭐⭐ v4.43.0 · RUMMET ER NU EN HEL SKÆRM — præcis som venne-chatten.
+      // `#snak-flade` er det eneste, `_fladeMaal` kigger efter: den sætter
+      // `body.flade` (bundbjælken væk), måler den plads, der er tilbage, og
+      // giver listen resten. Ét id, og hele mekanikken følger med.
+      h += '<div id="snak-flade" style="display:flex;flex-direction:column">';
+      h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px;flex:none">' +
         '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 16px" data-a="snakLuk">←</button>' +
         '<b style="font-size:16px">🚪 ' + esc(S.snakNavn || (EN?"Room":"Rum")) + '</b></div>';
 
       // ⭐⭐ v4.13.0 · RUMMET ER MERE END EN CHAT.
       // Alt herunder er bygget paa data, `gruppe-hent` allerede leverer —
       // fornavn, streak, live og seneste kamp. Der indsamles INTET nyt.
+      // ⭐⭐ HOVEDET BYGGES SOM FØR — men i sin egen streng, så det kan
+      // lægges INDE i rullekassen. Ikke én linje i live-kortene, de fire
+      // tal eller stigen er rørt; kun hvor resultatet lander.
+      const _hGem = h; h = "";
       const _rum = (S.grListe || []).find(function(x){ return x.id === S.snakRum; });
       const _med = (_rum && _rum.medlemmer) ? _rum.medlemmer.slice() : [];
       if (_med.length) {
@@ -5766,34 +5803,46 @@ function _tegn() {
           ? "The ladder counts trainings in a row. A nudge goes into the room chat \u2014 nowhere else."
           : "Stigen t\u00e6ller tr\u00e6ninger i tr\u00e6k. Et puf lander i rummets chat \u2014 ikke andre steder.") + '</p></div>';
       }
+      const _rumHoved = h; h = _hGem;
       const sb = S.snakBeskeder;
       // ⭐ v4.34.0 · DEN ENE SAETNING, DER AENDRER ADFAERD, STAAR FOER
       // MAN SKRIVER — ikke som fodnote bagefter. Resten af reglerne
       // (doegnet, de 200, ⚑) bor under 📱 DINE DATA.
-      h += '<p class="lille" style="margin:4px 2px 2px;opacity:.7">\ud83d\udc40 ' + (EN
-        ? "Everyone in the room reads along." : "Alle i rummet l\u00e6ser med.") + '</p>';
-      h += '<div style="padding:2px 0">';
-      if (sb === null) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">⏳ …</p>';
-      else if (!sb.length) h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (EN
-        ? "Nothing here yet. Say hi — or send a 🔥."
-        : "Her er tomt endnu. Sig hej — eller send en 🔥.") + '</p>';
       // ⭐⭐ v4.27.0 · SAMME LISTE SOM VENNE-CHATTEN. Se _snakListe.
       // Rummet og 1:1 tegnes af ÉN funktion, saa de ikke kan drive fra
       // hinanden igen. `alle: true` — her er der vidner.
-      if (sb) h += _snakListe(sb, { pre: "snak", retId: S.snakRetId,
+      // ⭐ v4.43.0 · `fyld: true` og `foer: _rumHoved` — samme flade som
+      // venne-chatten, med rummets eget hoved øverst i rullekassen.
+      h += '<div style="padding:2px 0;flex:1 1 auto;min-height:0;display:flex;flex-direction:column">';
+      h += _snakListe(sb || [], { pre: "snak", retId: S.snakRetId,
         retUdkast: S.snakRetUdkast, sletId: S.snakSletId,
-        anmeldId: S.snakAnmeldId, valgtId: S.snakValgtId, alle: true }, EN);
+        anmeldId: S.snakAnmeldId, valgtId: S.snakValgtId, alle: true,
+        fyld: true, foer: _rumHoved,
+        tom: (sb === null
+          ? '<p class="lille" style="margin:0;text-align:center;padding:10px 0">\u23f3 \u2026</p>'
+          : '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (EN
+            ? "Nothing here yet. Say hi \u2014 or send a \ud83d\udd25."
+            : "Her er tomt endnu. Sig hej \u2014 eller send en \ud83d\udd25.") + '</p>') }, EN);
       h += '</div>';
+      // ⚠️⚠️ STATUSLINJEN STÅR OVER EMOJIERNE, IKKE UNDER FELTET.
+      // Før stod `snakBesked` under skrivefeltet: hver gang serveren sagde
+      // nej, skubbede fejlen feltet OP. Det er ordret den fælde, v4.34.0
+      // skrev en advarsel om i venne-chatten — rummet arvede den aldrig.
+      h += (S.snakBesked ? '<p class="lille" style="flex:none;margin:6px 2px 0;color:var(--tabt)">' + esc(S.snakBesked.t) + '</p>' : '');
+      // ⭐ v4.34.0-reglen: den ene sætning, der ændrer adfærd, står FØR
+      // man skriver. Derfor er den fastgjort her og ruller ikke væk.
+      h += '<p class="lille" style="flex:none;margin:6px 2px 0;opacity:.7">\ud83d\udc40 ' + (EN
+        ? "Everyone in the room reads along." : "Alle i rummet l\u00e6ser med.") + '</p>';
       h += _billedLoefte(EN);
-      h += '<div class="raekke" style="margin-top:8px">' +
+      h += '<div class="raekke" style="margin-top:8px;flex:none">' +
         ["🔥","👏","🎾","💪"].map(function(i){
           return '<button class="knap" style="min-height:44px;font-size:21px;padding:0" data-a="snakReager" data-v="' + i + '">' + i + '</button>';
         }).join("") + '</div>';
-      h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:stretch">' +
+      h += '<div style="margin-top:8px;display:flex;gap:6px;align-items:stretch;flex:none">' +
         '<input class="felt" style="flex:1;min-width:0" maxlength="140" placeholder="' + (EN?"Write to the room":"Skriv til rummet") + '" value="' + esc(S.snakUdkast) + '" data-felt="snakUdkast">' +
         _kameraKnap(EN) +
         '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="snakSend">' + (EN?"Send":"Send") + '</button></div>';
-      h += (S.snakBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.snakBesked.t) + '</p>' : '');
+      h += '</div>';   // ⭐ #snak-flade slutter
     } else if (S.tab === "chat") {
       // ⭐ VENNE-CHATTEN (v4.3).
       //
@@ -7810,7 +7859,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   // der staar — en fod under det ville skubbe det op igen.
   // ⭐ v4.40.0 · Billedet ligger OVER alt andet — derfor sidst i strengen.
   h += _bilVis(EN);
-  if (S.tab !== "chat") h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses are fetched from the club's service with your club code. StreakTennis · SportsAInalytics · "+VERSION:"Data gemmes lokalt i browseren på denne enhed. Analyserne hentes hos klubbens tjeneste med jeres klubkode. StreakTennis · SportsAInalytics · "+VERSION)+'</p>';
+  if (S.tab !== "chat" && S.tab !== "rumsnak") h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses are fetched from the club's service with your club code. StreakTennis · SportsAInalytics · "+VERSION:"Data gemmes lokalt i browseren på denne enhed. Analyserne hentes hos klubbens tjeneste med jeres klubkode. StreakTennis · SportsAInalytics · "+VERSION)+'</p>';
   h += bundNav();
   el.innerHTML = h;
   devFoldning();

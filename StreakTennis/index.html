@@ -430,7 +430,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.46.0 · 28. august 2026";
+const VERSION = "v4.47.0 · 28. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1532,6 +1532,15 @@ function _invitTag() {
       // passer paa symptomet.
       // Kaldet er derfor UDSKUDT: naar koeen er tom, findes A.
       setTimeout(function () { try { A.ulaestHent(); } catch (_e) {} }, 0);
+    }
+    // ⭐⭐⭐ v4.47.0 · OG SPØRG PORTEN — UANSET om hilsenen viste sig.
+    // Målt i produktionen 28/8: en inviteret, der ikke er lukket ind, fik
+    // 403 fra `venne-bud` og INTET at vide. Appen ringer stadig ikke hjem
+    // uopfordret — men en invitation i lageret ER en handling, brugeren
+    // selv har foretaget, og så må vi godt spørge, om hun er inde.
+    // Uden det her kan hilsenen ikke vide, at den lover for meget.
+    if (S.spillerNoegle && S.portStatus === null) {
+      setTimeout(function () { try { inviteretTjek(); } catch (_e) {} }, 60);
     }
   } catch (e) {}
 }
@@ -4169,7 +4178,7 @@ const A = {
         r.fejl === "selv"     ? (EN ? "That is your own code — send it to a friend." : "Det er din egen kode — send den til en ven.") :
         r.fejl === "ukendt"   ? (EN ? "No such code." : "Den kode findes ikke.") :
         r.fejl === "loft"     ? (EN ? "The room is full." : "Rummet er fuldt.") :
-        r.fejl === "kraever-invitation" ? (EN ? "StreakTennis requires an invitation — ask someone who is already in for a link." : "StreakTennis kræver en invitation — bed en, der allerede er inde, om et link.") :
+        r.fejl === "kraever-invitation" ? (S.invitFra ? (EN ? "You have an invitation — but you have not been let in yet. Open MATCH and say who you are at the door." : "Du har en invitation — men du er ikke lukket ind endnu. Åbn KAMP og sig hvem du er ved døren.") : (EN ? "StreakTennis requires an invitation — ask someone who is already in for a link." : "StreakTennis kræver en invitation — bed en, der allerede er inde, om et link.")) :
                                 (EN ? "Could not redeem the code." : "Kunne ikke indløse koden.") };
     } else {
       S.venneAaben = false; S.venneUdkast = ""; S.invitHilsen = false;
@@ -6421,10 +6430,24 @@ function _tegn() {
             // ⭐ v4.45.0 · ANMODNINGEN SENDES HERFRA. Koden ligger i
             // S.venneUdkast (sat af _invitTag), saa knappen kan kalde
             // A.venneIndloes direkte — samme vej som feltet laengere nede.
-            '<button class="knap" style="width:100%;margin-top:10px;min-height:44px" data-a="venneIndloes">' +
-            (S.vennerHenter ? "⏳ …" : ("🤝 " + (EN ? "Send request" : "Send anmodning") +
-              (_invitFornavn(S.invitFra) ? (EN ? " to " : " til ") + esc(_invitFornavn(S.invitFra)) : ""))) +
-            '</button>' +
+            // ⭐⭐⭐ v4.47.0 · TO SVAR, IKKE ÉT.
+            // Er man ikke lukket ind endnu, 403'er «Send anmodning» — og
+            // det var præcis dét, der skete for et rigtigt menneske
+            // 28/8 kl. 08:45. Så peger vi på døren i stedet.
+            // ⚠️ `kendt === false` er den ENESTE tilstand, vi tør handle
+            // på: null betyder «vi har ikke spurgt endnu», og en
+            // netværksfejl må ALDRIG dømme nogen ude (samme regel som
+            // dørvagten selv, uændret siden 22/8).
+            ((S.portStatus && S.portStatus.kendt === false)
+              ? '<p class="lille" style="margin:8px 0 0;color:var(--guld)">' + (EN
+                  ? "One step first: you have not been let in yet. Say who you are at the door — it takes ten seconds."
+                  : "Ét skridt først: du er ikke lukket ind endnu. Sig hvem du er ved døren — det tager ti sekunder.") + '</p>' +
+                '<button class="knap" style="width:100%;margin-top:10px;min-height:44px;background:var(--grus)" data-a="tab" data-v="kamp">🚪 ' +
+                (EN ? "Go to the door" : "Gå til døren") + '</button>'
+              : '<button class="knap" style="width:100%;margin-top:10px;min-height:44px" data-a="venneIndloes">' +
+                (S.vennerHenter ? "⏳ …" : ("🤝 " + (EN ? "Send request" : "Send anmodning") +
+                  (_invitFornavn(S.invitFra) ? (EN ? " to " : " til ") + esc(_invitFornavn(S.invitFra)) : ""))) +
+                '</button>') +
             (S.vennerBesked ? '<p class="lille" style="margin:7px 0 0;color:' + (S.vennerBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.vennerBesked.t) + '</p>' : '') +
             '</div>';
         }

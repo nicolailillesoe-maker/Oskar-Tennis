@@ -65,8 +65,12 @@ h1{font-size:24px;margin:0;font-weight:700;letter-spacing:1px}
 /* Er antallet ulige, fylder den sidste flise raekken ud. Uden den staar
    der et hul, og gitteret ser i stykker ud — hvilket det ogsaa er. */
 .dev-grid>.dev-flise:last-child:nth-child(odd){grid-column:1/-1}
-.dev-flise{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:16px 14px 14px;border-radius:18px;border:1px solid var(--kant);background:var(--kort);color:var(--kridt);cursor:pointer;text-align:left;min-height:98px;font-family:inherit;backdrop-filter:blur(8px)}
+.dev-flise{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:16px 14px 14px;border-radius:18px;border:1px solid var(--kant);background:var(--kort);color:var(--kridt);cursor:pointer;text-align:left;min-height:98px;font-family:inherit;backdrop-filter:blur(8px)}
 .dev-flise .dev-ikon{font-size:24px;margin-bottom:4px}
+/* v4.50.0 · ULÆST-BADGEN — Nicolai 29/8: «det skal stå på Streak Zone
+   som det gør på en app. Fx 3 for der er 3 ulæste.» Rød cirkel i
+   hjørnet, mindst 20 px, aldrig i vejen for et tryk (pointer-events). */
+.dev-badge{position:absolute;top:10px;right:10px;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--tabt);color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .dev-flise b{font-size:13.5px;letter-spacing:.03em}
 .dev-flise small{font-size:10.5px;color:var(--daempet);line-height:1.3}
 .dev-kant{border:1px solid var(--kant) !important;background:var(--kort) !important;backdrop-filter:blur(8px)}
@@ -430,7 +434,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.49.0 · 28. august 2026";
+const VERSION = "v4.50.0 · 29. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -4067,6 +4071,15 @@ const A = {
       const m = {};
       (d.ulaest || []).forEach(function (x) { m[x.ven] = x.ulaest || 0; });
       S.ulaest = m; S.ulaestIAlt = d.i_alt || 0;
+      // v4.50.0 · OG IKONETS BADGE. Virker kun paa hjemmeskaermen med
+      // beskeder slaaet til (iOS 16.4+) — alle andre steder fejler den
+      // stille, og flisens badge baerer tallet alene.
+      try {
+        if (navigator.setAppBadge) {
+          if (S.ulaestIAlt > 0) navigator.setAppBadge(S.ulaestIAlt);
+          else if (navigator.clearAppBadge) navigator.clearAppBadge();
+        }
+      } catch (_e) {}
       render();
     } catch (e) {}
   },
@@ -4104,6 +4117,13 @@ const A = {
       if (S.ulaest && S.ulaest[S.chatVen]) {
         S.ulaestIAlt = Math.max(0, S.ulaestIAlt - S.ulaest[S.chatVen]);
         S.ulaest[S.chatVen] = 0;
+        // v4.50.0 · ikonet foelger med, naar en samtale laeses.
+        try {
+          if (navigator.setAppBadge) {
+            if (S.ulaestIAlt > 0) navigator.setAppBadge(S.ulaestIAlt);
+            else if (navigator.clearAppBadge) navigator.clearAppBadge();
+          }
+        } catch (_e) {}
       }
       try { S.chatLaest[S.chatVen] = new Date().toISOString();
         lager.gem("sai-chat-laest", JSON.stringify(S.chatLaest)); } catch(e) {}
@@ -5881,8 +5901,11 @@ function _tegn() {
     const GRP_FL = ["anbefal","planer","historik","s2026"].filter(function(id){ return FANER.some(function(x){ return x[0]===id; }); });
     // (fliserne _IK/_mini/_ring er hoistet til globalt niveau 22/8 —
     //  TRÆN-skærmen bruger dem nu også. Én kilde.)
-    const _flise = function(a, v, ik, titel, tekst, farve){
-      return '<button class="dev-flise dev-kant ' + farve + '" data-a="' + a + '" data-v="' + v + '">' +
+    const _flise = function(a, v, ik, titel, tekst, farve, badge){
+      // v4.50.0 · badge: et tal > 0 saetter den roede cirkel. Over 9
+      // staar der 9+ — praecis som appens ikon-badge goer paa iOS.
+      const _b = badge > 0 ? '<span class="dev-badge">' + (badge > 9 ? "9+" : badge) + '</span>' : '';
+      return '<button class="dev-flise dev-kant ' + farve + '" data-a="' + a + '" data-v="' + v + '">' + _b +
         '<span class="dev-ikon">' + ik + '</span><b>' + titel + '</b><small>' + tekst + '</small></button>';
     };
     // Flisens undertekst. Synkroniseringen sker af sig selv (se autoSynk),
@@ -5924,7 +5947,8 @@ function _tegn() {
         _flise("stigeAabn","","🔥",(EN?"Streak Zone":"Streak Zone"),
           (S.klubKode && S.traenerData && S.traenerData.stigeHoldTil
             ? (EN?"your group's streaks":"holdets streaks")
-            : (EN?"sessions in a row & friends":"træninger i træk & venner")),"dev-kant-guld") +
+            : (EN?"sessions in a row & friends":"træninger i træk & venner")),"dev-kant-guld",
+          S.ulaestIAlt) +
         _flise("tab","fysisk","💪",(EN?"Train":"Træn"),(S.klubKode ? (EN?"overview, log & your coach":"overblik, log & din træner") : (EN?"overview & your log":"overblik & din log")),"dev-kant-guld") +
         _flise("tab","historik","📊",(EN?"Statistics":"Statistik"),S.gemte.length+(EN?" matches · trends":" kampe · tendenser"),"dev-kant-staal") +
         _flise("tab","planer","🎯",(EN?"Rivals":"Modstandere"),(EN?"plans & notes":"planer & noter"),"dev-kant-staal") +
@@ -8384,6 +8408,14 @@ function autoSynk(){
   // ringer appen ikke hjem — O2) OG hintet, saa ingen ANDEN bruger faar
   // et ekstra kald ved opstart. Serveren afgoer stadig alt.
   try { if (lager.hent("sai-ejer-hint") === "1") setTimeout(function(){ inviteretTjek(); }, 300); } catch (e) {}
+  // ⭐ v4.50.0 · ULÆST-TALLET HENTES VED OPSTART — ellers kender forsidens
+  // badge det ikke, foer man selv aabner vennezonen. Samme hegn som alt
+  // andet (O2-loeftet): har man aldrig raakt ud, rejser der intet.
+  try {
+    if (S.spillerNoegle && S.rolle !== "familie"
+        && (S.klubKode || S.venneAktiv || lager.hent("sai-inviteret") === "1"))
+      setTimeout(function(){ try { A.ulaestHent(); } catch (_e) {} }, 500);
+  } catch (e) {}
   // 19/8: fuld synk (skub + hent) — Nicolai: "automatisér al den transport".
   try { A.synkroniser(); return; } catch (e) {}
   sync("hent", {}).then(function(r){

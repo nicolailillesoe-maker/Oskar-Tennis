@@ -478,7 +478,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v3.1.0 \u00b7 29. august 2026";
+const VERSION = "v3.2.0 \u00b7 29. august 2026";
 
 function render(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
@@ -602,6 +602,47 @@ function traenerIndstillinger(){
         h += '<p class="lille" style="margin:8px 0 0;font-style:italic">Godkendte spillere lægges automatisk i din trup.</p>';
       }
       h += '</div>';
+    }
+    // ── FAMILIENØGLER (v3.2.0) · traeneren inviterer familierne SELV.
+    // Noeglen dannes paa serveren, vises EEN gang og gemmes kun som hash.
+    // Ingen mennesker administrerer hemmeligheder — heller ikke Nicolai.
+    {
+      h += '<div class="kort" style="border-left:3px solid var(--is)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+          '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udd11 FAMILIEN\u00d8GLER</div>' +
+          '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="fam-liste">' +
+          (S.famHenter ? '\u2026' : (S.famListe ? 'Opdat\u00e9r' : 'Vis')) + '</button></div>';
+      if (S.famNyNoegle) {
+        // \u26a0\ufe0f VISES KUN NU. Serveren gemmer kun hashen — lukkes kortet,
+        // findes noeglen ingen steder mere. Derfor kraever "Faerdig" et tryk.
+        h += '<div style="border:1.5px solid var(--guld);border-radius:10px;padding:12px;margin-top:9px;text-align:center">' +
+          '<div class="lille" style="margin-bottom:5px">Ny n\u00f8gle' + (S.famNyEtiket ? ' til <b>'+esc(S.famNyEtiket)+'</b>' : '') + ' \u2014 <b>vises kun nu</b>:</div>' +
+          '<div style="font-size:18px;font-weight:800;letter-spacing:2px;user-select:all">'+esc(S.famNyNoegle)+'</div>' +
+          '<button class="knap" style="width:100%;margin-top:9px;min-height:44px;background:var(--grus)" data-act="fam-kopier">' +
+          (S.famKopieret ? '\u2713 Kopieret' : '\ud83d\udccb Kopi\u00e9r besked til familien') + '</button>' +
+          '<button class="knap valg" style="width:100%;margin-top:6px;min-height:44px" data-act="fam-luk-ny">F\u00e6rdig \u2014 jeg har sendt den</button></div>';
+      } else {
+        h += '<div class="raekke" style="margin-top:9px">' +
+          '<input class="felt" style="flex:1;min-width:0" data-felt="famEtiket" value="'+esc(S.famEtiket||'')+'" placeholder="fx familien Jensen" maxlength="40" autocapitalize="words">' +
+          '<button class="knap" style="flex:none;background:var(--grus);min-height:44px" data-act="fam-udsted">' +
+          (S.famUdsteder ? '\u23f3 \u2026' : '\u2795 Ny n\u00f8gle') + '</button></div>';
+      }
+      if (S.famListe && S.famListe.length) {
+        S.famListe.forEach(function(k2){
+          var brugt = k2.sidst_brugt ? new Date(k2.sidst_brugt).toLocaleDateString('da-DK') : 'aldrig brugt';
+          h += '<div style="border-top:1px solid var(--kant);padding:8px 0;display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+            '<div><div style="font-size:13px;font-weight:700">'+esc(k2.etiket||'(uden etiket)')+'</div>' +
+            '<div class="lille">'+(k2.status==='aktiv' ? '\ud83d\udfe2 aktiv \u00b7 '+brugt : '\u26d4 sp\u00e6rret')+'</div></div>' +
+            (k2.status==='aktiv'
+              ? '<button class="knap valg" style="flex:none;padding:7px 12px;font-size:12px;min-height:44px" data-act="fam-spaer" data-v="'+esc(k2.id)+'">' +
+                (S.famSpaerBed===k2.id ? 'Sikker? Tryk igen' : 'Sp\u00e6r') + '</button>'
+              : '') + '</div>';
+        });
+      } else if (S.famListe) {
+        h += '<p class="lille" style="margin:8px 0 0">Ingen familien\u00f8gler udstedt endnu.</p>';
+      }
+      if (S.famBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.famBesked.fejl?'var(--tabt)':'var(--vundet)') + '">'+esc(S.famBesked.t)+'</p>';
+      h += '<p class="lille" style="margin:8px 0 0;opacity:.7">\u00c9n n\u00f8gle pr. familie. Den giver adgang til jeres klub i StreakTennis \u2014 aldrig til tr\u00e6nerdelen \u2014 og kan sp\u00e6rres her n\u00e5r som helst.</p></div>';
     }
     // ── OPSÆTNING · klubkoden bor på enheden, aldrig i koden
   const kk = lager.hent("klubkode","");
@@ -1205,6 +1246,44 @@ document.addEventListener("click", function(e){
     if (S.rejse.trin >= 3) { S.rejse.faerdig = true; S.tab = "hjem"; }
     lager.gem("rejse", S.rejse); render(); }
   else if (act==="tilm-hent"){ hentTilmeldinger(); }
+  else if (act==="fam-udsted"){
+    if (S.famUdsteder) return;
+    if (!lager.hent("klubkode","")) { S.famBesked={fejl:true,t:"Indtast klubkoden f\u00f8rst."}; render(); return; }
+    S.famUdsteder = true; S.famBesked = null; render();
+    var _etk = (S.famEtiket||"").trim();
+    sync("noegle-udsted", _etk ? { etiket: _etk } : {}).then(function(r){
+      S.famUdsteder = false;
+      if (r && r.fejl) { S.famBesked={fejl:true,t:"Kunne ikke udstede: "+r.fejl}; render(); return; }
+      S.famNyNoegle = r.noegle; S.famNyEtiket = r.etiket; S.famEtiket = ""; S.famKopieret = false;
+      render();
+      sync("noegle-liste", {}).then(function(r2){ if (r2 && r2.noegler) { S.famListe = r2.noegler; render(); } });
+    }).catch(function(){ S.famUdsteder=false; S.famBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
+  else if (act==="fam-kopier"){
+    var _kn = (typeof KONFIG !== "undefined" && KONFIG.klub) || "klubben";
+    var _tekst = "\ud83c\udfbe " + _kn + " inviterer jer ind i StreakTennis!\n\nJeres families n\u00f8gle: " + S.famNyNoegle +
+      "\n\n\u00c5bn appen og tast n\u00f8glen, n\u00e5r I opretter jer:\nhttps://tennis.sportsainalytics.com/StreakTennis/";
+    try {
+      navigator.clipboard.writeText(_tekst).then(function(){ S.famKopieret = true; render(); },
+        function(){ S.famBesked={fejl:true,t:"Kunne ikke kopiere \u2014 mark\u00e9r n\u00f8glen selv."}; render(); });
+    } catch(e) { S.famBesked={fejl:true,t:"Kunne ikke kopiere \u2014 mark\u00e9r n\u00f8glen selv."}; render(); } }
+  else if (act==="fam-luk-ny"){ S.famNyNoegle=null; S.famNyEtiket=null; S.famKopieret=false; render(); }
+  else if (act==="fam-liste"){
+    if (S.famHenter) return;
+    S.famHenter = true; render();
+    sync("noegle-liste", {}).then(function(r){
+      S.famHenter = false;
+      if (r && r.fejl) { S.famBesked={fejl:true,t:"Kunne ikke hente: "+r.fejl}; render(); return; }
+      S.famListe = r.noegler || []; render();
+    }).catch(function(){ S.famHenter=false; S.famBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
+  else if (act==="fam-spaer"){
+    // Sp\u00e6rring er endelig — derfor to tryk, som trup-slet.
+    if (S.famSpaerBed !== v) { S.famSpaerBed = v; render(); return; }
+    S.famSpaerBed = null;
+    sync("noegle-spaer", { id: v }).then(function(r){
+      if (r && r.fejl) { S.famBesked={fejl:true,t:"Kunne ikke sp\u00e6rre: "+r.fejl}; render(); return; }
+      S.famBesked={fejl:false,t:"N\u00f8glen"+(r.etiket?" til "+r.etiket:"")+" er sp\u00e6rret \u2713"};
+      sync("noegle-liste", {}).then(function(r2){ if (r2 && r2.noegler) { S.famListe = r2.noegler; } render(); });
+    }).catch(function(){ S.famBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
   else if (act==="tilm-svar"){
     var dele = String(v).split("~~"), noegle = dele[0], nyStatus = dele[1];
     var post = (S.tilmeldinger||[]).filter(function(x){ return x.haandtag === noegle || x.spillernoegle === noegle; })[0];

@@ -448,7 +448,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.55.0 · 29. august 2026";
+const VERSION = "v4.56.0 · 29. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -6102,7 +6102,8 @@ function _tegn() {
           (_tr === 1 ? _bolde : '') +
           '<div style="position:relative">' + _kro +
           '<div class="raekke" style="margin-top:18px">' + _knap + '</div>' +
-          _prik + '</div>' +
+          _prik +
+          '<p class="lille" style="margin:10px 0 0;opacity:.4;font-size:10px">' + VERSION + '</p></div>' +
         '</div>';
       return;
     }
@@ -6124,6 +6125,10 @@ function _tegn() {
           '</div>' +
           '<button class="knap sai-op" style="animation-delay:.24s;background:var(--grus);flex:none;height:54px;min-height:54px;font-size:16px;font-weight:800" data-a="velkomstFrem">' +
             (S.sprog === "en" ? "Get started" : "Kom i gang") + '</button>' +
+          // v4.56.0 · Nicolai: «Man kan ikke se versionsnummeret i
+          // velkomsten.» En tester skal kunne se versionen UDEN at
+          // oprette sig — ellers tester hun i blinde (princip 66).
+          '<p class="lille sai-op" style="animation-delay:.3s;margin:16px auto 0;opacity:.45;font-size:10.5px">' + VERSION + '</p>' +
 
         '</div>';
       return;
@@ -6194,6 +6199,7 @@ function _tegn() {
             ? _loginKort(S.sprog === "en")
             : '<button class="knap valg" style="margin-top:9px;width:100%;min-height:44px;font-size:13px;background:transparent;border:1px dashed var(--kant);color:var(--is)" data-a="kontoAabn" data-v="log">' +
               (S.sprog === "en" ? "Already have an account? Log in" : "Har du allerede en konto? Log ind") + '</button>') +
+          '<p class="lille" style="margin:12px 0 0;text-align:center;opacity:.4;font-size:10px">' + VERSION + '</p>' +
         '</div>' +
       '</div>';
     return;

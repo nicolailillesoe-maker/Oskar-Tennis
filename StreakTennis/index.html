@@ -434,7 +434,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.50.0 · 29. august 2026";
+const VERSION = "v4.51.0 · 29. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1245,7 +1245,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilBesked: null, nulstilHenter: false, skiftSpoerg: false, vennePanel: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -1394,6 +1394,31 @@ try {
     S.doerKamp = (_tid > 0) && (Date.now() - _tid < 86400000);
   }
 } catch(e) {}
+// ⭐⭐⭐ v4.51.0 · PRINCIP 64 HAR NU ÉT STED.
+//
+// Hegnet `klubKode || venneAktiv || sai-inviteret==="1"` stod ORDRET fem
+// steder. Det skal holde O2-loeftet: en familie, der aldrig selv har
+// raakt ud, laver NUL netvaerkskald. Men det maalte 28.-29/8, at det
+// ogsaa gjorde tre RIGTIGE mennesker blinde — Nicolais soester, Signe og
+// Louise. De havde alle en konto, ingen klub og ingen venner: BESKEDER-
+// kortet fandtes ikke for dem, og en venneanmodning blev aldrig hentet.
+//
+// ⭐ Femte gren: EN KONTO ER OGSAA EN HANDLING. Man opretter sig ikke
+// ved et uheld — kontoen ER et kald hjem, brugeren selv har foretaget.
+// O2 staar uroert: en ren lokal installation uden klub, uden venner og
+// uden konto ringer stadig ikke hjem.
+//
+// ⚠️ Ét sted, fem kaldesteder. Aendres reglen igen, aendres den HER —
+// aldrig fem gange (princip 49: en port, der saettes ét sted, er ikke sat).
+function iDetDelteLag() {
+  try {
+    return !!(S.klubKode || S.venneAktiv || S.minKonto
+      || lager.hent("sai-inviteret") === "1");
+  } catch (_e) {
+    return !!(S.klubKode || S.venneAktiv || S.minKonto);
+  }
+}
+
 async function inviteretTjek() {
   // ⭐ v4.19.0 · DOEREN SPOERGER PORTEN, ikke et tilfaeldigt kald.
   // Foer spurgte den `gruppe-hent` og laeste fejlkoden. Det virkede, men
@@ -2203,11 +2228,11 @@ const A = {
     // Samme hegn som loefte-porten laengere nede: har man aldrig raakt ud,
     // rejser der intet. En ejer HAR raakt ud, saa panelet naas alligevel.
     if (id === "opsaet" && S.portStatus === null && S.spillerNoegle
-        && (S.klubKode || S.venneAktiv || lager.hent("sai-inviteret") === "1")) inviteretTjek();
+        && iDetDelteLag()) inviteretTjek();
     // ⭐ v4.24.0 · Samme hegn, samme grund: uden klub og uden venner
     // rejser der intet. Ét opslag — svaret gemmes ogsaa naar det er nej.
     if (id === "opsaet" && S.push === null && S.spillerNoegle && pushMulig()
-        && (S.klubKode || S.venneAktiv || lager.hent("sai-inviteret") === "1")) A.pushHent();
+        && iDetDelteLag()) A.pushHent();
     render();
   },
   devgaa: (v) => { const p = v.split(":"); S.verden = p[0]; S.tab = p[1]; render(); },
@@ -2605,7 +2630,7 @@ const A = {
     // ⭐ Bud hentes KUN for familier, der allerede er i det delte lag —
     // en lokal, uregistreret installation sender NUL kald fra zonen
     // (loeftet fra v4.7.2: intet sendes, foer familien selv handler).
-    if (S.spillerNoegle && (S.klubKode || S.venneAktiv || lager.hent("sai-inviteret") === "1")) {
+    if (S.spillerNoegle && iDetDelteLag()) {
       A.budHent(); A.rumBudHent();
       // ⭐ v4.20.0 · #75 · og porten, saa ejeren kan SE paa forsiden, at
       // nogen venter. Samme hegn som de to andre — en familie uden klub
@@ -2730,6 +2755,17 @@ const A = {
   // eksisterende spiller starte forfra i samme sekund, han oprettede sig.
   opretKonto: async () => {
     const EN = S.sprog === "en";
+    // ⭐⭐ v4.51.0 · Louises fund. Foer stod der INTET foran serveren: et
+    // kodeord paa tre tegn eller en tastefejl rejste ud i verden, og
+    // fejlen viste sig foerst naeste gang man skulle logge ind.
+    const dom = tjekNyKode(S.opretKode, EN);
+    if (dom) { S.kontoBesked = { fejl: true, t: dom }; render(); return; }
+    if (String(S.opretKode || "") !== String(S.opretKode2 || "")) {
+      S.kontoBesked = { fejl: true, t: EN
+        ? "The two passwords are not the same. Type it once more."
+        : "De to kodeord er ikke ens. Skriv det én gang til." };
+      render(); return;
+    }
     S.kontoHenter = true; S.kontoBesked = null; render();
     const r = await A.kontoKald("opret", {
       brugernavn: String(S.opretNavn || S.mitNavn || "").trim().toLowerCase(),
@@ -2744,7 +2780,7 @@ const A = {
     S.spillerNoegle = r.noegle; lager.gem("sai-spillernoegle", r.noegle);
     S.mitNavn = r.brugernavn; S.minKonto = r.brugernavn;
     lager.gem("sai-brugernavn", r.brugernavn); lager.gem("sai-konto", r.brugernavn);
-    S.opretKode = ""; S.opretMail = ""; S.kontoAaben = null;
+    S.opretKode = ""; S.opretKode2 = ""; S.opretMail = ""; S.kontoAaben = null;
     S.kontoBesked = { fejl: false, t: r.adopteret
       ? (EN ? "Done — everything on this phone came along." : "Færdig — alt på denne telefon kom med.")
       : (EN ? "Account created." : "Kontoen er oprettet.") };
@@ -2759,6 +2795,14 @@ const A = {
     const EN = S.sprog === "en";
     const dom = tjekNyKode(S.nulstilKode, EN);
     if (dom) { S.nulstilBesked = { fejl: true, t: dom }; render(); return; }
+    // v4.51.0 · og de to skal vaere ens — man har ÉT skud paa et link,
+    // der virker én gang. En tastefejl her koster hele vejen om igen.
+    if (String(S.nulstilKode || "") !== String(S.nulstilKode2 || "")) {
+      S.nulstilBesked = { fejl: true, t: EN
+        ? "The two passwords are not the same. Type it once more."
+        : "De to kodeord er ikke ens. Skriv det én gang til." };
+      render(); return;
+    }
     S.nulstilHenter = true; S.nulstilBesked = null; render();
     const r = await A.kontoKald("glem-faerdig", { token: S.nulstilToken, ny: String(S.nulstilKode) });
     S.nulstilHenter = false;
@@ -2773,10 +2817,10 @@ const A = {
       if (r.brugernavn) lager.gem("sai-brugernavn", r.brugernavn);
       lager.gem("sai-laas", "op");
     } catch (e) {}
-    S.nulstilToken = ""; S.nulstilKode = "";
+    S.nulstilToken = ""; S.nulstilKode = ""; S.nulstilKode2 = "";
     location.reload();
   },
-  nulstilFortryd: () => { S.nulstilToken = ""; S.nulstilKode = ""; S.nulstilBesked = null; render(); },
+  nulstilFortryd: () => { S.nulstilToken = ""; S.nulstilKode = ""; S.nulstilKode2 = ""; S.nulstilBesked = null; render(); },
 
   // ══ SKIFT SPILLER — vejen ud UDEN en konto (v4.48.0) ═════════════
   // ⛔ Maalt 28/8: «Log ud» findes kun inde i `if (S.minKonto)`. Uden en
@@ -3320,7 +3364,11 @@ const A = {
     render();
   },
   zonePanel: (v) => { S.zonePanel = (S.zonePanel === v ? null : v); render();
-    if (S.zonePanel === "venner") A.ulaestHent();
+    // ⛔ v4.51.0 · HEGNET MANGLEDE HELT HER. Maalt paa en fremmed uden
+    // klub, uden venner og uden konto: hun aabnede venne-panelet, og
+    // appen ringede hjem. Fejlen var i v4.50.0 ogsaa — den er fundet nu,
+    // fordi prøven for foerste gang TRYKKEDE paa panelet.
+    if (S.zonePanel === "venner" && iDetDelteLag()) A.ulaestHent();
     // ⭐⭐ v4.42.0 · EN FLISE, DER ÅBNER NOGET UDEN FOR SKÆRMEN, SER UD
     // SOM OM DEN IKKE GJORDE NOGET. Fliserne rulles op i toppen, så
     // valget OG indholdet står sammen. Kun ved ÅBNING — lukker man,
@@ -3972,7 +4020,7 @@ const A = {
       // ⭐ Hegnet foelger med: samme O2-betingelse som i `tab()` — har man
       // aldrig raakt ud, rejser der stadig intet.
       if (S.push === null && S.spillerNoegle && pushMulig()
-          && (S.klubKode || S.venneAktiv || lager.hent("sai-inviteret") === "1")) {
+          && iDetDelteLag()) {
         await A.pushHent();
       }
       // Har telefonen slet ikke sagt ja til notifikationer, er der intet
@@ -4603,6 +4651,43 @@ const esc = (t) => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">
 // paa serveren, faar man et rundt kald for at faa at vide, hvad man kunne
 // have set med det samme — og paa en daarlig forbindelse foeles det som
 // en fejl i appen.
+// ⭐⭐⭐ v4.51.0 · LOUISES FUND (29/8, efter hun laeste vejledningen):
+// «Faa folk til at gentage kodeord saa man er sikker paa der er rigtig.
+//  Jeg kan heller ikke se det naar jeg laver det.»
+//
+// Det er to fejl i én saetning, og begge er sande: feltet var maskeret
+// UDEN et oeje, og der var kun ÉT felt. Skriver man forkert, opdager man
+// det foerst naeste gang man skal logge ind — paa en anden telefon, uden
+// nogen vej tilbage.
+//
+// ⚠️ Svaret maa IKKE komme via render(). Taste-lytteren gentegner ikke
+// (S[f] = value, punktum), og en gentegning midt i et kodeord ville rive
+// taeppet vaek under fingeren — praecis det, _skriver() blev bygget for
+// at forhindre. Derfor skrives der DIREKTE i noden. Skaermen er maalingen.
+// ⚠️⚠️ FANGET AF SKÆRMBILLEDET, IKKE AF PRØVEN (princip 63: et
+// oejebliksbillede er ikke en tilstand). Foerste udgave skrev KUN i
+// noden fra tastelytteren — og saa slettede den foerste den bedste
+// render() svaret igen, fordi #app bygges om fra bunden. Man trykkede
+// paa oejet, og kvitteringen forsvandt. Derfor bor sandheden ÉT sted
+// (_ensTekst), og BEGGE veje bruger den: tegningen skriver den ind i
+// HTML'en, tastelytteren opdaterer noden direkte uden en gentegning.
+function _ensTekst(a, b) {
+  const EN = S.sprog === "en";
+  const k1 = String(a || ""), k2 = String(b || "");
+  if (!k2) return { t: "", farve: "" };
+  if (k1 === k2) return { t: "✓ " + (EN ? "the passwords match" : "kodeordene er ens"), farve: "var(--vundet)" };
+  return { t: (EN ? "the passwords are not the same yet" : "kodeordene er ikke ens endnu"), farve: "var(--tabt)" };
+}
+
+function _kodeEns(a, b, node) {
+  try {
+    const n = document.getElementById(node);
+    if (!n) return;
+    const d = _ensTekst(a, b);
+    n.textContent = d.t; n.style.color = d.farve;
+  } catch (_e) {}
+}
+
 function tjekNyKode(raa, EN) {
   const k = String(raa || "");
   if (k.length < 8) return EN ? "The password must be at least 8 characters." : "Kodeordet skal være mindst 8 tegn.";
@@ -4617,7 +4702,9 @@ const _loginKort = function(EN){
       ? "Your username, or the email on the account."
       : "Dit brugernavn — eller mailen på kontoen.") + '</p>' +
     '<input placeholder="' + (EN?"username or email":"brugernavn eller mail") + '" value="' + esc(S.logNavn) + '" data-felt="logNavn" maxlength="80" autocapitalize="off" spellcheck="false" style="text-transform:lowercase">' +
-    '<input type="password" placeholder="' + (EN?"password":"kodeord") + '" value="' + esc(S.logKode) + '" data-felt="logKode" maxlength="200" autocomplete="current-password" style="margin-top:7px">' +
+    '<div class="raekke" style="gap:6px;margin-top:7px">' +
+    '<input type="' + (S.visLogKode ? "text" : "password") + '" style="flex:1;min-width:0" placeholder="' + (EN?"password":"kodeord") + '" value="' + esc(S.logKode) + '" data-felt="logKode" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="current-password">' +
+    '<button class="knap valg" style="flex:none;min-height:44px;max-height:52px;padding:8px 12px;font-size:13px" data-a="visSkift" data-v="visLogKode">' + (S.visLogKode ? "🙈" : "👁") + '</button></div>' +
     '<button class="knap" style="margin-top:8px;width:100%;min-height:48px;background:var(--grus)" data-a="logInd">' +
       (S.kontoHenter ? "⏳ …" : (EN?"Log in":"Log ind")) + '</button>' +
     '<div class="raekke" style="margin-top:7px">' +
@@ -5818,7 +5905,11 @@ function _tegn() {
             ? "The link works once, and for 30 minutes. Your streak and your matches are untouched."
             : "Linket virker én gang og i 30 minutter. Din streak og dine kampe er urørte.") + '</p>' +
           '<div class="kort dev-kant dev-kant-guld" style="padding:16px">' +
-            '<input type="password" placeholder="' + (S.sprog === "en" ? "new password (min 8)" : "nyt kodeord (mindst 8)") + '" value="' + esc(S.nulstilKode) + '" data-felt="nulstilKode" maxlength="200" autocomplete="new-password">' +
+            '<div class="raekke" style="gap:6px">' +
+            '<input type="' + (S.visNulstilKode ? "text" : "password") + '" style="flex:1;min-width:0" placeholder="' + (S.sprog === "en" ? "new password (min 8)" : "nyt kodeord (mindst 8)") + '" value="' + esc(S.nulstilKode) + '" data-felt="nulstilKode" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="new-password">' +
+            '<button class="knap valg" style="flex:none;min-height:44px;max-height:52px;padding:8px 12px;font-size:13px" data-a="visSkift" data-v="visNulstilKode">' + (S.visNulstilKode ? "🙈" : "👁") + '</button></div>' +
+            '<input type="' + (S.visNulstilKode ? "text" : "password") + '" placeholder="' + (S.sprog === "en" ? "repeat the password" : "gentag kodeordet") + '" value="' + esc(S.nulstilKode2) + '" data-felt="nulstilKode2" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="new-password" style="margin-top:7px">' +
+            '<p class="lille" id="ens-nulstil" style="margin:5px 0 0;min-height:15px;font-weight:700;color:' + _ensTekst(S.nulstilKode, S.nulstilKode2).farve + '">' + esc(_ensTekst(S.nulstilKode, S.nulstilKode2).t) + '</p>' +
             '<button class="knap" style="width:100%;margin-top:9px;min-height:48px;background:var(--grus)" data-a="nulstilGem">' +
               (S.nulstilHenter ? "⏳ …" : (S.sprog === "en" ? "Save and log in" : "Gem og log ind")) + '</button>' +
             (S.nulstilBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.nulstilBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.nulstilBesked.t) + '</p>' : '') +
@@ -7195,7 +7286,16 @@ function _tegn() {
               ? "Everything on this phone comes along \u2014 your streak, your matches, all of it."
               : "Alt p\u00e5 denne telefon kommer med \u2014 din streak, dine kampe, det hele.") + '</p>' +
             '<input placeholder="' + (EN?"username":"brugernavn") + '" value="' + esc(S.opretNavn || S.mitNavn || "") + '" data-felt="opretNavn" maxlength="20" autocapitalize="off" spellcheck="false" style="text-transform:lowercase">' +
-            '<input type="password" placeholder="' + (EN?"password (min 8)":"kodeord (mindst 8)") + '" value="' + esc(S.opretKode) + '" data-felt="opretKode" maxlength="200" autocomplete="new-password" style="margin-top:7px">' +
+            // ⭐ v4.51.0 · Louise: oeje paa feltet, og saa én gang til.
+            // ⚠️ Her skiftes `type`, ikke -webkit-text-security som ved
+            // klubkoden — for KUN type="password" faar iOS' noeglering til
+            // at tilbyde at gemme kodeordet. Familien skal kunne komme
+            // ind igen paa en anden telefon; det er hele pointen.
+            '<div class="raekke" style="gap:6px;margin-top:7px">' +
+            '<input type="' + (S.visOpretKode ? "text" : "password") + '" style="flex:1;min-width:0" placeholder="' + (EN?"password (min 8)":"kodeord (mindst 8)") + '" value="' + esc(S.opretKode) + '" data-felt="opretKode" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="new-password">' +
+            '<button class="knap valg" style="flex:none;min-height:44px;max-height:52px;padding:8px 12px;font-size:13px" data-a="visSkift" data-v="visOpretKode">' + (S.visOpretKode ? "🙈" : "👁") + '</button></div>' +
+            '<input type="' + (S.visOpretKode ? "text" : "password") + '" placeholder="' + (EN?"repeat the password":"gentag kodeordet") + '" value="' + esc(S.opretKode2) + '" data-felt="opretKode2" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="new-password" style="margin-top:7px">' +
+            '<p class="lille" id="ens-opret" style="margin:5px 0 0;min-height:15px;font-weight:700;color:' + _ensTekst(S.opretKode, S.opretKode2).farve + '">' + esc(_ensTekst(S.opretKode, S.opretKode2).t) + '</p>' +
             '<input placeholder="' + (EN?"your email":"din mail") + '" value="' + esc(S.opretMail) + '" data-felt="opretMail" maxlength="80" autocapitalize="off" spellcheck="false" style="margin-top:7px;text-transform:lowercase">' +
             '<p class="lille" style="margin:7px 0 0;opacity:.75">' + (EN
               ? "Only used to get back in if the password is forgotten. It is not shown to anyone, and it is not the login. Under 18? Use a grown-up\u2019s."
@@ -8412,8 +8512,7 @@ function autoSynk(){
   // badge det ikke, foer man selv aabner vennezonen. Samme hegn som alt
   // andet (O2-loeftet): har man aldrig raakt ud, rejser der intet.
   try {
-    if (S.spillerNoegle && S.rolle !== "familie"
-        && (S.klubKode || S.venneAktiv || lager.hent("sai-inviteret") === "1"))
+    if (S.spillerNoegle && S.rolle !== "familie" && iDetDelteLag())
       setTimeout(function(){ try { A.ulaestHent(); } catch (_e) {} }, 500);
   } catch (e) {}
   // 19/8: fuld synk (skub + hent) — Nicolai: "automatisér al den transport".
@@ -8525,6 +8624,9 @@ window.__oskarInit = function(){
   rod.addEventListener("input", function(e){
     var f = e.target.dataset.felt; if (!f) return;
     S[f] = e.target.value;
+    // v4.51.0 · gentag-feltet svarer MENS man skriver — uden gentegning.
+    if (f === "opretKode" || f === "opretKode2") _kodeEns(S.opretKode, S.opretKode2, "ens-opret");
+    if (f === "nulstilKode" || f === "nulstilKode2") _kodeEns(S.nulstilKode, S.nulstilKode2, "ens-nulstil");
     // ⭐ v4.13.0 · Er navnet ledigt? Svaret kommer MENS man skriver, ikke
     // efter man har trykket Gem og glaedet sig. Vent et halvt sekund efter
     // sidste tast, saa vi ikke spoerger for hvert bogstav.

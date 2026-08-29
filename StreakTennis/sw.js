@@ -105,6 +105,17 @@ self.addEventListener("push", (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (_e) { d = {}; }
   const titel = String(d.titel || "StreakTennis").slice(0, 60);
+  // ⭐ v6 (29/8) · IKONETS BADGE SAETTES FRA PUSHEN — det er den eneste
+  // maade, tallet kan aendre sig paa en LUKKET app (WebKit: badging fra
+  // SW under en push, iOS 16.4+, kun paa hjemmeskaermen). Tallet kommer
+  // fra push-puls v8 og er regnet med venne-snaks egen ulaest-regel.
+  // Mangler feltet (gammel motor), roeres badgen ikke — aldrig et gaet.
+  try {
+    if (typeof d.ulaest === "number" && navigator.setAppBadge) {
+      if (d.ulaest > 0) e.waitUntil(navigator.setAppBadge(d.ulaest));
+      else if (navigator.clearAppBadge) e.waitUntil(navigator.clearAppBadge());
+    }
+  } catch (_e) {}
   e.waitUntil(self.registration.showNotification(titel, {
     body: String(d.tekst || "").slice(0, 140),
     icon: "./ikon-192.png",

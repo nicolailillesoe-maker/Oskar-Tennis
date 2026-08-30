@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.82.0 · 30. august 2026";
+const VERSION = "v4.83.0 · 30. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -876,25 +876,39 @@ function _dinTraener(EN){
             (tsp.hold ? '<b>' + esc(tsp.hold) + '</b>' : '') +
             (tsp.traeningshold ? (tsp.hold ? ' \u00b7 ' : '') + esc(tsp.traeningshold) : '') + '</p>';
           const uf = (td.ugefokus||[]).slice(-1)[0];
-          if (uf) h += '<p class="lille" style="margin:6px 0 8px">' + (EN?"This week's focus: ":"Ugens fokus: ") +
+          // ⭐ v4.83.0 · FUNDET PÅ ET SKÆRMBILLEDE: en ugefokus-række uden
+          //   `omraade` skrev ordret «Ugens fokus: undefined» til spilleren.
+          //   En manglende værdi må aldrig blive til et ORD på skærmen.
+          if (uf && uf.omraade) h += '<p class="lille" style="margin:6px 0 8px">' + (EN?"This week's focus: ":"Ugens fokus: ") +
             '<b style="color:var(--guld)">' + esc(uf.omraade) + '</b></p>';
           const _idag = new Date().toISOString().slice(0, 10);
+          // ⭐⭐ v4.83.0 · TRÆNERENS TRE OMRÅDER ER FLISER.
+          //   Tre rækker med et lille tal ude i højre kant var det, en
+          //   14-årig skulle læse for at finde ud af, hvad træneren mener.
+          //   Nu er tallet stort, farven er trænerens egen skala, og de tre
+          //   står ved siden af hinanden — samme gitter som resten af huset.
+          var _tvFliser = '';
           ["fysisk","traener","selv"].forEach(function(o){
             const alleTv = (tsp.vurderinger||[]).filter(function(x){ return x.o===o; });
             const tv = alleTv.slice(-1)[0];
             const tvIdag = alleTv.filter(function(x){ return x.d===_idag; });
             const sv = (tsp.selvvurderinger||[]).filter(function(x){ return x.o===o; }).slice(-1)[0];
             if (!tv && !sv) return;
-            h += '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--kant)">' +
-              '<span style="font-size:12.5px">' + OMR[o].i + ' ' + OMR[o].n + '</span>' +
-              '<span style="display:flex;gap:10px;align-items:center">' +
-                (tvIdag.length > 1
-                  ? tvIdag.map(function(x){ return '<b style="font-size:15px;color:'+FV(x.s)+'">'+x.s+'</b>'; }).join('<span class="lille" style="opacity:.55"> · </span>') +
-                    '<span class="lille" style="opacity:.7"> ' + (EN?"today":"i dag") + '</span>'
-                  : (tv ? '<b style="font-size:15px;color:'+FV(tv.s)+'">'+tv.s+'</b>' : '<span style="color:var(--daempet)">–</span>')) +
-                (sv ? '<span class="lille" style="opacity:.7">' + (EN?"you ":"dig ") + sv.s + '</span>' : '') +
-              '</span></div>';
+            const _f = tv ? FV(tv.s) : "var(--daempet)";
+            const _tal = tvIdag.length > 1
+              ? tvIdag.map(function(x){ return '<b style="font-size:22px;color:'+FV(x.s)+'">'+x.s+'</b>'; }).join('<span class="lille" style="opacity:.55;margin:0"> \u00b7 </span>')
+              : (tv ? '<b style="font-size:26px;line-height:1;color:'+_f+'">'+tv.s+'</b><span class="lille" style="margin:0;opacity:.6">/10</span>'
+                    : '<span style="color:var(--daempet);font-size:22px">\u2013</span>');
+            _tvFliser += '<div class="kort dev-kant" style="margin:0;padding:12px 12px 11px;border-radius:16px' +
+                (tv ? ';box-shadow:inset 0 0 0 1px ' + _f + '66,inset 0 22px 44px -30px ' + _f + '88' : '') + '">' +
+              '<div style="font-size:20px;line-height:1">' + OMR[o].i + '</div>' +
+              '<div style="font-size:10.5px;font-weight:800;letter-spacing:.5px;color:var(--daempet);line-height:1.3;margin:4px 0 3px">' + OMR[o].n + '</div>' +
+              '<div style="display:flex;align-items:baseline;gap:5px;flex-wrap:wrap">' + _tal +
+                (tvIdag.length > 1 ? '<span class="lille" style="margin:0;opacity:.7">' + (EN?"today":"i dag") + '</span>' : '') +
+                (sv ? '<span class="lille" style="margin:0;opacity:.7">\u00b7 ' + (EN?"you ":"dig ") + sv.s + '</span>' : '') +
+              '</div></div>';
           });
+          if (_tvFliser) h += '<div class="dev-grid" style="margin:9px 0 2px">' + _tvFliser + '</div>';
           // HISTORIK (19/8, Nicolais bestilling): en ny score må aldrig SKJULE
           // den gamle. Fold med de seneste 12 hændelser — trænerens farvede
           // score og spillerens egen dom samme dag ved siden af.
@@ -1263,7 +1277,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, fletKasseret: 0, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, liveOvertag: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, fletKasseret: 0, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenPanel: null, kampePanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, liveOvertag: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null,
   // ⭐ v4.79.0 · skyggekopien
   skyStatus: null, skySender: false, skyBesked: null, skySlet: false, skyAaben: false,
   // ⛔ Sand, når der ligger en boks, vi IKKE kunne åbne. Så sikres der
@@ -3964,6 +3978,8 @@ const A = {
   },
   // ⭐ STATISTIK ER FLISER (v4.7.4): ét panel ad gangen, som i zonen.
   statPanel: (v) => { S.statPanel = (S.statPanel === v ? null : v); render(); },
+  traenPanel: (v) => { S.traenPanel = (S.traenPanel === v ? null : v); render(); },
+  kampePanel: (v) => { S.kampePanel = (S.kampePanel === v ? null : v); render(); },
   grHent: async () => {
     if (S.grHenter || !S.spillerNoegle) return;
     S.grHenter = true;
@@ -7290,7 +7306,7 @@ function _tegn() {
       const n = ((tsp.vurderinger||[]).length);
       if (!n) return EN ? "no assessments yet" : "ingen vurderinger endnu";
       const uf = (td.ugefokus||[]).slice(-1)[0];
-      return (uf ? (EN?"focus: ":"fokus: ") + esc(uf.omraade) + " · " : "") + n + (EN?" assessments":" vurderinger");
+      return (uf && uf.omraade ? (EN?"focus: ":"fokus: ") + esc(uf.omraade) + " · " : "") + n + (EN?" assessments":" vurderinger");
     };
     const _hjempil = function(maal){
       return '<button class="pil-tilbage" data-a="tab" data-v="' + maal + '">←</button>';
@@ -8413,6 +8429,7 @@ function _tegn() {
     } else if (S.tab === "opsaet") {
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") +
            '<b style="font-size:16px">⚙️ ' + (EN?"Settings":"Indstillinger") + '</b></div>';
+      h += '<div class="dev-grid" style="margin:2px 0 10px">';
 
       // ══════════════════════════════════════════════════════════════
       // FOLDBARE KORT (21/8, Nicolai: "er jo ikke sikkert man har en klub
@@ -8422,14 +8439,24 @@ function _tegn() {
       // at aabne noget. En familie uden klub moeder ikke laengere en vaeg
       // af felter, den ikke skal bruge.
       // ══════════════════════════════════════════════════════════════
+      // ⭐⭐⭐ v4.83.0 · INDSTILLINGERNE ER FLISER.
+      //   Nicolai 24/8: «Jeg kan faktisk ikke lide det under indstillinger.
+      //   Det bliver lidt rodet.» Ti fuldbredde-folder under hinanden var
+      //   en liste, man skulle LÆSE. Ti fliser er et gitter, man SCANNER —
+      //   og statuslinjen står stadig i hovedet, så svaret ses uden at
+      //   åbne noget. Åbnet flise spænder over begge kolonner, præcis som
+      //   en åben modstander. Indholdet i hver folder er URØRT.
       const _opsKort = function(id, ikon, titel, status, statusFarve, krop){
         const aaben = S.opsAaben === id;
-        return '<div class="kort" style="padding:0;overflow:hidden">' +
-          '<button data-a="opsFold" data-v="' + id + '" style="width:100%;min-height:52px;display:flex;align-items:center;gap:10px;background:none;border:0;padding:13px 14px;text-align:left;cursor:pointer;color:inherit;font:inherit">' +
-            '<span style="flex:none;font-size:15px">' + ikon + '</span>' +
-            '<span style="flex:1;min-width:0;font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">' + titel + '</span>' +
-            '<span class="lille" style="flex:none;color:' + statusFarve + '">' + status + '</span>' +
-            '<span style="flex:none;color:var(--daempet);font-size:11px;transition:transform .15s;transform:rotate(' + (aaben?'90':'0') + 'deg)">▶</span>' +
+        return '<div class="kort dev-kant' + (aaben ? ' dev-kant-is' : '') + '" style="padding:0;overflow:hidden;margin:0;border-radius:16px' + (aaben ? ';grid-column:1/-1;border-color:var(--is)' : '') + '">' +
+          '<button data-a="opsFold" data-v="' + id + '" style="width:100%;display:flex;' +
+            (aaben ? 'flex-direction:row;align-items:center;gap:10px;min-height:52px;padding:13px 14px'
+                   : 'flex-direction:column;align-items:flex-start;gap:3px;min-height:96px;padding:15px 13px 13px') +
+            ';background:none;border:0;text-align:left;cursor:pointer;color:inherit;font:inherit">' +
+            '<span style="flex:none;font-size:' + (aaben ? '15px' : '22px') + ';line-height:1.1">' + ikon + '</span>' +
+            '<span style="' + (aaben ? 'flex:1;min-width:0;' : '') + 'font-size:' + (aaben ? '10px' : '10.5px') + ';font-weight:800;letter-spacing:1.4px;color:var(--grus);line-height:1.3">' + titel + '</span>' +
+            '<span class="lille" style="flex:none;margin:0;line-height:1.3;color:' + statusFarve + '">' + status + '</span>' +
+            (aaben ? '<span style="flex:none;color:var(--daempet);font-size:11px">\u25be</span>' : '') +
           '</button>' +
           (aaben ? '<div style="padding:0 14px 14px">' + krop + '</div>' : '') +
           '</div>';
@@ -8916,7 +8943,7 @@ function _tegn() {
       // det hoerer sammen med, og ikke oeverst paa skaermen (Nicolai:
       // "den ligger for hoejt under indstillinger"). Vises altid — ogsaa
       // foer klubben er sat op.
-      h += klubKort(EN);
+      h += '<div style="grid-column:1/-1">' + klubKort(EN) + '</div>';
       // ⭐ NAVNET (v4.4.1): det, vennerne ser. Kunne foer kun saettes paa
       // velkomstskaermen — nu kan en tastefejl (eller en far, der doebte
       // sig "Oskar" i et eksperiment) rettes med ét tryk.
@@ -8961,6 +8988,7 @@ function _tegn() {
         '<div class="raekke"><button class="knap valg' + (EN?'':' til') + '" style="min-height:44px" data-a="sprog" data-v="da">Dansk</button>' +
         '<button class="knap valg' + (EN?' til':'') + '" style="min-height:44px" data-a="sprog" data-v="en">English</button></div>');
 
+      h += '</div>';   // ⭐ v4.83.0 · indstillings-gitteret lukkes
       if (S.syncBesked) h += '<p class="lille" style="margin:6px 2px;color:' +
         (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
           } else if (S.tab === "hb-hjem") {
@@ -9418,9 +9446,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">'+(EN?'What the numbers say':'Hvad tallene siger')+'</h2>' + (EN?STAT26_EN:STAT26).map(function(x){ return '<div class="kort"><p>'+esc(x)+'</p></div>'; }).join("");
   }
 
-  if (!LAAST && S.tab === "fysisk") {
-
-      // ══ OVERBLIKKET · flyttet fra forsiden 22/8 ══════════════════════
+  if (!LAAST && S.tab === "fysisk") {      // ══ OVERBLIKKET · flyttet fra forsiden 22/8 ══════════════════════
       // Fire tal, ét blik — praecis som paa traenerens spillerside (1:1).
       (function(){
         const _ms = minStreak();
@@ -9439,49 +9465,41 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       })();
 
       h += _skadetKort(EN);
-      h += '<p class="lille">'+(EN?"Log physical training exactly like tennis training — with the coaches' 1-10 scale, so everything can be compared.":"Registrér fysisk træning på samme måde som tennistræningen — med trænernes 1-10-skala, så alt kan sammenlignes.")+'</p>';
-      (function(){
-        const m = ugeMaal(S.fysLog);
-        const naaet = m.denneUge >= m.MAAL;
-        const pct = Math.min(100, Math.round(m.denneUge / m.MAAL * 100));
-        h += '<div class="kort" style="border:1.5px solid '+(naaet?'var(--vundet)':'var(--kant)')+'">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:'+(naaet?'var(--vundet)':'var(--is)')+'">🏆 '+(EN?"WEEKLY GOAL":"UGENS MÅL")+'</div>' +
-          (m.streak > 0 ? '<span style="font-size:11px;font-weight:800;color:var(--guld)">🔥 '+m.streak+' '+(EN?(m.streak===1?"week":"weeks")+" in a row":(m.streak===1?"uge":"uger")+" i træk")+'</span>' : '') + '</div>' +
-          '<div style="font-size:16px;font-weight:800;margin:5px 0 7px">'+(naaet ? '🎉 '+(EN?"Goal reached — "+m.denneUge+"/"+m.MAAL+" sessions!":"Ugens mål nået — "+m.denneUge+"/"+m.MAAL+" pas!") : m.denneUge+'/'+m.MAAL+' '+(EN?"sessions this week":"pas denne uge"))+'</div>' +
-          '<div style="position:relative;background:var(--dyb);border-radius:5px;height:10px"><div style="background:'+(naaet?'var(--vundet)':'var(--is)')+';height:100%;width:'+pct+'%;border-radius:5px"></div></div>' +
-          (naaet ? '' : '<p class="lille" style="margin-top:6px">'+(EN?"Goal: 3 sessions a week — running, strength or footwork. Every logged session counts.":"Målet er 3 pas om ugen — løb, styrke eller benarbejde. Hvert registreret pas tæller.")+'</p>') + '</div>';
-      })();
-      // ⭐ v4.5.0 · REGISTRERING ER SPILLERENS (Nicolai 22/8: "registrering
-      // af træning giver jo ikke mening. For teamet - giver KUN mening
-      // for spilleren"). Formularen står ikke hos familie-rollen.
-      if (S.rolle !== "familie") {
-      h += '<h2 style="font-size:15px;color:var(--is);margin:6px 0 8px;text-transform:uppercase;letter-spacing:1px">💪 '+(EN?"Physical training log":"Fysisk træning — registrering")+'</h2>';
-      h += '<div class="kort">' +
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="flex:1;font-size:12.5px">'+(EN?"Duration":"Varighed")+'</span><button class="knap" style="flex:none;padding:8px 16px" data-a="fyMinJust" data-v="-15">−</button><b style="width:64px;text-align:center;font-size:15px">'+S.fyMin+' min</b><button class="knap" style="flex:none;padding:8px 16px" data-a="fyMinJust" data-v="15">+</button></div>' +
-        '<p class="lille" style="margin:0 0 5px">'+(EN?(SPILLER+"'s own effort rating — the coaches' scale (required)"):(SPILLER+"s"+" egen indsats-bedømmelse — trænernes skala (skal vælges)"))+'</p>' +
-        skalaKnapper(S.fyKval, "fyKvalVaelg") + skalaLegende(EN) +
-        '<p class="lille" style="margin:0 0 5px">'+(EN?"Type of session (required)":"Selv-træning eller med træner? (skal vælges)")+'</p>' +
-        '<div class="raekke" style="margin-bottom:8px">' +
-          '<button class="knap valg '+(S.fyType===1?"til":"")+'" style="padding:11px 2px" data-a="fyTypeVaelg" data-v="1">🏃 '+(EN?"Self-practice":"Selv-træning")+'</button>' +
-          '<button class="knap valg '+(S.fyType===2?"til":"")+'" style="padding:11px 2px" data-a="fyTypeVaelg" data-v="2">🧑‍🏫 '+(EN?"With coach":"Med træner")+'</button></div>' +
-        '<input placeholder="'+(EN?"Note (optional — e.g. \'intervals\' or \'strength\')":"Note (valgfri — fx \'intervaller\' eller \'styrke\')")+'" value="'+esc(S.fyNote)+'" data-felt="fyNote" style="margin-bottom:8px">' +
-        '<div class="raekke"><button class="knap" style="background:'+(S.fyKval&&S.fyType?"var(--grus)":"var(--flade)")+'" data-a="fyGem">💾 '+(EN?"Save session":"Gem passet")+'</button></div>' +
-          (S.passBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.passBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.passBesked.t) + '</p>' : '') + '</div>';
-      }
-      if (S.fysLog.length) {
-        const _fm = S.fysLog.reduce(function(a,e){ return a + (e.m || 0); }, 0); const _fkE = S.fysLog.filter(function(e){ return e.k; }); const _fk = _fkE.length ? (_fkE.reduce(function(a,e){ return a + e.k; }, 0) / _fkE.length).toFixed(1) : null;
-        h += '<div class="kort" style="border-left:3px solid var(--vundet)"><h3>📓 '+(EN?"Completed sessions":"Gennemførte pas")+' — '+S.fysLog.length+' '+(EN?"total":"i alt")+'</h3>' +
-          '<p style="margin-bottom:6px">'+(_fm ? (_fm/60).toFixed(1)+' '+(EN?"hours logged":"timer registreret") : (EN?"programme sessions":"program-pas"))+(_fk ? ' · '+(EN?"avg. effort":"Ø-indsats")+' '+_fk+'/10' : '')+'</p>' +
-          S.fysLog.slice(0,8).map(function(e, i){
-            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+fysTekst(e, EN)+'</span>' +
-              (S.fysSletB === i
-                ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="fysSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="fysSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
-                : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="fysSletSpoerg" data-v="'+i+'">🗑</button>') +
-              '</div>'; }).join("") +
-          '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="fysEksport">📤 '+(EN?"Export new":"Eksportér nye")+' ('+S.fysLog.filter(function(e){return !e.x;}).length+')</button></div>';
-        if (S.fysEks) h += '<p class="lille">'+(EN?"Select, copy and share with your coach:":"Markér, kopiér og del med træneren:")+'</p><textarea readonly onfocus="this.select()" style="height:100px">'+esc(S.fysEks)+'</textarea>' + eksportKnapper('fysEks', EN);
-      }
+      // ══════════════════════════════════════════════════════════════
+      // ⭐⭐⭐ v4.83.0 · TRÆNINGS-FLISERNE.
+      //   Bestilt 23/7 ("ALT om til tiles"), gentaget 30/8 — og bekræftet
+      //   af Oskar selv: «det giver et MEGET bedre overblik».
+      //   TRÆN var den eneste af de fire bundfaner uden fliser, og den
+      //   længste skærm i appen. Mønstret er husets eget (.dev-grid /
+      //   .dev-flise, samme som STATS) — en OMLÆGNING, ikke en ny komponent.
+      //   Fliserne stopper ved VALGET: det, de åbner, er de samme kort som før.
+      //   ⚠️ Overblikket og skadet-kortet står stadig ØVERST og altid synligt.
+      //   Et barn, der er skadet, skal ikke først gætte en flise.
+      // ══════════════════════════════════════════════════════════════
+      var _tp = S.traenPanel;
+      var _nFys = (S.fysLog || []).length, _nTt = (S.ttLog || []).length;
+      var _uM = ugeMaal(S.fysLog);
+      var _tflise = function(v, ik, titel, tal, kant) {
+        return '<button class="dev-flise dev-kant' + (_tp === v ? ' dev-kant-is' : (kant ? ' ' + kant : '')) + '"'
+          + ' style="min-height:92px' + (_tp === v ? ';border-color:var(--is)' : '') + '"'
+          + ' data-a="traenPanel" data-v="' + v + '">'
+          + '<span class="dev-ikon">' + ik + '</span>'
+          + '<b style="font-size:13px;letter-spacing:1.5px">' + titel + '</b>'
+          + '<small style="color:' + (_tp === v ? 'var(--is)' : 'var(--daempet)') + '">' + tal + '</small></button>';
+      };
+      h += '<div class="dev-grid" style="margin:12px 0">'
+        + _tflise("tennis", "\ud83c\udfbe", (EN?"TENNIS":"TENNIS"),
+            _nTt ? (_nTt + " " + (EN ? (_nTt===1?"session":"sessions") : "pas")) : (EN?"log your first":"log dit f\u00f8rste"))
+        + _tflise("fys", "\ud83d\udcaa", (EN?"FITNESS":"FYSISK"),
+            _nFys ? (_nFys + " " + (EN ? (_nFys===1?"session":"sessions") : "pas")) : (EN?"log your first":"log dit f\u00f8rste"))
+        + _tflise("uge", "\ud83d\udcc5", (EN?"THE WEEK":"UGEN"),
+            _uM.denneUge + "/" + _uM.MAAL + (EN?" \u00b7 weekly goal":" \u00b7 ugens m\u00e5l"),
+            _uM.denneUge >= _uM.MAAL ? "dev-kant-gron" : "")
+        + (S.klubKode ? _tflise("coach", "\ud83e\uddd1\u200d\ud83c\udfeb", (EN?"YOUR COACH":"DIN TR\u00c6NER"),
+            (EN?"focus & ratings":"fokus & vurderinger"), "dev-kant-guld") : '')
+        + '</div>';
+
+      if (_tp === "tennis") {
       const ttTot = S.ttLog.reduce(function(a, e){ return a + e.m; }, 0);
       const ttGk = S.ttLog.length ? (S.ttLog.reduce(function(a, e){ return a + e.k; }, 0) / S.ttLog.length).toFixed(1) : null;
       // ⭐ v4.5.0 · som fys: registrering er spillerens, ikke teamets.
@@ -9516,6 +9534,55 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       }
     
 
+      }
+
+      if (_tp === "fys") {
+      h += '<p class="lille">'+(EN?"Log physical training exactly like tennis training — with the coaches' 1-10 scale, so everything can be compared.":"Registrér fysisk træning på samme måde som tennistræningen — med trænernes 1-10-skala, så alt kan sammenlignes.")+'</p>';
+      // ⭐ v4.5.0 · REGISTRERING ER SPILLERENS (Nicolai 22/8: "registrering
+      // af træning giver jo ikke mening. For teamet - giver KUN mening
+      // for spilleren"). Formularen står ikke hos familie-rollen.
+      if (S.rolle !== "familie") {
+      h += '<h2 style="font-size:15px;color:var(--is);margin:6px 0 8px;text-transform:uppercase;letter-spacing:1px">💪 '+(EN?"Physical training log":"Fysisk træning — registrering")+'</h2>';
+      h += '<div class="kort">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><span style="flex:1;font-size:12.5px">'+(EN?"Duration":"Varighed")+'</span><button class="knap" style="flex:none;padding:8px 16px" data-a="fyMinJust" data-v="-15">−</button><b style="width:64px;text-align:center;font-size:15px">'+S.fyMin+' min</b><button class="knap" style="flex:none;padding:8px 16px" data-a="fyMinJust" data-v="15">+</button></div>' +
+        '<p class="lille" style="margin:0 0 5px">'+(EN?(SPILLER+"'s own effort rating — the coaches' scale (required)"):(SPILLER+"s"+" egen indsats-bedømmelse — trænernes skala (skal vælges)"))+'</p>' +
+        skalaKnapper(S.fyKval, "fyKvalVaelg") + skalaLegende(EN) +
+        '<p class="lille" style="margin:0 0 5px">'+(EN?"Type of session (required)":"Selv-træning eller med træner? (skal vælges)")+'</p>' +
+        '<div class="raekke" style="margin-bottom:8px">' +
+          '<button class="knap valg '+(S.fyType===1?"til":"")+'" style="padding:11px 2px" data-a="fyTypeVaelg" data-v="1">🏃 '+(EN?"Self-practice":"Selv-træning")+'</button>' +
+          '<button class="knap valg '+(S.fyType===2?"til":"")+'" style="padding:11px 2px" data-a="fyTypeVaelg" data-v="2">🧑‍🏫 '+(EN?"With coach":"Med træner")+'</button></div>' +
+        '<input placeholder="'+(EN?"Note (optional — e.g. \'intervals\' or \'strength\')":"Note (valgfri — fx \'intervaller\' eller \'styrke\')")+'" value="'+esc(S.fyNote)+'" data-felt="fyNote" style="margin-bottom:8px">' +
+        '<div class="raekke"><button class="knap" style="background:'+(S.fyKval&&S.fyType?"var(--grus)":"var(--flade)")+'" data-a="fyGem">💾 '+(EN?"Save session":"Gem passet")+'</button></div>' +
+          (S.passBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.passBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.passBesked.t) + '</p>' : '') + '</div>';
+      }
+      if (S.fysLog.length) {
+        const _fm = S.fysLog.reduce(function(a,e){ return a + (e.m || 0); }, 0); const _fkE = S.fysLog.filter(function(e){ return e.k; }); const _fk = _fkE.length ? (_fkE.reduce(function(a,e){ return a + e.k; }, 0) / _fkE.length).toFixed(1) : null;
+        h += '<div class="kort" style="border-left:3px solid var(--vundet)"><h3>📓 '+(EN?"Completed sessions":"Gennemførte pas")+' — '+S.fysLog.length+' '+(EN?"total":"i alt")+'</h3>' +
+          '<p style="margin-bottom:6px">'+(_fm ? (_fm/60).toFixed(1)+' '+(EN?"hours logged":"timer registreret") : (EN?"programme sessions":"program-pas"))+(_fk ? ' · '+(EN?"avg. effort":"Ø-indsats")+' '+_fk+'/10' : '')+'</p>' +
+          S.fysLog.slice(0,8).map(function(e, i){
+            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+fysTekst(e, EN)+'</span>' +
+              (S.fysSletB === i
+                ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="fysSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="fysSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
+                : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="fysSletSpoerg" data-v="'+i+'">🗑</button>') +
+              '</div>'; }).join("") +
+          '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="fysEksport">📤 '+(EN?"Export new":"Eksportér nye")+' ('+S.fysLog.filter(function(e){return !e.x;}).length+')</button></div>';
+        if (S.fysEks) h += '<p class="lille">'+(EN?"Select, copy and share with your coach:":"Markér, kopiér og del med træneren:")+'</p><textarea readonly onfocus="this.select()" style="height:100px">'+esc(S.fysEks)+'</textarea>' + eksportKnapper('fysEks', EN);
+      }
+      }
+
+      if (_tp === "uge") {
+      (function(){
+        const m = ugeMaal(S.fysLog);
+        const naaet = m.denneUge >= m.MAAL;
+        const pct = Math.min(100, Math.round(m.denneUge / m.MAAL * 100));
+        h += '<div class="kort" style="border:1.5px solid '+(naaet?'var(--vundet)':'var(--kant)')+'">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:'+(naaet?'var(--vundet)':'var(--is)')+'">🏆 '+(EN?"WEEKLY GOAL":"UGENS MÅL")+'</div>' +
+          (m.streak > 0 ? '<span style="font-size:11px;font-weight:800;color:var(--guld)">🔥 '+m.streak+' '+(EN?(m.streak===1?"week":"weeks")+" in a row":(m.streak===1?"uge":"uger")+" i træk")+'</span>' : '') + '</div>' +
+          '<div style="font-size:16px;font-weight:800;margin:5px 0 7px">'+(naaet ? '🎉 '+(EN?"Goal reached — "+m.denneUge+"/"+m.MAAL+" sessions!":"Ugens mål nået — "+m.denneUge+"/"+m.MAAL+" pas!") : m.denneUge+'/'+m.MAAL+' '+(EN?"sessions this week":"pas denne uge"))+'</div>' +
+          '<div style="position:relative;background:var(--dyb);border-radius:5px;height:10px"><div style="background:'+(naaet?'var(--vundet)':'var(--is)')+';height:100%;width:'+pct+'%;border-radius:5px"></div></div>' +
+          (naaet ? '' : '<p class="lille" style="margin-top:6px">'+(EN?"Goal: 3 sessions a week — running, strength or footwork. Every logged session counts.":"Målet er 3 pas om ugen — løb, styrke eller benarbejde. Hvert registreret pas tæller.")+'</p>') + '</div>';
+      })();
       // ══ TRÆNING · SENESTE UGER · spejlet af trænerens kort (1:1) ═════
       // Regnet af traeningsResume() — SAMME funktion som synken sender af.
       // Én sandhed: det, træneren ser, ER det her.
@@ -9537,11 +9604,14 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         h += '</div>';
       })();
 
+      }
+
+      if (_tp === "coach") {
       // ══ DIN TRÆNER · absorberet 22/8 ("Absorbere tænker jeg :)") ═════
       // Kun med klub — uden klub findes der ingen træner at spejle, og saa
       // skal skaermen heller ikke love én.
       if (S.klubKode) {
-        h += '<div style="display:flex;align-items:center;gap:8px;margin:14px 2px 6px"><b style="font-size:14px">🧑‍🏫 ' + (EN?"Your coach":"Din træner") + '</b></div>';
+        // ⭐ v4.83.0 · overskriften er væk: flisen ovenfor siger allerede DIN TRÆNER.
         h += _dinTraener(EN);
 
         // ══ DATA-DREVET FOKUS · spejlet, i DU-form ═════════════════════
@@ -9562,6 +9632,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
               : "Dit laveste tal lige nu er <b>" + OMR2[svag].i + " " + OMR2[svag].n + "</b> (" + (seneste[svag].s || 0) + "/10) — det er her, træneren sætter fokus. Følg med her, om det flytter sig.") + '</p></div>';
         })();
       }
+      }
+
   }
 
   if (!LAAST && S.tab === "historik") {
@@ -9601,8 +9673,30 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     h += '</div>';
     }
     if (_sp === "kampe") {
-    h += '<div class="kort">';
-    if (S.gemte.length >= 2) {
+    // ══════════════════════════════════════════════════════════════════
+    // ⭐⭐⭐ v4.83.0 · OGSÅ STATISTIK-OMRÅDERNES INDHOLD ER FLISER.
+    //   Nicolai 30/8: «Det samme med de statistisk områder.»
+    //   Panelet var 1.948 px, og en 14-årig skulle rulle forbi tre
+    //   analysekort for at nå sine egne kampe. Nu vælger man ét område
+    //   ad gangen — analyserne er URØRT, det er VEJEN derhen, der er ny.
+    //   Det ydre .kort er væk: kort inde i kort gav dobbelte rammer.
+    // ══════════════════════════════════════════════════════════════════
+    var _kp = S.kampePanel;
+    var _kflise = function(v, ik, titel, tal) {
+      return '<button class="dev-flise dev-kant' + (_kp === v ? ' dev-kant-is' : '') + '"'
+        + ' style="min-height:74px;padding:12px 12px 11px' + (_kp === v ? ';border-color:var(--is)' : '') + '"'
+        + ' data-a="kampePanel" data-v="' + v + '">'
+        + '<span class="dev-ikon" style="font-size:17px;margin-bottom:2px">' + ik + '</span>'
+        + '<b style="font-size:11.5px;letter-spacing:1.1px">' + titel + '</b>'
+        + '<small style="color:' + (_kp === v ? 'var(--is)' : 'var(--daempet)') + '">' + tal + '</small></button>';
+    };
+    h += '<p class="lille" style="margin:0 0 6px;letter-spacing:1.4px;font-weight:800;color:var(--daempet)">\u21b3 ' + (EN?"PICK AN AREA":"V\u00c6LG ET OMR\u00c5DE") + '</p>';
+    h += '<div class="dev-grid" style="margin:2px 0 12px">'
+      + (S.gemte.length >= 2 ? _kflise("mod", "\ud83e\udded", (EN?"LATEST":"SENESTE"), (EN?"vs the previous one":"mod forrige kamp")) : '')
+      + _kflise("trend", "\ud83d\udcc8", (EN?"TREND":"UDVIKLING"), (EN?"match by match":"kamp for kamp"))
+      + _kflise("bench", "\ud83c\udd9a", (EN?"BENCHMARK":"BENCHMARK"), (EN?"vs ":"mod ") + ((typeof BENCHMARKS!=="undefined"&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner"))
+      + '</div>';
+    if (_kp === "mod" && S.gemte.length >= 2) {
       const sa = statistik(S.gemte[0]), sb = statistik(S.gemte[1]);
       const frem = [], skaerp = [];
       const dom = function(label, nu, foer, stigerGodt, enhed){
@@ -9621,6 +9715,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         (skaerp.length ? '<p style="margin-bottom:2px;font-size:11px;color:var(--daempet)">'+(EN?"SHARPEN ("+(BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).navn+" rules)":"SKAL SKÆRPES ("+(BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).navn+"-budene)")+'</p><p style="margin-bottom:0">'+skaerp.map(function(t){return pille("⚠ "+t, "var(--tabt)");}).join("")+'</p>' : '') +
         (!frem.length && !skaerp.length ? '<p style="margin-bottom:0;font-size:12px;color:var(--daempet)">'+(EN?"Level with the previous match — steady as ice. 🧊":"Status quo mod forrige kamp — stabilt som is. 🧊")+'</p>' : '') + '</div>';
     }
+    if (_kp === "trend") {
     if (S.gemte.length >= 3) {
       const kron = S.gemte.slice().reverse().map(function(k){ return statistik(k); });
       const rk = function(f){ return kron.map(f).join(" → "); };
@@ -9647,8 +9742,9 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         '</table>' +
         '<p style="font-size:11px;color:var(--guld)">'+(EN?("⚠ Not "+SPILLER+"'s numbers! Replaced automatically by real statistics when at least 3 matches are saved — currently "):("⚠ Ikke "+SPILLER+"s"+" tal! Erstattes automatisk af rigtig statistik, når mindst 3 kampe er gemt — lige nu "))+S.gemte.length+'/3.</p></div>';
     }
-    // 🆚 Sinner-benchmark
-    (function(){
+    }
+    // 🆚 Sinner-benchmark — kun når flisen er valgt
+    if (_kp === "bench") (function(){
       const harData = S.gemte.length > 0;
       const kilder = harData ? S.gemte.map(function(k){ return statistik(k); }) : [statistik({ point: DEMOKAMP, oskarFirst: true, mtb: true, justeringer: [] })];
       // Kamp-totaler på tværs af kilder
@@ -9698,16 +9794,32 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       h += '</div>';
     }
     if (S.hentBesked && S.hentBesked.i === -1) h += '<p class="lille" style="color:var(--vundet)">'+esc(S.hentBesked.t)+'</p>';
-    h += S.gemte.map((k,i) => {
+    // ══════════════════════════════════════════════════════════════
+    // ⭐⭐⭐ v4.83.0 · AFVIKLEDE KAMPE SOM FLISER.
+    //   Nicolai 30/8 med kamplisten på skærmen: «Også afviklede kampe.
+    //   Det skal også være fliser med helt samme layout som modstandere.»
+    //   Skabelonen er modstander-gitteret (.dev-grid + balance-farvet kant)
+    //   — den er genbrugt, ikke genopfundet. Farven kommer fra facitVandt,
+    //   som kampen allerede bærer: ét opslag, intet regnestykke.
+    //   Åbnet flise spænder over begge kolonner (grid-column:1/-1), præcis
+    //   som en åben modstander — indholdet er URØRT.
+    // ══════════════════════════════════════════════════════════════
+    if (S.gemte.length) h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">\ud83c\udfbe ' + (EN?"Matches played":"Afviklede kampe") + ' \u00b7 ' + S.gemte.length + '</h2>';
+    h += '<div class="dev-grid" style="margin:2px 0 10px">' + S.gemte.map((k,i) => {
       const s = statistik(k);
       const aaben = !!S.kampAaben[i];
       const aAaben = !!S.analyseAaben[i];
-      // Hovedet er knappen: hele linjen folder kampen ud og i.
-      const hoved = '<div data-a="kampFold" data-v="'+i+'" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;cursor:pointer">' +
-        '<b style="font-size:13.5px">'+(aaben?'▾':'▸')+' vs '+esc(k.modstander)+(k.resultat?' <span style="color:var(--is)">· '+esc(k.resultat)+'</span>':'')+'</b>' +
-        '<span style="font-size:11px;color:var(--daempet)">'+(k.analyse?'📝 ':'')+esc(k.dato)+'</span></div>';
-      if (!aaben) return '<div class="kort" style="padding-top:10px;padding-bottom:10px">' + hoved + '</div>';
-      return '<div class="kort">' + hoved +
+      const vandt = typeof k.facitVandt === "boolean" ? k.facitVandt : (s.setsO > s.setsM);
+      const kantKl = vandt ? "dev-kant-gron" : "dev-kant-roed";
+      const farve  = vandt ? "var(--vundet)" : "var(--tabt)";
+      // Hovedet er knappen: hele flisen folder kampen ud og i.
+      const hoved = '<div data-a="kampFold" data-v="'+i+'" style="display:flex;align-items:center;gap:9px;cursor:pointer">' +
+        '<span style="font-size:12px;font-weight:800;background:'+farve+';color:var(--dyb);padding:3px 9px;border-radius:10px;flex:none">'+(vandt?(EN?'W':'V'):(EN?'L':'T'))+'</span>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;line-height:1.25;word-break:break-word">'+esc(k.modstander)+'</div>' +
+        '<div style="font-size:11px;color:var(--daempet);line-height:1.35">'+(k.analyse?'📝 ':'')+esc(k.dato)+(k.resultat?'<br><span style="color:var(--is);white-space:nowrap">'+esc(k.resultat)+'</span>':'')+'</div></div>' +
+        '<span style="color:var(--daempet);font-size:11px;flex:none">'+(aaben?'▲':'▼')+'</span></div>';
+      if (!aaben) return '<div class="kort dev-kant '+kantKl+'" style="cursor:pointer;padding:13px;margin:0;border-radius:16px">' + hoved + '</div>';
+      return '<div class="kort dev-kant '+kantKl+'" style="padding:13px;margin:0;border-radius:16px;grid-column:1/-1">' + hoved +
         (k.turnering?'<p style="margin:2px 0 2px;font-size:11px;color:var(--daempet)">'+esc(k.turnering)+'</p>':'')+statTabel(s,EN)+saetTabel(s,EN)+pulsKort(k,EN)+
         (k.analyse && S.redigerA !== i
           ? '<div style="border:1.5px solid var(--guld);border-radius:10px;padding:10px 12px;margin:10px 0 4px">' +
@@ -9747,7 +9859,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         (_maaBillede() ? _bilStrimmel("kamp", _kampNoegle(k, i), EN) : '') +
         (S.hentBesked && S.hentBesked.i === i ? '<p class="lille" style="margin:8px 0 0;color:'+(S.hentBesked.fejl?'var(--tabt)':'var(--vundet)')+'">'+esc(S.hentBesked.t)+'</p>' : '') +
         '</div>';
-    }).join("");
+    }).join("") + '</div>';
     if (S.redigerA !== null && S.gemte[S.redigerA]) {
       h += '<p class="lille" style="margin-top:10px">'+(EN?"Analysis of the match vs ":"Analyse af kampen mod ")+esc(S.gemte[S.redigerA].modstander)+(EN?" — paste from the chat:":" — indsæt fra chatten:")+'</p>';
       h += '<textarea data-felt="aTekst" placeholder="'+(EN?'Paste the analysis here…':'Indsæt analysen her…')+'" style="height:120px;border-color:var(--guld);color:var(--kridt)">'+esc(S.aTekst)+'</textarea>';
@@ -9755,7 +9867,6 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       h += '<div class="raekke" style="margin-top:4px"><button class="knap" style="flex:none;padding:7px 11px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="hentAnalyse" data-v="'+S.redigerA+'">'+(S.henter===S.redigerA?(EN?'⏳ Fetching…':'⏳ Henter…'):(EN?'🔄 Fetch again — overwrites':'🔄 Hent igen — overskriver'))+'</button></div>';
       h += '<p class="lille" style="margin:4px 0 0">'+(EN?'Only needed if the analysis is wrong or the engine has changed.':'Kun nødvendigt hvis analysen er skæv, eller motoren er ændret.')+'</p>';
     }
-    h += '</div>';
     }
     if (_sp === "traen") {
     h += '<div class="kort">';

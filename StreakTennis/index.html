@@ -40,6 +40,10 @@ body.flade .bundnav{display:none}
 body.flade #snak-flade{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
 a{color:var(--is)}a:hover{color:#C6EAF5}
 .wrap{max-width:520px;margin:0 auto;padding:16px 16px 40px}
+/* ⭐ v4.76.0 · DØREN SKAL IKKE RULLE. De 40px i bunden er til app-siderne,
+   hvor der er en bundmenu at komme under. Paa doerens skaerme var de
+   praecis det, der skubbede VALGET 24px over kanten. */
+body.doer .wrap{padding:8px 16px 12px}
 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;position:sticky;top:0;z-index:60;background:radial-gradient(120% 55% at 50% -8%,#14264A 0%,#0B1220 55%) fixed #0B1220;margin:0 -14px;padding:10px 14px}
 .brand{display:flex;align-items:center;gap:10px}
 .brandlogo{width:34px;height:34px;border-radius:50%;flex:none;box-shadow:0 0 0 1.5px rgba(240,207,97,.45),0 4px 12px rgba(0,0,0,.4)}
@@ -102,7 +106,7 @@ button.dev-hero.dev-kant{background:linear-gradient(160deg,#101E3A,#0C1526) padd
    og `maximum-scale` af tilgængelighedshensyn. Gælder HVERT felt, man
    kan få fokus i, også klubkode, brugernavn og backup-boksen. */
 input,textarea,select{font-size:16px}
-input{width:100%;padding:13px;border-radius:14px;border:1px solid var(--kant);background:rgba(255,255,255,.05);color:var(--kridt);font-size:16px;margin-bottom:8px;font-family:inherit}
+input{width:100%;padding:11px 13px;border-radius:14px;border:1px solid var(--kant);background:rgba(255,255,255,.05);color:var(--kridt);font-size:16px;margin-bottom:6px;font-family:inherit}
 input::placeholder{color:var(--daempet)}
 .raekke{display:flex;gap:8px;margin-bottom:8px}
 .knap{flex:1;padding:12px 8px;border-radius:14px;border:none;cursor:pointer;background:var(--flade);color:var(--kridt);font-weight:700;font-size:13px;font-family:inherit}
@@ -448,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.69.0 · 30. august 2026";
+const VERSION = "v4.76.0 · 30. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -3323,14 +3327,24 @@ const A = {
   // ⭐ v4.16.0 · linjen med dit navn ER knappen til at skifte det.
   // Uden den ville der ikke findes nogen vej, naar kortet er gemt vaek.
   // ⭐ v4.16.0 · startskaermens to trin
+  // ⭐⭐ v4.71.0 · TRE TRIN, ÉT SKRIDT AD GANGEN.
+  //   0 = LOG IND · 1 = INDFOERINGEN (hvad er det her?) · 2 = OPRETTELSEN
+  //   Foer sprang `velkomstFrem` til et fast tal. Med tre skaerme skal
+  //   den gaa ét skridt — saa er der ingen ny handler at holde styr paa,
+  //   og formularens ← foerer til indfoeringen i stedet for helt ud.
   velkomstFrem: () => {
-    S.velkomstTrin = 1;
+    S.velkomstTrin = Math.min(2, (S.velkomstTrin || 0) + 1);
     // ⭐ v4.52.0 · en parkeret invitation (#ven=-linket) lander i
     // kodefeltet af sig selv — linket og fordoeren er samme rejse.
     try { if (!S.indKlubkode) S.indKlubkode = lager.hent("sai-invit-fra") || ""; } catch (_e) {}
+    try { window.scrollTo(0, 0); } catch (_e) {}
     render();
   },
-  velkomstTilbage: () => { S.velkomstTrin = 0; render(); },
+  velkomstTilbage: () => {
+    S.velkomstTrin = Math.max(0, (S.velkomstTrin || 0) - 1);
+    try { window.scrollTo(0, 0); } catch (_e) {}
+    render();
+  },
   navnAabn: () => {
     S.navnAaben = !S.navnAaben;
     S.navnUdkast2 = S.navnAaben ? (S.mitNavn || "") : "";
@@ -6216,6 +6230,13 @@ function _tegn() {
   }
   const EN = S.sprog === "en";
   const el = document.getElementById("app");
+  // ⭐ v4.76.0 · doerens skaerme skal kunne ses paa ÉN side
+  //   (Nicolai 30/8: «alt skal kunne ses paa 1 side»). Klassen
+  //   styrer KUN polstring — app-siderne beholder deres 40px i bunden,
+  //   hvor der er en bundmenu at komme under.
+  try { document.body.classList.toggle("doer",
+        !SPILLER || !!S.indAaben || !!S.indResultat || !!S.nulstilToken
+        || !!S.betingelser || !!S.liveDemo); } catch (_e) {}
     let h = '<div class="topbar"><span class="brand">'+'<img class="brandlogo" src="'+(KLUBLOGO||SAILOGO)+'" alt="">'+'<span class="brandtxt"><span class="wordmark">'+HOLDNAVN()+'</span><span class="brandby">'+(KLUB?esc(KLUB)+" · ":"")+'Sports<b>AI</b>nalytics</span></span></span><button class="sprogknap" data-a="sprog">'+(EN?"\u{1F310} Dansk":"\u{1F310} English")+'</button></div>';
 
   h += '<div class="hero"><span class="eyebrow">'+(EN?'High tempo \u00b7 ball in \u00b7 cool head':'H\u00f8jt tempo \u00b7 bolden ind \u00b7 hovedet koldt')+'</span>'+naesteChip(EN)+'</div>';
@@ -6293,7 +6314,7 @@ function _tegn() {
     if (S.betingelser) {
       const _b = function(t, x){ return '<p class="lille" style="margin:0 0 10px;line-height:1.6"><b style="display:block;font-size:13.5px">' + t + '</b>' + x + '</p>'; };
       el.innerHTML =
-        '<div style="padding:22px 16px 28px">' +
+        '<div style="padding:14px 16px 18px">' +
           '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">' +
             '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 15px" data-a="betingelser">←</button>' +
             '<b style="font-size:17px">' + (S.sprog === "en" ? "Terms & privacy" : "Betingelser & privatliv") + '</b></div>' +
@@ -6333,7 +6354,7 @@ function _tegn() {
       if (S.liveDemo) {
         const _nv = esc(SPILLER || (S.sprog === "en" ? "Emma" : "Emma"));
         el.innerHTML =
-          '<div style="padding:22px 16px 28px">' +
+          '<div style="padding:14px 16px 18px">' +
             '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">' +
               '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 15px" data-a="liveDemo">←</button>' +
               '<b style="font-size:17px">' + (S.sprog === "en" ? "This is live" : "Sådan ser live ud") + '</b></div>' +
@@ -6343,46 +6364,44 @@ function _tegn() {
             //   den svageste tekst paa hele skaermen forklarede, hvad man
             //   kiggede paa. Nu bruger den husets egen stemme fra rejsens
             //   oevrige trin: 54px ikon, 21px overskrift, 16px broedtekst.
-            '<div style="text-align:center;margin:6px 0 18px">' +
+            '<div style="text-align:center;margin:2px 0 12px">' +
               '<div class="sai-op" style="font-size:54px;line-height:1;margin-bottom:8px">\ud83d\udce3</div>' +
               '<b class="sai-op" style="animation-delay:.06s;font-size:21px;display:block;margin-bottom:8px;line-height:1.35;text-wrap:balance">' +
-                (S.sprog === "en" ? "Your people can watch"
-                                  : "Dine folk kan se med") + '</b>' +
+                (S.sprog === "en" ? "The team can watch"
+                                  : "Teamet kan se med") + '</b>' +
               '<p class="sai-op" style="animation-delay:.12s;font-size:16px;margin:0 auto;max-width:20em;line-height:1.6;color:var(--daempet);text-wrap:pretty">' +
                 (S.sprog === "en"
-                  ? "Wherever they are. They install nothing \u2014 they get a link and follow every single point while you play."
-                  : "Hvor de end er. De henter ingenting \u2014 de f\u00e5r et link og f\u00f8lger hvert eneste point, mens du spiller.") + '</p>' +
+                  ? "Wherever they are. No app \u2014 just a link, and every single point."
+                  : "Hvor de end er. Ingen app \u2014 bare et link, og hvert eneste point.") + '</p>' +
               // ⭐ Den staerkeste saetning i hele produktet stod foer
               //   nederst i 12px graat, som en fodnote til en prisliste.
               //   «Farmors foerste klik er reklamen» (drifts-noter 16/8).
               '<p class="sai-op" style="animation-delay:.18s;font-size:16px;font-weight:800;color:var(--guld);margin:12px 0 0">' +
                 (S.sprog === "en" ? "Watching is always free." : "At se med er altid gratis.") + '</p>' +
             '</div>' +
-            '<p class="lille" style="margin:0 0 8px;color:var(--daempet);text-align:center">' + (S.sprog === "en"
-              ? "This is what they see, ball by ball:"
-              : "Det her er, hvad de ser \u2014 bold for bold:") + '</p>' +
+            // ⭐ v4.72.0 · Billedteksten er ude — krogen ovenover siger
+            //   allerede «foelger hvert eneste point», og scoreboardet
+            //   under den forklarer sig selv paa et halvt sekund.
+            '' +
             '<div class="kort scoreboard"><div class="sb-top"><b>vs A. Kruse</b><span>Sommer Cup</span></div>' +
               '<div class="sb-grid"><div class="sb-navn">' + _nv + ' <span class="sb-serv"></span></div><div class="sb-tal">1</div><div class="sb-tal">5</div><div class="sb-pt sb-akt">40</div>' +
               '<div class="sb-navn sb-dim">A. Kruse</div><div class="sb-tal">1</div><div class="sb-tal">4</div><div class="sb-pt sb-dim">30</div></div>' +
               '<div class="sb-fod"><span>' + (S.sprog === "en" ? "SETS \u00b7 GAMES \u00b7 POINTS" : "S\u00c6T \u00b7 PARTI \u00b7 POINT") + '</span><span>' + _nv + (S.sprog === "en" ? " serving" : " server") + '</span></div></div>' +
             '<div class="banner guld">🎯 ' + (S.sprog === "en" ? "SET POINT \u2014 percentage tennis now" : "S\u00c6TBOLD \u2014 procenttennis nu") + '</div>' +
-            '<div class="kridtstreg"><div class="linje"></div><div class="prikker">' +
-              [1,1,0,1,1,1,0,1,1].map(function(v){ return '<span class="prik" style="background:' + (v ? "var(--vundet)" : "var(--tabt)") + ';margin-top:' + (v ? 0 : 10) + 'px"></span>'; }).join("") + '</div></div>' +
-            '<div class="kort" style="padding:11px 13px;margin-top:2px">' +
-              '<p class="lille" style="margin:0 0 5px">💬 <b>' + (S.sprog === "en" ? "The stands write along:" : "Tribunen skriver med:") + '</b></p>' +
-              '<p class="lille" style="margin:0 0 3px;opacity:.85">👏 «' + (S.sprog === "en" ? "Come on!" : "Kom s\u00e5!") + '» · 🔥 «' + (S.sprog === "en" ? "What a serve" : "Sikke en serv") + '»</p>' +
-              // ⭐ v4.68.0 · Gratis-saetningen er flyttet OP i krogen og
-              //   staar dér i guld. Her staar nu KUN det, afsnittet
-              //   handler om: hvad det koster at DELE. To sandheder om
-              //   samme ting paa én skaerm er én for meget.
-              '<p class="lille" style="margin:6px 0 0;opacity:.7">' + (S.sprog === "en"
+            // ⭐ v4.72.0 · KRIDTSTREGEN (41px) og TRIBUNE-KORTET (97px) er
+            //   ude: ni prikker uden forklaring og to opdigtede tilraab er
+            //   charme, ikke information. Skaermen skal kunne ses paa ÉN
+            //   side, og krogen + scoreboardet + prisen er det, der saelger.
+            //   Linjen om at DELE er flyttet NED i priskortet, hvor den
+            //   hoerer til — den handler om prisen, ikke om tribunen.
+            '<div class="kort" style="padding:11px 13px;margin-top:12px;border-left:3px solid var(--guld)">' +
+              '<p class="lille" style="margin:0 0 6px;opacity:.7">' + (S.sprog === "en"
                 ? "Sharing live counts against your plan:"
-                : "At DELE live t\u00e6ller p\u00e5 planen:") + '</p></div>' +
-            '<div class="kort" style="padding:11px 13px;margin-top:8px;border-left:3px solid var(--guld)">' +
+                : "At DELE live t\u00e6ller p\u00e5 planen:") + '</p>' +
               '<p class="lille" style="margin:0;line-height:1.7">' + (S.sprog === "en"
                 ? "<b>Full access (49 kr/mo): 3 live matches every month included.</b><br>More? <b>+49 kr/mo</b> for unlimited streaming \u2014 or <b>15 kr per live match</b>."
                 : "<b>Fuld adgang (49 kr/md): 3 live-kampe hver m\u00e5ned er med i prisen.</b><br>Flere? <b>+49 kr/md</b> for uendelig streaming \u2014 eller <b>15 kr pr. live-kamp</b>.") + '</p></div>' +
-            '<div class="raekke" style="margin-top:14px"><button class="knap stor" style="background:var(--grus)" data-a="liveDemo">' + (S.sprog === "en" ? "Back to the choice" : "Tilbage til valget") + '</button></div>' +
+            '<div class="raekke" style="margin-top:12px"><button class="knap" style="width:100%;min-height:54px;height:54px;font-size:16px;font-weight:800;background:var(--grus)" data-a="liveDemo">' + (S.sprog === "en" ? "Back to the choice" : "Tilbage til valget") + '</button></div>' +
           '</div>';
         return;
       }
@@ -6450,8 +6469,8 @@ function _tegn() {
             '<div class="raekke sai-op" style="animation-delay:.14s;margin-top:10px"><button class="knap valg" style="min-height:46px;border-color:var(--guld);color:var(--guld)" data-a="liveDemo">▶ ' +
               (S.sprog === "en" ? "See what live looks like" : "Se hvordan live ser ud") + '</button></div>' +
             '<p class="lille sai-op" style="animation-delay:.16s;margin:12px auto 0;max-width:22em;opacity:.65">' + (S.sprog === "en"
-              ? "The choice can be changed any time. We contact you about payment — nothing is charged automatically. In a club that uses StreakTennis? The club pays — ask your coach for the club code."
-              : "Valget kan altid laves om. Vi kontakter jer om betalingen — intet trækkes automatisk. Spiller I i en klub med StreakTennis? Klubben betaler — spørg træneren om klubkoden.") + '</p>' +
+              ? "The choice can be changed any time. We contact you about payment — nothing is charged automatically."
+              : "Valget kan altid laves om. Vi kontakter jer om betalingen — intet trækkes automatisk.") + '</p>' +
             (S.indBesked ? '<p class="lille" style="margin:8px auto 0;font-weight:700;color:var(--tabt)">' + esc(S.indBesked.t) + '</p>' : '') +
             (S.indPlanSender ? '<p class="lille" style="margin:8px auto 0;opacity:.6">\u23f3 \u2026</p>' : '');
           _knap = '';
@@ -6575,10 +6594,10 @@ function _tegn() {
         }
       }
             el.innerHTML =
-        '<div style="position:relative;min-height:86vh;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:24px 18px 28px;text-align:center">' +
+        '<div style="position:relative;min-height:86vh;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:12px 18px 14px;text-align:center">' +
           (_tr === 1 ? _bolde : '') +
           '<div style="position:relative">' + _kro +
-          '<div class="raekke" style="margin-top:18px">' + _knap + '</div>' +
+          '<div class="raekke" style="margin-top:12px">' + _knap + '</div>' +
           (_tr > 1
             ? '<div class="raekke" style="margin-top:10px"><button class="knap valg" style="min-height:46px;background:none;border-color:var(--kant);color:var(--daempet)" data-a="indTilbage">\u2190 ' +
               (S.sprog === "en" ? "Back" : "Tilbage") + '</button></div>'
@@ -6605,50 +6624,55 @@ function _tegn() {
           '<div class="sai-op" style="animation-delay:.06s;font-size:22px;font-weight:900;letter-spacing:4px;color:var(--kridt);margin-bottom:16px">TENNIS</div>' +
           // ① LOG IND — det foerste, som han bad om.
           '<div class="sai-op" style="animation-delay:.12s;text-align:left">' + _loginKort(S.sprog === "en", true) + '</div>' +
-          // ② Skillelinjen. De to ting maa ikke kunne forveksles.
-          '<div class="sai-op" style="animation-delay:.18s;display:flex;align-items:center;gap:10px;margin:18px 0 12px">' +
+          // ② «Ny her?» — ét skridt videre til INDFOERINGEN, ikke til en
+          //    formular. Skærmen her har ét ærinde: at lukke en KENDT ind.
+          '<div class="sai-op" style="animation-delay:.18s;display:flex;align-items:center;gap:10px;margin:16px 0 12px">' +
             '<div style="flex:1;height:1px;background:var(--kant)"></div>' +
             '<span class="lille" style="color:var(--daempet);letter-spacing:1px">' + (S.sprog === "en" ? "OR" : "ELLER") + '</span>' +
             '<div style="flex:1;height:1px;background:var(--kant)"></div>' +
           '</div>' +
-          // ③ NY HER — en RIGTIG knap, ikke et link. 8/9 er hver eneste
-          //    bruger ny, og doeren skal fylde lige saa meget som laasen.
-          '<p class="sai-op" style="animation-delay:.2s;margin:0 0 8px;font-size:16px;font-weight:800">' +
-            (S.sprog === "en" ? "New here?" : "Ny her?") + '</p>' +
           '<button class="knap sai-op" style="animation-delay:.24s;background:var(--guld);color:#12203a;width:100%;height:54px;min-height:54px;font-size:16px;font-weight:800" data-a="velkomstFrem">' +
-            (S.sprog === "en" ? "Create the player" : "Opret spilleren") + ' →</button>' +
-          // ④ Hvad er det her? Bliver staaende — bare nedenunder, saa en
-          //    ny familie stadig kan se produktet uden at logge ind.
-          '<p class="sai-op" style="animation-delay:.3s;margin:26px auto 14px;max-width:19em;font-size:15px;line-height:1.55;color:var(--daempet)">' +
+            (S.sprog === "en" ? "New here? Start here" : "Ny her? Start her") + ' →</button>' +
+          '<p class="lille sai-op" style="animation-delay:.3s;margin:14px auto 0;opacity:.45;font-size:10.5px">' + VERSION + '</p>' +
+        '</div>';
+      return;
+    }
+    // ⭐⭐⭐ v4.71.0 · TRIN 1 · INDFOERINGEN — «hvad er det her?»
+    //   Nicolai: «har man ikke en konto, saa ryger man videre til
+    //   indfoeringen.» Linjen og de fire fliser stod foer paa forsiden
+    //   under login og gjorde den til to skaerme i én. De har altid
+    //   hoert til her: husets egen v4.16.0-idé var «foerst HVORFOR, saa
+    //   HVEM ER DU» — login var bare aldrig lagt foran.
+    if (S.velkomstTrin === 1 && !S.indAaben) {
+      el.innerHTML =
+        '<div style="padding:20px 18px 24px;text-align:center">' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">' +
+            '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 15px" data-a="velkomstTilbage">←</button>' +
+            '<b style="font-size:17px;text-align:left">' + (S.sprog === "en" ? "What is this?" : "Hvad er det her?") + '</b></div>' +
+          '<div class="sai-op" style="font-size:46px;line-height:1;margin-bottom:2px"><span class="sai-flamme" style="display:inline-block">🔥</span></div>' +
+          '<p class="sai-op" style="animation-delay:.06s;margin:0 auto 14px;max-width:19em;font-size:16px;line-height:1.5;color:var(--daempet)">' +
             (S.sprog === "en"
               ? "Every session counts. Every match tells you something."
               : "Hver træning tæller. Hver kamp fortæller dig noget.") + '</p>' +
-          '<div class="sai-op dev-grid" style="animation-delay:.34s;margin-bottom:12px">' +
-            '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">🔥</span><b>' + (S.sprog === "en" ? "STREAK" : "STREAK") + '</b><small>' + (S.sprog === "en" ? "sessions in a row" : "træninger i træk") + '</small></div>' +
+          '<div class="sai-op dev-grid" style="animation-delay:.12s;margin-bottom:18px">' +
+            '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">🔥</span><b>STREAK</b><small>' + (S.sprog === "en" ? "sessions in a row" : "træninger i træk") + '</small></div>' +
             '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">🎾</span><b>' + (S.sprog === "en" ? "MATCH" : "KAMP") + '</b><small>' + (S.sprog === "en" ? "ball by ball" : "bold for bold") + '</small></div>' +
             '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">📊</span><b>' + (S.sprog === "en" ? "ANALYSIS" : "ANALYSE") + '</b><small>' + (S.sprog === "en" ? "what the numbers say" : "hvad tallene siger") + '</small></div>' +
             '<div class="dev-flise dev-kant" style="cursor:default"><span class="dev-ikon">🤝</span><b>' + (S.sprog === "en" ? "FRIENDS" : "VENNER") + '</b><small>' + (S.sprog === "en" ? "follow each other" : "følg hinanden") + '</small></div>' +
           '</div>' +
-          // ⭐ v4.69.0 · «Kom i gang» er flyttet OP over fliserne og hedder
-          //   nu «Opret spilleren» — den skal sige, hvad den goer. To
-          //   knapper til samme sted paa én skaerm er én for meget.
-          ''  +
-          // v4.56.0 · Nicolai: «Man kan ikke se versionsnummeret i
-          // velkomsten.» En tester skal kunne se versionen UDEN at
-          // oprette sig — ellers tester hun i blinde (princip 66).
-          '<p class="lille sai-op" style="animation-delay:.3s;margin:16px auto 0;opacity:.45;font-size:10.5px">' + VERSION + '</p>' +
-
+          '<button class="knap sai-op" style="animation-delay:.18s;background:var(--guld);color:#12203a;width:100%;height:54px;min-height:54px;font-size:16px;font-weight:800" data-a="velkomstFrem">' +
+            (S.sprog === "en" ? "Create the player" : "Opret spilleren") + ' →</button>' +
         '</div>';
       return;
     }
     el.innerHTML =
-      '<div style="padding:22px 16px 24px">' +
+      '<div style="padding:14px 16px 18px">' +
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">' +
           '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 15px" data-a="' + (S.indAaben ? "indLuk" : "velkomstTilbage") + '">←</button>' +
           '<b style="font-size:17px">' + (S.indAaben
             ? (S.sprog === "en" ? "Finish your account" : "Færdiggør din konto")
             : (S.sprog === "en" ? "Create the player" : "Opret spilleren")) + '</b></div>' +
-        '<div class="kort sai-op" style="border-color:var(--guld);padding:16px">' +
+        '<div class="kort sai-op" style="border-color:var(--guld);padding:13px">' +
           // ⭐⭐⭐ v4.52.0 · OPRETTELSEN BOR HER — OG KUN HER.
           // Nicolai 29/8, efter selv at have proevet inkognito-rejsen:
           // «ALT oprettes ved starten. Vi kan intet kontrollere.» Foer
@@ -6661,11 +6685,11 @@ function _tegn() {
           '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin-bottom:5px">' + (S.sprog === "en" ? "PLAYER'S FIRST NAME" : "SPILLERENS FORNAVN") + '<span id="ok-navnUdkast" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
           '<input data-felt="navnUdkast" maxlength="24" placeholder="' + (S.sprog === "en" ? "e.g. Oskar" : "fx Oskar") + '" value="' + esc(S.navnUdkast || "") + '">' +
 
-          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:14px 0 5px">' + (S.sprog === "en" ? "USERNAME" : "BRUGERNAVN") + '<span id="ok-navnUdkast2" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (S.sprog === "en" ? "USERNAME" : "BRUGERNAVN") + '<span id="ok-navnUdkast2" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
           '<input data-felt="navnUdkast2" maxlength="20" style="text-transform:lowercase;letter-spacing:1px;font-weight:700" placeholder="' + (S.sprog === "en" ? "e.g. oskar_b93" : "fx oskar_b93") + '" value="' + esc(S.navnUdkast2 || "") + '" autocapitalize="off" spellcheck="false">' +
 
 
-          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:14px 0 5px">' + (S.sprog === "en" ? "PASSWORD" : "KODEORD") + '<span id="ok-indKode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (S.sprog === "en" ? "PASSWORD" : "KODEORD") + '<span id="ok-indKode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
           '<div class="raekke" style="gap:6px">' +
           '<input type="' + (S.visIndKode ? "text" : "password") + '" style="flex:1;min-width:0" placeholder="' + (S.sprog === "en" ? "min 8 characters" : "mindst 8 tegn") + '" value="' + esc(S.indKode) + '" data-felt="indKode" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="new-password">' +
           '<button class="knap valg" style="flex:none;min-height:44px;max-height:52px;padding:8px 12px;font-size:13px" data-a="visSkift" data-v="visIndKode">' + (S.visIndKode ? "🙈" : "👁") + '</button></div>' +
@@ -6677,19 +6701,23 @@ function _tegn() {
           '<input data-felt="indMail" maxlength="80" placeholder="' + (S.sprog === "en" ? "to recover the password" : "til at gendanne kodeordet") + '" value="' + esc(S.indMail) + '" autocapitalize="off" spellcheck="false" style="text-transform:lowercase">' +
 
 
-          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:14px 0 5px">' + (S.sprog === "en" ? "CODE FROM CLUB OR FRIEND · OPTIONAL" : "KODE FRA KLUB ELLER VEN · VALGFRIT") + '<span id="ok-indKlubkode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (S.sprog === "en" ? "CODE FROM CLUB OR FRIEND · OPTIONAL" : "KODE FRA KLUB ELLER VEN · VALGFRIT") + '<span id="ok-indKlubkode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
           '<input data-felt="indKlubkode" maxlength="40" style="letter-spacing:1px;font-weight:700" placeholder="' + (S.sprog === "en" ? "club code or friend ID" : "klubkode eller venne-ID") + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">' +
-          '<p class="lille" style="margin:5px 0 0;opacity:.72">' + (S.sprog === "en"
-            ? "Got a code from your club, or a friend ID? It goes here. No code? Just continue."
-            : "Har I fået en kode af klubben eller et venne-ID? Den hører til her. Ingen kode? Gå bare videre.") + '</p>' +
+          // ⭐ v4.72.0 · Tre saetninger blev til én. Etiketten siger selv
+          //   «VALGFRIT», saa «ingen kode? gaa bare videre» var det samme
+          //   sagt to gange paa 20 pixels afstand.
+          '<p class="lille" style="margin:4px 0 0;opacity:.72">' + (S.sprog === "en"
+            ? "From your club or a friend — or just continue."
+            : "Fra klubben eller en ven — ellers gå bare videre.") + '</p>' +
 
-          // ⭐ PRISEN — Nicolais valg nr. 5: «Der skal ved oprettelse staa
-          // en pris. Det skal man vide med det samme.» Og aerligt om
-          // betalingen: der findes ingen opkraevning endnu, saa der
-          // loves heller ikke et kassebaand (design §5②).
-          '<p class="lille" style="margin:14px 0 0;padding:10px 12px;border-left:3px solid var(--guld);background:rgba(240,207,97,.07);border-radius:0 9px 9px 0;text-align:left;line-height:1.55">' + (S.sprog === "en"
-            ? "<b>With a club code the club pays — the app is free for you.</b> Without a club, full access is <b>49 kr/month</b> — we contact you about payment, nothing is charged automatically."
-            : "<b>Med en klubkode betaler klubben — appen er gratis for jer.</b> Uden klub koster fuld adgang <b>49 kr/md</b> — vi kontakter jer om betalingen, intet trækkes automatisk.") + '</p>' +
+          // ⭐⭐ v4.72.0 · PRISKASSEN (98px) ER UDE — den var en GENTAGELSE.
+          //   Ordret det samme staar paa VALGET, TO skaerme senere i samme
+          //   rejse: «Klubben betaler» / «49 kr/md» / «vi kontakter jer om
+          //   betalingen, intet traekkes automatisk».
+          //   ⚠️ Betingelses-reglen er intakt: prisen forsvinder ikke —
+          //     den staar dér, hvor den bruges til at VAELGE. Og linjen om
+          //     betingelserne staar stadig lige under knappen her.
+          '' +
 
           (S.indBesked ? '<p class="lille" style="margin:10px 0 0;font-weight:700;color:' + (S.indBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.indBesked.t) + '</p>' : '') +
           '<button class="knap" style="width:100%;margin-top:12px;min-height:52px;font-size:16px;font-weight:800;background:var(--grus)" data-a="indGaa">' +
@@ -6713,10 +6741,13 @@ function _tegn() {
           //     fra Indstillinger (`indAaben`), har telefonen allerede en
           //     spiller — saa er der ingen at logge ind som, og en knap,
           //     der ikke goer noget, er en brudt knap (princip 35).
-          (S.indAaben ? '' :
-            '<button class="knap valg" style="margin-top:9px;width:100%;min-height:44px;font-size:13px;background:transparent;border:1px dashed var(--kant);color:var(--is)" data-a="velkomstTilbage">' +
-            (S.sprog === "en" ? "← Already have an account? Log in" : "← Har du allerede en konto? Log ind") + '</button>') +
-          '<p class="lille" style="margin:12px 0 0;text-align:center;opacity:.4;font-size:10px">' + VERSION + '</p>' +
+          // ⭐ v4.72.0 · UDE. Login er nu trin 0, og ← oeverst paa skaermen
+          //   foerer dertil. To knapper til samme sted paa samme skaerm er
+          //   stoej — og de 53px er praecis dem, der skulle bruges.
+          '' +
+          // ⭐ v4.72.0 · Versionen staar paa trin 0, hvor en tester ser den
+          //   FOER hun roerer noget. Princip 66 er opfyldt ét sted.
+          '' +
         '</div>' +
       '</div>';
     // ⭐ v4.64.0 · fluebenene overlever en gentegning. Uden dette ville de

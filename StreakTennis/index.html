@@ -448,7 +448,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.62.0 · 29. august 2026";
+const VERSION = "v4.63.0 · 30. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1400,6 +1400,23 @@ try { const ra = JSON.parse(lager.hent("sai-rivalanalyser") || "{}"); if (ra && 
 // kamp-registreringen bag den aerlige doer. Alle andre svar (ok,
 // netvaerk, offline) doemmer ikke: hallen uden daekning maa ALDRIG
 // stoppe en indbudt spiller, og "1" i lageret sparer alle opslag.
+// ⭐⭐⭐ v4.63.0 · LOEFTET FRA REJSEN INDFRIES.
+// Trin 7 gemte `sai-push-vil` og lovede iPhone-brugeren ordret:
+// «Aabn den derfra — saa spoerger vi igen med ét tryk.»
+// Maalt 30/8: flaget blev SKREVET ét sted og LAEST INTET STED.
+// Praecis samme fejlklasse som `sai-brugernavn` 24/8 — et felt, der
+// kun skrives, er ikke gemt, det er tabt. Louise fik derfor aldrig
+// sit spoergsmaal igen, og kanalen kunne ikke aabnes.
+//
+// ⚠️ Trinnet tages op i REJSEN, ikke paa forsiden — forsiden er
+// fredet, og et nyt kort dér ville kraeve Nicolais ja pr. gang.
+try {
+  if (lager.hent("sai-push-vil") === "1" && pushMulig()
+      && !(erIOS() && !paaHjemmeskaerm())
+      && (typeof Notification === "undefined" || Notification.permission === "default")) {
+    S.indResultat = "inde"; S.indTrin = 7;
+  }
+} catch (e) {}
 try {
   const _inv = lager.hent("sai-inviteret");
   if (_inv === "0") {
@@ -2241,8 +2258,15 @@ const A = {
     // laver appen NUL netvaerkskald" — brudt af en bekvemmelighed.
     // Samme hegn som loefte-porten laengere nede: har man aldrig raakt ud,
     // rejser der intet. En ejer HAR raakt ud, saa panelet naas alligevel.
-    if (id === "opsaet" && S.portStatus === null && S.spillerNoegle
-        && iDetDelteLag()) inviteretTjek();
+    // ⭐⭐ v4.63.0 · SVARET «AFVENTER» MAA IKKE STAA FAST HELE BESOEGET.
+    // Foer spurgte vi kun, naar S.portStatus var null — altsaa ÉN gang.
+    // Louise blev godkendt 16.23; hendes app havde hentet «afventer»
+    // og kunne ikke vise NOTIFIKATIONER-kortet foer en genindlaesning.
+    // Nu spoerges der igen, saa laenge svaret ikke er «godkendt»: det
+    // koster ét kald for netop dem, der venter paa et ja — og nul for
+    // alle andre. O2-loeftet er uroert, hegnet er praecis det samme.
+    if (id === "opsaet" && S.spillerNoegle && iDetDelteLag()
+        && (S.portStatus === null || S.portStatus.status !== "godkendt")) inviteretTjek();
     // ⭐ v4.24.0 · Samme hegn, samme grund: uden klub og uden venner
     // rejser der intet. Ét opslag — svaret gemmes ogsaa naar det er nej.
     if (id === "opsaet" && S.push === null && S.spillerNoegle && pushMulig()
@@ -3729,7 +3753,7 @@ const A = {
     if (!pushMulig()) {
       S.pushBesked = { fejl: true, t: EN
         ? "This browser cannot send notifications."
-        : "Denne browser kan ikke sende beskeder." };
+        : "Denne browser kan ikke sende notifikationer." };
       render(); return;
     }
     S.pushSender = true; render();
@@ -4668,10 +4692,16 @@ const A = {
   // (pushTil), men svaret vises i rejsen, og et ja gaar selv videre.
   indPush: async () => {
     await A.pushTil();
-    if (S.push && S.push.tilmeldt) { S.indTrin = 6; }
+    // ⭐ v4.63.0 · et ja gik TILBAGE til trin 6 (status) — og «Videre →»
+    // derfra fører lige op i trin 7 igen. Brugeren blev spurgt om
+    // notifikationer, EFTER hun havde sagt ja. Nu gaar et ja videre.
+    if (S.push && S.push.tilmeldt) { A.indVidere(); return; }
     render();
   },
   indVidere: () => {
+    // ⭐ v4.63.0 · spoergsmaalet er besvaret (ja eller «senere») — saa
+    // skal loefte-flaget vaek, ellers spoerger vi ved hver opstart.
+    try { lager.slet("sai-push-vil"); } catch (_e) {}
     S.indResultat = null; S.indTrin = 1;
     if (S.indVen) {
       // venne-koden tages op NU — _invitTag aabner vennezonen med koden
@@ -6253,7 +6283,7 @@ function _tegn() {
         const _sidste = '<button class="knap stor sai-op" style="animation-delay:.18s;background:var(--grus)" data-a="indVidere">' +
           (S.indVen ? (S.sprog === "en" ? "To the friend zone" : "Til vennezonen") : (S.sprog === "en" ? "Into the app" : "Ind i appen")) + ' →</button>';
         _kro = '<div class="sai-op" style="font-size:54px;line-height:1;margin-bottom:10px">🔔</div>' +
-          '<b class="sai-op" style="animation-delay:.06s;font-size:21px;display:block;margin-bottom:8px">' + (S.sprog === "en" ? "Notifications" : "Beskeder") + '</b>';
+          '<b class="sai-op" style="animation-delay:.06s;font-size:21px;display:block;margin-bottom:8px">' + (S.sprog === "en" ? "Notifications" : "Notifikationer") + '</b>';
         if (erIOS() && !paaHjemmeskaerm()) {
           // iPhone i Safari: kanalen findes ikke her — vis vejen.
           try { lager.gem("sai-push-vil", "1"); } catch (_e) {}
@@ -6271,13 +6301,13 @@ function _tegn() {
           // SIDEN af hovedknappen (maalt paa skaermbilledet).
           _knap = '<div style="display:flex;flex-direction:column;gap:8px;width:100%;align-items:center">' +
             '<button class="knap stor sai-op" style="animation-delay:.18s;background:var(--grus);width:100%" data-a="indPush">' +
-              (S.pushSender ? "\u23f3 \u2026" : (S.sprog === "en" ? "Turn on notifications" : "Sl\u00e5 beskeder til")) + '</button>' +
+              (S.pushSender ? "\u23f3 \u2026" : (S.sprog === "en" ? "Turn on notifications" : "Sl\u00e5 notifikationer til")) + '</button>' +
             '<button class="knap valg sai-op" style="animation-delay:.24s;flex:none;min-height:44px;max-height:52px;width:auto;padding:0 18px;font-size:12.5px" data-a="indVidere">' +
               (S.indVen ? (S.sprog === "en" ? "Later \u2014 to the friend zone" : "Senere \u2014 til vennezonen") : (S.sprog === "en" ? "Later" : "Senere")) + '</button></div>';
         } else {
           _kro += '<p class="lille sai-op" style="animation-delay:.12s;margin:0 auto;max-width:21em;line-height:1.6">' + (S.sprog === "en"
             ? "Notifications can be turned on any time under Settings \u2192 NOTIFICATIONS."
-            : "Beskeder kan sl\u00e5s til n\u00e5r som helst under Indstillinger \u2192 BESKEDER.") + '</p>';
+            : "Notifikationer kan sl\u00e5s til n\u00e5r som helst under Indstillinger \u2192 NOTIFIKATIONER.") + '</p>';
           _knap = _sidste;
         }
       }
@@ -6456,7 +6486,7 @@ function _tegn() {
                 ? (EN ? "Get notified: put the app on the Home Screen (share \u2192 Add to Home Screen)."
                       : "F\u00e5 beskeder: l\u00e6g appen p\u00e5 hjemmesk\u00e6rmen (del \u2192 F\u00f8j til hjemmesk\u00e6rm).")
                 : (EN ? "Turn on notifications \u2014 the app tells you when friends answer."
-                      : "Sl\u00e5 beskeder til \u2014 appen siger til, n\u00e5r vennerne svarer.")) + '</span>' +
+                      : "Sl\u00e5 notifikationer til \u2014 appen siger til, n\u00e5r vennerne svarer.")) + '</span>' +
               (_kanSpoerge ? '<button class="knap" style="flex:none;width:auto;min-height:40px;padding:6px 14px;font-size:12px;background:var(--grus)" data-a="pushTil">' + (S.pushSender ? "\u23f3" : (EN ? "Turn on" : "Sl\u00e5 til")) + '</button>' : '') +
               '<button class="knap valg" style="flex:none;width:auto;min-height:40px;padding:6px 10px;font-size:12px" data-a="pushStribeVaek">\u2715</button>' +
               '</div>';
@@ -7645,7 +7675,7 @@ function _tegn() {
           _pfarve = "var(--guld)";
           _pkrop = '<p class="lille" style="margin:0 0 8px">' + (EN
             ? "On iPhone, notifications only work when the app sits on the Home Screen. A Safari tab never gets one."
-            : "På iPhone virker beskeder kun, når appen ligger på hjemmeskærmen. En fane i Safari får aldrig en.") + '</p>' +
+            : "På iPhone virker notifikationer kun, når appen ligger på hjemmeskærmen. En fane i Safari får aldrig en.") + '</p>' +
             '<div class="lille" style="line-height:1.9;opacity:.85">' +
             '1. ' + (EN ? "Tap the Share button" : "Tryk på Del-knappen") + ' <b>\u2934\ufe0f</b><br>' +
             '2. ' + (EN ? "Choose \u00abAdd to Home Screen\u00bb" : "Vælg \u00abFøj til hjemmeskærm\u00bb") + '<br>' +
@@ -7653,12 +7683,12 @@ function _tegn() {
         } else if (!pushMulig()) {
           _pkrop = '<p class="lille" style="margin:0">' + (EN
             ? "This browser cannot send notifications."
-            : "Denne browser kan ikke sende beskeder.") + '</p>';
+            : "Denne browser kan ikke sende notifikationer.") + '</p>';
         } else if (typeof Notification !== "undefined" && Notification.permission === "denied") {
           _pstatus = EN ? "blocked" : "afvist";
           _pkrop = '<p class="lille" style="margin:0">' + (EN
             ? "You said no to notifications for this app. It can only be changed in your phone settings."
-            : "Du har sagt nej til beskeder for denne app. Det kan kun laves om i telefonens indstillinger.") + '</p>';
+            : "Du har sagt nej til notifikationer for denne app. Det kan kun laves om i telefonens indstillinger.") + '</p>';
         } else if (_paa) {
           _pstatus = EN ? "on" : "til"; _pfarve = "var(--vundet)";
           // ⭐ v4.25.0 · SEKS KONTAKTER. Nicolai 26/8: "pr. besked og hvem
@@ -7691,24 +7721,24 @@ function _tegn() {
           });
           _pkrop += '<p class="lille" style="margin:8px 0 9px;opacity:.7">' + (EN
             ? "One notification per message, with the sender name \u2014 never the message itself. Nothing between 21 and 07."
-            : "Én besked pr. begivenhed, med navnet på den, der skrev \u2014 aldrig selve teksten. Intet mellem 21 og 07." +
+            : "Én notifikation pr. begivenhed, med navnet på den, der skrev \u2014 aldrig selve teksten. Intet mellem 21 og 07." +
               // ⭐ Porten er den ene undtagelse fra navne-reglen, og det skal
               // staa der: en, der endnu ikke er lukket ind, faar intet navn.
               ((S.push && S.push.ejer) ? " Ved porten st\u00e5r der kun et tal \u2014 aldrig et navn." : "")) + '</p>' +
             '<button class="knap valg" style="min-height:44px" data-a="pushFra">' +
-            (S.pushSender ? "\u23f3 \u2026" : (EN ? "Turn notifications off" : "Slå beskeder fra")) + '</button>';
+            (S.pushSender ? "\u23f3 \u2026" : (EN ? "Turn notifications off" : "Slå notifikationer fra")) + '</button>';
         } else {
           _pkrop = '<p class="lille" style="margin:0 0 9px">' + (EN
             ? "A short message when someone writes to you, the coach has news, or your streak is about to break. You choose which \u2014 and the message itself is never shown."
-            : "En kort besked når nogen skriver til dig, træneren har noget nyt, eller din streak er ved at falde. Du vælger selv hvilke \u2014 og selve teksten vises aldrig.") + '</p>' +
+            : "En kort notifikation når nogen skriver til dig, træneren har noget nyt, eller din streak er ved at falde. Du vælger selv hvilke \u2014 og selve teksten vises aldrig.") + '</p>' +
             '<button class="knap" style="min-height:46px;background:var(--grus)" data-a="pushTil">' +
-            (S.pushSender ? "\u23f3 \u2026" : (EN ? "Turn notifications on" : "Slå beskeder til")) + '</button>';
+            (S.pushSender ? "\u23f3 \u2026" : (EN ? "Turn notifications on" : "Slå notifikationer til")) + '</button>';
         }
         if (S.pushBesked) {
           _pkrop += '<p class="lille" style="margin:8px 0 0;color:' +
             (S.pushBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.pushBesked.t) + '</p>';
         }
-        h += _opsKort("beskeder", "\ud83d\udd14", (EN ? "NOTIFICATIONS" : "BESKEDER"),
+        h += _opsKort("beskeder", "\ud83d\udd14", (EN ? "NOTIFICATIONS" : "NOTIFIKATIONER"),
           _pstatus, _pfarve, _pkrop);
       }
       // ⭐⭐ v4.21.0 · KONTOEN. Nicolai 25/8: "De skal kunne logge ind og

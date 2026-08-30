@@ -448,7 +448,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.66.0 · 30. august 2026";
+const VERSION = "v4.67.0 · 30. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1492,6 +1492,23 @@ async function inviteretTjek() {
     // ved opstart. Et forfalsket hint koster ét kald, der svarer "nej".
     try { if (r.ejer) lager.gem("sai-ejer-hint", "1"); else lager.slet("sai-ejer-hint"); } catch (e) {}
     if (r.ejer && !S.ejerHenter && S.ejerKoe === null) A.ejerHent();
+    // ⭐⭐ v4.67.0 · ET PARKERET OENSKE ER ET LOEFTE, DER SKAL INDLOESES.
+    //   Valgte familien en plan, mens de stod i koeen, gemte telefonen
+    //   oensket. I det sekund porten siger «godkendt», saettes det paa
+    //   serveren — én gang, og saa slettes det. Princip 70: et flag, der
+    //   skrives ét sted og laeses intet sted, er et brudt loefte.
+    if (inde) {
+      let _oensket = null;
+      try { _oensket = lager.hent("sai-plan-oensket"); } catch (_e) {}
+      if (_oensket === "fuld" || _oensket === "fri" || _oensket === "gaest") {
+        A.kontoKald("plan-saet", { plan: _oensket }).then(function (p) {
+          if (!p || (p.fejl && p.fejl !== "klub")) return;
+          try { lager.slet("sai-plan-oensket"); } catch (_e) {}
+          S.minPlan = p.fejl === "klub" ? "klub" : (p.plan || _oensket);
+          render();
+        }).catch(function () {});
+      }
+    }
   }
   render();
 }
@@ -4684,17 +4701,40 @@ const A = {
   // valget gaar bare videre som fuld.
   indPlan: async (v) => {
     if (S.indPlanSender) return;
-    const oensket = v === "fuld" ? "fuld" : "gaest";
+    // ⭐ v4.67.0 · TRE planer, ikke to. «fri» blev oversat til «gaest», saa
+    //   kortet til 98 kr gemte gratis. Motoren har kendt 'fri' siden
+    //   migrationen plan_fri_v1 — det var appen, der ikke kunne sige det.
+    const oensket = (v === "fuld" || v === "fri") ? v : "gaest";
     S.indPlanSender = true; S.indBesked = null; render();
     const r = await A.kontoKald("plan-saet", { plan: oensket });
     S.indPlanSender = false;
+    // ⭐⭐ v4.67.0 · PORTEN ER IKKE EN FEJL PAA DENNE SKAERM.
+    //   Et planvalg er et OENSKE, ikke en adgang. Staar man i koeen,
+    //   svarer motoren korrekt 403 — men rejsen har ingen anden vej frem,
+    //   og saa staar familien fast paa trin 2 af 7. Oensket parkeres paa
+    //   telefonen og saettes, naar porten siger «godkendt» (se
+    //   inviteretTjek). Motorens port er URØRT.
+    // ⚠️ FANGET AF PRØVEN: motorens `kode` lander i `r.fejl`, ikke i
+    //   `r.kode` — `kontoKald` mapper ikke-200 til {fejl: d.kode, t: d.fejl}.
+    //   Første udgave af denne patch spurgte om `r.kode` og virkede aldrig.
+    //   Biblen har lektien to gange i forvejen. Princip 14 gælder feltnavne.
+    if (r.fejl === "afventer-godkendelse") {
+      try { lager.gem("sai-plan-oensket", oensket); } catch (_e) {}
+      S.minPlan = oensket;
+      S.indTrin = 3; render(); return;
+    }
     if (r.fejl && r.fejl !== "klub") {
       S.indBesked = { fejl: true, t: r.t || (S.sprog === "en" ? "Could not save the choice — try again." : "Kunne ikke gemme valget — prøv igen.") };
       render(); return;
     }
+    try { lager.slet("sai-plan-oensket"); } catch (_e) {}
     S.minPlan = r.fejl === "klub" ? "klub" : (r.plan || oensket);
     S.indTrin = 3; render();
   },
+  // ⭐ v4.67.0 · VEJEN TILBAGE (princip 32). Rejsen havde seks Videre og
+  //   nul tilbage — og paa VALGET er knappraekken tom, saa skaermen havde
+  //   ingen knapper overhovedet ud over planerne.
+  indTilbage: () => { S.indBesked = null; S.indTrin = Math.max(1, (S.indTrin || 1) - 1); render(); },
   // Opgraderingen fra DIN KONTO-kortet — samme kald, andet sted.
   liveDemo: () => { S.liveDemo = !S.liveDemo; render(); try { window.scrollTo(0, 0); } catch (_e) {} },
   planOpgrader: async () => {
@@ -6490,6 +6530,10 @@ function _tegn() {
           (_tr === 1 ? _bolde : '') +
           '<div style="position:relative">' + _kro +
           '<div class="raekke" style="margin-top:18px">' + _knap + '</div>' +
+          (_tr > 1
+            ? '<div class="raekke" style="margin-top:10px"><button class="knap valg" style="min-height:46px;background:none;border-color:var(--kant);color:var(--daempet)" data-a="indTilbage">\u2190 ' +
+              (S.sprog === "en" ? "Back" : "Tilbage") + '</button></div>'
+            : '') +
           _prik +
           '<p class="lille" style="margin:10px 0 0;opacity:.4;font-size:10px">' + VERSION + '</p></div>' +
         '</div>';

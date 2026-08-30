@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.77.0 · 30. august 2026";
+const VERSION = "v4.78.0 · 30. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1845,6 +1845,34 @@ function pushMulig() {
   try { return ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window); }
   catch (_e) { return false; }
 }
+// ⭐⭐ v4.78.0 · HVILKEN BROWSER SIDDER HUN I?
+//   Paa iPhone kan KUN Safari laegge en app paa hjemmeskaermen og faa
+//   beskeder. Chrome, Firefox og Edge paa iOS koerer samme WebKit, men
+//   har ikke menupunktet — og appen bad indtil nu om det alligevel.
+//   ⚠️ Dette er UA-sniffing, og det er et bevidst valg: «kan denne
+//     browser laegge en app paa hjemmeskaermen» findes ikke som API.
+//     Kan man ikke maale, siger man det hoejt frem for at lade som om.
+function iOSBrowser() {
+  try {
+    const u = navigator.userAgent || "";
+    if (/CriOS/.test(u))  return "chrome";
+    if (/FxiOS/.test(u))  return "firefox";
+    if (/EdgiOS/.test(u)) return "edge";
+    if (/OPiOS|OPT\//.test(u)) return "opera";
+    return "safari";
+  } catch (_e) { return "safari"; }
+}
+// Sand, naar hun staar i en browser paa iPhone, der IKKE kan det, vi beder om.
+function forkertBrowser() { return erIOS() && iOSBrowser() !== "safari"; }
+function browserNavn() {
+  const b = iOSBrowser();
+  return b === "chrome" ? "Chrome" : b === "firefox" ? "Firefox"
+       : b === "edge" ? "Edge" : b === "opera" ? "Opera" : "Safari";
+}
+// ⭐ Vejledningen ligger ved siden af appen og aabnes i en NY fane, saa
+//   man aldrig mister sin plads i rejsen.
+const GUIDE_URL = "kom-i-gang.html";
+
 function erIOS() {
   try {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -6608,7 +6636,17 @@ function _tegn() {
               _skridt("2", _ikPlus, (S.sprog === "en" ? "Scroll down and choose <b>Add to Home Screen</b>." : "Rul ned og vælg <b>Føj til hjemmeskærm</b>.")) +
               _skridt("3", _ikApp, (S.sprog === "en" ? "Close this tab and open StreakTennis from the <b>new icon</b>." : "Luk denne fane, og åbn StreakTennis fra det <b>nye ikon</b>.")) +
             '</div>' +
-            (S.hjemBesked ? '<p class="lille" style="margin:11px auto 0;max-width:21em;font-weight:700;color:var(--guld);line-height:1.5">' + esc(S.hjemBesked) + '</p>' : '');
+            (S.hjemBesked ? '<p class="lille" style="margin:11px auto 0;max-width:21em;font-weight:700;color:var(--guld);line-height:1.5">' + esc(S.hjemBesked) + '</p>' : '') +
+            // ⭐ v4.78.0 · Staar hun i Chrome, er hele dette trin umuligt at
+            //   udfoere. Det siges her, hvor hun staar — ikke i en note.
+            (forkertBrowser()
+              ? '<p class="lille" style="margin:12px auto 0;max-width:22em;padding:9px 11px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 9px 9px 0;text-align:left;line-height:1.5">' +
+                (S.sprog === "en"
+                  ? "<b>You are in " + browserNavn() + ".</b> Only Safari can do this on iPhone \u2014 tap \u2022\u2022\u2022 and choose <b>Open in Safari</b> first."
+                  : "<b>Du er i " + browserNavn() + ".</b> P\u00e5 iPhone er det kun Safari, der kan det her \u2014 tryk \u2022\u2022\u2022 og v\u00e6lg <b>\u00c5bn i Safari</b> f\u00f8rst.") + '</p>'
+              : '') +
+            '<p class="lille" style="margin:12px auto 0"><a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700">' +
+              (S.sprog === "en" ? "Open the guide \u2197" : "\u00c5bn vejledningen \u2197") + '</a></p>';
           // Knappen TJEKKER. Den laaser ikke paa en maaling, der ikke kan
           // tages — den tager maalingen, naar der trykkes, og siger det,
           // den faktisk ser.
@@ -6691,7 +6729,12 @@ function _tegn() {
           '</div>' +
           '<button class="knap sai-op" style="animation-delay:.24s;background:var(--guld);color:#12203a;width:100%;height:54px;min-height:54px;font-size:16px;font-weight:800" data-a="velkomstFrem">' +
             (S.sprog === "en" ? "New here? Start here" : "Ny her? Start her") + ' →</button>' +
-          '<p class="lille sai-op" style="animation-delay:.3s;margin:14px auto 0;opacity:.45;font-size:10.5px">' + VERSION + '</p>' +
+          // ⭐ v4.78.0 · En vej til vejledningen HELT fremme. Den, der er
+          //   i tvivl, er i tvivl foer hun logger ind — ikke bagefter.
+          '<p class="lille sai-op" style="animation-delay:.28s;margin:14px auto 0">' +
+            '<a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700">' +
+            (S.sprog === "en" ? "How does this work? \u2197" : "Hvordan virker det? \u2197") + '</a></p>' +
+          '<p class="lille sai-op" style="animation-delay:.3s;margin:10px auto 0;opacity:.45;font-size:10.5px">' + VERSION + '</p>' +
         '</div>';
       return;
     }
@@ -6875,13 +6918,23 @@ function _tegn() {
         if (_pInde && S.rolle !== "familie" && (pushMulig() || _safari) && !_pVaek) {
           const _kanSpoerge = !_safari && pushMulig() && (typeof Notification !== "undefined" && Notification.permission === "default");
           if (_safari || _kanSpoerge) {
-            h += '<div class="kort" style="margin:0 0 10px;padding:10px 12px;display:flex;align-items:center;gap:10px;border-color:var(--is)">' +
-              '<span style="font-size:20px;flex:none">🔔</span>' +
-              '<span class="lille" style="flex:1;text-align:left">' + (_safari
+            h += '<div class="kort" style="margin:0 0 10px;padding:10px 12px;display:flex;align-items:center;gap:10px;border-color:' +
+              (forkertBrowser() ? 'var(--guld)' : 'var(--is)') + '">' +
+              '<span style="font-size:20px;flex:none">' + (forkertBrowser() ? '⚠️' : '🔔') + '</span>' +
+              // ⭐⭐⭐ v4.78.0 · TEKSTEN SKIFTER MED BROWSEREN.
+              //   Foer stod der «del \u2192 F\u00f8j til hjemmesk\u00e6rm» ogsaa i Chrome,
+              //   hvor det menupunkt ikke findes. Nu naevnes browseren ved
+              //   navn, og der peges paa den ene knap, der faktisk virker.
+              '<span class="lille" style="flex:1;text-align:left">' + (forkertBrowser()
+                ? (EN ? "You are in <b>" + browserNavn() + "</b>. On iPhone only Safari can add the app to the Home Screen \u2014 tap \u2022\u2022\u2022 and choose <b>Open in Safari</b>."
+                      : "Du er i <b>" + browserNavn() + "</b>. P\u00e5 iPhone er det kun Safari, der kan l\u00e6gge appen p\u00e5 hjemmesk\u00e6rmen \u2014 tryk \u2022\u2022\u2022 og v\u00e6lg <b>\u00c5bn i Safari</b>.")
+                : _safari
                 ? (EN ? "Get notified: put the app on the Home Screen (share \u2192 Add to Home Screen)."
                       : "F\u00e5 beskeder: l\u00e6g appen p\u00e5 hjemmesk\u00e6rmen (del \u2192 F\u00f8j til hjemmesk\u00e6rm).")
                 : (EN ? "Turn on notifications \u2014 the app tells you when friends answer."
-                      : "Sl\u00e5 notifikationer til \u2014 appen siger til, n\u00e5r vennerne svarer.")) + '</span>' +
+                      : "Sl\u00e5 notifikationer til \u2014 appen siger til, n\u00e5r vennerne svarer.")) +
+                ' <a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700;white-space:nowrap">' +
+                (EN ? "Guide \u2197" : "Vejledning \u2197") + '</a></span>' +
               (_kanSpoerge ? '<button class="knap" style="flex:none;width:auto;min-height:40px;padding:6px 14px;font-size:12px;background:var(--grus)" data-a="pushTil">' + (S.pushSender ? "\u23f3" : (EN ? "Turn on" : "Sl\u00e5 til")) + '</button>' : '') +
               '<button class="knap valg" style="flex:none;width:auto;min-height:40px;padding:6px 10px;font-size:12px" data-a="pushStribeVaek">\u2715</button>' +
               '</div>';
@@ -8064,7 +8117,32 @@ function _tegn() {
         // «browseren kan ikke» UDEN at naevne hjemmeskaermen. Louise
         // stod med et kort, der ikke kunne taendes, og ingen vej videre.
         // Paa iPhone ER hjemmeskaermen svaret — den doemmes FOERST.
-        if (erIOS() && !paaHjemmeskaerm()) {
+        if (forkertBrowser() && !paaHjemmeskaerm()) {
+          // \u26d4\u26d4 v4.78.0 · DEN GAMLE TEKST VAR EN UMULIG OPGAVE HER.
+          //   «Tryk paa Del-knappen \u2192 Foej til hjemmeskaerm» findes ikke i
+          //   Chrome, Firefox eller Edge paa iPhone. Kortet sendte hende
+          //   ud at lede efter en knap, der ikke er der.
+          _pstatus = EN ? "wrong browser" : "forkert browser";
+          _pfarve = "var(--guld)";
+          _pkrop = '<p class="lille" style="margin:0 0 8px">' + (EN
+            ? "You are in <b>" + browserNavn() + "</b>. On iPhone, only <b>Safari</b> can put the app on the Home Screen \u2014 and without that, notifications never arrive."
+            : "Du er i <b>" + browserNavn() + "</b>. P\u00e5 iPhone er det kun <b>Safari</b>, der kan l\u00e6gge appen p\u00e5 hjemmesk\u00e6rmen \u2014 og uden den kommer der aldrig beskeder.") + '</p>' +
+            '<div class="lille" style="line-height:1.9;opacity:.85">' +
+            '1. ' + (EN ? "Tap <b>\u2022\u2022\u2022</b> in " + browserNavn() : "Tryk p\u00e5 <b>\u2022\u2022\u2022</b> i " + browserNavn()) + '<br>' +
+            '2. ' + (EN ? "Choose <b>Open in Safari</b>" : "V\u00e6lg <b>\u00c5bn i Safari</b>") + '<br>' +
+            '3. ' + (EN ? "Then add it to the Home Screen from there" : "L\u00e6g den p\u00e5 hjemmesk\u00e6rmen derfra") + '</div>' +
+            // ⭐⭐⭐ v4.78.0 · DEN DYRE LINJE. Kampe og traeninger bor i
+            //   lageret i DEN browser, de blev tastet i — synken sender
+            //   dem til klubben, men henter dem aldrig hjem. Skifter hun
+            //   browser uden backup, er de vaek, og intet siger fra.
+            ((S.gemte && S.gemte.length) || (S.ttLog && S.ttLog.length) || (S.fysLog && S.fysLog.length)
+              ? '<p class="lille" style="margin:9px 0 0;padding:8px 10px;border-left:3px solid var(--tabt);background:rgba(255,107,107,.08);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
+                  ? "<b>First: take a backup.</b> What you have logged here lives in <b>this</b> browser \u2014 open \ud83d\udcbe Backup below, tap <b>Create full backup</b> and copy the text. In Safari you paste it under <b>Merge device</b>."
+                  : "<b>Tag en backup f\u00f8rst.</b> Det, du har tastet her, ligger i <b>denne</b> browser \u2014 \u00e5bn \ud83d\udcbe BACKUP herunder, tryk <b>Lav fuld backup</b> og kopi\u00e9r teksten. I Safari s\u00e6tter du den ind under <b>Flet enhed</b>.") + '</p>'
+              : '') +
+            '<p class="lille" style="margin:9px 0 0"><a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700">' +
+            (EN ? "Open the guide \u2197" : "\u00c5bn vejledningen \u2197") + '</a></p>';
+        } else if (erIOS() && !paaHjemmeskaerm()) {
           // ⚠️ DEN VIGTIGSTE BESKED I HELE KORTET.
           _pstatus = EN ? "needs Home Screen" : "kræver hjemmeskærm";
           _pfarve = "var(--guld)";
@@ -8074,7 +8152,9 @@ function _tegn() {
             '<div class="lille" style="line-height:1.9;opacity:.85">' +
             '1. ' + (EN ? "Tap the Share button" : "Tryk på Del-knappen") + ' <b>\u2934\ufe0f</b><br>' +
             '2. ' + (EN ? "Choose \u00abAdd to Home Screen\u00bb" : "Vælg \u00abFøj til hjemmeskærm\u00bb") + '<br>' +
-            '3. ' + (EN ? "Open the app from there \u2014 then come back here" : "Åbn appen derfra \u2014 og kom tilbage hertil") + '</div>';
+            '3. ' + (EN ? "Open the app from there \u2014 then come back here" : "Åbn appen derfra \u2014 og kom tilbage hertil") + '</div>' +
+            '<p class="lille" style="margin:9px 0 0"><a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700">' +
+            (EN ? "Open the guide \u2197" : "\u00c5bn vejledningen \u2197") + '</a></p>';
         } else if (!pushMulig()) {
           _pkrop = '<p class="lille" style="margin:0">' + (EN
             ? "This browser cannot send notifications."

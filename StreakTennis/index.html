@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.76.0 · 30. august 2026";
+const VERSION = "v4.77.0 · 30. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1483,6 +1483,50 @@ async function inviteretTjek() {
   // svar fra porten — den er tom, HTML fra en cache, eller noget helt
   // tredje — og saa maa vi ikke konkludere noget som helst.
   if (!r.fejl && typeof r.kendt === "boolean") {
+    // ⭐⭐⭐ v4.77.0 · EN DØD NØGLE RYDDER SIG SELV.
+    //   Nicolai 30/8: «Sletter du ikke døde nøgler hos min søster?»
+    //   `kendt:false` er et 200-svar fra porten, der siger: serveren har
+    //   INGEN række med den her nøgle. Så er telefonen en blindgyde —
+    //   fornavnet ligger stadig lokalt, døren tegnes ikke, og alt svarer
+    //   403. Det skete for Louise, da testbrugerne blev ryddet.
+    //   ⚠️ ① ALDRIG en `fam-`-nøgle: familiens kigge-adgang bor i tabellen
+    //     `familie`, ikke i `spillerdata`, så porten svarer `kendt:false`
+    //     på en HELT gyldig adgang. Uden dette hegn ville rettelsen smide
+    //     mor ud af sin egen søns app.
+    //   ⚠️ ② Kun på et rigtigt svar — `r.fejl` er tom, og `kendt` er en
+    //     boolean. En hal uden dækning logger ingen ud.
+    //   ⚠️ ③ KAMPENE RØRES ALDRIG. Kun identiteten ryddes. Kampe,
+    //     træningslog, streak og backup er familiens, ikke serverens.
+    //   ⚠️⚠️ ④ OG DEN VIGTIGSTE, FUNDET AF PRØVEN: `kendt:false` ER DEN
+    //     NORMALE TILSTAND. Appen GENERERER selv en 128-bit noegle paa en
+    //     frisk telefon (linje ~1388, «genereres lokalt — der sendes INTET
+    //     foer familien selv handler»). Serveren har derfor ALDRIG set den
+    //     noegle, og svarer korrekt `kendt:false` til enhver, der endnu
+    //     ikke har oprettet sig. Den foerste udgave af denne rettelse ville
+    //     have vist «din adgang findes ikke» ved HVER indlaesning for dem.
+    //   ⭐ Det, der skiller en DØD noegle fra en UBRUGT, er ikke noeglen —
+    //     det er, om telefonen troede, den var NOGEN: et brugernavn, en
+    //     konto, eller et tidligere «du er inde». Louise havde alle tre.
+    var _harIdentitet = false;
+    try {
+      _harIdentitet = !!(lager.hent("sai-konto") || lager.hent("sai-brugernavn")
+                         || lager.hent("sai-inviteret") === "1");
+    } catch (_e) {}
+    if (r.kendt === false && _harIdentitet
+        && String(S.spillerNoegle || "").indexOf("fam-") !== 0) {
+      try {
+        ["sai-spillernoegle", "sai-spiller", "sai-brugernavn", "sai-konto",
+         "sai-laas", "sai-inviteret", "sai-inviteret-tid", "sai-ejer-hint",
+         "sai-plan-oensket"].forEach(function (n) { lager.slet(n); });
+        // ⭐ Der siges HVORFOR. En app, der bare glemmer hvem du er,
+        //   føles i stykker. Døren viser linjen én gang og sletter den.
+        lager.gem("sai-doed-noegle", "1");
+      } catch (_e) {}
+      SPILLER = ""; S.spillerNoegle = ""; S.mitNavn = null; S.minKonto = null;
+      S.portStatus = null; S.velkomstTrin = 0; S.indAaben = false; S.indResultat = null;
+      console.log("[doer] noeglen findes ikke paa serveren — identiteten ryddet");
+      render(); return;
+    }
     S.portStatus = r;
     const inde = !!r.kendt && r.status === "godkendt";
     S.doerKamp = !inde;
@@ -6622,6 +6666,20 @@ function _tegn() {
           '<div class="sai-op" style="font-size:54px;line-height:1;margin-bottom:4px"><span class="sai-flamme" style="display:inline-block">🔥</span></div>' +
           '<div class="sai-op" style="animation-delay:.06s;font-size:22px;font-weight:900;letter-spacing:4px;color:var(--guld)">STREAK</div>' +
           '<div class="sai-op" style="animation-delay:.06s;font-size:22px;font-weight:900;letter-spacing:4px;color:var(--kridt);margin-bottom:16px">TENNIS</div>' +
+          // ⭐ v4.77.0 · Har telefonen lige faaet ryddet en doed noegle,
+          //   skal doeren sige HVORFOR — én gang. Ellers ligner det, at
+          //   appen glemte hvem du var (princip 35: skaermen skal svare).
+          (function () {
+            var _doed = null;
+            try { _doed = lager.hent("sai-doed-noegle"); } catch (_e) {}
+            if (!_doed) return '';
+            try { lager.slet("sai-doed-noegle"); } catch (_e) {}
+            return '<p class="lille sai-op" style="animation-delay:.09s;margin:0 0 12px;padding:10px 12px;' +
+              'border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 9px 9px 0;' +
+              'text-align:left;line-height:1.5">' + (S.sprog === "en"
+                ? "<b>Your access no longer exists on the server.</b> Log in, or create the player again \u2014 your matches on this phone are untouched."
+                : "<b>Din adgang findes ikke l\u00e6ngere p\u00e5 serveren.</b> Log ind, eller opret spilleren forfra \u2014 kampene p\u00e5 denne telefon er ur\u00f8rte.") + '</p>';
+          })() +
           // ① LOG IND — det foerste, som han bad om.
           '<div class="sai-op" style="animation-delay:.12s;text-align:left">' + _loginKort(S.sprog === "en", true) + '</div>' +
           // ② «Ny her?» — ét skridt videre til INDFOERINGEN, ikke til en

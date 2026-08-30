@@ -448,7 +448,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.63.0 · 30. august 2026";
+const VERSION = "v4.64.0 · 30. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -3247,19 +3247,36 @@ const A = {
   // paa velkomstskaermen findes den ikke endnu, og saa tier vi bare.
   navnTjek: async () => {
     const n = String(S.navnUdkast2 || "").trim().toLowerCase();
-    if (!S.spillerNoegle || n.length < 3) { S.navnLedig = null; render(); return; }
-    // ⛔ v4.52.0 · O2: en telefon, der aldrig selv har raakt ud, maa
-    // heller ikke spoerge om et navn er ledigt. Doeren faar svaret ved
-    // oprettelsen i stedet (409). Maalt: den lokale noegle fandtes ved
-    // foerste start, saa vagten ovenfor holdt ikke alene.
-    if (!iDetDelteLag()) { S.navnLedig = null; return; }
-    S.navnTjekker = true; render();
-    const r = await A.budKald("ledig", { navn: n });
+    // ⭐⭐ v4.64.0 · FORDOEREN ER OGSAA EN HANDLING.
+    // Foer krav: en spillernoegle OG iDetDelteLag(). Begge er falske for
+    // netop den, der staar i oprettelsen og skal vaelge et navn — princip
+    // 64 en gang til: hegnet, der skal spare et kald, gjorde den nye
+    // bruger blind. Nu spoerges der ogsaa fra fordoeren, men KUN naar den
+    // faktisk er aaben: at taste i oprettelses-formularen goer man ikke
+    // ved et uheld. O2-loeftet staar — en telefon, der bare ligger paa
+    // forsiden, ringer stadig ikke hjem.
+    const vedFordoeren = (S.velkomstTrin > 0) || S.indAaben;
+    if (n.length < 3 || !(iDetDelteLag() || vedFordoeren)) {
+      S.navnLedig = null; _fordoerMaerk(); render(); return;
+    }
+    S.navnTjekker = true; _fordoerMaerk(); render();
+    // ⭐⭐ TO VEJE TIL SAMME SVAR — OG PORTEN ER UROERT.
+    // Inde i det delte lag spoerges `venne-bud` som hidtil. Ved fordoeren
+    // findes der ingen GODKENDT noegle endnu, og `venne-bud` staar bag
+    // porten (403). Derfor spoerges `konto`, som er den eneste motor, der
+    // taler med ukendte — porten paa venne-bud roeres ikke med ét ord.
+    //
+    // ⚠️ Kender motoren ikke handlingen endnu, svarer den 400, og feltet
+    // staar bare uden dom. Appen kan derfor uploades FOER motoren, uden
+    // at noget braekker — og tjekket taender af sig selv, naar den kommer.
+    const r = iDetDelteLag()
+      ? await A.budKald("ledig", { navn: n })
+      : await A.kontoKald("ledig", { navn: n });
     S.navnTjekker = false;
     // Skiftede feltet, mens vi spurgte, hoerer svaret til et andet navn.
-    if (String(S.navnUdkast2 || "").trim().toLowerCase() !== n) { render(); return; }
+    if (String(S.navnUdkast2 || "").trim().toLowerCase() !== n) { _fordoerMaerk(); render(); return; }
     S.navnLedig = r.fejl ? null : { ledig: !!r.ledig, grund: r.grund || null, navn: n };
-    render();
+    _fordoerMaerk(); render();
   },
   // ⭐ v4.16.0 · linjen med dit navn ER knappen til at skifte det.
   // Uden den ville der ikke findes nogen vej, naar kortet er gemt vaek.
@@ -4856,6 +4873,95 @@ function _ensTekst(a, b) {
   return { t: (EN ? "the passwords are not the same yet" : "kodeordene er ikke ens endnu"), farve: "var(--tabt)" };
 }
 
+// ⭐⭐⭐ v4.64.0 · FLUEBENENE PAA FORDOEREN.
+// Nicolai 30/8: «Hvert felt når det er udfyldt skal markeres med grønt
+// flueben.»
+//
+// ⚠️⚠️ PRINCIP 38 ER HELE POINTEN HER. Fordoeren er fem felter i traek,
+// og render() bygger skaermen forfra med innerHTML. Tegnede fluebenene
+// sig med render(), ville feltet blive slettet og lavet igen ved hvert
+// bogstav — tastaturet ville lukke, praecis som i rummet 25/8. De
+// skrives derfor DIREKTE i DOM, noejagtig som _kodeEns goer.
+//
+// ⭐ Og et tomt felt er ikke en fejl. Der staar intet, foer man har
+// skrevet noget — kun det valgfrie kodefelt tier ogsaa, naar det er tomt.
+function _fordoerDomme() {
+  const EN = S.sprog === "en";
+  const bn = String(S.navnUdkast2 || "").trim().toLowerCase();
+  const mail = String(S.indMail || "").trim().toLowerCase();
+  const kode = String(S.indKlubkode || "").trim();
+  let dNavn2;
+  if (!bn) dNavn2 = { tom: true };
+  else if (!/^[a-zæøå][a-zæøå0-9_-]{2,19}$/.test(bn))
+    dNavn2 = { ok: false, t: EN ? "small letters, digits, - and _" : "små bogstaver, tal, - og _" };
+  else if (S.navnTjekker) dNavn2 = { venter: true };
+  else if (S.navnLedig && S.navnLedig.navn === bn)
+    dNavn2 = S.navnLedig.ledig
+      ? { ok: true }
+      : { ok: false, t: S.navnLedig.grund || (EN ? "taken" : "taget") };
+  else dNavn2 = { venter: true };
+  return {
+    navnUdkast:  String(S.navnUdkast || "").trim().length >= 2 ? { ok: true } : { tom: true },
+    navnUdkast2: dNavn2,
+    indKode:     String(S.indKode || "") ? (tjekNyKode(S.indKode, EN) ? { ok: false } : { ok: true }) : { tom: true },
+    indKode2:    String(S.indKode2 || "") ? { ok: String(S.indKode) === String(S.indKode2) } : { tom: true },
+    indMail:     mail ? { ok: /^[^@\s]{1,64}@[^@\s.]+(\.[^@\s.]+)+$/.test(mail) } : { tom: true },
+    // Valgfrit felt: tomt er en gyldig tilstand og faar hverken flueben
+    // eller kryds. Betingelses-reglen — vi maerker ikke noget som en fejl,
+    // der ikke er en fejl.
+    indKlubkode: kode
+      ? { ok: /^[A-Za-z2-9]{4}-[A-Za-z2-9]{4}-[A-Za-z2-9]{4}$/.test(kode) || _invitGyldig(kode) }
+      : { tom: true },
+  };
+}
+
+// ⭐⭐ MAERKET BOR INDE I FELTET, IKKE I LABELEN.
+// Foerste udgave satte fluebenet i labelen. Proeven stod groen — tegnet
+// LAA i DOM — men skaermbilledet viste det ikke: 10 px groent paa en
+// 10 px etiket forsvinder. Princip 62: kun skaermen er maalingen, og
+// den sagde nej, hvor DOM sagde ja.
+// Maerket tegnes derfor som feltets egen baggrund, hvor oejet allerede
+// er. Ingen wrapper, ingen ny komponent, ingen layout-risiko.
+// ⚠️ URI-EN BYGGES I KODEN, IKKE SKREVET I HAANDEN.
+// Foerste forsoeg skrev den som en faerdig streng med escapede
+// anfoerselstegn — og escapingen doede paa vejen gennem byggekaeden.
+// `node --check` fangede det. Det er bjaelke-faelden i ny forklaedning:
+// det, der skal citeres ordret gennem flere lag, skal maskinen bygge.
+const _svgMaerke = function (farve, sti) {
+  return "url('data:image/svg+xml," + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="' + farve +
+    '" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="' + sti + '"/></svg>'
+  ) + "')";
+};
+const _FLU_OK  = _svgMaerke("#22995a", "M20 6 9 17l-5-5");
+const _FLU_NEJ = _svgMaerke("#c9464b", "M18 6 6 18M6 6l12 12");
+
+function _fordoerMaerk() {
+  try {
+    const d = _fordoerDomme();
+    Object.keys(d).forEach(function (f) {
+      const m = d[f];
+      const n = document.getElementById("ok-" + f);
+      const i = document.querySelector('[data-felt="' + f + '"]');
+      // Etiketten baerer kun GRUNDEN, naar der er en. Selve maerket staar
+      // i feltet — to steder at sige det samme er stoej.
+      if (n) {
+        n.textContent = (!m.tom && !m.venter && !m.ok && m.t) ? m.t : "";
+        n.style.color = "var(--tabt)";
+      }
+      if (i) {
+        i.style.borderColor = m.tom || m.venter ? "" : (m.ok ? "var(--vundet)" : "var(--tabt)");
+        i.style.backgroundImage = m.tom || m.venter ? "" : (m.ok ? _FLU_OK : _FLU_NEJ);
+        i.style.backgroundRepeat = "no-repeat";
+        i.style.backgroundPosition = "right 12px center";
+        i.style.backgroundSize = "17px 17px";
+        // Plads til maerket, saa teksten aldrig loeber ind i det.
+        i.style.paddingRight = m.tom || m.venter ? "" : "38px";
+      }
+    });
+  } catch (_e) {}
+}
+
 function _kodeEns(a, b, node) {
   try {
     const n = document.getElementById(node);
@@ -6364,25 +6470,26 @@ function _tegn() {
           // valgfrit kodefelt. Serveren saetter alle i koeen (afventer)
           // — en klubkode lukker ind i samme kald (motor v2.20.0).
           // O2-loeftet staar: INTET forlader telefonen foer trykket.
-          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin-bottom:5px">' + (S.sprog === "en" ? "PLAYER'S FIRST NAME" : "SPILLERENS FORNAVN") + '</label>' +
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin-bottom:5px">' + (S.sprog === "en" ? "PLAYER'S FIRST NAME" : "SPILLERENS FORNAVN") + '<span id="ok-navnUdkast" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
           '<input data-felt="navnUdkast" maxlength="24" placeholder="' + (S.sprog === "en" ? "e.g. Oskar" : "fx Oskar") + '" value="' + esc(S.navnUdkast || "") + '">' +
 
-          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:14px 0 5px">' + (S.sprog === "en" ? "USERNAME" : "BRUGERNAVN") + '</label>' +
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:14px 0 5px">' + (S.sprog === "en" ? "USERNAME" : "BRUGERNAVN") + '<span id="ok-navnUdkast2" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
           '<input data-felt="navnUdkast2" maxlength="20" style="text-transform:lowercase;letter-spacing:1px;font-weight:700" placeholder="' + (S.sprog === "en" ? "e.g. oskar_b93" : "fx oskar_b93") + '" value="' + esc(S.navnUdkast2 || "") + '" autocapitalize="off" spellcheck="false">' +
 
 
-          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:14px 0 5px">' + (S.sprog === "en" ? "PASSWORD" : "KODEORD") + '</label>' +
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:14px 0 5px">' + (S.sprog === "en" ? "PASSWORD" : "KODEORD") + '<span id="ok-indKode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
           '<div class="raekke" style="gap:6px">' +
           '<input type="' + (S.visIndKode ? "text" : "password") + '" style="flex:1;min-width:0" placeholder="' + (S.sprog === "en" ? "min 8 characters" : "mindst 8 tegn") + '" value="' + esc(S.indKode) + '" data-felt="indKode" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="new-password">' +
           '<button class="knap valg" style="flex:none;min-height:44px;max-height:52px;padding:8px 12px;font-size:13px" data-a="visSkift" data-v="visIndKode">' + (S.visIndKode ? "🙈" : "👁") + '</button></div>' +
           '<input type="' + (S.visIndKode ? "text" : "password") + '" placeholder="' + (S.sprog === "en" ? "repeat the password" : "gentag kodeordet") + '" value="' + esc(S.indKode2) + '" data-felt="indKode2" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="new-password" style="margin-top:7px">' +
+          '<span id="ok-indKode2" class="lille" style="float:right;font-weight:700"></span>' +
           '<p class="lille" id="ens-ind" style="margin:5px 0 0;min-height:15px;font-weight:700;color:' + _ensTekst(S.indKode, S.indKode2).farve + '">' + esc(_ensTekst(S.indKode, S.indKode2).t) + '</p>' +
 
-          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:10px 0 5px">' + (S.sprog === "en" ? "EMAIL" : "MAIL") + '</label>' +
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:10px 0 5px">' + (S.sprog === "en" ? "EMAIL" : "MAIL") + '<span id="ok-indMail" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
           '<input data-felt="indMail" maxlength="80" placeholder="' + (S.sprog === "en" ? "to recover the password" : "til at gendanne kodeordet") + '" value="' + esc(S.indMail) + '" autocapitalize="off" spellcheck="false" style="text-transform:lowercase">' +
 
 
-          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:14px 0 5px">' + (S.sprog === "en" ? "CODE FROM CLUB OR FRIEND · OPTIONAL" : "KODE FRA KLUB ELLER VEN · VALGFRIT") + '</label>' +
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:14px 0 5px">' + (S.sprog === "en" ? "CODE FROM CLUB OR FRIEND · OPTIONAL" : "KODE FRA KLUB ELLER VEN · VALGFRIT") + '<span id="ok-indKlubkode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
           '<input data-felt="indKlubkode" maxlength="40" style="letter-spacing:1px;font-weight:700" placeholder="' + (S.sprog === "en" ? "club code or friend ID" : "klubkode eller venne-ID") + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">' +
           '<p class="lille" style="margin:5px 0 0;opacity:.72">' + (S.sprog === "en"
             ? "Got a code from your club, or a friend ID? It goes here. No code? Just continue."
@@ -6416,6 +6523,9 @@ function _tegn() {
           '<p class="lille" style="margin:12px 0 0;text-align:center;opacity:.4;font-size:10px">' + VERSION + '</p>' +
         '</div>' +
       '</div>';
+    // ⭐ v4.64.0 · fluebenene overlever en gentegning. Uden dette ville de
+    // forsvinde, hver gang skaermen tegnes af en anden grund end en tast.
+    setTimeout(_fordoerMaerk, 0);
     return;
   }
   const FANER = S.verden === "udv"
@@ -9133,6 +9243,8 @@ window.__oskarInit = function(){
     if (f === "opretKode" || f === "opretKode2") _kodeEns(S.opretKode, S.opretKode2, "ens-opret");
     if (f === "nulstilKode" || f === "nulstilKode2") _kodeEns(S.nulstilKode, S.nulstilKode2, "ens-nulstil");
     if (f === "indKode" || f === "indKode2") _kodeEns(S.indKode, S.indKode2, "ens-ind");
+    // ⭐ v4.64.0 · fluebenene svarer ved hvert bogstav — uden gentegning.
+    _fordoerMaerk();
     // ⭐ v4.13.0 · Er navnet ledigt? Svaret kommer MENS man skriver, ikke
     // efter man har trykket Gem og glaedet sig. Vent et halvt sekund efter
     // sidste tast, saa vi ikke spoerger for hvert bogstav.

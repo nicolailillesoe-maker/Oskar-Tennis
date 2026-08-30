@@ -61,6 +61,7 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 /* Designstandard v1.0 regel 3: alle fliser lige store. grid-auto-rows:1fr
    goer raekkerne ens uanset tekstlaengde — ingen manuel hoejde. */
 .dev-grid{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:12px;margin-top:12px}
+.dev-grid>.dev-flise:last-child:nth-child(odd){grid-column:1/-1}
 .dev-flise{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:16px 14px 14px;border-radius:18px;border:1px solid var(--kant);background:var(--kort);color:var(--kridt);cursor:pointer;text-align:left;min-height:96px;font-family:inherit;backdrop-filter:blur(8px)}
 .dev-flise .ik{font-size:24px;margin-bottom:4px}
 /* ── FLISER som standard for valg-lister. Erstatter stablede piller. */
@@ -218,6 +219,13 @@ const lager = {
 //   øverst på sin egen platform, og familiernes evalueringsbrev ville
 //   have båret samme navn. Princip 70: hentet, aldrig brugt.
 try { const _kn = lager.hent("klubnavn", ""); if (_kn) KONFIG.klub = _kn; } catch (_e) {}
+// ⭐ v4.1.0 · OG ROLLEN HUSKES OGSÅ.
+//   Samme mønster som klubnavnet, og samme fejl: `S.minRolle` sættes
+//   først, når serveren har svaret på et kald. En cheftræner, der bare
+//   åbner StreakCoach, stod med «TRÆNER» i øjenbrynet, til han havde
+//   været inde i et kort. Rollen huskes nu og friskes ved hvert svar.
+//   ⚠️ Prisen, sagt højt: en husket rolle kan være forældet. Den koster
+//     kun et spildt tryk — SERVEREN afgør stadig (403), ikke skærmen.
 
 // ══════════════════════════════════════════════════════════════════════
 // DET DELTE LAG · trænerens side
@@ -445,6 +453,8 @@ function syncFejltekst(r) {
 }
 
 let S = {
+  // ⭐ v4.1.0 · rollen huskes mellem åbninger (se noten ved klubnavnet).
+  minRolle: (function(){ try { return localStorage.getItem("tp-minrolle") ? JSON.parse(localStorage.getItem("tp-minrolle")) : null; } catch (_e) { return null; } })(),
   traener: "Cheftræneren", spiller: "Oskar Lillesø",
   tab: "hjem", aabenSpiller: null,
   vurderOmraade: null, vurderGruppe: null, vurderScores: {},
@@ -591,7 +601,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v4.0.0 \u00b7 30. august 2026";
+const VERSION = "v4.1.0 \u00b7 30. august 2026";
 
 function render(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
@@ -838,6 +848,16 @@ function renderTraener(){
     h += '</div>';
 
     h += '<div class="dev-grid">' +
+      // ⭐⭐⭐ v4.1.0 · AFTENENS VIGTIGSTE KNAP STÅR FORREST.
+      //   ⚠️ FANGET FØR DEN BLEV BYGGET: første udkast skrev
+      //     `S.minRolle === "admin"`. Men `minRolle` sættes FØRST, når
+      //     serveren har svaret på et kald — en træner, der åbner appen
+      //     og ikke har været i Indstillinger, har den som null, og
+      //     flisen ville være VÆK præcis den aften, den skal bruges.
+      //   Og den hører alligevel til alle: BEGGE roller må udstede
+      //   spillernøgler (kun trænernøgler er admin-only, og det afsnit
+      //   inde i kortet skjuler sig selv). Ingen rolle at spørge om.
+      '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="noegler"><span class="ik">🔑</span><b>UDSTED NØGLE</b><small>én pr. familie — vises kun én gang</small></button>' +
       '<button class="dev-flise dev-kant-is" data-act="tab" data-v="grupper"><span class="ik">👥</span><b>GRUPPER</b><small>hold, spillere & udvikling</small></button>' +
       '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="vurder"><span class="ik">⚡</span><b>VURDÉR TRÆNING</b><small>hele holdet på under 20 sek.</small></button>' +
       '<button class="dev-flise dev-kant-gron" data-act="tab" data-v="kvartal"><span class="ik">📋</span><b>EVALUERING</b><small>AI-udkast — du godkender alt</small></button>' +
@@ -845,7 +865,8 @@ function renderTraener(){
       '</div>';
   } else {
     h += '<button class="dev-pilknap" data-act="tab" data-v="hjem">←</button>';
-    if (S.tab==="grupper") h += traenerGrupper(t);
+    if (S.tab==="noegler") h += noegleKortet();
+    else if (S.tab==="grupper") h += traenerGrupper(t);
     else if (S.tab==="vurder") h += traenerVurder(t);
     else if (S.tab==="kvartal") h += traenerKvartal(t);
     else if (S.tab==="indst") h += traenerIndstillinger();
@@ -859,34 +880,18 @@ function faneKnap(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'"
 // INDSTILLINGER · designstandard v1.0, regel 2: alt der kun saettes op
 // EN gang bor her — ikke som kort paa forsiden. Klubkode, trup, kopi.
 // ═══════════════════════════════════════════════════════
-function traenerIndstillinger(){
+// ══════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v4.1.0 · NØGLEKORTET FÅR SIN EGEN DØR.
+//   Målt i basen 30/8: Øresund har ÉN nøgle — Carstens admin — og den er
+//   brugt NUL gange. Der findes ingen spillernøgler, ingen spillerrækker
+//   og ingen trænerkonti. 8/9 kl. 18.00 skal cheftræneren udstede tre
+//   nøgler, og knappen lå bag ⚙️ INDSTILLINGER → «klubkode, trup & kopi».
+//   Kortet er URØRT — det har bare fået sin egen flise på forsiden, så
+//   aftenens vigtigste handling ikke skal findes.
+// ══════════════════════════════════════════════════════════════════
+function noegleKortet(){
   let h = '';
-    // ── NYE TILMELDINGER · familier, der har oprettet sig og venter paa klubben
-    {
-      const afv = (S.tilmeldinger||[]).filter(function(x){ return x.status === "afventer"; });
-      h += '<div class="kort" style="border-left:3px solid ' + (afv.length ? 'var(--guld)' : 'var(--kant)') + '">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-          '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udce5 NYE TILMELDINGER' +
-          (afv.length ? ' <span style="background:var(--guld);color:var(--nat);padding:1px 6px;border-radius:7px;margin-left:5px">'+afv.length+'</span>' : '') + '</div>' +
-          '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="tilm-hent">' +
-          (S.tilmHenter ? '\u2026' : (S.tilmHentet ? 'Opdatér' : 'Tjek')) + '</button></div>';
-      if (!S.tilmHentet) {
-        h += '<p class="lille" style="margin:6px 0 0">Tryk Tjek for at se, om nogen familier har oprettet sig.</p>';
-      } else if (!afv.length) {
-        h += '<p class="lille" style="margin:6px 0 0">Ingen venter på svar lige nu.</p>';
-      } else {
-        afv.forEach(function(t2){
-          h += '<div style="border-top:1px solid var(--kant);padding:9px 0">' +
-            '<div style="font-size:13px;font-weight:700">'+esc(t2.fornavn||'Spiller')+'</div>' +
-            '<div class="lille" style="margin-bottom:7px">'+esc(t2.hold||'\u2014')+(t2.aargang?' \u00b7 '+esc(t2.aargang):'')+'</div>' +
-            '<div class="raekke"><button class="knap" style="background:var(--vundet)" data-act="tilm-svar" data-v="'+esc(t2.haandtag||t2.spillernoegle)+'~~godkendt">\u2713 Godkend</button>' +
-            '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-act="tilm-svar" data-v="'+esc(t2.haandtag||t2.spillernoegle)+'~~afvist">Afvis</button></div></div>';
-        });
-        h += '<p class="lille" style="margin:8px 0 0;font-style:italic">Godkendte spillere lægges automatisk i din trup.</p>';
-      }
-      h += '</div>';
-    }
-    // ── FAMILIENØGLER (v3.2.0) · traeneren inviterer familierne SELV.
+  // ── FAMILIENØGLER (v3.2.0) · traeneren inviterer familierne SELV.
     // Noeglen dannes paa serveren, vises EEN gang og gemmes kun som hash.
     // Ingen mennesker administrerer hemmeligheder — heller ikke Nicolai.
     {
@@ -971,6 +976,37 @@ function traenerIndstillinger(){
       }
       h += '</div>';
     }
+  return h;
+}
+
+function traenerIndstillinger(){
+  let h = '';
+    // ── NYE TILMELDINGER · familier, der har oprettet sig og venter paa klubben
+    {
+      const afv = (S.tilmeldinger||[]).filter(function(x){ return x.status === "afventer"; });
+      h += '<div class="kort" style="border-left:3px solid ' + (afv.length ? 'var(--guld)' : 'var(--kant)') + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+          '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udce5 NYE TILMELDINGER' +
+          (afv.length ? ' <span style="background:var(--guld);color:var(--nat);padding:1px 6px;border-radius:7px;margin-left:5px">'+afv.length+'</span>' : '') + '</div>' +
+          '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="tilm-hent">' +
+          (S.tilmHenter ? '\u2026' : (S.tilmHentet ? 'Opdatér' : 'Tjek')) + '</button></div>';
+      if (!S.tilmHentet) {
+        h += '<p class="lille" style="margin:6px 0 0">Tryk Tjek for at se, om nogen familier har oprettet sig.</p>';
+      } else if (!afv.length) {
+        h += '<p class="lille" style="margin:6px 0 0">Ingen venter på svar lige nu.</p>';
+      } else {
+        afv.forEach(function(t2){
+          h += '<div style="border-top:1px solid var(--kant);padding:9px 0">' +
+            '<div style="font-size:13px;font-weight:700">'+esc(t2.fornavn||'Spiller')+'</div>' +
+            '<div class="lille" style="margin-bottom:7px">'+esc(t2.hold||'\u2014')+(t2.aargang?' \u00b7 '+esc(t2.aargang):'')+'</div>' +
+            '<div class="raekke"><button class="knap" style="background:var(--vundet)" data-act="tilm-svar" data-v="'+esc(t2.haandtag||t2.spillernoegle)+'~~godkendt">\u2713 Godkend</button>' +
+            '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-act="tilm-svar" data-v="'+esc(t2.haandtag||t2.spillernoegle)+'~~afvist">Afvis</button></div></div>';
+        });
+        h += '<p class="lille" style="margin:8px 0 0;font-style:italic">Godkendte spillere lægges automatisk i din trup.</p>';
+      }
+      h += '</div>';
+    }
+    h += noegleKortet();
     // ── OPSÆTNING · klubkoden bor på enheden, aldrig i koden
   const kk = lager.hent("klubkode","");
   const antalN = Object.keys(S.noegler||{}).length;
@@ -1628,7 +1664,7 @@ document.addEventListener("click", function(e){
       lager.gem("traenernavn", r.navn); lager.gem("klubnavn", r.klub);
       S.konto = { brugernavn: r.brugernavn, navn: r.navn, klub: r.klub, rolle: r.rolle };
       S.traener = r.navn; if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].navn = r.navn;
-      S.minRolle = r.rolle; try { KONFIG.klub = r.klub; } catch(_e){}
+      S.minRolle = r.rolle; try { lager.gem("minrolle", r.rolle); KONFIG.klub = r.klub; } catch(_e){}
       S.doerLogKode = "";
       // ⚠️ Kunne nøglen ikke låses op (fx efter et kodeordsskifte, hvor
       //   skrinet ikke fulgte med), SIGES det — der lades ikke som om.
@@ -1709,7 +1745,7 @@ document.addEventListener("click", function(e){
       lager.gem("traenernavn", r.navn); lager.gem("klubnavn", r.klub);
       S.konto = { brugernavn: r.brugernavn, navn: r.navn, klub: r.klub, rolle: r.rolle };
       S.traener = r.navn; if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].navn = r.navn;
-      S.minRolle = r.rolle; try { KONFIG.klub = r.klub; } catch(_e){}
+      S.minRolle = r.rolle; try { lager.gem("minrolle", r.rolle); KONFIG.klub = r.klub; } catch(_e){}
       S.doerKode = ""; S.doerKode2 = "";
       S.doerFest = { ikon:"🎉", h:"Velkommen, " + String(r.navn||"").split(" ")[0] + "!",
         u:"Din konto er klar. Du kan logge ind på enhver telefon med " + r.brugernavn + ".",
@@ -1723,7 +1759,7 @@ document.addEventListener("click", function(e){
   else if (act==="log-ud"){
     if (!S.logUdSpoerg) { S.logUdSpoerg = true; render(); return; }
     S.logUdSpoerg = false;
-    ["konto","klubkode","traenernavn","klubnavn","doer"].forEach(function(n){
+    ["konto","klubkode","traenernavn","klubnavn","minrolle","doer"].forEach(function(n){
       try { localStorage.removeItem("tp-" + n); } catch(_e){} });
     try { window.location.reload(); } catch(_e){} }
 
@@ -1785,7 +1821,7 @@ document.addEventListener("click", function(e){
       if (r && r.fejl) { S.famBesked={fejl:true,t:"Kunne ikke hente: "+(r.t||r.fejl)}; render(); return; }
       // ⭐ Svaret baerer OGSAA min egen rolle. Det er den, der afgoer, om
       //   traenernoegle-afsnittet overhovedet tegnes.
-      S.famListe = r.noegler || []; S.minRolle = r.rolle || null; render();
+      S.famListe = r.noegler || []; S.minRolle = r.rolle || null; try { if (r.rolle) lager.gem("minrolle", r.rolle); } catch(_e){} render();
     }).catch(function(){ S.famHenter=false; S.famBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
   else if (act==="fam-spaer"){
     // Sp\u00e6rring er endelig — derfor to tryk, som trup-slet.

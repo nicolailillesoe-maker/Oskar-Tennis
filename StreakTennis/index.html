@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.81.0 · 30. august 2026";
+const VERSION = "v4.82.0 · 30. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -2959,8 +2959,25 @@ const A = {
   stigeAabn: () => {
     S.tab = "stige"; render();
     if (S.stigeTilvalgt && !S.stigeHenter) A.stigeHent();
-    if (S.spillerNoegle && (S.klubKode || S.venneAktiv) && !S.vennerHenter) A.venneHent();
-    if (S.spillerNoegle && (S.klubKode || S.venneAktiv) && !S.grHenter) A.grHent();
+    // ⛔⛔⭐ v4.82.0 · HER STOD OSKARS FEJL I VIRKELIGHEDEN.
+    //   v4.81.0 rettede fire steder med hegnet skrevet NEGERET
+    //   (`!S.klubKode && !S.venneAktiv`). Disse to står med den
+    //   POSITIVE form — samme regel, anden skrivemåde — og slap
+    //   derfor gennem søgningen. Symptomet bestod efter v4.81.0.
+    //
+    //   ⭐ `stigeAabn` er DEN funktion, der åbner Streak Zone. Oskar
+    //     havde konto, men hverken klubkode eller selv-indløst venne-
+    //     kode: vennelisten og rummene blev ALDRIG hentet, mens
+    //     ulæst-tælleren (`A.ulaestHent`, som bruger den rigtige dør)
+    //     meldte «1 ulæst» fra samme skærm.
+    //
+    //   ⚠️⚠️ OG SE TO LINJER NED: `budHent` blev flyttet til
+    //     `iDetDelteLag()` den 29/8. Disse to blev glemt LIGE VED
+    //     SIDEN AF. Et hegn i appen har ingen dør at banke på —
+    //     det findes kun med en søgning, og søgningen skal dække
+    //     BEGGE skrivemåder af den samme regel.
+    if (S.spillerNoegle && iDetDelteLag() && !S.vennerHenter) A.venneHent();
+    if (S.spillerNoegle && iDetDelteLag() && !S.grHenter) A.grHent();
     // ⭐ Bud hentes KUN for familier, der allerede er i det delte lag —
     // en lokal, uregistreret installation sender NUL kald fra zonen
     // (loeftet fra v4.7.2: intet sendes, foer familien selv handler).
@@ -4022,7 +4039,8 @@ const A = {
     if (_rumTimer) { clearInterval(_rumTimer); _rumTimer = null; }
     S.rumKode = null; S.rumData = null; S.rumBeskeder = []; S.rumUdkast = ""; S.rumBesked = null;
     S.tab = "stige"; render();
-    if (S.spillerNoegle && (S.klubKode || S.venneAktiv) && !S.vennerHenter) A.venneHent();
+    // ⭐ v4.82.0 · samme dør som i `stigeAabn` (se dér).
+    if (S.spillerNoegle && iDetDelteLag() && !S.vennerHenter) A.venneHent();
   },
 
   rumHent: async (puls) => {

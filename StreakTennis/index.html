@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.83.0 · 30. august 2026";
+const VERSION = "v4.84.0 · 30. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1280,6 +1280,7 @@ let S = {
   verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, fletKasseret: 0, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenPanel: null, kampePanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, liveOvertag: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null,
   // ⭐ v4.79.0 · skyggekopien
   skyStatus: null, skySender: false, skyBesked: null, skySlet: false, skyAaben: false,
+  kampeLaast: false, kampeTabt: 0, kampeRaa: null, kampeRaaVis: false, fletEkstra: [], skyGammelKode: "", skyLaasOpAaben: false,
   // ⛔ Sand, når der ligger en boks, vi IKKE kunne åbne. Så sikres der
   //   ikke — vi skriver aldrig oven i noget, vi ikke kan læse.
   skyLaast: false,
@@ -1380,11 +1381,41 @@ try { if (lager.hent("sai-zoner") === "1") S.zoner = true; } catch(e) {}
 // ingen diagnose, ingen fritekst, ingen kropsdel. Kun: fra hvornaar.
 try { const _sk = lager.hent("sai-skadet");
   if (_sk && /^\d{4}-\d{2}-\d{2}$/.test(_sk)) S.skadet = _sk; } catch(e) {}
+// ⛔⭐⭐⭐ v4.84.0 · BREMSEN SKAL OVERLEVE EN GENSTART.
+//   Målt 30/8: `S.skyLaast` levede kun i hukommelsen. Efter en kodeords-
+//   NULSTILLING kunne boksen ikke åbnes — bremsen blev sat, telefonen fik
+//   en NY nøgle med et NYT salt, og ved NÆSTE opstart var bremsen væk.
+//   Første sikring ville da have overskrevet den gamle boks. Det er ikke
+//   «en manglende besked» — det er et tab, ingen kunne se.
+try { if (lager.hent("sai-sky-laast") === "1") S.skyLaast = true; } catch(e) {}
 try { const fl = JSON.parse(lager.hent("sai-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = sikrePasId(sorterNyestFoerst(fl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d")); } catch(e) {}
 try { const tl = JSON.parse(lager.hent("sai-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = sikrePasId(sorterNyestFoerst(tl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d")); } catch(e) {}
 try { S.stigeTilvalgt = lager.hent("sai-stige-tilvalgt") === "1"; } catch(e) {}
 try { if (lager.hent("sai-skala10") !== "1") { if (S.ttLog.length) { S.ttLog.forEach((e) => { if (e.k >= 1 && e.k <= 5) e.k = e.k * 2; }); lager.gem("sai-tennis-log", JSON.stringify(S.ttLog)); } lager.gem("sai-skala10", "1"); } } catch(e) {}
-try { const rå = JSON.parse(lager.hent("sai-kampe") || "[]"); S.gemte = sorterNyestFoerst((Array.isArray(rå) ? rå : []).map(rensKamp).filter(Boolean), "dato"); } catch(e) {}
+// ⛔⭐⭐⭐ v4.84.0 · DEN TAVSE KASSERING VED OPSTART — princip 75.
+//   DEN TOMME EKSPORT, 30/8: Nicolais backup-tekst sagde «"kampe":[]»,
+//   mens træningerne var ægte. Linjen herunder var `try { … } catch(e) {}`:
+//   kunne lageret ikke læses — eller kasserede `rensKamp` hver eneste kamp,
+//   fordi `point` manglede — stod S.gemte tom, OG INGEN FIK DET AT VIDE.
+//   Det værste var ikke visningen. Det var, at næste `gemAlle()` skrev den
+//   TOMME liste tilbage oven i den fulde. En sæson kunne forsvinde af sig
+//   selv. Samme regel som skyggekopiens: DET, VI IKKE KUNNE LÆSE, RØRES IKKE.
+try {
+  const _raaT = lager.hent("sai-kampe");
+  let _raa = null, _parseFejl = false;
+  try { _raa = JSON.parse(_raaT || "[]"); } catch (_p) { _parseFejl = true; }
+  if (_parseFejl || !Array.isArray(_raa)) {
+    // Teksten ligger der stadig. Vi rører den ikke, og vi siger det højt.
+    if (_raaT && _raaT.trim() && _raaT.trim() !== "[]") { S.kampeLaast = true; S.kampeRaa = _raaT; }
+    S.gemte = [];
+  } else {
+    S.gemte = sorterNyestFoerst(_raa.map(rensKamp).filter(Boolean), "dato");
+    S.kampeTabt = _raa.length - S.gemte.length;
+    // Lå der kampe i lageret, og overlevede INGEN af dem, er det ikke en
+    // tom sæson — det er en læsefejl. Bremsen sættes.
+    if (_raa.length > 0 && S.gemte.length === 0) { S.kampeLaast = true; S.kampeRaa = _raaT; }
+  }
+} catch(e) { S.kampeLaast = true; S.gemte = []; }
 try { const a = lager.hent("sai-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.parse(a)); } catch(e) {}
 try { const kk = lager.hent("sai-klubkode"); if (kk) S.klubKode = kk; } catch(e) {}
 try { const sn = lager.hent("sai-spillernoegle"); if (sn) S.spillerNoegle = sn; } catch(e) {}
@@ -1792,6 +1823,9 @@ const RIVAL_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analy
 //   telefonen, kan boksen ikke åbnes. Heller ikke af os. Ingen bagdør.
 // ══════════════════════════════════════════════════════════════════════
 const SKY_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/sky-kopi";
+// ⭐ v4.84.0 · Nøglerne, skyggekopien bærer ud over kampe og logs.
+//   ⚠️ "skadet" er en JURIDISK linje, ikke en teknisk — se A.skyKrop.
+const SKY_INDSTILLINGER = ["haand", "benchmark", "skala10", "zoner", "stige-tilvalgt", "sprog", "navn-oenske", "skadet"];
 const SKY_RUNDER = 210000;
 
 const _b64 = (u) => btoa(String.fromCharCode.apply(null, Array.from(u)));
@@ -2308,6 +2342,11 @@ function analyseFejltekst(kode, status, EN) {
 }
 
 const gemAlle = () => {
+  // ⛔⭐ v4.84.0 · BREMSEN. Kunne kampene ikke læses ved opstart, skrives
+  //   der ikke oven i dem — og der sikres ikke, for så ville den tomme
+  //   liste også overskrive skyggekopien. Bremsen slippes kun ved at
+  //   rydde eller genskabe bevidst.
+  if (S.kampeLaast) return;
   lager.gem("sai-kampe", JSON.stringify(S.gemte));
   // ⭐⭐⭐ v4.79.0 · og så sikres der. ÉT sted, så en fremtidig
   //   kaldested-nummer-syv ikke bliver glemt.
@@ -2634,7 +2673,11 @@ const A = {
     render();
   },
   backupLav: () => {
-    S.backupTekst = "TEAMOSKAR-BACKUP-V1\n" + JSON.stringify({ kampe: S.gemte, fysLog: S.fysLog, ttLog: S.ttLog });
+    // ⭐⭐ v4.84.0 · den manuelle backup bærer nu PRÆCIS det samme som
+    //   skyggekopien — samme kilde (A.skyKrop). Det er dén vej, Oskar
+    //   flytter fra den gamle adresse, og før i dag ville hans navn,
+    //   indstillinger, modstander-planer og analyser ikke være kommet med.
+    S.backupTekst = "TEAMOSKAR-BACKUP-V1\n" + JSON.stringify(A.skyKrop());
     S.gendanAaben = false; render();
   },
   gendanToggle: () => { S.gendanAaben = !S.gendanAaben; S.backupTekst = null; S.gendanBesked = null; render(); },
@@ -2708,6 +2751,68 @@ const A = {
           lager.gem("sai-rivalanalyser", JSON.stringify(S.rivalAnalyser));
         } catch (_e) {}
       }
+      // ══════════════════════════════════════════════════════════════
+      // ⭐⭐⭐ v4.84.0 · RESTEN AF TELEFONEN (kopiens v2).
+      //   Reglen er den samme som for kampene: FLET, aldrig overskriv.
+      //   Et felt sættes KUN, hvis telefonen ikke selv har et — ellers
+      //   ville en fletning kunne rulle dagens indstilling tilbage.
+      //   ⚠️ Kun nøgler fra SKY_INDSTILLINGER lukkes ind. En fremtidig
+      //     (eller manipuleret) kopi kan derfor ikke plante noget i
+      //     lageret, listen ikke kender.
+      // ══════════════════════════════════════════════════════════════
+      S.fletEkstra = [];
+      try {
+        if (d.navn && !lager.hent("sai-spiller")) {
+          lager.gem("sai-spiller", String(d.navn)); SPILLER = String(d.navn);
+          S.fletEkstra.push(S.sprog === "en" ? "your name" : "dit navn");
+        }
+        if (d.indst && typeof d.indst === "object") {
+          let _n = 0;
+          Object.keys(d.indst).forEach(function (k2) {
+            if (SKY_INDSTILLINGER.indexOf(k2) === -1) return;
+            if (lager.hent("sai-" + k2)) return;
+            lager.gem("sai-" + k2, String(d.indst[k2])); _n++;
+          });
+          if (_n) {
+            // Sæt dem i kraft med det samme — ellers ville de først virke
+            // ved næste opstart, og skærmen ville lyve om, hvad der kom med.
+            try {
+              const _sp = lager.hent("sai-sprog"); if (_sp === "en" || _sp === "da") S.sprog = _sp;
+              const _hd = lager.hent("sai-haand"); if (_hd === "venstre" || _hd === "hoejre") S.haand = _hd;
+              const _bm = lager.hent("sai-benchmark"); if (_bm && typeof BENCHMARKS !== "undefined" && BENCHMARKS[_bm]) S.benchmark = _bm;
+              S.zoner = lager.hent("sai-zoner") === "1";
+              S.stigeTilvalgt = lager.hent("sai-stige-tilvalgt") === "1";
+              const _sk2 = lager.hent("sai-skadet");
+              if (_sk2 && /^\d{4}-\d{2}-\d{2}$/.test(_sk2)) S.skadet = _sk2;
+            } catch (_e) {}
+            S.fletEkstra.push(_n + (S.sprog === "en" ? " settings" : " indstillinger"));
+          }
+        }
+        if (d.scout && typeof d.scout === "object") {
+          let _sn = 0;
+          S.scout = S.scout || {};
+          Object.keys(d.scout).forEach(function (k3) { if (!S.scout[k3]) { S.scout[k3] = d.scout[k3]; _sn++; } });
+          if (_sn) { try { gemScout(); } catch (_e) {} S.fletEkstra.push(_sn + (S.sprog === "en" ? " opponent plans" : " modstander-planer")); }
+        }
+        // ⭐ KAMPEN, DER VAR I GANG. To hegn, og begge er nødvendige:
+        //   ① den røres ALDRIG, hvis telefonen selv har en kamp i gang —
+        //     at overskrive en igangværende kamp er værre end at miste en gammel
+        //   ② og den er kun frisk, hvis kopien er under et døgn gammel.
+        //     En halv kamp fra i marts skal ikke vågne op på en ny telefon.
+        if (d.kampAktiv && !lager.hent("sai-kamp-aktiv")) {
+          const _alder = d.tid ? (Date.now() - new Date(d.tid).getTime()) : Infinity;
+          if (_alder >= 0 && _alder < 86400000) {
+            try {
+              const _ka = rensKamp(JSON.parse(String(d.kampAktiv)));
+              if (_ka) {
+                lager.gem("sai-kamp-aktiv", String(d.kampAktiv));
+                S.aktiv = _ka;
+                S.fletEkstra.push(S.sprog === "en" ? "the match in progress" : "kampen, der var i gang");
+              }
+            } catch (_e) {}
+          }
+        }
+      } catch (_e) {}
       return tilfoejet;
     } catch (_e) { return null; }
   },
@@ -3108,6 +3213,54 @@ const A = {
   // ⭐ SIKRINGEN. Kaldes efter hver ændring, men SAMLET: en kamp med 150
   //   bolde ville ellers sende 150 gange. Ét kald, halvandet sekund efter
   //   sidste tryk (samme greb som navne-tjekket i fordøren).
+  // ══════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ v4.84.0 · HVAD KOPIEN BÆRER — ÉN LISTE, SÅ DEN KAN TÆLLES.
+  //   Nicolai 30/8: «det skal køre helt af sig selv, så man ALTID kan logge
+  //   ind fra en anden telefon og se det hele.» Automatikken var der; det
+  //   var DÆKNINGEN, der manglede. Kopien bar fire ting — appen gemmer 44.
+  //
+  //   ⚠️ `skadet` er med efter Nicolais udtrykkelige ja 30/8. Skal den UD
+  //     igen, er det ÉN linje herunder — og `gdpr-notat-v01.md` §2 skal så
+  //     rettes tilbage. Fortrydelsen er med vilje gjort billig.
+  //
+  //   HØRER IKKE I BOKSEN, fordi SERVEREN sender dem hjem ved login:
+  //     spillernoegle · konto · brugernavn · klub · min-klub · venne-id · rolle
+  //   HØRER TIL ENHEDEN og må aldrig rejse:
+  //     sky-* · foelgekode · liveaktiv · push-* · laas · doed-noegle
+  //     traenerdata (klubbens, hentes igen) · klublogo (klubbens)
+  //     invit-* · inviteret* · navn-oenske · plan-oensket · ejer-hint
+  //     flyttet-fra · chat-laest (hvad DENNE telefon har set)
+  // ══════════════════════════════════════════════════════════════════
+  _skyIndst: () => {
+    const ud = {};
+    SKY_INDSTILLINGER.forEach(function (k) {
+      try { const v = lager.hent("sai-" + k); if (v !== null && v !== undefined && v !== "") ud[k] = String(v); } catch (_e) {}
+    });
+    return ud;
+  },
+  // Kroppen bruges af BEGGE veje — skyggekopien og den manuelle backup.
+  // Én kilde, så de to aldrig kan komme til at bære forskellige ting.
+  //   ⚠️⚠️ `iBoks` er IKKE pynt. Den KRYPTEREDE kopi må bære `skadet`
+  //     (Nicolais ja 30/8) — men den MANUELLE backup er KLARTEKST i en
+  //     tekstboks, som familien selv kan sende hvorhen som helst. Et ja
+  //     til «serveren opbevarer en boks, den ikke kan åbne» er ikke det
+  //     samme som et ja til, at skadesdatoen ligger i en mail. Derfor
+  //     står den kun i boksen. Prisen: flytter man manuelt, skal datoen
+  //     sættes igen — ét felt, ét tryk.
+  skyKrop: (iBoks) => {
+    const ud = { v: 2, tid: new Date().toISOString(),
+      kampe: S.gemte || [], fysLog: S.fysLog || [], ttLog: S.ttLog || [],
+      rivalAnalyser: S.rivalAnalyser || {}, scout: S.scout || {},
+      indst: A._skyIndst() };
+    if (!iBoks) { try { delete ud.indst.skadet; } catch (_e) {} }
+    try { const n = lager.hent("sai-spiller"); if (n) ud.navn = n; } catch (_e) {}
+    // Kampen, der er I GANG. Nicolai: «Mister man telefonen midt i en kamp,
+    // er den væk.» Den følger med som RÅ tekst — appen renser den selv, når
+    // den flettes ind, og den flettes kun ind på en telefon uden en kamp.
+    try { const k = lager.hent("sai-kamp-aktiv"); if (k) ud.kampAktiv = k; } catch (_e) {}
+    return ud;
+  },
+
   skySik: (straks) => {
     try { clearTimeout(window.__skyUr); } catch (_e) {}
     const koer = async () => {
@@ -3120,18 +3273,26 @@ const A = {
       //   Der ligger data derinde, som nogen måske kan åbne senere.
       //   At skrive oven i den er at slette noget, man ikke kan læse.
       if (S.skyLaast) return;
+      // ⛔⭐ v4.84.0 · og den anden bremse: kunne telefonens egne kampe
+      //   ikke læses ved opstart, må den TOMME liste aldrig sendes op og
+      //   overskrive en god boks. Samme regel, den anden vej.
+      if (S.kampeLaast) return;
       // ⛔ Ingen kopi, før man er lukket ind. Dørskærmen lover ordret
       //   «vi gemmer intet, før I er inde» — og motoren afviser også.
       if (!(S.portStatus && S.portStatus.status === "godkendt")) return;
-      const krop = { v: 1, tid: new Date().toISOString(),
-        kampe: S.gemte || [], fysLog: S.fysLog || [], ttLog: S.ttLog || [],
-        rivalAnalyser: S.rivalAnalyser || {} };
+      const krop = A.skyKrop(true);   // true = i den krypterede boks
       // ⭐ Er intet ændret, sendes intet. Et aftryk af klarteksten bliver
       //   på TELEFONEN — serveren skal ikke kunne bekræfte et gæt om
       //   indholdet (princip 17: et felt, der ikke findes, holder altid).
       let aftryk = "";
       try { aftryk = String(JSON.stringify(krop.kampe).length) + ":" +
-        String(JSON.stringify(krop.fysLog).length) + ":" + String(JSON.stringify(krop.ttLog).length); } catch (_e) {}
+        String(JSON.stringify(krop.fysLog).length) + ":" + String(JSON.stringify(krop.ttLog).length) + ":" +
+        // ⭐ v4.84.0 · aftrykket skal kende ALT det, kopien nu bærer — ellers
+        //   ville et nyt navn, en ny indstilling eller en kamp i gang aldrig
+        //   blive sendt, fordi de tre længder ovenfor stod uændret.
+        String(JSON.stringify(krop.scout || {}).length) + ":" +
+        String(JSON.stringify(krop.indst || {}).length) + ":" +
+        String((krop.navn || "").length) + ":" + String((krop.kampAktiv || "").length); } catch (_e) {}
       if (!straks && aftryk && aftryk === lager.hent("sai-sky-aftryk")) return;
       try {
         S.skySender = true; if (straks) render();
@@ -3175,6 +3336,7 @@ const A = {
         // ⛔ Flaget er en BREMSE, ikke en besked: det stopper enhver
         //   sikring, indtil boksen er åbnet eller bevidst slettet.
         S.skyLaast = true;
+        try { lager.gem("sai-sky-laast", "1"); } catch (_e) {}
         S.skyBesked = { fejl: true, t: EN
           ? "There is a backup, but it cannot be opened with this password. Nothing has been overwritten \u2014 log in with the password it was made with, or delete it below."
           : "Der ligger en sikkerhedskopi, men den kan ikke \u00e5bnes med dette kodeord. Der er ikke overskrevet noget \u2014 log ind med det kodeord, den blev lavet med, eller slet den nedenfor." };
@@ -3182,6 +3344,7 @@ const A = {
       }
       // ⭐ Boksen ER åbnet — bremsen slippes, og nøglen står nu rigtigt.
       S.skyLaast = false;
+      try { lager.slet("sai-sky-laast"); } catch (_e) {}
       lager.gem("sai-sky-salt", foer.salt); lager.gem("sai-sky-noegle", bits);
       const n = A.fletInd(d);
       if (n === null) return 0;
@@ -3201,6 +3364,42 @@ const A = {
   },
 
   skySikNu: () => { S.skyBesked = null; A.skySik(true); },
+  // ══════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ v4.84.0 · VEJEN UD AF DEN LÅSTE BOKS.
+  //   Efter en kodeords-NULSTILLING er kopien låst med det GAMLE kodeord.
+  //   Indtil i dag fandtes der ingen knap — kun en sætning nede i et
+  //   panel, og en automatik, der stille holdt op med at sikre.
+  //   Her taster familien det kodeord, kopien blev lavet med. Lykkes det,
+  //   kommer ALT hjem, og bremsen slippes.
+  //   ⚠️ Kopien er derefter stadig låst med det GAMLE kodeord. Det siges
+  //     HØJT, og der peges på kodeordsskiftet, som låser den om — den vej
+  //     findes og er målt (se A.kodeSkift).
+  // ══════════════════════════════════════════════════════════════════
+  skyLaasOpAabn: () => { S.skyLaasOpAaben = !S.skyLaasOpAaben; S.skyGammelKode = ""; S.skyBesked = null; render(); },
+  skyLaasOp: async () => {
+    const EN = S.sprog === "en";
+    const kode = String(S.skyGammelKode || "");
+    if (kode.length < 4) {
+      S.skyBesked = { fejl: true, t: EN ? "Type the password the backup was made with." : "Skriv det kodeord, kopien blev lavet med." };
+      return render();
+    }
+    S.skySender = true; S.skyBesked = null; render();
+    const n = await A.skyGendan(kode, false);   // sætter selv bremsen igen, hvis det slår fejl
+    S.skySender = false;
+    if (!S.skyLaast) {
+      S.skyGammelKode = ""; S.skyLaasOpAaben = false;
+      const ekstra = (S.fletEkstra || []).length
+        ? " " + (EN ? "Also back: " : "Med kom også: ") + S.fletEkstra.join(", ") + "." : "";
+      S.skyBesked = { fejl: false, t: (EN ? (n + " match" + (n === 1 ? "" : "es") + " came home.")
+                                          : (n + " kamp" + (n === 1 ? "" : "e") + " kom hjem.")) + ekstra + " " + (EN
+        ? "The backup is still locked with the OLD password — change your password under \u2699\ufe0f YOUR ACCOUNT and it is re-locked to the new one."
+        : "Kopien er stadig låst med det GAMLE kodeord — skift kodeord under \u2699\ufe0f DIN KONTO, så låses den om til det nye.") };
+    }
+    render();
+  },
+  // ⭐ v4.84.0 · den låste KAMPLISTE (ikke boksen): her kan man få den rå
+  //   tekst ud og gemme den, i stedet for at stå med hænderne i lommen.
+  kampeRaaVis: () => { S.kampeRaaVis = !S.kampeRaaVis; render(); },
   skyHentNu: async () => {
     S.skySender = true; S.skyBesked = null; render();
     // ⭐ Kodeordet findes IKKE her — der bruges den nøgle, telefonen
@@ -3218,7 +3417,7 @@ const A = {
       // ⭐ At slette er den BEVIDSTE vej ud af bremsen. Herefter må der
       //   sikres igen — der er ikke længere noget at skrive oven i.
       S.skyLaast = false;
-      try { lager.slet("sai-sky-aftryk"); lager.slet("sai-sky-tid"); } catch (_e) {}
+      try { lager.slet("sai-sky-aftryk"); lager.slet("sai-sky-tid"); lager.slet("sai-sky-laast"); } catch (_e) {}
       S.skyBesked = { fejl: false, t: S.sprog === "en" ? "The backup is deleted." : "Sikkerhedskopien er slettet." };
     } else S.skyBesked = { fejl: true, t: S.sprog === "en" ? "Could not delete." : "Kunne ikke slette." };
     render();
@@ -3288,7 +3487,9 @@ const A = {
         // ⭐⭐ Var der ingen boks, laves nøglen alligevel — ellers ville
         //   denne telefon ALDRIG blive sikret, og hullet ville være
         //   usynligt indtil den dag, den blev væk. Princip 70.
-        if (!lager.hent("sai-sky-noegle")) await A.skyNoegleSaet(_skyKode);
+        // ⛔⭐ v4.84.0 · og IKKE, hvis der ligger en boks, vi ikke kunne åbne.
+        //   Et nyt salt her ville gøre den gamle boks uåbnelig for altid.
+        if (!lager.hent("sai-sky-noegle") && !S.skyLaast) await A.skyNoegleSaet(_skyKode);
         A.skySik(true);
       }
     } catch (_e) {}
@@ -9645,11 +9846,33 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     // tiles." Fire fliser, ét tal hver, ét panel ad gangen. Ingen
     // brødtekst: flisen siger hvad der ER, panelet viser det.
     // ══════════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════
+    // ⛔⭐⭐⭐ v4.84.0 · KUNNE KAMPENE IKKE LÆSES, SIGES DET HER — ØVERST.
+    //   Det er den skærm, man går til for at se sine kampe. Står de ikke
+    //   der, er den ENESTE ting, der må stå i stedet, sandheden om hvorfor.
+    //   Og der peges på en vej ud: den rå tekst kan kopieres ud og gemmes.
+    // ══════════════════════════════════════════════════════════════
+    if (S.kampeLaast) {
+      h += '<div class="kort" style="border:1.5px solid var(--tabt);background:rgba(210,72,78,.08)">' +
+        '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--tabt)">\u26d4 ' + (EN?"YOUR MATCHES COULD NOT BE READ":"DINE KAMPE KUNNE IKKE LÆSES") + '</div>' +
+        '<p style="margin:6px 0 0;font-size:13px">' + (EN
+          ? "Something in this browser's storage is unreadable. <b>Nothing is deleted</b> \u2014 we do not write on top of it, and no backup is sent while this is showing. Take the raw text below and keep it, then contact us."
+          : "Noget i denne browsers lager kan ikke læses. <b>Intet er slettet</b> \u2014 vi skriver ikke oven i det, og der sendes ingen sikkerhedskopi, så længe det her står. Tag den rå tekst nedenfor og gem den, og sig til.") + '</p>' +
+        '<div class="raekke" style="margin-top:8px"><button class="knap" style="background:transparent;border:1.5px solid var(--tabt);color:var(--tabt);font-size:12px" data-a="kampeRaaVis">' +
+          (S.kampeRaaVis ? (EN?"Hide the raw text":"Skjul den rå tekst") : (EN?"Show the raw text":"Vis den rå tekst")) + '</button></div>' +
+        (S.kampeRaaVis ? '<textarea readonly onfocus="this.select()" style="height:110px;margin-top:8px">' + esc(String(S.kampeRaa || "")) + '</textarea>' + eksportKnapper('kampeRaa', EN) : '') +
+        '</div>';
+    } else if (S.kampeTabt > 0) {
+      // ⚠️ Princip 75: en vagt må gerne afvise — den må ikke tie om det.
+      h += '<p class="lille" style="margin:0 0 8px;color:var(--guld)">\u26a0\ufe0f ' + S.kampeTabt + (EN
+        ? " saved match(es) have no ball-by-ball recording and are not shown here. They are not deleted."
+        : " gemte kampe har ingen bold-for-bold-registrering og vises ikke her. De er ikke slettet.") + '</p>';
+    }
     var _sp = S.statPanel;
     var _nKamp = (S.gemte || []).length;
     var _nTraen = (S.ttLog || []).length + (S.fysLog || []).length;
-    var _stflise = function(v, ik, titel, tal) {
-      return '<button class="dev-flise dev-kant' + (_sp === v ? ' dev-kant-is' : '') + '"'
+    var _stflise = function(v, ik, titel, tal, kant) {
+      return '<button class="dev-flise dev-kant' + (_sp === v ? ' dev-kant-is' : (kant ? ' ' + kant : '')) + '"'
         + ' style="min-height:92px' + (_sp === v ? ';border-color:var(--is)' : '') + '"'
         + ' data-a="statPanel" data-v="' + v + '">'
         + '<span class="dev-ikon">' + ik + '</span>'
@@ -9657,14 +9880,24 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         + '<small style="color:' + (_sp === v ? 'var(--is)' : 'var(--daempet)') + '">' + tal + '</small></button>';
     };
     h += '<div class="dev-grid" style="margin:12px 0">'
+      // ⭐ v4.84.0 · er kamplisten låst, må fliserne ikke sige «ingen kampe
+      //   endnu» ved siden af et kort, der siger, at de ikke kunne læses.
       + _stflise("form", "\ud83d\udcc8", (EN?"FORM":"FORMKURVEN"),
-          _nKamp ? (_nKamp + " " + (EN ? (_nKamp===1?"match":"matches") : (_nKamp===1?"kamp":"kampe"))) : (EN?"no matches yet":"ingen kampe endnu"))
+          S.kampeLaast ? (EN?"\u26a0\ufe0f could not be read":"\u26a0\ufe0f kunne ikke læses")
+            : _nKamp ? (_nKamp + " " + (EN ? (_nKamp===1?"match":"matches") : (_nKamp===1?"kamp":"kampe"))) : (EN?"no matches yet":"ingen kampe endnu"),
+          S.kampeLaast ? "dev-kant-roed" : "")
       + _stflise("kampe", "\ud83c\udfbe", (EN?"MATCHES":"KAMPENE"),
-          _nKamp ? (EN?"tap to open":"tryk for at åbne") : (EN?"register your first":"registrér din første"))
+          S.kampeLaast ? (EN?"\u26a0\ufe0f could not be read":"\u26a0\ufe0f kunne ikke læses")
+            : _nKamp ? (EN?"tap to open":"tryk for at åbne") : (EN?"register your first":"registrér din første"),
+          S.kampeLaast ? "dev-kant-roed" : "")
       + _stflise("traen", "\ud83c\udfc3", (EN?"TRAINING":"TR\u00c6NINGEN"),
           _nTraen ? (_nTraen + " " + (EN ? (_nTraen===1?"session":"sessions") : (_nTraen===1?"pas":"pas"))) : (EN?"log your first":"log dit f\u00f8rste"))
+      // ⭐⭐ v4.84.0 · en låst kopi må kunne SES fra flisen. Før stod den
+      //   ærlige besked nede i panelet — og en familie, der ikke åbnede
+      //   det, fik aldrig at vide, at der ikke blev gemt mere.
       + _stflise("backup", "\ud83d\udcbe", (EN?"BACKUP":"BACKUP"),
-          (EN?"save & move":"gem & flyt"))
+          (S.skyLaast ? (EN?"\u26a0\ufe0f locked \u2014 open it":"\u26a0\ufe0f låst — åbn den") : (EN?"save & move":"gem & flyt")),
+          S.skyLaast ? "dev-kant-roed" : "")
       + '</div>';
 
       if (_sp === "form") {
@@ -9898,13 +10131,18 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         : _siden < 60 ? (EN ? _siden + " min ago" : "for " + _siden + " min siden")
         : _siden < 1440 ? (EN ? Math.round(_siden / 60) + " h ago" : "for " + Math.round(_siden / 60) + " timer siden")
         : _tid.toLocaleDateString("da-DK"));
+      // ⭐ v4.84.0 · FANGET PÅ ET SKÆRMBILLEDE: kortet sagde «ikke endnu»
+      //   ØVERST og «kopien her er låst» tre linjer nede. To sætninger om
+      //   det samme, der ikke kunne passe begge. Er boksen låst, siger
+      //   hovedet dét — og intet andet.
       h += '<div class="kort" style="border-left:3px solid ' +
-        ((_sk && _sk.har) ? 'var(--vundet)' : 'var(--guld)') + '">' +
+        (S.skyLaast ? 'var(--tabt)' : (_sk && _sk.har) ? 'var(--vundet)' : 'var(--guld)') + '">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
           '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\u2601\ufe0f ' +
           (EN ? "AUTOMATIC BACKUP" : "AUTOMATISK KOPI") + '</div>' +
-          '<span class="lille" style="color:' + ((_sk && _sk.har) ? 'var(--vundet)' : 'var(--daempet)') + '">' +
-          (S.skySender ? '\u23f3 \u2026' : ((_sk && _sk.har) ? '\u2713 ' + _naar : (EN ? "not yet" : "ikke endnu"))) + '</span></div>';
+          '<span class="lille" style="color:' + (S.skyLaast ? 'var(--tabt)' : (_sk && _sk.har) ? 'var(--vundet)' : 'var(--daempet)') + '">' +
+          (S.skySender ? '\u23f3 \u2026' : S.skyLaast ? '\ud83d\udd12 ' + (EN ? "locked" : "låst")
+            : (_sk && _sk.har) ? '\u2713 ' + _naar : (EN ? "not yet" : "ikke endnu")) + '</span></div>';
       if (!S.minKonto) {
         // ⛔ Uden konto er der ingen at gemme for — og ingen vej tilbage.
         h += '<p class="lille" style="margin:8px 0 0">' + (EN
@@ -9940,6 +10178,29 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
             : "Log ud og ind \u00e9n gang \u2014 n\u00f8glen laves ud af dit kodeord, og det findes kun ved login.") + '</p>';
         }
       }
+      // ⭐⭐⭐ v4.84.0 · DEN LÅSTE BOKS HAR NU EN DØR.
+      if (S.skyLaast) {
+        h += '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--kant)">' +
+          '<p class="lille" style="margin:0 0 7px;color:var(--guld);font-weight:700">\ud83d\udd12 ' + (EN
+            ? "This backup is locked with an EARLIER password. Nothing has been overwritten \u2014 and nothing new is being saved until it is opened."
+            : "Kopien her er låst med et TIDLIGERE kodeord. Der er ikke overskrevet noget \u2014 og der bliver ikke gemt nyt, før den er åbnet.") + '</p>';
+        if (!S.skyLaasOpAaben) {
+          h += '<button class="knap valg" style="width:100%;min-height:44px" data-a="skyLaasOpAabn">\ud83d\udd11 ' +
+            (EN ? "Open it with the old password" : "Åbn den med det gamle kodeord") + '</button>';
+        } else {
+          h += '<div style="display:flex;gap:6px;align-items:stretch">' +
+            '<input type="password" class="felt" style="flex:1;min-width:0" autocomplete="off" data-felt="skyGammelKode" value="' + esc(S.skyGammelKode || "") +
+            '" placeholder="' + (EN ? "the password the backup was made with" : "kodeordet, kopien blev lavet med") + '"></div>' +
+            '<div class="raekke" style="margin-top:7px">' +
+            '<button class="knap" style="min-height:44px;background:var(--grus)"' + (S.skySender ? ' disabled' : '') + ' data-a="skyLaasOp">' +
+              (S.skySender ? "\u23f3 \u2026" : (EN ? "Open" : "Åbn")) + '</button>' +
+            '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;font-size:12px" data-a="skyLaasOpAabn">' + (EN ? "Cancel" : "Annullér") + '</button></div>' +
+            '<p class="lille" style="margin:6px 0 0">' + (EN
+              ? "Forgot it? Delete the backup below \u2014 then a new one is made from this phone right away. Everything on THIS phone stays."
+              : "Kan du ikke huske det? Slet kopien nedenfor \u2014 så laves en ny fra denne telefon med det samme. Alt på DENNE telefon bliver, hvor det er.") + '</p>';
+        }
+        h += '</div>';
+      }
       if (S.skyBesked) h += '<p class="lille" style="margin:8px 0 0;color:' +
         (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>';
       h += '</div>';
@@ -9972,6 +10233,10 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       h += '<p class="lille" style="color:var(--guld);font-weight:700;margin-top:4px">' + (EN
         ? S.fletBesked.split(":")[2] + " match(es) in the text could NOT be read \u2014 they have no ball-by-ball recording, only a result. They stay where they are."
         : S.fletBesked.split(":")[2] + " kampe i teksten kunne IKKE l\u00e6ses \u2014 de har ingen bold-for-bold-registrering, kun et resultat. De bliver, hvor de er.") + '</p>';
+    // ⭐ v4.84.0 · og hvad der ELLERS kom med. Princip 70: et løfte, der kun
+    //   gemmes, er ikke givet — så det, kopien nu bærer, skal også SES.
+    if (S.fletBesked && S.fletBesked.indexOf("OK") === 0 && (S.fletEkstra || []).length)
+      h += '<p class="lille" style="color:var(--vundet);margin-top:4px">' + (EN ? "Also came along: " : "Med kom også: ") + esc(S.fletEkstra.join(", ")) + '</p>';
     if (S.fletBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read that text.":"Kunne ikke læse teksten.")+'</p>';
     if (S.gendanBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read the backup text — check that everything was copied.":"Kunne ikke læse backup-teksten — tjek at alt kom med.")+'</p>';
     if (S.gendanBesked && S.gendanBesked.indexOf("OK:") === 0) { const t = S.gendanBesked.split(":"); h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Restored: ":"Gendannet: ")+t[1]+' '+(EN?"matches":"kampe")+' · '+t[2]+' '+(EN?"running sessions":"løbepas")+' · '+t[3]+' '+(EN?"tennis sessions":"tennistræninger")+'</p>'; }

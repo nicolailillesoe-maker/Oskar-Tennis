@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.78.0 · 30. august 2026";
+const VERSION = "v4.81.0 · 30. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1263,7 +1263,12 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, fletKasseret: 0, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, liveOvertag: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null,
+  // ⭐ v4.79.0 · skyggekopien
+  skyStatus: null, skySender: false, skyBesked: null, skySlet: false, skyAaben: false,
+  // ⛔ Sand, når der ligger en boks, vi IKKE kunne åbne. Så sikres der
+  //   ikke — vi skriver aldrig oven i noget, vi ikke kan læse.
+  skyLaast: false,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -1750,6 +1755,98 @@ try {
 // bliver det ikke sendt herfra og ville blive afvist med 422 alligevel.
 const ANALYSE_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-kamp";
 const RIVAL_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-rival";
+// ══════════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v4.79.0 · SKYGGEKOPIEN — EN BOKS, SERVEREN IKKE KAN ÅBNE
+//
+// `synkroniser()` sender kampresumeet OP til klubben og henter det ALDRIG
+// hjem. Kampe, træninger og hele bold-for-bold-registreringen bor i
+// lageret i den browser, de blev tastet i. Mister man telefonen, ryger
+// sæsonen — og ingen fejlmeddelelse afslører det.
+//
+// Herunder krypteres ALT på telefonen, før det sendes. AES-GCM med en
+// nøgle udledt af brugerens eget kodeord (PBKDF2-SHA256, 210.000 runder
+// — samme opskrift som trænernøglen i StreakCoach samme dag).
+//
+// ⚠️⚠️ NØGLEN CACHES I LAGERET, OG DET ER MED VILJE.
+//   Truslen er ikke «nogen har telefonen» — den, der har telefonen, har
+//   allerede klarteksten. Truslen er, at SERVEREN kan læse indholdet.
+//   Nøglen forlader aldrig telefonen, og det er præcis nok.
+//   ⛔ Retter man det «for en sikkerheds skyld», bliver gendannelse
+//     umulig, og hele funktionen er spildt.
+//
+// ⚠️ PRISEN, SOM STÅR I APPEN: glemmer man sit kodeord OG mister
+//   telefonen, kan boksen ikke åbnes. Heller ikke af os. Ingen bagdør.
+// ══════════════════════════════════════════════════════════════════════
+const SKY_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/sky-kopi";
+const SKY_RUNDER = 210000;
+
+const _b64 = (u) => btoa(String.fromCharCode.apply(null, Array.from(u)));
+const _fraB64 = (t) => Uint8Array.from(atob(t), (c) => c.charCodeAt(0));
+
+// Udleder nøglen og giver de RÅ bit tilbage, så de kan gemmes og bruges
+// igen uden at spørge om kodeordet ved hver eneste sikring.
+async function skyUdled(kode, saltB64) {
+  const raa = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(kode), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt: _fraB64(saltB64), iterations: SKY_RUNDER, hash: "SHA-256" }, raa, 256);
+  return _b64(new Uint8Array(bits));
+}
+
+async function _skyNoegle(bitsB64, brug) {
+  return await crypto.subtle.importKey("raw", _fraB64(bitsB64), { name: "AES-GCM" }, false, brug);
+}
+
+// ⭐ Gzip, når browseren kan (Safari 16.4+). En sæson fylder så en
+//   brøkdel, og formatet siger det selv: `v1z.` mod `v1.`.
+async function _pak(tekst) {
+  try {
+    if (typeof CompressionStream === "undefined") return { z: false, b: new TextEncoder().encode(tekst) };
+    const st = new Blob([tekst]).stream().pipeThrough(new CompressionStream("gzip"));
+    return { z: true, b: new Uint8Array(await new Response(st).arrayBuffer()) };
+  } catch (_e) { return { z: false, b: new TextEncoder().encode(tekst) }; }
+}
+async function _udpak(bytes, zippet) {
+  if (!zippet) return new TextDecoder().decode(bytes);
+  const st = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+  return await new Response(st).text();
+}
+
+async function skyLaas(objekt, bitsB64) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const p = await _pak(JSON.stringify(objekt));
+  const n = await _skyNoegle(bitsB64, ["encrypt"]);
+  const c = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, n, p.b);
+  return (p.z ? "v1z." : "v1.") + _b64(iv) + "." + _b64(new Uint8Array(c));
+}
+
+// ⚠️ Returnerer null i stedet for at kaste. En boks, der ikke kan åbnes,
+//   må ALDRIG vælte et login — man skal stadig kunne komme ind og bruge
+//   appen (princip 35: skærmen skal svare).
+async function skyAab(krypt, bitsB64) {
+  try {
+    const d = String(krypt || "").split(".");
+    if (d.length !== 3 || (d[0] !== "v1" && d[0] !== "v1z")) return null;
+    const n = await _skyNoegle(bitsB64, ["decrypt"]);
+    const raa = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: _fraB64(d[1]) }, n, _fraB64(d[2]));
+    return JSON.parse(await _udpak(new Uint8Array(raa), d[0] === "v1z"));
+  } catch (_e) { return null; }
+}
+
+async function skyKald(handling, krop) {
+  if (!S.spillerNoegle) return { fejl: "mangler-noegle" };
+  const st = new AbortController(); const ur = setTimeout(() => st.abort(), 25000);
+  try {
+    const r = await fetch(SKY_URL, { method: "POST", signal: st.signal,
+      headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+      body: JSON.stringify({ handling, ...krop }) });
+    clearTimeout(ur);
+    const d = await r.json().catch(() => ({}));
+    return r.ok ? d : { fejl: d.kode || "netvaerk", status: r.status, t: d.fejl };
+  } catch (_e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+}
+
 const SYNC_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/spiller-sync";
 // ⭐ v4.7.9 · ANALYSER UDEN KLUB. Doeren til analyserne for en familie
 // uden klub: taeller forbruget pr. kamp og udsteder et kortlivet token.
@@ -2196,7 +2293,15 @@ function analyseFejltekst(kode, status, EN) {
   return EN ? "Something went wrong. Try again." : "Noget gik galt. Pr\u00f8v igen.";
 }
 
-const gemAlle = () => lager.gem("sai-kampe", JSON.stringify(S.gemte));
+const gemAlle = () => {
+  lager.gem("sai-kampe", JSON.stringify(S.gemte));
+  // ⭐⭐⭐ v4.79.0 · og så sikres der. ÉT sted, så en fremtidig
+  //   kaldested-nummer-syv ikke bliver glemt.
+  try { A.skySik(); } catch (_e) {}
+};
+// Træningsloggene har deres egne gemme-linjer spredt i filen. Denne ene
+// dør bruges, hvor de skrives, af nøjagtig samme grund.
+const gemTraening = () => { try { A.skySik(); } catch (_e) {} };
 S.scout = JSON.parse(lager.hent("sai-scout") || "{}");
 const gemScout = () => lager.gem("sai-scout", JSON.stringify(S.scout || {}));
 const STILRAAD = {
@@ -2524,8 +2629,37 @@ const A = {
     try {
       const raa = S.fletTekst.replace("TEAMOSKAR-BACKUP-V1", "").trim();
       const d = JSON.parse(raa);
-      if (!d || !Array.isArray(d.kampe)) throw new Error("format");
+      S.fletKasseret = 0;
+      const n = A.fletInd(d);
+      if (n === null) throw new Error("format");
+      // ⭐ v4.81.0 · og hvis noget blev kasseret, står det på skærmen.
+      S.fletBesked = "OK:" + n + (S.fletKasseret ? ":" + S.fletKasseret : "");
+      S.fletAaben = false; S.fletTekst = "";
+    } catch (e) { S.fletBesked = "FEJL"; }
+    render();
+  },
+
+  // ⭐⭐⭐ v4.79.0 · FLETNINGEN, LØFTET UD AF TEKSTFELTET.
+  //   Den lå kun inde i `fletKoer` og kunne kun fodres med noget, en
+  //   bruger havde sat ind. Skyggekopien skal bruge NØJAGTIG samme
+  //   fletning — ellers får huset to forskellige svar på «er det den
+  //   samme kamp?», og en gendannelse ville lave dubletter.
+  //   ⭐ Den FLETTER, den erstatter aldrig. Det, der står på telefonen,
+  //     er lige så gyldigt som det, der kommer ned.
+  //   Returnerer antal tilføjede kampe, eller null hvis formatet er galt.
+  fletInd: (d) => {
+    if (!d || !Array.isArray(d.kampe)) return null;
+    try {
+      // ⛔⭐ v4.81.0 · DE KASSEREDE TÆLLES NU (Nicolai 30/8: «når jeg
+      //   fletter hans kampe kommer de ikke med»).
+      //   `rensKamp` returnerer null for enhver kamp UDEN et `point`-
+      //   array — og `.filter(Boolean)` smed dem ud i STILHED. Skærmen
+      //   sagde «OK: 0», som om der intet var at hente, mens der lå
+      //   kampe i teksten, appen havde besluttet at kassere.
+      //   ⚠️ En vagt må gerne afvise. Den må ikke tie om det.
+      const raaKampe = d.kampe.length;
       const nye = d.kampe.map(rensKamp).filter(Boolean);
+      S.fletKasseret = raaKampe - nye.length;
       // Dedup-nøgle: modstander + resultat + antal point (robust nok til at fange samme kamp)
       const noegle = function(k){ return (k.modstander||"") + "|" + (k.resultat||"") + "|" + (k.point ? k.point.length : 0) + "|" + (k.dato||""); };
       const findes = {}; S.gemte.forEach(function(k){ findes[noegle(k)] = true; });
@@ -2550,10 +2684,18 @@ const A = {
       gemAlle();
       lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
       lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
-      S.fletBesked = "OK:" + tilfoejet;
-      S.fletAaben = false; S.fletTekst = "";
-    } catch (e) { S.fletBesked = "FEJL"; }
-    render();
+      // ⭐ Analyserne flettes med, uden at overskrive dem, telefonen har.
+      if (d.rivalAnalyser && typeof d.rivalAnalyser === "object") {
+        try {
+          S.rivalAnalyser = S.rivalAnalyser || {};
+          Object.keys(d.rivalAnalyser).forEach(function (k2) {
+            if (!S.rivalAnalyser[k2]) S.rivalAnalyser[k2] = d.rivalAnalyser[k2];
+          });
+          lager.gem("sai-rivalanalyser", JSON.stringify(S.rivalAnalyser));
+        } catch (_e) {}
+      }
+      return tilfoejet;
+    } catch (_e) { return null; }
   },
   gendanKoer: () => {
     try {
@@ -2695,10 +2837,24 @@ const A = {
   puls: (v) => { S.puls = S.puls === v ? null : v; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   kampFold: (i) => { const n = +i; S.kampAaben[n] = !S.kampAaben[n]; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   analyseFold: (i) => { const n = +i; S.analyseAaben[n] = !S.analyseAaben[n]; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
-  delAabn: () => { S.delAaben = !S.delAaben; S.liveBesked = null; render(); },
-  liveStart: async () => {
+  delAabn: () => { S.delAaben = !S.delAaben; S.liveBesked = null; S.liveOvertag = null; render(); A.liveTjek(); },
+  liveFortryd: () => { S.liveOvertag = null; render(); },
+  liveStart: async (bekraeftet) => {
     const EN = S.sprog === "en";
     if (!S.klubKode) { S.kodeAaben = true; render(); return; }
+    // ⭐ v4.80.0 · TEAM-ENHEDEN SPØRGES FØRST.
+    //   En team-enhed (far, mor, den anden telefon) deler EJERENS
+    //   spillernøgle. Trykker den "del kampen", mens spillerens egen
+    //   kamp kører, ville serveren lukke spillerens kamp — den nyeste
+    //   vinder. Her er dataene allerede: `hent` bærer ejerens aktive
+    //   kamp som S.ejerLive. Så vi spørger i stedet for at overraske.
+    //   ⚠️ Det er et VALG, ikke en spærring: siger man ja, tager man
+    //     over. Fortrydelsen skal være billig, men prisen skal ses.
+    if (!bekraeftet && S.rolle === "familie" && S.ejerLive && S.ejerLive.foelgekode
+        && S.ejerLive.foelgekode !== S.foelgekode) {
+      S.liveOvertag = S.ejerLive.foelgekode; render(); return;
+    }
+    S.liveOvertag = null;
     if (!S.foelgekode) {
       S.foelgekode = nyFoelgekode((SPILLER));
       lager.gem("sai-foelgekode", S.foelgekode);
@@ -2719,6 +2875,48 @@ const A = {
     if (r.fejl) { S.liveAktiv = false; lager.gem("sai-liveaktiv", "0"); }
     render();
   },
+  // ══════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ v4.80.0 · ER VORES KAMP STADIG DEN, DER DELES?
+  //
+  // Serveren håndhæver siden 30/8, at én spiller kun kan have ÉN live
+  // kamp ad gangen (Nicolai: "der kan kun være en live kamp i gang").
+  // Starter en anden enhed på samme spillernøgle en nyere kamp, bliver
+  // vores lukket i basen — og INGEN fejlmeddelelse fortæller os det.
+  // Uden dette tjek ville skærmen blive ved med at sige "LIVE — DELES",
+  // mens tribunen var tom. Princip 70: et løfte, der kun gemmes, er
+  // ikke givet.
+  //
+  // ⚠️ Spørger KUN når appen vågner, og kun mens vi tror, vi deler.
+  //   Et tjek pr. bold-tik ville hente hele forløbet ned igen hvert 4.
+  //   sekund — det er en telefon på et stadion, ikke en pc.
+  // ⚠️ Ingen forbindelse = ingen konklusion. Vi lukker ALDRIG en deling
+  //   på et kald, der ikke kom frem (princip 35).
+  // ══════════════════════════════════════════════════════════════════
+  liveTjek: async () => {
+    if (!S.liveAktiv || !S.foelgekode) return;
+    const EN = S.sprog === "en";
+    let d = null;
+    try {
+      const r = await fetch(SYNC_URL, { method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ handling: "live-hent", foelgekode: S.foelgekode }) });
+      d = await r.json().catch(() => null);
+    } catch (_e) { return; }
+    if (!d || !d.kamp || d.kamp.aktiv !== false) return;
+    // Kampen står som lukket hos serveren, men vi troede, vi delte.
+    // Det sker kun ét sted: en nyere kamp på samme spiller har taget over.
+    S.liveAktiv = false; lager.gem("sai-liveaktiv", "0");
+    // ⭐ MÅLT PÅ SKÆRMBILLEDET 30/8 (princip 62): uden denne linje stod
+    //   beskeden i et SAMMENFOLDET panel uden en eneste knap. Spilleren
+    //   fik at vide, at delingen var stoppet — og havde ingen vej videre.
+    //   Panelet foldes ud, så «Del kampen» står lige der (princip 32/35).
+    S.delAaben = true;
+    S.liveBesked = { fejl: true, t: EN
+      ? "Sharing stopped — another match was started on this player. Only one match can be live at a time."
+      : "Delingen er stoppet — der blev startet en anden kamp på denne spiller. Der kan kun være én kamp live ad gangen." };
+    render();
+  },
+
   liveStop: async () => {
     const EN = S.sprog === "en";
     S.liveAktiv = false; lager.gem("sai-liveaktiv", "0");
@@ -2858,6 +3056,143 @@ const A = {
       return r.ok ? d : { fejl: d.kode || "netvaerk", t: d.fejl || "" };
     } catch (e) { clearTimeout(ur); return { fejl: "netvaerk", t: "" }; }
   },
+  // ══════════════════════════════════════════════════════════════════
+  // ⭐⭐⭐ v4.79.0 · SKYGGEKOPIEN
+  // ══════════════════════════════════════════════════════════════════
+
+  // Bygger nøglen ud af kodeordet og gemmer de rå bit lokalt, så
+  // sikringen kan køre uden at spørge om kodeordet hver gang.
+  // ⭐ Saltet er ikke hemmeligt og skal FØLGE boksen — uden det kan
+  //   nøglen ikke udledes igen på en anden telefon.
+  skyNoegleSaet: async (kode, saltB64) => {
+    try {
+      const salt = saltB64 || _b64(crypto.getRandomValues(new Uint8Array(16)));
+      const bits = await skyUdled(String(kode), salt);
+      lager.gem("sai-sky-salt", salt);
+      lager.gem("sai-sky-noegle", bits);
+      return { salt, bits };
+    } catch (_e) { return null; }
+  },
+
+  // ⭐ SIKRINGEN. Kaldes efter hver ændring, men SAMLET: en kamp med 150
+  //   bolde ville ellers sende 150 gange. Ét kald, halvandet sekund efter
+  //   sidste tryk (samme greb som navne-tjekket i fordøren).
+  skySik: (straks) => {
+    try { clearTimeout(window.__skyUr); } catch (_e) {}
+    const koer = async () => {
+      const bits = lager.hent("sai-sky-noegle"), salt = lager.hent("sai-sky-salt");
+      if (!bits || !salt || !S.spillerNoegle) return;
+      // ⛔⛔⛔ EN BOKS, VI IKKE KUNNE ÅBNE, RØRES IKKE.
+      //   Fundet af prøven 30/8: uden denne linje overskrev et login med
+      //   et «forkert» kodeord den gamle kopi med en tom — og skærmen
+      //   sagde «✓ lige nu». En sæson kunne forsvinde ved ét tryk.
+      //   Der ligger data derinde, som nogen måske kan åbne senere.
+      //   At skrive oven i den er at slette noget, man ikke kan læse.
+      if (S.skyLaast) return;
+      // ⛔ Ingen kopi, før man er lukket ind. Dørskærmen lover ordret
+      //   «vi gemmer intet, før I er inde» — og motoren afviser også.
+      if (!(S.portStatus && S.portStatus.status === "godkendt")) return;
+      const krop = { v: 1, tid: new Date().toISOString(),
+        kampe: S.gemte || [], fysLog: S.fysLog || [], ttLog: S.ttLog || [],
+        rivalAnalyser: S.rivalAnalyser || {} };
+      // ⭐ Er intet ændret, sendes intet. Et aftryk af klarteksten bliver
+      //   på TELEFONEN — serveren skal ikke kunne bekræfte et gæt om
+      //   indholdet (princip 17: et felt, der ikke findes, holder altid).
+      let aftryk = "";
+      try { aftryk = String(JSON.stringify(krop.kampe).length) + ":" +
+        String(JSON.stringify(krop.fysLog).length) + ":" + String(JSON.stringify(krop.ttLog).length); } catch (_e) {}
+      if (!straks && aftryk && aftryk === lager.hent("sai-sky-aftryk")) return;
+      try {
+        S.skySender = true; if (straks) render();
+        const krypt = await skyLaas(krop, bits);
+        const r = await skyKald("gem", { krypt, salt,
+          enhed: (erIOS() ? "iPhone" : "Enhed") + " \u00b7 " + browserNavn() });
+        S.skySender = false;
+        if (r && !r.fejl) {
+          lager.gem("sai-sky-aftryk", aftryk);
+          lager.gem("sai-sky-tid", r.opdateret || new Date().toISOString());
+          S.skyStatus = { har: true, bytes: r.bytes, opdateret: r.opdateret };
+          S.skyBesked = null;
+        } else if (r && r.fejl && straks) {
+          S.skyBesked = { fejl: true, t: r.fejl === "netvaerk"
+            ? (S.sprog === "en" ? "No connection \u2014 try again." : "Ingen forbindelse \u2014 pr\u00f8v igen.")
+            : (r.t || (S.sprog === "en" ? "Could not save." : "Kunne ikke gemme.")) };
+        }
+        if (straks) render();
+      } catch (_e) { S.skySender = false; if (straks) render(); }
+    };
+    if (straks) koer(); else window.__skyUr = setTimeout(koer, 1500);
+  },
+
+  // ⭐⭐ GENDANNELSEN. Kaldes efter et login — dér findes kodeordet, og
+  //   dér er telefonen typisk tom. Den FLETTER (aldrig erstatter).
+  skyGendan: async (kode, stille) => {
+    const EN = S.sprog === "en";
+    try {
+      const foer = await skyKald("hent", {});
+      if (!foer || foer.fejl || foer.tom) {
+        if (!stille) S.skyBesked = { fejl: false, t: EN ? "No backup found." : "Der er ingen sikkerhedskopi." };
+        return 0;
+      }
+      // Nøglen udledes af DET salt, boksen kom med — ikke af telefonens.
+      const bits = kode ? await skyUdled(String(kode), foer.salt) : lager.hent("sai-sky-noegle");
+      if (!bits) return 0;
+      const d = await skyAab(foer.krypt, bits);
+      if (!d) {
+        // ⚠️ Den ærlige besked. En boks, der ikke kan åbnes, siges HØJT —
+        //   der lades ikke som om, der ingen kopi var.
+        // ⛔ Flaget er en BREMSE, ikke en besked: det stopper enhver
+        //   sikring, indtil boksen er åbnet eller bevidst slettet.
+        S.skyLaast = true;
+        S.skyBesked = { fejl: true, t: EN
+          ? "There is a backup, but it cannot be opened with this password. Nothing has been overwritten \u2014 log in with the password it was made with, or delete it below."
+          : "Der ligger en sikkerhedskopi, men den kan ikke \u00e5bnes med dette kodeord. Der er ikke overskrevet noget \u2014 log ind med det kodeord, den blev lavet med, eller slet den nedenfor." };
+        return 0;
+      }
+      // ⭐ Boksen ER åbnet — bremsen slippes, og nøglen står nu rigtigt.
+      S.skyLaast = false;
+      lager.gem("sai-sky-salt", foer.salt); lager.gem("sai-sky-noegle", bits);
+      const n = A.fletInd(d);
+      if (n === null) return 0;
+      S.skyStatus = { har: true, bytes: foer.bytes, opdateret: foer.opdateret };
+      if (n > 0 || !stille) {
+        S.skyBesked = { fejl: false, t: EN
+          ? (n + " match" + (n === 1 ? "" : "es") + " came back from your backup.")
+          : (n + " kamp" + (n === 1 ? "" : "e") + " kom tilbage fra din sikkerhedskopi.") };
+      }
+      return n;
+    } catch (_e) { return 0; }
+  },
+
+  skyHentStatus: async () => {
+    const r = await skyKald("status", {});
+    if (r && !r.fejl) { S.skyStatus = r; render(); }
+  },
+
+  skySikNu: () => { S.skyBesked = null; A.skySik(true); },
+  skyHentNu: async () => {
+    S.skySender = true; S.skyBesked = null; render();
+    // ⭐ Kodeordet findes IKKE her — der bruges den nøgle, telefonen
+    //   allerede har. Kan boksen ikke åbnes med den, siges det ærligt.
+    await A.skyGendan(null, false);
+    S.skySender = false; render();
+  },
+  skySletSpoerg: () => { S.skySlet = !S.skySlet; S.skyBesked = null; render(); },
+  skySlet: async () => {
+    S.skySlet = false; S.skySender = true; render();
+    const r = await skyKald("slet", {});
+    S.skySender = false;
+    if (r && !r.fejl) {
+      S.skyStatus = { har: false };
+      // ⭐ At slette er den BEVIDSTE vej ud af bremsen. Herefter må der
+      //   sikres igen — der er ikke længere noget at skrive oven i.
+      S.skyLaast = false;
+      try { lager.slet("sai-sky-aftryk"); lager.slet("sai-sky-tid"); } catch (_e) {}
+      S.skyBesked = { fejl: false, t: S.sprog === "en" ? "The backup is deleted." : "Sikkerhedskopien er slettet." };
+    } else S.skyBesked = { fejl: true, t: S.sprog === "en" ? "Could not delete." : "Kunne ikke slette." };
+    render();
+  },
+
   kontoAabn: (v) => { S.kontoAaben = (S.kontoAaben === v ? null : v); S.kontoBesked = null; render(); },
   kontoLuk: () => { S.kontoAaben = null; S.kontoBesked = null; render(); },
   kodeAabn2: () => { S.kodeAaben2 = !S.kodeAaben2; S.kodeGammel = ""; S.kodeNy = ""; S.kontoBesked = null; render(); },
@@ -2869,7 +3204,12 @@ const A = {
       render(); return;
     }
     S.kontoHenter = true; S.kontoBesked = null; render();
-    const r = await A.kontoKald("login", { navn: String(S.logNavn).trim(), kode: String(S.logKode) });
+    // ⭐⭐ v4.79.0 · KODEORDET FANGES HER, hvor det stadig findes.
+    //   `S.logKode` ryddes længere nede, og skyggekopiens nøgle kan KUN
+    //   laves ud af kodeordet. Første forsøg læste den bagefter og fik
+    //   en tom streng — prøven fangede det, ikke øjet.
+    const _skyKode = String(S.logKode || "");
+    const r = await A.kontoKald("login", { navn: String(S.logNavn).trim(), kode: _skyKode });
     S.kontoHenter = false;
     if (r.fejl) {
       S.kontoBesked = { fejl: true, t: r.t || (EN ? "Could not log in." : "Kunne ikke logge ind.") };
@@ -2904,6 +3244,23 @@ const A = {
       SPILLER = String(S.portStatus.fornavn).slice(0, 40);
       try { lager.gem("sai-spiller", SPILLER); } catch (_e) {}
     }
+    // ⭐⭐⭐ v4.79.0 · OG SÅ KOMMER KAMPENE MED.
+    //   Blokken står HER og ikke højere oppe, og begge grunde er målt:
+    //   ① `S.spillerNoegle` skal være sat, før `skyKald` kan sende den
+    //   ② `S.portStatus` skal være kendt, ellers ved sikringen ikke, om
+    //      porten er åben — og «vi gemmer intet, før I er inde» er et
+    //      løfte, ikke en formalitet.
+    //   Kodeordet er fanget øverst i handleren; her findes det ikke mere.
+    try {
+      if (_skyKode) {
+        await A.skyGendan(_skyKode, true);
+        // ⭐⭐ Var der ingen boks, laves nøglen alligevel — ellers ville
+        //   denne telefon ALDRIG blive sikret, og hullet ville være
+        //   usynligt indtil den dag, den blev væk. Princip 70.
+        if (!lager.hent("sai-sky-noegle")) await A.skyNoegleSaet(_skyKode);
+        A.skySik(true);
+      }
+    } catch (_e) {}
     render();
   },
   // (v4.52.0 · opretKonto UDGIK — oprettelsen bor i fordoeren: A.indGaa.)
@@ -2976,13 +3333,27 @@ const A = {
   kodeSkift: async () => {
     const EN = S.sprog === "en";
     S.kontoHenter = true; S.kontoBesked = null; render();
-    const r = await A.kontoKald("skift-kode", { gammel: String(S.kodeGammel || ""), ny: String(S.kodeNy || "") });
+    const _nyKode = String(S.kodeNy || "");
+    const r = await A.kontoKald("skift-kode", { gammel: String(S.kodeGammel || ""), ny: _nyKode });
     S.kontoHenter = false;
     S.kodeGammel = ""; S.kodeNy = "";
     S.kontoBesked = r.fejl
       ? { fejl: true, t: r.t || (EN ? "Could not change it." : "Kunne ikke skiftes.") }
       : { fejl: false, t: EN ? "New password saved." : "Nyt kodeord gemt." };
-    if (!r.fejl) S.kodeAaben2 = false;
+    if (!r.fejl) {
+      S.kodeAaben2 = false;
+      // ⭐⭐⭐ DEN VIGTIGSTE LINJE I KODESKIFTET.
+      //   Boksen er låst med det GAMLE kodeord. Skiftes kodeordet uden
+      //   at låse den om, kan den ikke åbnes på en ny telefon — og det
+      //   ville ingen opdage før den dag, det gjaldt.
+      //   ⭐ Der laves et NYT salt og sendes en frisk boks. Den gamle
+      //     overskrives i samme kald, så der aldrig ligger to.
+      try {
+        await A.skyNoegleSaet(_nyKode);
+        try { lager.slet("sai-sky-aftryk"); } catch (_e2) {}
+        A.skySik(true);
+      } catch (_e) {}
+    }
     render();
   },
   logUdSpoerg: () => { S.logUdSpoerg = true; S.kontoBesked = null; render(); },
@@ -4438,7 +4809,15 @@ const A = {
   venneHent: async () => {
     if (S.vennerHenter) return;
     if (!S.spillerNoegle) return;
-    if (!S.klubKode && !S.venneAktiv) return;   // ingen grund til at ringe hjem
+    // ⛔⭐ v4.81.0 · HER STOD OSKARS FEJL (målt 30/8 på hans telefon).
+    //   Hegnet var det GAMLE udtryk, som `iDetDelteLag()` afløste 29/8.
+    //   Oskar har en konto, men hverken klub eller selv-indløst venne-
+    //   kode — så listen blev ALDRIG hentet, mens ulæst-tælleren (som
+    //   bruger den rigtige dør) glad meldte «1 ulæst». Han kunne se, at
+    //   nogen havde skrevet, men ikke hvem.
+    //   ⚠️ Princip 64, tredje gang på tre dage: et hegn, der skal spare
+    //     et kald, gør en ny bruger blind.
+    if (!iDetDelteLag()) return;   // ingen grund til at ringe hjem
     S.vennerHenter = true; render();
     const r = await sync("venne-hent", {});
     S.vennerHenter = false;
@@ -4560,7 +4939,8 @@ const A = {
     const EN = S.sprog === "en";
     if (S.syncHenter) return;
     if (!S.spillerNoegle) { S.syncBesked = { fejl: true, t: EN ? "Enter the player code under \u2699 Settings first." : "Indtast spiller-koden under \u2699 Indstillinger f\u00f8rst." }; render(); return; }
-    if (!S.klubKode && !S.venneAktiv) { S.syncBesked = { fejl: true, t: EN ? "Nothing to sync \u2014 no club and no friends." : "Intet at synkronisere \u2014 ingen klub og ingen venner." }; render(); return; }
+    // ⭐ v4.81.0 · samme dør som resten (se venneHent).
+    if (!iDetDelteLag()) { S.syncBesked = { fejl: true, t: EN ? "Nothing to sync \u2014 no club and no friends." : "Intet at synkronisere \u2014 ingen klub og ingen venner." }; render(); return; }
     S.syncHenter = true; S.syncBesked = null; render();
 
     // ⭐ v4.5.0 · TEAM-ENHEDEN HENTER, DEN SENDER IKKE (Nicolai 22/8:
@@ -4771,6 +5151,10 @@ const A = {
         : (EN ? "Could not create the account — try again." : "Kunne ikke oprette kontoen — prøv igen.")) };
       render(); return;
     }
+    // ⭐⭐⭐ v4.79.0 · NØGLEN TIL SKYGGEKOPIEN LAVES HER, hvor kodeordet
+    //   findes. Fra dag ét er telefonen sikret — der er ingen periode,
+    //   hvor en familie taster kampe ind uden et sikkerhedsnet.
+    try { await A.skyNoegleSaet(String(S.indKode)); } catch (_e) {}
     // Identiteten foerst — intet efter det her kan tage den fra hende.
     SPILLER = navn; lager.gem("sai-spiller", navn);
     S.spillerNoegle = r.noegle; lager.gem("sai-spillernoegle", r.noegle);
@@ -5535,6 +5919,12 @@ function _fladeMaal() {
 }
 // Drejer telefonen, maales der forfra.
 try {
+  // ⭐ v4.80.0 · NÅR APPEN VÅGNER, SPØRGER VI, OM VI STADIG DELER.
+  //   Telefonen har ligget i lommen; en anden enhed kan have taget over.
+  //   Skærmen må ikke vise "LIVE" om en kamp, serveren har lukket.
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") { try { A.liveTjek(); } catch (_e) {} }
+  });
   window.addEventListener("resize", _fladeMaal);
   window.addEventListener("orientationchange", function () { setTimeout(_fladeMaal, 120); });
 } catch (_e) {}
@@ -8408,7 +8798,14 @@ function _tegn() {
       // sige det. Det var præcis dén slags tavshed, sætningen "Alt
       // bliver på denne telefon" var, og som blev fanget 21/8.
       // ══════════════════════════════════════════════════════════════
-      if (!S.klubKode && !S.venneAktiv) {
+    // ⛔⭐ v4.81.0 · KORTET LØJ (målt 30/8 på Oskars telefon).
+    //   Det sagde «appen har ikke lavet ét eneste netværkskald», mens
+    //   ulæst-tælleren i samme øjeblik viste 1 fra serveren. Kortet
+    //   brugte det gamle hegn og kendte ikke den femte gren (kontoen).
+    //   ⚠️ BETINGELSES-REGLEN: det er PÅ dette kort, hele
+    //     privatlivsløftet bor. Så det må aldrig være dét, der tager
+    //     fejl — hverken til den ene eller den anden side.
+      if (!iDetDelteLag()) {
         _kData = '<p class="lille" style="margin:0 0 4px;color:var(--vundet)">' + (EN
           ? "<b>Right now nothing leaves this phone.</b> No club, no friends — the app has not made a single network call. Your streak is counted here."
           : "<b>Lige nu forlader intet denne telefon.</b> Ingen klub, ingen venner — appen har ikke lavet ét eneste netværkskald. Din streak regnes her.") + '</p>' +
@@ -8426,28 +8823,57 @@ function _tegn() {
           ? "And nothing else. Not this:" : "Og intet andet. Ikke dette:") + '</b></p>' +
           _pkt(false, (EN?"your matches, one by one":"dine kampe, én for én")) +
           _pkt(false, (EN?"your notes":"dine noter")) +
+        // ⭐ v4.81.0 · den manglede her. «Dine kampe, én for én» dækker
+        //   den implicit, men bold-for-bold-registreringen er dét, en
+        //   familie faktisk bekymrer sig om, og den skal nævnes ved navn.
+        _pkt(false, (EN?"the ball-by-ball recording":"bold-for-bold-registreringen")) +
           _pkt(false, (EN?"your opponents’ names":"dine modstanderes navne")) +
           _pkt(false, (EN?"your own assessments":"dine egne vurderinger")) +
           '<p class="lille" style="margin:10px 0 0;padding-top:8px;border-top:1px dashed var(--kant)">' + (EN
           ? "A friend sees your first name and your streak — and your match while it is being played, if you turn that on yourself."
           : "En ven ser dit fornavn, din streak og dine sæsontal — og din kamp mens den spilles, hvis du selv slår det til.") + '</p>' +
           '<p class="lille" style="margin:8px 0 0;opacity:.75">' + (EN
-          ? "This started when you added or accepted a friend. Nothing was sent before that."
-          : "Det begyndte, da du tilføjede eller accepterede en ven. Før det blev der ikke sendt noget.") + '</p>';
+      // ⭐ v4.81.0 · ORDLYDEN FULGTE IKKE MED DEN FEMTE GREN.
+      //   Her stod «Det begyndte, da du tilføjede eller accepterede en
+      //   ven» — usandt for den, der bare har oprettet en konto. Nu
+      //   nævnes begge veje ind, så sætningen passer på begge.
+          ? "This started when you created an account or added a friend. Nothing was sent before that."
+          : "Det begyndte, da du oprettede en konto eller fik en ven. Før det blev der ikke sendt noget.") + '</p>' +
+        // ⛔⭐⭐ v4.81.0 · SKYGGEKOPI-LØFTET MANGLEDE HELT I DENNE GREN.
+        //   Fundet af prøven, da hegnet blev rettet 30/8: en spiller med
+        //   konto men UDEN klub så aldrig løftet om boksen — han faldt
+        //   i den forkerte gren og fik klubbens tekst ved et tilfælde.
+        //   Nu han falder rigtigt, ville løftet være forsvundet helt.
+        //   ⚠️ BETINGELSES-REGLEN: skyggekopien gælder ALLE godkendte
+        //     spillere, ikke kun dem med klub. Så løftet skal stå her
+        //     med de SAMME ord — ét løfte, ikke to.
+        '<p class="lille" style="margin:8px 0 0;padding:8px 10px;border-left:3px solid var(--is);background:rgba(159,216,232,.07);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
+          ? "\u2601\ufe0f <b>This is never READ by anyone.</b> Matches, notes and the ball-by-ball recording are copied for safekeeping \u2014 but they are <b>locked on this phone</b> before they are sent, with a key made from your password. The server keeps a box it cannot open. Not us, not a database dump, not anyone. Lose the phone, and it all comes back when you log in."
+          : "\u2601\ufe0f <b>Dette bliver ALDRIG l\u00e6st af nogen.</b> Kampe, noter og bold-for-bold-registrering kopieres for en sikkerheds skyld \u2014 men de <b>l\u00e5ses p\u00e5 denne telefon</b>, f\u00f8r de sendes, med en n\u00f8gle lavet ud af dit kodeord. Serveren opbevarer en boks, den ikke kan \u00e5bne. Ikke os, ikke en databasekopi, ikke nogen. Mister du telefonen, kommer det hele tilbage, n\u00e5r du logger ind.") + '</p>';
       } else {
         _kData = '<p class="lille" style="margin:0 0 6px"><b>' + (EN
           ? "This goes to your club:" : "Dette går til din klub:") + '</b></p>';
       }
-      if (S.klubKode || (!S.klubKode && !S.venneAktiv)) _kData +=
+    // ⭐ v4.81.0 · samme dør (se ovenfor): klubbens fulde liste vises
+    //   til den, der HAR en klub, og til den, der endnu ikke deler noget.
+      if (S.klubKode || !iDetDelteLag()) _kData +=
         _pkt(true, (EN?"your first name":"dit fornavn")) +
         _pkt(true, (EN?"your matches: date, tournament, result, won/lost and number of balls":"dine kampe: dato, turnering, resultat, vundet/tabt og antal bolde")) +
         _pkt(true, (EN?"your sessions: date, type, minutes and your own 1–10":"dine træninger: dato, type, minutter og din egen 1–10")) +
         _pkt(true, (EN?"your streak — only if you switched it on":"din streak — kun hvis du har slået den til")) +
         '<p class="lille" style="margin:10px 0 4px;padding-top:8px;border-top:1px dashed var(--kant)"><b>' + (EN
-          ? "This never leaves the phone:" : "Dette forlader ALDRIG telefonen:") + '</b></p>' +
+          ? "This is never READ by anyone:" : "Dette bliver ALDRIG læst af nogen:") + '</b></p>' +
         _pkt(false, (EN?"your notes — on sessions and on matches":"dine noter — på træninger og på kampe")) +
         _pkt(false, (EN?"your opponents’ names":"dine modstanderes navne")) +
         _pkt(false, (EN?"the ball-by-ball recording":"bold-for-bold-registreringen")) +
+        // ⭐⭐⭐ v4.79.0 · BETINGELSES-REGLEN: siden må aldrig love mere
+        //   end målt. Før stod der «forlader ALDRIG telefonen». Med
+        //   skyggekopien FORLADER det telefonen — låst. Løftet er ikke
+        //   blevet mindre, men det er blevet et ANDET løfte, og så skal
+        //   sætningen skiftes samme dag.
+        '<p class="lille" style="margin:8px 0 0;padding:8px 10px;border-left:3px solid var(--is);background:rgba(159,216,232,.07);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
+          ? "\u2601\ufe0f <b>The three above are copied for safekeeping</b> \u2014 but they are <b>locked on this phone</b> before they are sent, with a key made from your password. The server keeps a box it cannot open. Not us, not a database dump, not anyone. Lose the phone, and it all comes back when you log in."
+          : "\u2601\ufe0f <b>De tre ovenfor kopieres for en sikkerheds skyld</b> \u2014 men de <b>l\u00e5ses p\u00e5 denne telefon</b>, f\u00f8r de sendes, med en n\u00f8gle lavet ud af dit kodeord. Serveren opbevarer en boks, den ikke kan \u00e5bne. Ikke os, ikke en databasekopi, ikke nogen. Mister du telefonen, kommer det hele tilbage, n\u00e5r du logger ind.") + '</p>' +
         '<p class="lille" style="margin:10px 0 0;padding-top:8px;border-top:1px dashed var(--kant)">' + (EN
           ? "<b>While a match is live</b> and only then: the score, the tournament and your opponent — that is what a follower sees. Friends see the opponent shortened. Turn the match off and the sharing stops."
           : "<b>Mens en kamp er live</b> og kun da: stillingen, turneringen og din modstander — det er dét, en følger ser. Venner ser modstanderen forkortet. Slår du kampen fra, stopper delingen.") + '</p>' +
@@ -8743,6 +9169,19 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
             '<button class="knap valg" style="flex:1;padding:9px" data-a="liveKopier">🔗 ' + (EN?"Copy link":"Kopiér link") + '</button>' +
             '<button class="knap valg" style="flex:none;padding:9px 14px" data-a="liveStop">■ ' + (EN?"Stop":"Stop") + '</button>' +
           '</div>';
+      } else if (S.liveOvertag) {
+        // ⭐ v4.80.0 · PRISEN VISES, FØR DEN BETALES.
+        h += '<p class="lille" style="margin:6px 0 8px;color:var(--guld)">' + (EN
+          ? "A match is already live on this player. Only one match can be live at a time — starting here stops the other one."
+          : "Der er allerede en kamp live på denne spiller. Der kan kun være én kamp live ad gangen — starter du her, stopper den anden.") + '</p>' +
+          '<div class="raekke">' +
+            '<button class="knap valg" style="flex:1;padding:9px" data-a="rumAabn" data-v="' + esc(S.liveOvertag + "|" + (S.ejerLive && S.ejerLive.spiller || "")) + '">🏟 ' +
+              (EN?"Open that match":"Åbn den kamp") + '</button>' +
+            '<button class="knap" style="flex:none;padding:9px 14px;background:var(--grus)" data-a="liveStart" data-v="ja">📡 ' +
+              (EN?"Start here":"Start her") + '</button>' +
+          '</div>' +
+          '<div class="raekke" style="margin-top:6px"><button class="knap valg" style="width:100%;padding:9px" data-a="liveFortryd">' +
+            (EN?"Cancel":"Fortryd") + '</button></div>';
       } else if (S.delAaben) {
         h += '<p class="lille" style="margin:6px 0 8px">' + (EN
           ? "Share a code so your team can follow live. The code only opens this match, and it dies when you stop."
@@ -9317,8 +9756,70 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     h += '</div>';
     }
     if (_sp === "backup") {
+    // ══════════════════════════════════════════════════════════════════
+    // ⭐⭐⭐ v4.79.0 · DEN AUTOMATISKE KOPI STÅR ØVERST.
+    //   Den manuelle nedenunder er stadig der og virker — men den, ingen
+    //   husker at tage, er ikke en sikkerhedskopi. Denne tager sig selv.
+    // ══════════════════════════════════════════════════════════════════
+    {
+      const _sk = S.skyStatus, _harN = !!lager.hent("sai-sky-noegle");
+      const _tid = _sk && _sk.opdateret ? new Date(_sk.opdateret) : null;
+      const _siden = _tid ? Math.max(0, Math.round((Date.now() - _tid.getTime()) / 60000)) : null;
+      const _naar = _siden === null ? "" : (_siden < 2 ? (EN ? "just now" : "lige nu")
+        : _siden < 60 ? (EN ? _siden + " min ago" : "for " + _siden + " min siden")
+        : _siden < 1440 ? (EN ? Math.round(_siden / 60) + " h ago" : "for " + Math.round(_siden / 60) + " timer siden")
+        : _tid.toLocaleDateString("da-DK"));
+      h += '<div class="kort" style="border-left:3px solid ' +
+        ((_sk && _sk.har) ? 'var(--vundet)' : 'var(--guld)') + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+          '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\u2601\ufe0f ' +
+          (EN ? "AUTOMATIC BACKUP" : "AUTOMATISK KOPI") + '</div>' +
+          '<span class="lille" style="color:' + ((_sk && _sk.har) ? 'var(--vundet)' : 'var(--daempet)') + '">' +
+          (S.skySender ? '\u23f3 \u2026' : ((_sk && _sk.har) ? '\u2713 ' + _naar : (EN ? "not yet" : "ikke endnu"))) + '</span></div>';
+      if (!S.minKonto) {
+        // ⛔ Uden konto er der ingen at gemme for — og ingen vej tilbage.
+        h += '<p class="lille" style="margin:8px 0 0">' + (EN
+          ? "You need an account for this. Without one, everything stays on this phone only."
+          : "Det kr\u00e6ver en konto. Uden en bliver alt kun p\u00e5 denne telefon.") + '</p>';
+      } else {
+        h += '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
+          ? "Your matches, every ball, your training log and your analyses are copied automatically. <b>They are locked on this phone before they are sent</b> \u2014 the server keeps a box it cannot open. Log in on a new phone, and everything comes back."
+          : "Dine kampe, hver bold, din tr\u00e6ningslog og dine analyser kopieres automatisk. <b>De l\u00e5ses p\u00e5 denne telefon, f\u00f8r de sendes</b> \u2014 serveren opbevarer en boks, den ikke kan \u00e5bne. Log ind p\u00e5 en ny telefon, og det hele kommer tilbage.") + '</p>';
+        // ⚠️⚠️ PRISEN, SAGT HVOR DEN GÆLDER. Der findes ingen bagdør, og
+        //   det er hele pointen — så det må ikke stå med småt et andet sted.
+        h += '<p class="lille" style="margin:9px 0 0;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
+          ? "<b>Remember your password.</b> The box is locked with it. If you forget it <i>and</i> lose the phone, no one can open the copy \u2014 not even us. There is no back door, and that is the point."
+          : "<b>Husk dit kodeord.</b> Boksen er l\u00e5st med det. Glemmer du det <i>og</i> mister telefonen, kan ingen \u00e5bne kopien \u2014 heller ikke vi. Der er ingen bagd\u00f8r, og det er hele pointen.") + '</p>';
+        if (_sk && _sk.har && _sk.bytes) {
+          h += '<p class="lille" style="margin:7px 0 0;opacity:.6">' +
+            Math.max(1, Math.round(_sk.bytes / 1024)) + ' KB' + (_sk.enhed ? ' \u00b7 ' + esc(_sk.enhed) : '') + '</p>';
+        }
+        h += '<div class="raekke" style="margin-top:9px;gap:6px">' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' +
+            (S.skySender ? ' disabled' : '') + ' data-a="skySikNu">' +
+            (S.skySender ? '\u23f3 \u2026' : (EN ? "\u2601\ufe0f Save now" : "\u2601\ufe0f Gem nu")) + '</button>' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-a="skyHentNu">' +
+            (EN ? "\u267b\ufe0f Fetch it" : "\u267b\ufe0f Hent den") + '</button>' +
+          (_sk && _sk.har ? '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px;' +
+            (S.skySlet ? 'background:var(--tabt);border-color:var(--tabt);color:#fff' : 'color:var(--tabt);border-color:rgba(210,72,78,.5)') +
+            '" data-a="' + (S.skySlet ? 'skySlet' : 'skySletSpoerg') + '">' +
+            (S.skySlet ? (EN ? "\u26a0\ufe0f Tap again" : "\u26a0\ufe0f Tryk igen") : (EN ? "Delete" : "Slet")) + '</button>' : '') +
+          '</div>';
+        if (!_harN) {
+          h += '<p class="lille" style="margin:8px 0 0;color:var(--guld)">' + (EN
+            ? "Log out and in again once \u2014 the key is made from your password, and it is only there at login."
+            : "Log ud og ind \u00e9n gang \u2014 n\u00f8glen laves ud af dit kodeord, og det findes kun ved login.") + '</p>';
+        }
+      }
+      if (S.skyBesked) h += '<p class="lille" style="margin:8px 0 0;color:' +
+        (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>';
+      h += '</div>';
+    }
     h += '<div class="kort">';
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">💾 '+(EN?"Backup":"Sikkerhedskopi")+'</h2>' +
+      '<p class="lille" style="margin:-4px 0 9px">' + (EN
+        ? "The manual copy \u2014 for moving to another browser, or for keeping a copy somewhere of your own."
+        : "Den manuelle kopi \u2014 til at flytte til en anden browser, eller til at gemme et sted, du selv bestemmer.") + '</p>' +
       '<div class="raekke"><button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="backupLav">💾 '+(EN?"Create full backup":"Lav fuld backup")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="gendanToggle">♻️ '+(EN?"Restore":"Gendan")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--vundet);color:var(--vundet)" data-a="fletToggle">'+(EN?"🔀 Merge device":"🔀 Flet enhed")+'</button></div>';
     if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and keep it somewhere safe — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den et sikkert sted — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>' + eksportKnapper('backupTekst', EN);
     if (S.gendanAaben) {
@@ -9332,6 +9833,16 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--vundet);color:var(--dyb)" data-a="fletKoer">'+(EN?"🔀 Merge in":"🔀 Flet ind")+'</button></div>';
     }
     if (S.fletBesked && S.fletBesked.indexOf("OK") === 0) h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Merged in "+S.fletBesked.split(":")[1]+" new matches ✓":"Flettede "+S.fletBesked.split(":")[1]+" nye kampe ind ✓")+'</p>';
+    // ⛔⭐ v4.81.0 · OG HVIS NOGET BLEV KASSERET, SIGES DET.
+    //   Nicolai 30/8: «når jeg fletter hans kampe kommer de ikke med».
+    //   `rensKamp` kræver et `point`-array — en kamp, der kun er ført
+    //   ind som et RESULTAT, har ikke ét, og blev smidt ud i stilhed.
+    //   Nu står der, hvor mange og hvorfor, så ingen leder efter en
+    //   fejl, der ikke findes.
+    if (S.fletBesked && S.fletBesked.indexOf("OK") === 0 && S.fletBesked.split(":")[2])
+      h += '<p class="lille" style="color:var(--guld);font-weight:700;margin-top:4px">' + (EN
+        ? S.fletBesked.split(":")[2] + " match(es) in the text could NOT be read \u2014 they have no ball-by-ball recording, only a result. They stay where they are."
+        : S.fletBesked.split(":")[2] + " kampe i teksten kunne IKKE l\u00e6ses \u2014 de har ingen bold-for-bold-registrering, kun et resultat. De bliver, hvor de er.") + '</p>';
     if (S.fletBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read that text.":"Kunne ikke læse teksten.")+'</p>';
     if (S.gendanBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read the backup text — check that everything was copied.":"Kunne ikke læse backup-teksten — tjek at alt kom med.")+'</p>';
     if (S.gendanBesked && S.gendanBesked.indexOf("OK:") === 0) { const t = S.gendanBesked.split(":"); h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Restored: ":"Gendannet: ")+t[1]+' '+(EN?"matches":"kampe")+' · '+t[2]+' '+(EN?"running sessions":"løbepas")+' · '+t[3]+' '+(EN?"tennis sessions":"tennistræninger")+'</p>'; }

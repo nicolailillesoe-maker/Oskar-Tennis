@@ -448,7 +448,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.64.0 · 30. august 2026";
+const VERSION = "v4.66.0 · 30. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -1259,7 +1259,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null,
   // Indstillinger: ét kort ad gangen. Alle lukkede fra start —
   // samme regel som resten af appen siden v2.7.2.
   opsAaben: null,
@@ -1411,9 +1411,14 @@ try { const ra = JSON.parse(lager.hent("sai-rivalanalyser") || "{}"); if (ra && 
 // ⚠️ Trinnet tages op i REJSEN, ikke paa forsiden — forsiden er
 // fredet, og et nyt kort dér ville kraeve Nicolais ja pr. gang.
 try {
-  if (lager.hent("sai-push-vil") === "1" && pushMulig()
-      && !(erIOS() && !paaHjemmeskaerm())
-      && (typeof Notification === "undefined" || Notification.permission === "default")) {
+  // ⭐ v4.66.0 · TO GRUNDE TIL AT TAGE TRINNET OP:
+  //   · kanalen kan levere        → notifikations-spoergsmaalet (ét tryk)
+  //   · iPhone uden hjemmeskaerm  → hjemmeskaerms-skaermen (vejen dertil)
+  // Foer fangede reglen kun den foerste, saa den, der havde MEST brug
+  // for vejledningen, var den eneste der aldrig fik den.
+  if (lager.hent("sai-push-vil") === "1"
+      && (typeof Notification === "undefined" || Notification.permission === "default")
+      && ((erIOS() && !paaHjemmeskaerm()) || pushMulig())) {
     S.indResultat = "inde"; S.indTrin = 7;
   }
 } catch (e) {}
@@ -4715,6 +4720,15 @@ const A = {
     if (S.push && S.push.tilmeldt) { A.indVidere(); return; }
     render();
   },
+  // ⭐ v4.66.0 · maalingen tages i det oejeblik, der trykkes.
+  // Er vi stadig i en fane, er svaret aerligt og trinnet bliver staaende.
+  hjemTjek: () => {
+    if (paaHjemmeskaerm()) { S.hjemBesked = null; render(); return; }
+    S.hjemBesked = S.sprog === "en"
+      ? "You are still in Safari. Close this tab and open StreakTennis from the new icon on your Home Screen — then we are ready."
+      : "Du er stadig i Safari. Luk denne fane, og åbn StreakTennis fra det nye ikon på hjemmeskærmen — så er vi klar.";
+    render();
+  },
   indVidere: () => {
     // ⭐ v4.63.0 · spoergsmaalet er besvaret (ja eller «senere») — saa
     // skal loefte-flaget vaek, ellers spoerger vi ved hver opstart.
@@ -6322,7 +6336,7 @@ function _tegn() {
             return '<button class="sai-op" data-a="indPlan" data-v="' + v + '" style="animation-delay:.1s;width:100%;text-align:left;padding:14px 16px;border-radius:16px;cursor:pointer;font-family:inherit;color:var(--kridt);background:' + (primaer ? "rgba(46,86,214,.16)" : "rgba(255,255,255,.04)") + ';border:1.5px solid ' + (primaer ? "var(--grus)" : "var(--kant)") + '">' +
               '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:3px"><span style="font-size:19px">' + ik + '</span>' +
               '<b style="font-size:15px;letter-spacing:.5px">' + titel + '</b>' +
-              '<span style="margin-left:auto;font-weight:800;color:' + (primaer ? "var(--guld)" : "var(--daempet)") + '">' + pris + '</span></div>' +
+              '<span style="margin-left:auto;flex:none;white-space:nowrap;font-weight:800;color:' + (primaer ? "var(--guld)" : "var(--daempet)") + '">' + pris + '</span></div>' +
               '<span class="lille" style="line-height:1.5;display:block">' + tekst + '</span></button>';
           };
           _kro = '<b class="sai-op" style="animation-delay:.04s;font-size:21px;display:block;margin-bottom:12px">' + (S.sprog === "en" ? "What do you want?" : "Hvad skal I have?") + '</b>' +
@@ -6331,6 +6345,13 @@ function _tegn() {
               (S.sprog === "en"
                 ? "Everything in the app — and <b>live streaming</b>: friends and family watch from the stands, ball by ball. <b>3 live matches every month included.</b>"
                 : "Alt i appen — og <b>live-streaming</b>: venner og familie ser med fra tribunen, bold for bold. <b>3 live-kampe hver måned er med i prisen.</b>"), true) +
+            // ⭐⭐ v4.65.0 · FRI STREAMING — «+49 kr/md for uendelig»
+            // fra prisbeslutningen 29/8, vist som TOTALEN (49+49), fordi
+            // ingen skal regne ved fordoeren.
+            _pkort("fri", "🚀", (S.sprog === "en" ? "FULL ACCESS + FREE STREAMING" : "FULD ADGANG + FRI STREAMING"), (S.sprog === "en" ? "98 kr/mo" : "98 kr/md"),
+              (S.sprog === "en"
+                ? "Everything in Full access — and <b>live with no limit</b>. Stream every single match, all season."
+                : "Alt i Fuld adgang — og <b>live uden loft</b>. Stream hver eneste kamp, hele sæsonen."), false) +
             _pkort("gaest", "🎟", "BASIS", (S.sprog === "en" ? "free" : "gratis"),
               (S.sprog === "en"
                 ? "Streak, training, matches, analyses and friends. Matches are not shared live."
@@ -6393,10 +6414,57 @@ function _tegn() {
         if (erIOS() && !paaHjemmeskaerm()) {
           // iPhone i Safari: kanalen findes ikke her — vis vejen.
           try { lager.gem("sai-push-vil", "1"); } catch (_e) {}
-          _kro += '<p class="lille sai-op" style="animation-delay:.12s;margin:0 auto;max-width:21em;line-height:1.6">' + (S.sprog === "en"
-            ? "To get notified when friends answer, put the app on your Home Screen: tap the share button and choose \u00abAdd to Home Screen\u00bb. Open it from there, and we ask again with one tap."
-            : "For at f\u00e5 besked, n\u00e5r vennerne svarer, skal appen p\u00e5 hjemmesk\u00e6rmen: tryk p\u00e5 del-knappen og v\u00e6lg \u00abF\u00f8j til hjemmesk\u00e6rm\u00bb. \u00c5bn den derfra \u2014 s\u00e5 sp\u00f8rger vi igen med \u00e9t tryk.") + '</p>';
-          _knap = _sidste;
+          // ⭐⭐⭐ v4.66.0 · HJEMMESKAERMEN FAAR SIN EGEN SKAERM.
+          // Nicolai: «en skaerm der siger man skal lave det som shortcut
+          // via safari. Og man foerst skal klikke naeste naar det er gjort.»
+          //
+          // ⚠️ DEN AEGTE BEGRAENSNING, SAGT HOEJT I KODEN: appen kan ikke
+          // se fra en Safari-FANE, at ikonet er lagt paa hjemmeskaermen.
+          // Ikonet aabner en ny kontekst; fanen faar det aldrig at vide.
+          // At laase «Naeste» bag et tjek, der ikke kan tages, ville vaere
+          // princip 35 i sin vaerste form — en knap, der venter paa noget,
+          // den aldrig kan se. Derfor TJEKKER knappen i stedet, og staar
+          // man stadig i en fane, siger den det ligeud. Man kommer ikke
+          // videre, foer det er gjort — og loeftet er sandt hele vejen.
+          //
+          // ⭐ Tegningerne er SVG i filen. Der findes ingen aegte
+          // skaermbilleder af Safaris egen menu (den kan ikke fotograferes
+          // herfra), og en tegning er baade skarpere og aerligere end et
+          // opdigtet skaermbillede.
+          const _tegn = function (indre) {
+            return '<div style="flex:none;width:52px;height:52px;border-radius:13px;background:rgba(255,255,255,.06);border:1px solid var(--kant);display:flex;align-items:center;justify-content:center">' +
+              '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--is)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + indre + '</svg></div>';
+          };
+          // 1 · del-ikonet  2 · plus-i-firkant  3 · app-ikon paa en skaerm
+          const _ikDel = '<path d="M12 15V3"/><path d="m8 7 4-4 4 4"/><path d="M20 14v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-5"/>';
+          const _ikPlus = '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>';
+          const _ikApp = '<rect x="4" y="2" width="16" height="20" rx="3"/><rect x="8" y="6" width="8" height="8" rx="2.2"/><path d="M10 18h4"/>';
+          const _skridt = function (n, ikon, tekst) {
+            return '<div style="display:flex;align-items:center;gap:11px;margin-bottom:9px;text-align:left">' +
+              _tegn(ikon) +
+              '<div style="flex:1;min-width:0"><b class="lille" style="color:var(--guld)">' + n + '</b>' +
+              '<div class="lille" style="line-height:1.45">' + tekst + '</div></div></div>';
+          };
+          _kro = '<div class="sai-op" style="font-size:48px;line-height:1;margin-bottom:8px">📲</div>' +
+            '<b class="sai-op" style="animation-delay:.06s;font-size:20px;display:block;margin-bottom:6px">' +
+              (S.sprog === "en" ? "Put StreakTennis on the Home Screen" : "Læg StreakTennis på hjemmeskærmen") + '</b>' +
+            '<p class="lille sai-op" style="animation-delay:.1s;margin:0 auto 14px;max-width:21em;line-height:1.55">' + (S.sprog === "en"
+              ? "It takes ten seconds — and it is what makes notifications work on iPhone. A Safari tab never gets one."
+              : "Det tager ti sekunder — og det er dét, der får notifikationer til at virke på iPhone. En fane i Safari får aldrig en.") + '</p>' +
+            '<div class="kort sai-op" style="animation-delay:.14s;padding:13px;max-width:21em;margin:0 auto">' +
+              _skridt("1", _ikDel, (S.sprog === "en" ? "Tap the <b>share button</b> at the bottom of Safari." : "Tryk på <b>del-knappen</b> nederst i Safari.")) +
+              _skridt("2", _ikPlus, (S.sprog === "en" ? "Scroll down and choose <b>Add to Home Screen</b>." : "Rul ned og vælg <b>Føj til hjemmeskærm</b>.")) +
+              _skridt("3", _ikApp, (S.sprog === "en" ? "Close this tab and open StreakTennis from the <b>new icon</b>." : "Luk denne fane, og åbn StreakTennis fra det <b>nye ikon</b>.")) +
+            '</div>' +
+            (S.hjemBesked ? '<p class="lille" style="margin:11px auto 0;max-width:21em;font-weight:700;color:var(--guld);line-height:1.5">' + esc(S.hjemBesked) + '</p>' : '');
+          // Knappen TJEKKER. Den laaser ikke paa en maaling, der ikke kan
+          // tages — den tager maalingen, naar der trykkes, og siger det,
+          // den faktisk ser.
+          _knap = '<div style="display:flex;flex-direction:column;gap:8px;width:100%;align-items:center">' +
+            '<button class="knap stor sai-op" style="animation-delay:.2s;background:var(--grus);width:100%" data-a="hjemTjek">' +
+              (S.sprog === "en" ? "I have done it" : "Jeg har gjort det") + '</button>' +
+            '<button class="knap valg sai-op" style="animation-delay:.26s;flex:none;min-height:44px;max-height:52px;width:auto;padding:0 18px;font-size:12.5px" data-a="indVidere">' +
+              (S.sprog === "en" ? "Later" : "Senere") + '</button></div>';
         } else if (pushMulig() && (typeof Notification === "undefined" || Notification.permission !== "denied")) {
           _kro += '<p class="lille sai-op" style="animation-delay:.12s;margin:0 auto;max-width:21em;line-height:1.6">' + (S.sprog === "en"
             ? "One tap, and the app tells you when friends answer, when someone asks to be friends \u2014 and when you are let in."
@@ -7862,11 +7930,26 @@ function _tegn() {
               : "Du er logget ind som <b>" + esc(S.minKonto) + "</b>. Log ind med samme brugernavn p\u00e5 en hvilken som helst telefon \u2014 alt f\u00f8lger med.") + '</p>';
           // ⭐ v4.61.0 · planen staar ved kontoen — og vejen op er ét tryk.
           // Kendes planen ikke (aeldre rejse), staar der intet: princip 63.
-          if (S.minPlan === "gaest") {
+          // ⛔⛔ v4.66.0 · VENTER MAN, STAAR DER AT MAN VENTER.
+          // `plan` har default 'fuld', saa ENHVER ny raekke — ogsaa en i
+          // koeen — fik linjen «Fuld adgang». Maalt 30/8: de er ikke
+          // inde (13 af 15 porte afviser dem), men kortet sagde det
+          // modsatte til praecis den, der har mest brug for at vide,
+          // hvad der foregaar. Planen staar foerst, naar man ER lukket ind.
+          if (S.portStatus && S.portStatus.kendt && S.portStatus.status !== "godkendt") {
+            _kk += '<div class="lille" style="margin:2px 0 8px;padding:9px 11px;border-left:3px solid var(--guld);background:rgba(240,207,97,.07);border-radius:0 9px 9px 0;line-height:1.55">' +
+              '⏳ <b>' + (EN ? "Your access is waiting for a yes." : "Din adgang venter på et ja.") + '</b><br>' +
+              (EN ? "Everything on this phone already works — streak, training and matches. Your plan is set the moment you are let in."
+                  : "Alt på denne telefon virker allerede — streak, træning og kampe. Planen sættes, i samme øjeblik I bliver lukket ind.") + '</div>';
+          } else if (S.minPlan === "gaest") {
             _kk += '<div class="lille" style="margin:2px 0 8px;display:flex;align-items:center;gap:8px">' +
               '<span style="flex:1;min-width:0">🎟 ' + (EN ? "Basis — matches are not shared live." : "Basis — kampene deles ikke live.") + '</span>' +
               '<button class="knap" style="flex:none;width:auto;min-height:40px;padding:6px 12px;font-size:12px;background:var(--grus)" data-a="planOpgrader">' +
               (S.indPlanSender ? "\u23f3" : (EN ? "Full access" : "Få fuld adgang")) + '</button></div>';
+          } else if (S.minPlan === "fri") {
+            _kk += '<div class="lille" style="margin:2px 0 8px">🚀 ' + (EN
+              ? "Full access + free streaming — live with no limit."
+              : "Fuld adgang + fri streaming — live uden loft.") + '</div>';
           } else if (S.minPlan === "fuld") {
             _kk += '<p class="lille" style="margin:2px 0 8px">⭐ ' + (EN ? "Full access — incl. live streaming (49 kr/mo)." : "Fuld adgang — inkl. live-streaming (49 kr/md).") + '</p>';
           } else if (S.minPlan === "klub") {

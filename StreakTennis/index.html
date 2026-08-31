@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.88.0 · 31. august 2026";
+const VERSION = "v4.89.0 · 31. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -9175,8 +9175,26 @@ function _tegn() {
         _kKlub = '<p class="lille" style="margin:0 0 8px">' + (S.klubKode
             ? (EN?"Enter the new club code.":"Indtast den nye klubkode.")
             : (EN
-               ? "Optional. Without a club code the app works on its own and sends nothing. With one, some of your data goes to the club — see “Your data” below."
-               : "Frivillig. Uden klubkode kører appen for sig selv og sender ingenting. Med én går noget af dine data til klubben — se “Dine data” nedenfor.")) + '</p>' +
+               // ⛔⛔ v4.89.0 · TO FEJL I ÉN SÆTNING.
+               //   Den gamle tekst: «Uden klubkode kører appen for sig selv
+               //   og sender ingenting.»
+               //   ⛔ ① USANDT — målt: fornavn og træningslog sendes uden
+               //     klubkode, og venner, beskeder og rum virker uden klub.
+               //     Samme fejl som fodnoten og forældresamtykket havde.
+               //   ⛔⛔ ② Og den sagde ikke, HVAD en klubkode gør.
+               //     Nicolai 31/8, efter at have tastet en anden klubs kode
+               //     ind i sin egen app: «Det er præcis dér, forvekslingen
+               //     ligger. Det var jeg klar over — men kan også ske for
+               //     andre.»
+               //     **En klubkode melder DIG ind i en klub.** Den giver
+               //     ikke adgang til en anden spillers data. Tastes en vens
+               //     eller et barns kode ind, sendes ens EGNE kampe til
+               //     DERES klubs trænerlag. Det stod ingen steder.
+               ? "Optional. <b>A club code signs YOU into that club</b> — your own matches and training are then shared with the club’s coaches. It does <b>not</b> give you access to another player’s data. Without one the app still works, and only your first name and training streak leave the phone (for friends)."
+               : "Frivillig. <b>En klubkode melder DIG ind i klubben</b> — dine egne kampe og din træning deles så med klubbens trænere. Den giver <b>ikke</b> adgang til en anden spillers data. Uden klubkode virker appen stadig, og kun dit fornavn og din træningsstreak forlader telefonen (til vennerne).")) + '</p>' +
+          '<p class="lille" style="margin:-4px 0 8px;padding:8px 10px;background:rgba(230,176,69,.10);border-radius:8px">' + (EN
+            ? "⚠️ Got a code from a friend or your child? <b>Do not enter it here.</b> That would move you into their club. Use ❤️ friends instead."
+            : "⚠️ Har du fået en kode af en ven eller dit barn? <b>Tast den ikke her.</b> Så flytter du dig selv over i deres klub. Brug ❤️ venner i stedet.") + '</p>' +
           '<div style="display:flex;gap:6px;align-items:stretch">' +
           '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:' + (S.visKode?"none":"disc") + '" data-felt="kodeUdkast" value="' + esc(S.kodeUdkast||"") +
           '" placeholder="' + (EN?"club code":"klubkode") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +

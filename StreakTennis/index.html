@@ -5307,7 +5307,15 @@ const A = {
       S.syncHenter = false;
       S.syncBesked = _r.fejl
         ? { fejl: true, t: _r.fejl === "kraever-invitation"
-            ? (EN ? "StreakTennis requires an invitation \u2014 the app still works fine on this phone." : "StreakTennis kr\u00e6ver en invitation \u2014 appen virker stadig fint p\u00e5 denne telefon.")
+            // ⚠️ v4.87.0 · RØD FARVE + BEROLIGENDE TEKST ER SELVMODSIGENDE.
+            //   Nicolai så den 31/8 som EJER — godkendt, plan fuld, række i
+            //   orden i basen. Den er ikke en fejl i hans adgang; den er
+            //   svaret på ét kald, der ikke kunne dele hans streak. Sagt
+            //   som en fejl i rødt lyder det, som om appen er i stykker.
+            //   ⚠️ Beskeden er stadig RIGTIG for en, der ikke er lukket
+            //     ind — men den skal sige, hvad der ikke skete, ikke hvad
+            //     appen er.
+            ? (EN ? "Your streak was not shared \u2014 you are not let in yet. Everything else on this phone works." : "Din streak blev ikke delt \u2014 du er ikke lukket ind endnu. Alt andet p\u00e5 telefonen virker.")
             : (EN ? "No connection \u2014 try again." : "Ingen forbindelse \u2014 pr\u00f8v igen.") }
         : { fejl: false, t: EN ? "Your streak is shared with your friends \u2713" : "Din streak er delt med dine venner \u2713" };
       render(); return;
@@ -10493,7 +10501,20 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   // der staar — en fod under det ville skubbe det op igen.
   // ⭐ v4.40.0 · Billedet ligger OVER alt andet — derfor sidst i strengen.
   h += _bilVis(EN);
-  if (S.tab !== "chat" && S.tab !== "rumsnak") h += '<p class="fod">'+(EN?"Data is stored locally in the browser on this device. Analyses are fetched from the club's service with your club code. StreakTennis · SportsAInalytics · "+VERSION:"Data gemmes lokalt i browseren på denne enhed. Analyserne hentes hos klubbens tjeneste med jeres klubkode. StreakTennis · SportsAInalytics · "+VERSION)+'</p>';
+  // ⛔⛔ v4.87.0 · FODNOTEN LØJ OM DATA — OG DEN STÅR PÅ HVER ENESTE SKÆRM.
+  //   Den sagde: «Data gemmes lokalt i browseren på denne enhed. Analyserne
+  //   hentes hos klubbens tjeneste med jeres klubkode.» Begge halvdele er
+  //   usande i dag, målt:
+  //     ⛔ kampe, venner, beskeder, rum og en KRYPTERET sikkerhedskopi
+  //        ligger på serveren — «kun lokalt» holdt op med at passe 30/8
+  //     ⛔ analyserne kræver ikke en klubkode. Nicolai har ingen klub og
+  //        kan analysere. Det er samme fejl som gdpr-notatets §4.4.
+  //   ⭐ BETINGELSES-REGLEN: siden må aldrig love mere end målt — heller
+  //     ikke indad i appen. En pilotfamilie læser den her linje 8/9.
+  //   Den nye tekst siger de tre ting, der ER sande, og ikke mere.
+  if (S.tab !== "chat" && S.tab !== "rumsnak") h += '<p class="fod">'+(EN
+    ? "Your matches and training live on this device. A backup is locked on your phone before it is sent \u2014 we cannot open it. StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION
+    : "Dine kampe og din tr\u00e6ning bor p\u00e5 denne enhed. Sikkerhedskopien l\u00e5ses p\u00e5 din telefon, f\u00f8r den sendes \u2014 vi kan ikke \u00e5bne den. StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION)+'</p>';
   h += bundNav();
   el.innerHTML = h;
   devFoldning();

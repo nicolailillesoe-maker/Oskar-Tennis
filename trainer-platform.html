@@ -601,7 +601,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v4.1.0 \u00b7 30. august 2026";
+const VERSION = "v4.2.0 \u00b7 30. august 2026";
 
 function render(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
@@ -679,6 +679,21 @@ function scDom(felt, v){
     if (v.length < 2) return { ja: false, t: "skriv dit fulde navn" };
     return { ja: true, t: "" };
   }
+  // ⭐⭐⭐ v4.2.0 · NØGLEN HAR EN DOM, MAN KAN SE.
+  //   Målt i `klub-noegler`: NOEGLE_TEGN = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+  //   — 12 tegn i grupper af fire, med bindestreg. STORE bogstaver og
+  //   tallene 2-9. Hverken 0/O eller 1/I findes, så en forælder ikke skal
+  //   gætte i et klubhus. Det står nu på skærmen i stedet for i motoren.
+  if (felt === "doerNoegle") {
+    var rene = v.toUpperCase().replace(/-/g, "");
+    if (/[0O1I]/.test(v.toUpperCase()))
+      return { ja: false, t: "nøgler har hverken 0/O eller 1/I — tjek tegnet" };
+    if (/[^A-Z2-9]/.test(rene))
+      return { ja: false, t: "kun store bogstaver, tallene 2-9 og bindestreg" };
+    if (rene.length < 12) return { ja: false, t: "12 tegn i alt (" + rene.length + " nu)" };
+    if (rene.length > 12) return { ja: false, t: "12 tegn i alt — der er " + rene.length };
+    return { ja: true, t: "ser rigtigt ud" };
+  }
   if (felt === "doerMail") {
     if (!/^[^@\s]{1,64}@[^@\s.]+(\.[^@\s.]+)+$/.test(v)) return { ja: false, t: "ser ikke ud som en mail" };
     return { ja: true, t: "" };
@@ -695,7 +710,9 @@ function scFelt(felt, ph, opts){
   return '<input class="' + kl + '" data-felt="' + felt + '" value="' + esc(v) + '" placeholder="' + ph + '"' +
     (opts.type ? ' type="' + opts.type + '"' : '') +
     (opts.maks ? ' maxlength="' + opts.maks + '"' : '') +
-    (opts.lille ? ' autocapitalize="off" spellcheck="false" style="text-transform:lowercase"' : ' autocapitalize="words"') + '>' +
+    (opts.stort ? ' autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text" style="letter-spacing:1.5px;font-weight:700"'
+      : opts.lille ? ' autocapitalize="off" autocorrect="off" spellcheck="false"'
+      : ' autocapitalize="words"') + '>' +
     '<p class="fbmrk' + (d ? (d.ja ? " ja" : " nej") : "") + '" id="mrk-' + felt + '">' +
       (d && d.t ? (d.ja ? "\u2713 " : "\u2715 ") + d.t : "") + '</p>';
 }
@@ -799,7 +816,7 @@ function renderRejse(){
     h += '<div class="rejse-trin sc-op">SKRIDT 2 AF 3</div>' +
       '<h1 class="sc-op" style="animation-delay:.04s">Din trænernøgle</h1>' +
       '<p class="und sc-op" style="animation-delay:.08s">Den har du fået af klubben. Vi udsteder den ikke — det gør cheftræneren, og det er med vilje.</p>' +
-      '<div class="sc-op" style="animation-delay:.12s">' + scFelt("doerNoegle", "fx ABCD-EFGH-JKLM", { lille: true, maks: 20 }) + '</div>' +
+      '<div class="sc-op" style="animation-delay:.12s">' + scFelt("doerNoegle", "ABCD-EFGH-JKLM", { stort: true, maks: 20 }) + '</div>' +
       '<button class="knap sc-op" style="animation-delay:.16s;background:var(--grus)"' + (S.doerHenter ? ' disabled' : '') +
         ' data-act="doer-noegle">' + (S.doerHenter ? '⏳ tjekker …' : 'Forbind') + '</button>' +
       '<button class="knap valg sc-op" style="animation-delay:.2s;margin-top:9px;background:none;border-color:var(--kant);color:var(--daempet)" data-act="doer-tilbage">← Tilbage</button>' +
@@ -1544,9 +1561,33 @@ function traenerKvartal(t){
 // ---------- SPILLER ----------
 
 // ---------- EVENTS ----------
+// ⭐⭐⭐ v4.2.0 · SKÆRMEN MÅ IKKE VISE NOGET ANDET, END DER SENDES.
+//   Nicolai 30/8 med telefonen i hånden: «Jeg kan kun lave små bogstaver
+//   i trænernøglen.» Feltet havde `text-transform:lowercase` — ren maling.
+//   Værdien beholdt sine STORE bogstaver, og `doer-noegle` sendte den
+//   `.toUpperCase()`. Nøglen VIRKEDE altså — men den, der taster en kode
+//   fra en seddel, kunne ikke efterprøve ét eneste tegn.
+//   ⛔⛔ Og værre: `doerKode` bar samme maling. Trykkede en træner «vis
+//     kode», så han sit kodeord med små bogstaver, mens det rigtige havde
+//     store. Skrev han det ned, som han så det, var han låst ude — og der
+//     findes ingen «glemt kodeord» for trænere.
+//   Malingen er væk. I stedet normaliseres VÆRDIEN, så skærm og server
+//   altid er enige. Kodeord og navn røres ikke.
+var SC_STORT = ["doerNoegle"];
+var SC_SMAAT = ["doerBrugernavn", "doerLogNavn", "doerMail"];
 document.addEventListener("input", function(e){
   var f = e.target.dataset && e.target.dataset.felt; if (!f) return;
-  S[f] = e.target.value;
+  var raa = e.target.value;
+  var ny = SC_STORT.indexOf(f) >= 0 ? raa.toUpperCase()
+         : SC_SMAAT.indexOf(f) >= 0 ? raa.toLowerCase() : raa;
+  if (ny !== raa) {
+    // Princip 38: ingen gentegning midt i et ord. Længden er uændret ved
+    // et rent skift af store/små, så markøren kan sættes tilbage præcist.
+    var pos = e.target.selectionStart;
+    e.target.value = ny;
+    try { e.target.setSelectionRange(pos, pos); } catch (_e) {}
+  }
+  S[f] = ny;
   // ⭐ v4.0.0 · fordørens felter svarer ved hvert bogstav — UDEN
   //   gentegning (princip 38). Kun de felter, der har en dom.
   if (f.indexOf("doer") === 0) { try { scMaerk(); } catch (_e) {} }

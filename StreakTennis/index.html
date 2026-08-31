@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.87.0 · 31. august 2026";
+const VERSION = "v4.88.0 · 31. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -4274,6 +4274,10 @@ const A = {
   },
   // ⭐ STATISTIK ER FLISER (v4.7.4): ét panel ad gangen, som i zonen.
   statPanel: (v) => { S.statPanel = (S.statPanel === v ? null : v); render(); },
+  // ⭐ v4.88.0 · døren fra Indstillinger til sikkerhedskopien. Sætter
+  //   BEGGE dele — fanen og panelet — så man lander på indholdet og ikke
+  //   på en flise, man skal trykke på én gang til.
+  gaaKopi: () => { S.statPanel = "backup"; A.tab("historik"); },
   traenPanel: (v) => { S.traenPanel = (S.traenPanel === v ? null : v); render(); },
   kampePanel: (v) => { S.kampePanel = (S.kampePanel === v ? null : v); render(); },
   grHent: async () => {
@@ -9383,6 +9387,32 @@ function _tegn() {
           '<div class="raekke"><button class="knap valg' + (S.stigeTilvalgt?' til':'') + '" style="min-height:44px" data-a="stigeSkift" data-v="til">' + (EN?"On":"Til") + '</button>' +
           '<button class="knap valg' + (S.stigeTilvalgt?'':' til') + '" style="min-height:44px" data-a="stigeSkift" data-v="fra">' + (EN?"Off":"Fra") + '</button></div>');
       }
+
+      // ══════════════════════════════════════════════════════════════
+      // ⭐⭐ v4.88.0 · SIKKERHEDSKOPIEN FÅR EN DØR I INDSTILLINGER.
+      //   Nicolai 31/8: «Kopi og backup — tænker det er et område til
+      //   indstillinger.»
+      //   Han har ret, og det er ikke bare smag. TO målinger:
+      //   ⭐ Designstandard v1.0, regel 2: «alt der kun sættes op ÉN gang
+      //     bor i Indstillinger.» En sikkerhedskopi er præcis dét.
+      //   ⛔ Og vigtigere: BIBLEN og VEJLEDNINGEN har hele tiden beskrevet
+      //     vejen som «⚙️ → 💾 BACKUP». Den vej fandtes ikke — knappen lå
+      //     under 📊 STATS. **Dokumentationen pegede et sted, appen ikke
+      //     havde.** En pilotfamilie, der 8/9 følger vejledningen, ville
+      //     lede forgæves.
+      //   ⭐ Panelet FLYTTES ikke — det ville være et større indgreb otte
+      //     dage før pilotstart (køreplanens §7). Der bygges en DØR, så
+      //     app og vejledning siger det samme. Flisen under STATS bliver
+      //     stående; den, der leder dér, finder den også.
+      h += _opsKort("kopi", "\ud83d\udcbe", (EN?"BACKUP":"SIKKERHEDSKOPI"),
+        (S.skyLaast ? (EN?"\u26a0\ufe0f locked":"\u26a0\ufe0f l\u00e5st")
+          : (EN?"automatic \u00b7 locked on this phone":"automatisk \u00b7 l\u00e5st p\u00e5 telefonen")),
+        (S.skyLaast ? "var(--tabt)" : "var(--vundet)"),
+        '<p class="lille" style="margin:0 0 9px">' + (EN
+          ? "Your matches, every ball, your training log and your analyses are copied automatically. <b>They are locked on this phone before they are sent</b> \u2014 the server keeps a box it cannot open. Log in on a new phone and it all comes back."
+          : "Dine kampe, hver bold, din tr\u00e6ningslog og dine analyser kopieres automatisk. <b>De l\u00e5ses p\u00e5 denne telefon, f\u00f8r de sendes</b> \u2014 serveren opbevarer en boks, den ikke kan \u00e5bne. Log ind p\u00e5 en ny telefon, og det hele kommer tilbage.") + '</p>' +
+        '<button class="knap" style="width:100%;min-height:48px;background:var(--grus)" data-a="gaaKopi">' +
+        (EN?"Open backup \u2192":"\u00c5bn sikkerhedskopien \u2192") + '</button>');
 
       // ── SPROG ─────────────────────────────────────────────────────
       h += _opsKort("sprog", "🌐", (EN?"LANGUAGE":"SPROG"), (EN?"English":"Dansk"), "var(--is)",

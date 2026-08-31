@@ -452,14 +452,34 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.89.0 · 31. august 2026";
+const VERSION = "v4.90.0 · 31. august 2026";
+// ══════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
+//   team-medlemmer på samme måde som venner. Som team-medlem skifter man
+//   bare view»). Telefonen kan rumme SIN EGEN spiller OG et team-medlem-
+//   skab. Lageret deles i navnerum: egen visning bruger de rå sai-*-nøgler
+//   (100 % bagudkompatibel — intet flyttes), team-visningen får præfikset
+//   tm1-. Hvilken visning der er aktiv, står i sai-profil-aktiv, som
+//   ALDRIG præfikses — den er selve kontakten.
+// ⛔ Egen og teamets data må ALDRIG blandes: en kamp tastet i team-
+//   visningen bor under tm1-sai-* og rører ikke egne kampe. Skiftet er
+//   én skrivning + location.reload() — hele appen genfødes i det andet
+//   navnerum, og AL eksisterende kode virker uændret dér.
+let VISNING = "";
+try { VISNING = window.localStorage.getItem("sai-profil-aktiv") || ""; } catch(e) {}
+if (VISNING !== "team") VISNING = "";
+// Kontakterne selv + sproget er fælles for telefonen — alt andet følger visningen.
+const LAGER_FAELLES = { "sai-profil-aktiv": 1, "sai-profil-team": 1, "sai-sprog": 1 };
+function lagerNoegle(k) {
+  return (VISNING === "team" && !LAGER_FAELLES[k] && String(k).indexOf("sai-") === 0) ? "tm1-" + k : k;
+}
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
 // Klubbens navn og logo bor KUN på denne enhed — som spillernavnet.
 try { KLUB = lagerRaa("sai-klub") || ""; KLUBLOGO = lagerRaa("sai-klublogo") || ""; } catch(e) {}
 const SAILOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAIAAADajyQQAAAh+klEQVR42sV7eZzlVXXnOefe3/L22ruqeqEXumlooGm6G9lkUQTFjRiIWyKTQWJMMjqIJhHNJMTJRGOMBMYkJjGizESjooIiRJpVQBahaZpuuumleq3q7tpeve233HvPmT9+71UVi4gOmanP+/zq9avP7/X9/s4533PO99yL3QtXwmvxgwiECAjOcWo4NWwZCJTWSmvwPUAiBHDMxoix4JwTAaUk8NDXREQCICIir8lyQL8mkETAOk4S5xjzhXDJUG75cGnZQhruDwZ68pWCLYZpAICCxnAtgvGWHq8mh8Yb+w/zyFg6Nhm3WkaThD4pQvn/DkwROmZrAQmLYf7MtQOvX1/asKq0cjDpynl5tIypFQPWsQVhEWEAQWCFiRAx5iITjLdo5Ei6bWd879Zk2/56HAmIUwoVoeNfHSP+aq5IhABQaySFfFjp0qeuqHzqyhNPX5mkNUlc7BxYy9mqEEVEWJhYQByLFWFhZhFhFrREpEiTh36I23bLF749/sw+qTdMM7LlvAJE/pXgqVy595d1PKWoFSVJKpeeu+w9Fy97Yue+XSPJtm2jHpRXLMujVkkKpLTSGomQFCmFqBQRIqIiRFRIhESknBI0XCIthu+8b/KLtx55cq90K7j611b4gX3+YGKNC3z6DwemFBnrGo3k9JMX/umH115/9fJDI/u/eutorqd379Gp7z50dNvI5PKFlRVLelicYUTlAWkghUiIHYZBUECC7BznlS4UzeN70+tvPnzjD5ujtUKQo4NHG5ed13P9FbmlC7sOT8u+sVgReIp+KV75JYBpRfVGVMnn//i3z/7zDy87fVk9rjeKPcNbR47u3j0dFAvlgt6xq/Vv9+6fmlbr1wz09eSjBAWUIiRGQYWIBASIBoUh11X2qjP1z90y+emvTew4osqVghapVZONaxa999IeZaonDuhLX1fo6a5sG4mqjTT01avH9qqAIQIRTNfic9ed+I+fPukt5wFGM8aERpV6yvayN6zqKvRve256rFYvdIcBlu7bcuiOB/Z1h5UzTh7wlbPGCOVRISIgomUV5nTel2/dceT3bhy559moEPYGnp6eSQrl/EfetfxT7+/vLYxQ6kVWJdS6YKk979T+kSo8f6AR+oT4GgEjQsfSarnffe+pn//E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";
-function lagerRaa(k) { try { return window.localStorage.getItem(k); } catch(e) { return null; } }
+function lagerRaa(k) { try { return window.localStorage.getItem(lagerNoegle(k)); } catch(e) { return null; } }
 const HOLDNAVN = () => SPILLER ? ("TEAM " + SPILLER.toUpperCase()) : "STREAKTENNIS";
 const KODEHASH = 1187643301;
 const hashKode = (s) => { let h = 5381; for (let i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; } return h; };
@@ -1305,7 +1325,7 @@ let S = {
   arkivFold: false, arkivSletId: null, arkivBesked: null,
   // Familien (v4.2, "byg 4"): rollen laeses af lageret. En familie-enhed
   // er teamets spejl — den ser data og tavler, aldrig beskeder.
-  rolle: "spiller", famKoder: null, famNyKode: null, famEtiket: "",
+  rolle: "spiller", famKoder: null, famNyKode: null, famEtiket: "", famIndloesUdkast: "",
   famHenter: false, famBesked: null, famTilbud: null,
   // Venne-chatten (v4.3, "vi skal have chats med"): én samtale ad gangen.
   // chatLaest = {haandtag: tidsstempel} — kun prikkens hukommelse, lokalt.
@@ -1329,9 +1349,11 @@ let S = {
 };
 const MEM = {};
 const lager = {
-  hent: (k) => { try { return window.localStorage.getItem(k); } catch (e) { return MEM[k] || null; } },
-  gem: (k, v) => { try { window.localStorage.setItem(k, v); } catch (e) { MEM[k] = v; } },
-  slet: (k) => { try { window.localStorage.removeItem(k); } catch (e) { delete MEM[k]; } },
+  // v4.90.0: nøglen mappes gennem lagerNoegle — i team-visningen bliver
+  // sai-kampe til tm1-sai-kampe osv. Egen visning er urørt (tom mapning).
+  hent: (k) => { const n = lagerNoegle(k); try { return window.localStorage.getItem(n); } catch (e) { return MEM[n] || null; } },
+  gem: (k, v) => { const n = lagerNoegle(k); try { window.localStorage.setItem(n, v); } catch (e) { MEM[n] = v; } },
+  slet: (k) => { const n = lagerNoegle(k); try { window.localStorage.removeItem(n); } catch (e) { delete MEM[n]; } },
 };
 // ── FEJL-HØSTEN 20/8 · F6: udfaldet udledes af resultat-strengen.
 // Kampe gemt før v3.0.5 (5/8-2026) mangler facitVandt, fordi automatikken
@@ -1770,12 +1792,29 @@ try { const cl = JSON.parse(lager.hent("sai-chat-laest") || "{}"); if (cl && typ
 // ⭐ FAMILIE-LINKET · ?familie=KODE (v4.2). Som venne-linket: tilbuddet
 // staar klar, men SELVE tilslutningen er et tryk — foraelderens handling.
 try {
-  const _fp = new URLSearchParams(location.search).get("familie");
+  let _fp = null;
+  const _fh = /(?:^|&)familie=([^&]+)/.exec(String(location.hash || "").replace(/^#/, ""));
+  if (_fh) { try { _fp = decodeURIComponent(_fh[1]); } catch (_e) { _fp = _fh[1]; } }
+  if (!_fp) _fp = new URLSearchParams(location.search).get("familie");
   if (_fp && /^fam-[0-9a-f]{32}$/.test(_fp.trim())) {
     S.famTilbud = _fp.trim();
     history.replaceState(null, "", location.pathname);
   }
 } catch(e) {}
+
+// v4.90.0 · som #ven=: trykkes et #familie=-link, mens appen allerede er
+// åben, skifter kun fragmentet — uden lytteren faldt invitationen på gulvet.
+window.addEventListener("hashchange", function () {
+  try {
+    const m = /(?:^|&)familie=([^&]+)/.exec(String(location.hash || "").replace(/^#/, ""));
+    if (!m) return;
+    let v = m[1]; try { v = decodeURIComponent(v); } catch (_e) {}
+    if (!/^fam-[0-9a-f]{32}$/.test(v.trim())) return;
+    S.famTilbud = v.trim();
+    history.replaceState(null, "", location.pathname);
+    render();
+  } catch (e) {}
+});
 
 // ⭐ HJEMKOMSTEN (v4.4). Samme domaene = samme lager: bor Team Oskar
 // (eller Team P) allerede paa telefonen, kan StreakTennis se det — og
@@ -4483,7 +4522,9 @@ const A = {
   },
   famDel: () => {
     if (!S.famNyKode) return;
-    const url = location.origin + location.pathname + "?familie=" + S.famNyKode;
+    // v4.90.0: FRAGMENTET, IKKE FORESPØRGSLEN — som #ven= (sikkerhedsreglen).
+    // ?familie= læses stadig, så allerede delte links virker.
+    const url = location.origin + location.pathname + "#familie=" + S.famNyKode;
     const t = (S.sprog === "en"
       ? "Join our team in StreakTennis — open the link and tap ”Join the team”: "
       : "Vær med på holdet i StreakTennis — åbn linket og tryk ”Bliv en del af teamet”: ");
@@ -4514,19 +4555,75 @@ const A = {
         : (S.sprog === "en" ? "The link does not work — ask for a new one." : "Linket virker ikke — bed om et nyt.") };
       render(); return;
     }
-    // Enheden BLIVER familie: koden er nu dens noegle, rollen laases i
-    // lageret, og appen genfoedes som teamets spejl.
     // ⭐ v4.4.3 · EN NOEGLE, EN AKTIVERING: serveren ROTEREDE noeglen ved
     // indloesningen — enheden gemmer den NYE hemmelighed fra svaret, som
     // aldrig har staaet i en URL. Linkets kode er doed i samme sekund.
     // Uden `noegle` i svaret (aeldre motor) bruges linkets kode som foer.
+    const _fnyN = (r.noegle && /^fam-[0-9a-f]{32}$/.test(r.noegle)) ? r.noegle : S.famTilbud;
+    // ⭐⭐⭐ v4.90.0 · EN TELEFON MED SIN EGEN SPILLER bliver IKKE til
+    // familie-enheden — den faar en TEAM-VISNING VED SIDEN AF (Nicolai
+    // 31/8). Team-noeglerne skrives RAAT under tm1- (lager.gem ville ikke
+    // praefikse her, for den aktive visning er stadig «egen»), og egen
+    // data roeres ikke med ét tegn. MAALT paa serveren foerst: indloes-
+    // ningen roerer aldrig kalderens egen noegle — den roterer kun koden.
+    if (SPILLER && S.rolle !== "familie" && VISNING !== "team") {
+      try {
+        // Har telefonen allerede en team-visning, afloeses den — og dens
+        // navnerum toemmes FOERST, saa to teams data aldrig blandes.
+        if (window.localStorage.getItem("sai-profil-team")) {
+          const _doede = [];
+          for (let _i = 0; _i < window.localStorage.length; _i++) {
+            const _k = window.localStorage.key(_i);
+            if (_k && _k.indexOf("tm1-") === 0) _doede.push(_k);
+          }
+          _doede.forEach(function (_k) { window.localStorage.removeItem(_k); });
+        }
+        window.localStorage.setItem("tm1-sai-spillernoegle", _fnyN);
+        window.localStorage.setItem("tm1-sai-rolle", "familie");
+        window.localStorage.setItem("tm1-sai-venne-aktiv", "1");
+        window.localStorage.setItem("tm1-sai-laas", "op");
+        if (r.fornavn) window.localStorage.setItem("tm1-sai-spiller", r.fornavn);
+        window.localStorage.setItem("sai-profil-team", JSON.stringify({ navn: r.fornavn || "" }));
+        window.localStorage.setItem("sai-profil-aktiv", "team");
+      } catch(e) {}
+      location.reload();
+      return;
+    }
+    // Frisk telefon (eller allerede familie-enhed): enheden BLIVER
+    // familie — koden er nu dens noegle, rollen laases, appen genfoedes
+    // som teamets spejl. Som hidtil (v4.2).
     try {
-      lager.gem("sai-spillernoegle", (r.noegle && /^fam-[0-9a-f]{32}$/.test(r.noegle)) ? r.noegle : S.famTilbud);
+      lager.gem("sai-spillernoegle", _fnyN);
       lager.gem("sai-rolle", "familie");
       lager.gem("sai-venne-aktiv", "1");
       lager.gem("sai-laas", "op");
       if (r.fornavn) lager.gem("sai-spiller", r.fornavn);
+      // Indloeses en ny noegle INDE i team-visningen, foelger registrets navn med.
+      if (VISNING === "team" && r.fornavn) window.localStorage.setItem("sai-profil-team", JSON.stringify({ navn: r.fornavn }));
     } catch(e) {}
+    location.reload();
+  },
+  // ⭐ v4.90.0 · INDLOES EN TEAM-NOEGLE MED HAANDEN (Indstillinger →
+  // TEAMET). Loeser besked-app-faelden: et link, der aabnes fra en besked,
+  // koerer i beskedappens EGEN browser med sit EGET lager (adresse-
+  // reglen) — saa den rigtige app saa aldrig noeglen. Nu kan den saettes
+  // ind direkte. Tager imod baade den noegne kode og et helt indklistret link.
+  famIndloes: () => {
+    if (S.famHenter) return;
+    const m = /fam-[0-9a-f]{32}/.exec(String(S.famIndloesUdkast || "").toLowerCase());
+    if (!m) {
+      S.famBesked = { t: (S.sprog === "en"
+        ? "That does not look like a team key (fam-…). Paste the whole link or the key itself."
+        : "Det ligner ikke en team-nøgle (fam-…). Sæt hele linket eller selve nøglen ind.") };
+      render(); return;
+    }
+    S.famTilbud = m[0]; S.famIndloesUdkast = ""; S.famBesked = null;
+    A.famBliv();
+  },
+  // ⭐ v4.90.0 · SKIFTET: én skrivning, én genfoedsel. Kontakten staar
+  // UDEN FOR navnerummene og skrives derfor raat.
+  profilSkift: (v) => {
+    try { window.localStorage.setItem("sai-profil-aktiv", v === "team" ? "team" : ""); } catch(e) { return; }
     location.reload();
   },
   famAfvis: () => { S.famTilbud = null; render(); },
@@ -7039,7 +7136,7 @@ function _tegn() {
   //   styrer KUN polstring — app-siderne beholder deres 40px i bunden,
   //   hvor der er en bundmenu at komme under.
   try { document.body.classList.toggle("doer",
-        !SPILLER || !!S.indAaben || !!S.indResultat || !!S.nulstilToken
+        !SPILLER || !!S.famTilbud || !!S.indAaben || !!S.indResultat || !!S.nulstilToken
         || !!S.betingelser || !!S.liveDemo); } catch (_e) {}
     let h = '<div class="topbar"><span class="brand">'+'<img class="brandlogo" src="'+(KLUBLOGO||SAILOGO)+'" alt="">'+'<span class="brandtxt"><span class="wordmark">'+HOLDNAVN()+'</span><span class="brandby">'+(KLUB?esc(KLUB)+" · ":"")+'Sports<b>AI</b>nalytics</span></span></span><button class="sprogknap" data-a="sprog">'+(EN?"\u{1F310} Dansk":"\u{1F310} English")+'</button></div>';
 
@@ -7050,7 +7147,11 @@ function _tegn() {
   // ⛔ OG NULSTILLINGSLINKET: skaermen laa bag «ingen spiller»-porten,
   // saa paa en telefon MED en aktiv spiller gjorde mail-linket ingenting
   // (siden v4.48 — fundet af proeven 29/8, princip 67). Token med i porten.
-  if (!SPILLER || S.indAaben || S.indResultat || S.nulstilToken || S.betingelser) {
+  // v4.90.0: S.famTilbud er med i porten — MÅLT 31/8: på en telefon MED
+  // en spiller blev invitationskortet aldrig tegnet (kortet lå bag
+  // «ingen spiller»-porten), så team-linket gjorde INGENTING. Det var
+  // fejlen, Nicolai så i aften.
+  if (!SPILLER || S.famTilbud || S.indAaben || S.indResultat || S.nulstilToken || S.betingelser) {
     // ⭐ FAMILIE-LINKET foerst (v4.2): en frisk telefon, der aabnes med et
     // ?familie=-link, skal ikke opfinde en ny spiller — den skal MED paa
     // holdet. Trykket ER tilslutningen; foer det sendes intet bindende.
@@ -7058,9 +7159,13 @@ function _tegn() {
       el.innerHTML = '<div class="topbar"><span class="brand"><span class="brandnavn">STREAKTENNIS</span></span></div>' +
         '<div class="kort" style="margin:60px 16px 0;border-color:var(--guld)">' +
         '<h2 style="color:var(--guld);font-size:16px;margin:0 0 10px">' + (S.sprog === "en" ? "You are invited" : "Du er inviteret") + '</h2>' +
-        '<p class="lille" style="margin:0 0 12px">' + (S.sprog === "en"
-          ? "This phone becomes part of the team: you enter and see data — never the messages between the player and the friends."
-          : "Denne telefon bliver en del af teamet: du taster og ser data — aldrig beskederne mellem spilleren og vennerne.") + '</p>' +
+        '<p class="lille" style="margin:0 0 12px">' + (SPILLER && S.rolle !== "familie"
+          ? (S.sprog === "en"
+            ? "You are invited to join a team. <b>Your own player stays on this phone</b> — you get an extra view you can switch to and from under ⚙️ Settings. As a team member you enter and see the team's data — never the messages between the player and the friends."
+            : "Du er inviteret med på et team. <b>Din egen spiller bliver stående på telefonen</b> — du får en ekstra visning, du kan skifte til og fra under ⚙️ Indstillinger. Som team-medlem taster og ser du teamets data — aldrig beskederne mellem spilleren og vennerne.")
+          : (S.sprog === "en"
+            ? "This phone becomes part of the team: you enter and see data — never the messages between the player and the friends."
+            : "Denne telefon bliver en del af teamet: du taster og ser data — aldrig beskederne mellem spilleren og vennerne.")) + '</p>' +
         '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="famBliv">' + (S.famHenter ? "⏳ …" : (S.sprog === "en" ? "Join the team" : "Bliv en del af teamet")) + '</button>' +
         '<button class="knap valg" data-a="famAfvis">' + (S.sprog === "en" ? "Not now" : "Ikke nu") + '</button></div>' +
         (S.famBesked ? '<p class="lille" style="margin:8px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '') + '</div>';
@@ -8770,6 +8875,32 @@ function _tegn() {
           '</div>';
       };
 
+      // ⭐⭐ v4.90.0 · SKIFT VISNING (Nicolai 31/8: «Som team-medlem
+      // skifter man bare view»). Flisen findes KUN, naar telefonen har to
+      // visninger — alle andre ser praecis det, de saa i gaar.
+      try {
+        const _ptRaa = window.localStorage.getItem("sai-profil-team");
+        const _pt = _ptRaa ? JSON.parse(_ptRaa) : null;
+        if (VISNING === "team") {
+          let _egetNavn = ""; try { _egetNavn = window.localStorage.getItem("sai-spiller") || ""; } catch(_e) {}
+          h += _opsKort("profil", "🔁", (EN?"SWITCH VIEW":"SKIFT VISNING"),
+            "TEAM " + esc(String(SPILLER || "").toUpperCase()), "var(--guld)",
+            '<p class="lille" style="margin:0 0 8px">' + (EN
+              ? "You are looking at the team right now. Your own player still lives on this phone — nothing is mixed."
+              : "Du ser teamet lige nu. Din egen spiller bor stadig på telefonen — intet blandes.") + '</p>' +
+            '<button class="knap" style="width:100%;min-height:44px;background:var(--grus)" data-a="profilSkift" data-v="egen">' +
+            (EN ? "Switch to my own player" : "Skift til min egen spiller") + (_egetNavn ? " (" + esc(_egetNavn) + ")" : "") + '</button>');
+        } else if (_pt) {
+          h += _opsKort("profil", "🔁", (EN?"SWITCH VIEW":"SKIFT VISNING"),
+            "Team " + esc(_pt.navn || ""), "var(--is)",
+            '<p class="lille" style="margin:0 0 8px">' + (EN
+              ? "This phone also holds a team view: there you enter and see the team's data — your own matches stay here."
+              : "Telefonen har også en team-visning: dér taster og ser du teamets data — dine egne kampe bliver her.") + '</p>' +
+            '<button class="knap" style="width:100%;min-height:44px;background:var(--grus)" data-a="profilSkift" data-v="team">' +
+            (EN ? "Switch to" : "Skift til") + " Team " + esc(_pt.navn || "") + '</button>');
+        }
+      } catch(_e) {}
+
       // ── SPILLER-KODE ──────────────────────────────────────────────
       // 21/8, Nicolai: "Taenker bare vi skriver indtast spiller-kode."
       // "Noegle" er vores ord. "Kode" er familiens — og den staar ved
@@ -9192,9 +9323,15 @@ function _tegn() {
                //     DERES klubs trænerlag. Det stod ingen steder.
                ? "Optional. <b>A club code signs YOU into that club</b> — your own matches and training are then shared with the club’s coaches. It does <b>not</b> give you access to another player’s data. Without one the app still works, and only your first name and training streak leave the phone (for friends)."
                : "Frivillig. <b>En klubkode melder DIG ind i klubben</b> — dine egne kampe og din træning deles så med klubbens trænere. Den giver <b>ikke</b> adgang til en anden spillers data. Uden klubkode virker appen stadig, og kun dit fornavn og din træningsstreak forlader telefonen (til vennerne).")) + '</p>' +
-          '<p class="lille" style="margin:-4px 0 8px;padding:8px 10px;background:rgba(230,176,69,.10);border-radius:8px">' + (EN
-            ? "⚠️ Got a code from a friend or your child? <b>Do not enter it here.</b> That would move you into their club. Use ❤️ friends instead."
-            : "⚠️ Har du fået en kode af en ven eller dit barn? <b>Tast den ikke her.</b> Så flytter du dig selv over i deres klub. Brug ❤️ venner i stedet.") + '</p>' +
+          (S.rolle === "familie"
+            // v4.90.0: i TEAM-visningen er det PRAECIS spillerens klubkode,
+            // der skal ind her — advarslen ville forbyde det rigtige.
+            ? '<p class="lille" style="margin:-4px 0 8px;padding:8px 10px;background:rgba(230,176,69,.10);border-radius:8px">' + (EN
+              ? "Here you enter <b>the player's own club code</b>, so the team phone can share with the player's club."
+              : "Her sættes <b>spillerens egen klubkode</b> ind, så team-telefonen kan dele med spillerens klub.") + '</p>'
+            : '<p class="lille" style="margin:-4px 0 8px;padding:8px 10px;background:rgba(230,176,69,.10);border-radius:8px">' + (EN
+              ? "⚠️ Got a code from a friend or your child? <b>Do not enter it here.</b> That would move you into their club. Use ❤️ friends instead."
+              : "⚠️ Har du fået en kode af en ven eller dit barn? <b>Tast den ikke her.</b> Så flytter du dig selv over i deres klub. Brug ❤️ venner i stedet.") + '</p>') +
           '<div style="display:flex;gap:6px;align-items:stretch">' +
           '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:' + (S.visKode?"none":"disc") + '" data-felt="kodeUdkast" value="' + esc(S.kodeUdkast||"") +
           '" placeholder="' + (EN?"club code":"klubkode") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
@@ -9232,6 +9369,17 @@ function _tegn() {
             (f.status === "aktiv" ? '<button class="knap valg" style="flex:none;min-height:40px;padding:0 11px;font-size:12px;color:var(--daempet)" data-a="famSpaer" data-v="' + esc(f.id) + '">' + (EN?"Remove":"Fjern") + '</button>' : '') + '</div>';
         });
         else famKrop += '<p class="lille" style="margin:8px 0 0;opacity:.7">' + (EN?"No keys issued yet.":"Ingen nøgler udstedt endnu.") + '</p>';
+        // ⭐ v4.90.0 · DEN ANDEN VEJ: har DU faaet en noegle, saettes den
+        // ind her — praecis som venner. Egen spiller bliver staaende.
+        famKrop += '<div style="border-top:1px solid var(--kant);margin-top:10px;padding-top:10px">' +
+          '<p class="lille" style="margin:0 0 6px">' + (EN
+            ? "Got a team key from another player? Redeem it here — <b>your own player stays</b>, you just get an extra view to switch to."
+            : "Har du fået en team-nøgle af en anden spiller? Sæt den ind her — <b>din egen spiller bliver stående</b>, du får bare en ekstra visning at skifte til.") +
+          ((function(){ try { return !!window.localStorage.getItem("sai-profil-team"); } catch(_e){ return false; } })()
+            ? " " + (EN ? "<b>This phone already has a team view — a new key replaces it.</b>"
+                        : "<b>Telefonen har allerede en team-visning — en ny nøgle afløser den.</b>") : "") + '</p>' +
+          '<input data-felt="famIndloesUdkast" placeholder="fam-…" value="' + esc(S.famIndloesUdkast || "") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
+          '<button class="knap valg" style="margin-top:7px;width:100%;min-height:44px;font-size:13px" data-a="famIndloes">' + (S.famHenter ? "⏳ …" : (EN?"Redeem team key":"Indløs team-nøgle")) + '</button></div>';
         famKrop += (S.famBesked ? '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '');
         const famAntal = S.famKoder ? S.famKoder.filter(function(f){ return f.status === "aktiv"; }).length : 0;
         h += _opsKort("familie", "👪", (EN?"THE TEAM":"TEAMET"),

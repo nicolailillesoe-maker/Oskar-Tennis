@@ -308,12 +308,28 @@ async function tjekAdgang(){
 // Klubbens ting fjernes fra telefonen. Identiteten bliver stående, så han
 // kan taste en NY nøgle — en træner, der skifter klub, skal ikke starte
 // forfra som menneske, bare som medarbejder.
-function lukNed(){
-  ["truppen","vurderinger","fokuspunkter","evalueringer","ugefokus",
-   "stigehold","srvnavne","noegler","klubkode","klubnavn","minrolle"]
-    .forEach(function(n){ try { localStorage.removeItem("tp-" + n); } catch(_e){} });
+// ⭐⭐ v4.4.0 · ÉN LISTE, TO ANLEDNINGER.
+//   Klubbens ting fjernes to steder: når klubben lukker en træner ude, og
+//   når han selv skifter klub. Stod listen to gange, ville den ene før
+//   eller siden komme bagud — og det, der blev glemt, ville være et barns
+//   navn på en fremmed klubs skærm. Derfor bor den ÉT sted.
+//   ⚠️ Den er også ordret den, skærmen viser brugeren. Ændres den her,
+//     skal `SKIFT_FJERNES` nedenfor følge med.
+var KLUB_TING = ["truppen","vurderinger","fokuspunkter","evalueringer","ugefokus",
+                 "stigehold","srvnavne","noegler","klubkode","klubnavn","minrolle"];
+
+function ryddKlubben(){
+  KLUB_TING.forEach(function(n){ try { localStorage.removeItem("tp-" + n); } catch(_e){} });
   S.truppen = []; S.vurderinger = []; S.fokuspunkter = {}; S.evalueringer = {};
   S.ugefokus = {}; S.stigeHold = []; S.noegler = {}; S.minRolle = null;
+  S.tilmeldinger = []; S.tilmHentet = null; S.tilmHenter = false;
+  S.aabenSpiller = null; S.vurderOmraade = null; S.vurderGruppe = null;
+  S.fpAaben = null; S.noegleFor = null; S.stigeHold = [];
+  genskabDemo();                 // ⛔ ellers står den gamle klubs børn i DATA
+}
+
+function lukNed(){
+  ryddKlubben();
   // ⚠️ Festen ryddes med. Ellers ville en træner, hvis nøgle er spærret,
   //   blive budt velkommen med konfetti ind i en klub, han ikke er i.
   S.doerFest = null;
@@ -564,6 +580,10 @@ let S = {
   konto: lager.hent("konto", null),
   adgangLukket: false, lukNyNoegle: "", lukKode: "", lukSender: false, lukBesked: null,
   lukVisKode: false,
+  // ⭐ v4.4.0 · KLUBSKIFTET. `skiftFund` er serverens svar på den nye
+  //   nøgle — der vises aldrig en klub, vi ikke har fået at vide.
+  skiftAaben: false, skiftNoegle: "", skiftKode: "", skiftVisKode: false,
+  skiftHenter: false, skiftFund: null, skiftBesked: null, skiftBekraeft: false,
   doerTrin: 0, doerFest: null, doerHenter: false, doerBesked: null,
   doerLogNavn: "", doerLogKode: "", doerVisKode: false,
   doerNoegle: "", doerKlub: "", doerRolle: "",
@@ -601,6 +621,25 @@ function byggTrup(){
     if (d2 && S.evalueringer[navn] && S.evalueringer[navn].tekst) { d2.evalSendt = S.evalueringer[navn].tekst; d2.evalNy = true; }
   });
 }
+
+// ⛔⭐⭐ v4.4.0 · DEMO-AFTRYKKET, TAGET FØR TRUPPEN SKRIVES OVER.
+//   `byggTrup()` returnerer tidligt på en tom trup — den GENDANNER ikke
+//   eksemplerne. Den har allerede overskrevet `DATA.grupper` og
+//   `DATA.spillere` med klubbens rigtige børn. Ryddede vi kun `S` og
+//   lageret ved et klubskifte, ville Øresunds børn stå på B.93's skærm
+//   bagefter, uden en eneste fejlmeddelelse.
+//   ⚠️ Fundet ved at LÆSE funktionen, før den blev kaldt — ikke af en prøve.
+var DEMO_AFTRYK = JSON.stringify({ g: DATA.grupper, s: DATA.spillere,
+  t: (DATA.traenere && DATA.traenere[0] ? DATA.traenere[0].grupper : []) });
+function genskabDemo(){
+  try {
+    var d = JSON.parse(DEMO_AFTRYK);
+    DATA.grupper = d.g; DATA.spillere = d.s;
+    if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].grupper = d.t;
+    S.spiller = Object.keys(d.s)[0] || null;
+  } catch (_e) {}
+}
+
 byggTrup();
 
 // Læg de gemte evalueringer tilbage i DATA, så visningen er uændret.
@@ -667,7 +706,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v4.3.0 \u00b7 31. august 2026";
+const VERSION = "v4.4.0 \u00b7 31. august 2026";
 
 function render(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
@@ -762,7 +801,7 @@ function scDom(felt, v){
   // ⭐ v4.3.0 · `lukNyNoegle` er SAMME felt på en anden skærm — nøglen,
   //   en træner taster, når klubben har lukket den gamle. Dommen skal være
   //   ét sted, ellers driver de to fra hinanden.
-  if (felt === "doerNoegle" || felt === "lukNyNoegle") {
+  if (felt === "doerNoegle" || felt === "lukNyNoegle" || felt === "skiftNoegle") {
     var rene = v.toUpperCase().replace(/-/g, "");
     if (/[0O1I]/.test(v.toUpperCase()))
       return { ja: false, t: "nøgler har hverken 0/O eller 1/I — tjek tegnet" };
@@ -802,7 +841,7 @@ function scFelt(felt, ph, opts){
 //   StreakTennis. Ingen render() på en tastetryk.
 function scMaerk(){
   ["doerNavn","doerBrugernavn","doerKode","doerKode2","doerMail","doerNoegle","doerLogNavn",
-   "lukNyNoegle"]
+   "lukNyNoegle", "skiftNoegle"]
   .forEach(function(felt){
     var i = document.querySelector('[data-felt="' + felt + '"]');
     var m = document.getElementById("mrk-" + felt);
@@ -834,6 +873,83 @@ function scMaerk(){
 // ⭐ Vejen videre er `gem-noegle` — motoren, der har været bygget og målt
 //   siden 30/8 uden en eneste knap. Princip 70's egen fælde, lukket her.
 // ══════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v4.4.0 · «HAN SKAL KUNNE SKIFTE KLUB»
+//
+// Nicolai 31/8: *«Og han skal kunne skifte klub, så fra Øresund til
+// B.93. eksempelvis.»*
+//
+// v4.3.0 byggede vejen — men KUN gennem lukkeskærmen. Den krævede altså,
+// at den gamle klub havde spærret ham FØRST. Et pænt skifte, hvor Øresund
+// ikke lukker noget, havde ingen dør overhovedet.
+//
+// ⭐ Motoren kunne det hele i forvejen: `gem-noegle` spørger ikke, om den
+//   gamle nøgle er død — den skriver bare `noegle_hash`, `noegle_krypt`,
+//   `klub` og `rolle` om. Det er altså igen kun en SKÆRM, der mangler.
+//
+// ⛔⛔ DEN FARLIGE HALVDEL ER IKKE NØGLEN — DET ER TRUPPEN.
+//   Skifter han uden at rydde, står Øresunds børn på B.93's skærm. Derfor
+//   følger skiftet SLETTE-REGLEN: der vises ordret, hvad der fjernes, og
+//   der ventes på et ja. To tryk, som ved trup-slet.
+//
+// ⭐ RÆKKEFØLGEN ER OMVENDT AF LUKNINGENS: serveren spørges FØRST, og der
+//   ryddes kun på et ja. Ved en lukning var truppen allerede tabt; her er
+//   den ikke, og en fejlet forbindelse må ikke koste den.
+//
+// ⭐ OG SAMME KLUB ER IKKE ET SKIFTE. Får han en ny nøgle i sin EGEN klub
+//   (fx opgraderet fra træner til cheftræner), beholder han sin trup.
+// ══════════════════════════════════════════════════════════════════════
+
+// Ordret den liste, `KLUB_TING` rydder — i menneskeord.
+var SKIFT_FJERNES = "truppen · dine vurderinger · fokuspunkter · evalueringer · ugens fokus · stigeholdet · familiernes nøgler";
+
+function skiftKlubKort(k){
+  if (!S.skiftAaben) return '';
+  var f = S.skiftFund;
+  var samme = !!(f && f.klub && k && f.klub === k.klub);
+  var h = '<div style="margin-top:11px;padding-top:10px;border-top:1px dashed var(--kant)">' +
+    '<b style="display:block;font-size:13px;margin-bottom:4px">🔄 Skift til en anden klub</b>' +
+    '<p class="lille" style="margin:0 0 9px;line-height:1.55">Har du fået en nøgle af en ny klub, taster du den her. ' +
+    'Du beholder din konto, dit brugernavn og dit kodeord — det er kun klubben, der skifter.</p>' +
+    scFelt("skiftNoegle", "ABCD-EFGH-JKLM", { stort: true, maks: 20 });
+
+  if (!f) {
+    h += '<button class="knap valg" style="width:100%;margin-top:7px;min-height:46px"' +
+      (S.skiftHenter ? ' disabled' : '') + ' data-act="skift-tjek">' +
+      (S.skiftHenter ? '⏳ tjekker …' : 'Tjek nøglen') + '</button>';
+  } else {
+    // ⭐ Klubbens navn kommer fra SERVEREN. Skærmen gætter aldrig.
+    h += '<p class="lille" style="margin:8px 0 0;color:var(--vundet)">✓ Nøglen hører til <b>' + esc(f.klub) + '</b> · ' +
+      (f.rolle === "admin" ? "cheftræner" : "træner") + '</p>';
+    if (samme) {
+      h += '<p class="lille" style="margin:7px 0 0;line-height:1.55">Det er den klub, du allerede er i. ' +
+        'Nøglen skiftes, og <b>din trup bliver, hvor den er</b>.</p>';
+    } else {
+      h += '<div class="kort" style="margin:9px 0 0;padding:11px;background:rgba(210,72,78,.07);border-color:rgba(210,72,78,.35)">' +
+        '<b style="display:block;font-size:12.5px;color:var(--tabt);margin-bottom:4px">⚠️ Dette fjernes fra telefonen</b>' +
+        '<p class="lille" style="margin:0;line-height:1.6">' + SKIFT_FJERNES + '.</p>' +
+        '<p class="lille" style="margin:7px 0 0;line-height:1.6;opacity:.8">Det, du allerede har sendt til spillerne i ' +
+        esc(k && k.klub ? k.klub : "din klub") + ', bliver stående hos dem. ' +
+        '<b>Vil du beholde din egen liste, så tag en sikkerhedskopi under ⚙️ FORBINDELSE først.</b></p></div>';
+    }
+    h += '<div class="raekke" style="gap:6px;margin-top:9px">' +
+      '<input class="felt" style="flex:1;min-width:0" type="' + (S.skiftVisKode ? "text" : "password") + '" data-felt="skiftKode" value="' + esc(S.skiftKode || "") + '" placeholder="dit kodeord" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="current-password">' +
+      '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px" data-act="skift-vis-kode">' + (S.skiftVisKode ? "🙈" : "👁") + '</button></div>' +
+      '<p class="lille" style="margin:5px 2px 0;opacity:.7">Kodeordet skal med, fordi nøglen låses ind under det. Vi kan ikke læse den uden.</p>' +
+      '<button class="knap" style="width:100%;margin-top:9px;min-height:50px;background:' +
+      (S.skiftBekraeft && !samme ? 'var(--tabt)' : 'var(--grus)') + '"' + (S.skiftHenter ? ' disabled' : '') +
+      ' data-act="skift-gem">' +
+      (S.skiftHenter ? '⏳ …'
+        : (samme ? 'Gem den nye nøgle'
+          : (S.skiftBekraeft ? '⚠️ Tryk igen — skift til ' + esc(f.klub) : 'Skift til ' + esc(f.klub)))) + '</button>';
+  }
+  if (S.skiftBesked) {
+    h += '<p class="lille" style="margin:8px 2px 0;line-height:1.5;color:' +
+      (S.skiftBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skiftBesked.t) + '</p>';
+  }
+  return h + '</div>';
+}
+
 function renderLukket(){
   var k = S.konto || lager.hent("konto", null);
   var klub = (k && k.klub) || lager.hent("klubnavn", "") || "klubben";
@@ -1217,8 +1333,11 @@ function traenerIndstillinger(){
       h += '<p class="lille" style="margin:7px 0 0">Logget ind som <b>' + esc(_k.brugernavn) + '</b> \u00b7 ' +
         esc(_k.klub || "") + ' \u00b7 ' + (_k.rolle === "admin" ? '<span style="color:var(--guld)">cheftr\u00e6ner</span>' : 'tr\u00e6ner') + '</p>' +
         '<p class="lille" style="margin:5px 0 0;opacity:.7">Du kan logge ind p\u00e5 enhver telefon med dit brugernavn \u2014 din n\u00f8gle f\u00f8lger med.</p>' +
-        '<div class="raekke" style="margin-top:9px"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="log-ud">' +
-        (S.logUdSpoerg ? '\u26a0\ufe0f Tryk igen \u2014 log ud' : '\ud83d\udeaa Log ud') + '</button></div>';
+        '<div class="raekke" style="margin-top:9px;gap:6px;flex-wrap:wrap"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="log-ud">' +
+        (S.logUdSpoerg ? '\u26a0\ufe0f Tryk igen \u2014 log ud' : '\ud83d\udeaa Log ud') + '</button>' +
+        '<button class="knap valg' + (S.skiftAaben ? ' til' : '') + '" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="skift-aabn">' +
+        (S.skiftAaben ? '\u2715 Luk' : '\ud83d\udd04 Skift klub') + '</button></div>' +
+        skiftKlubKort(_k);
     } else {
       h += '<p class="lille" style="margin:7px 0 0">Der er ingen konto p\u00e5 denne telefon. Alt, du laver her, bliver p\u00e5 enheden \u2014 og forsvinder, hvis browseren ryddes.</p>';
     }
@@ -1708,7 +1827,7 @@ function traenerKvartal(t){
 //     findes ingen «glemt kodeord» for trænere.
 //   Malingen er væk. I stedet normaliseres VÆRDIEN, så skærm og server
 //   altid er enige. Kodeord og navn røres ikke.
-var SC_STORT = ["doerNoegle", "lukNyNoegle"];
+var SC_STORT = ["doerNoegle", "lukNyNoegle", "skiftNoegle"];
 var SC_SMAAT = ["doerBrugernavn", "doerLogNavn", "doerMail"];
 document.addEventListener("input", function(e){
   var f = e.target.dataset && e.target.dataset.felt; if (!f) return;
@@ -1725,7 +1844,7 @@ document.addEventListener("input", function(e){
   S[f] = ny;
   // ⭐ v4.0.0 · fordørens felter svarer ved hvert bogstav — UDEN
   //   gentegning (princip 38). Kun de felter, der har en dom.
-  if (f.indexOf("doer") === 0 || f === "lukNyNoegle") { try { scMaerk(); } catch (_e) {} }
+  if (f.indexOf("doer") === 0 || f === "lukNyNoegle" || f === "skiftNoegle") { try { scMaerk(); } catch (_e) {} }
 });
 document.addEventListener("click", function(e){
   const t = e.target.closest("[data-act]"); if (!t) return;
@@ -1937,6 +2056,98 @@ document.addEventListener("click", function(e){
     }).catch(function(){
       S.doerHenter = false;
       S.doerBesked = { fejl:true, t:"Ingen forbindelse — prøv igen." }; render(); }); }
+
+  // ══ v4.4.0 · KLUBSKIFTET ═════════════════════════════════════════
+  else if (act==="skift-aabn"){
+    S.skiftAaben = !S.skiftAaben;
+    S.skiftNoegle = ""; S.skiftKode = ""; S.skiftFund = null;
+    S.skiftBesked = null; S.skiftBekraeft = false; S.skiftVisKode = false; render(); }
+  else if (act==="skift-vis-kode"){ S.skiftVisKode = !S.skiftVisKode; render(); }
+
+  // ⭐ TRIN 1 · HVEM HØRER NØGLEN TIL? Der spørges, FØR der advares —
+  //   ellers ville skærmen skulle gætte klubbens navn (princip 14).
+  //   `min-status` kræver intet kodeord og afslører kun det, fordøren
+  //   allerede viser i skridt 2.
+  else if (act==="skift-tjek"){
+    if (S.skiftHenter) return;
+    var _sn = (S.skiftNoegle||"").trim().toUpperCase();
+    var _sd = scDom("skiftNoegle", _sn);
+    if (!_sd || !_sd.ja) { S.skiftBesked={fejl:true,t:"Nøglen ser ikke rigtig ud — 12 tegn i grupper af fire."}; render(); return; }
+    var _mig = S.konto || lager.hent("konto", null);
+    S.skiftHenter = true; S.skiftBesked = null; render();
+    kontoKald("min-status", {}, _sn).then(function(r){
+      S.skiftHenter = false;
+      if (r && r.fejl) {
+        S.skiftBesked = { fejl:true, t: r.fejl === "netvaerk"
+          ? "Ingen forbindelse — prøv igen. Der er ikke sket noget."
+          : (r.t || "Nøglen kunne ikke tjekkes.") };
+        render(); return;
+      }
+      if (!r.kendt) {
+        S.skiftBesked = { fejl:true, t:"Den nøgle kender vi ikke. Tjek den — eller spørg din nye cheftræner." };
+        render(); return;
+      }
+      // ⛔ De tre nej'er, sagt med en grund hver.
+      if (r.rolle === "spiller") {
+        S.skiftBesked = { fejl:true, t:"Det er en spillernøgle — den hører hjemme i StreakTennis-appen. Her skal en træner- eller cheftrænernøgle bruges." };
+        render(); return;
+      }
+      // ⭐⭐ ÉN NØGLE, ÉN TRÆNER. Hele pointen med rollerne 30/8 var, at
+      //   trænere IKKE deler nøgle — ellers kan den ene ikke lukkes ude
+      //   uden den anden. Serveren håndhæver det ikke, så skærmen gør.
+      if (r.harKonto && _mig && r.brugernavn && r.brugernavn !== _mig.brugernavn) {
+        S.skiftBesked = { fejl:true, t:"Der er allerede en konto på den nøgle (" + r.brugernavn +
+          "). Bed klubbens cheftræner om din egen nøgle — to trænere må ikke dele én." };
+        render(); return;
+      }
+      S.skiftFund = { klub: r.klub, rolle: r.rolle };
+      S.skiftBekraeft = false; render();
+    }).catch(function(){
+      S.skiftHenter = false;
+      S.skiftBesked = { fejl:true, t:"Ingen forbindelse — prøv igen. Der er ikke sket noget." }; render(); }); }
+
+  // ⭐ TRIN 2 · SKIFTET. Serveren FØRST, oprydningen bagefter — omvendt
+  //   af lukningen, fordi truppen her stadig findes og kan tabes.
+  else if (act==="skift-gem"){
+    if (S.skiftHenter || !S.skiftFund) return;
+    var _smig = S.konto || lager.hent("konto", null);
+    if (!_smig || !_smig.brugernavn) { S.skiftBesked={fejl:true,t:"Der er ingen konto på denne telefon."}; render(); return; }
+    if (!(S.skiftKode||"")) { S.skiftBesked={fejl:true,t:"Skriv dit kodeord — nøglen låses ind under det."}; render(); return; }
+    var _sny = (S.skiftNoegle||"").trim().toUpperCase();
+    var _samme = S.skiftFund.klub === _smig.klub;
+    // SLETTE-REGLEN: et skifte til en ANDEN klub kræver to tryk.
+    if (!_samme && !S.skiftBekraeft) { S.skiftBekraeft = true; S.skiftBesked = null; render(); return; }
+    S.skiftHenter = true; S.skiftBesked = null; render();
+    kontoKald("gem-noegle", { brugernavn: _smig.brugernavn, kode: S.skiftKode }, _sny).then(function(r){
+      S.skiftHenter = false; S.skiftBekraeft = false;
+      if (r && r.fejl) {
+        // ⛔ Intet er rørt. Truppen står, hvor den stod.
+        S.skiftBesked = { fejl:true, t: r.fejl === "netvaerk"
+          ? "Ingen forbindelse — prøv igen. Din trup er urørt."
+          : (r.t || "Nøglen kunne ikke gemmes. Din trup er urørt.") };
+        render(); return;
+      }
+      var nyKlub = r.klub || S.skiftFund.klub;
+      var skiftede = nyKlub !== _smig.klub;
+      // ⭐ Først NU ryddes der — og kun hvis klubben faktisk er en anden.
+      if (skiftede) ryddKlubben();
+      lager.gem("klubkode", _sny);
+      lager.gem("klubnavn", nyKlub); KONFIG.klub = nyKlub;
+      S.minRolle = r.rolle || S.skiftFund.rolle;
+      try { lager.gem("minrolle", S.minRolle); } catch(_e){}
+      var nk = { brugernavn: _smig.brugernavn, navn: _smig.navn, klub: nyKlub, rolle: S.minRolle };
+      lager.gem("konto", nk); S.konto = nk;
+      S.skiftAaben = false; S.skiftNoegle = ""; S.skiftKode = "";
+      S.skiftFund = null; S.skiftVisKode = false; S.skiftBesked = null;
+      S.doerFest = { ikon:"🔄", h:"Du er nu i " + nyKlub,
+        u: skiftede
+          ? "Nøglen er gemt, og telefonen er ryddet for den forrige klub. Truppen starter tom — skriv din nye ind under 👥 MIN TRUP."
+          : "Nøglen er gemt. Din trup og dine vurderinger står, hvor de stod.",
+        sidste:true, bolde:true };
+      render();
+    }).catch(function(){
+      S.skiftHenter = false; S.skiftBekraeft = false;
+      S.skiftBesked = { fejl:true, t:"Ingen forbindelse — prøv igen. Din trup er urørt." }; render(); }); }
 
   // ══ v4.3.0 · DEN LUKKEDE SKÆRMS TRE KNAPPER ══════════════════════
   else if (act==="luk-vis-kode"){ S.lukVisKode = !S.lukVisKode; render(); }

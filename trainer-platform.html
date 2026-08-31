@@ -267,6 +267,70 @@ async function kontoKald(handling, krop, noegle) {
   } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
 }
 
+// ══════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v4.3.0 · NÅR EN TRÆNER STOPPER.
+//   Nicolai 31/8: «Tænker en træner skal kunne lukkes pænt meget ned.»
+//
+//   Målt 30/8, og det var værre end forventet:
+//     ① `klub-noegler` og `spiller-sync` afviser en spærret nøgle i døren
+//        — han kan ikke GØRE noget. ✅
+//     ② men `traener-konto login` spørger ALDRIG, om nøglen lever. Den
+//        falder tilbage på rollen i rækken og udleverer nøglen igen.
+//        Han kom altså INDENFOR. ⛔
+//     ③ og platformen havde ingen håndtering af 401 overhovedet — ordet
+//        «spærret» stod ét sted i hele filen, i en kommentar. Skærmen
+//        sagde intet; knapperne holdt bare op med at virke. ⛔
+//
+//   ⭐ LØSNINGEN RØRER IKKE MOTOREN. `min-status` måler allerede præcis
+//     det rigtige: den svarer `kendt:false` for en nøgle, der er spærret,
+//     udløbet eller ukendt. Så platformen spørger selv — og et 14 KB
+//     motor-citat gennem sproglaget undgås helt (bjælke-fælden).
+//
+//   ⛔⛔ OG DEN VIGTIGSTE LINJE: INGEN FORBINDELSE ER INGEN KONKLUSION.
+//     Kun et RIGTIGT svar fra serveren lukker ned. Et kald, der ikke kom
+//     frem, må aldrig koste en træner hans trup (princip 35).
+// ══════════════════════════════════════════════════════════════════
+async function tjekAdgang(){
+  var kn = lager.hent("klubkode", "");
+  if (!kn) return;                      // ingen nøgle at spørge om
+  var r = await kontoKald("min-status", {}, kn);
+  if (!r || r.fejl) return;             // ⛔ netværk eller fejl → rør INTET
+  // ⛔⭐⭐ FANGET AF EN RØD REGRESSIONSPRØVE 31/8 (princip 76).
+  //   Første udkast lukkede ned på `!r.kendt` — altså også på et svar,
+  //   der slet ikke bar feltet. Et 200-svar fra en mellemstation, en
+  //   proxy-side, en tom krop: alt sammen «ingen kendt» og dermed en
+  //   dom. Det er nøjagtig den fejl, princip 35 forbyder, bare i 200-tøj.
+  //   ⭐ KUN ET UDTRYKKELIGT `kendt: false` ER ET NEJ.
+  if (r.kendt !== false) return;
+  lukNed();                             // serveren har svaret: den gælder ikke mere
+}
+
+// Klubbens ting fjernes fra telefonen. Identiteten bliver stående, så han
+// kan taste en NY nøgle — en træner, der skifter klub, skal ikke starte
+// forfra som menneske, bare som medarbejder.
+function lukNed(){
+  ["truppen","vurderinger","fokuspunkter","evalueringer","ugefokus",
+   "stigehold","srvnavne","noegler","klubkode","klubnavn","minrolle"]
+    .forEach(function(n){ try { localStorage.removeItem("tp-" + n); } catch(_e){} });
+  S.truppen = []; S.vurderinger = []; S.fokuspunkter = {}; S.evalueringer = {};
+  S.ugefokus = {}; S.stigeHold = []; S.noegler = {}; S.minRolle = null;
+  // ⚠️ Festen ryddes med. Ellers ville en træner, hvis nøgle er spærret,
+  //   blive budt velkommen med konfetti ind i en klub, han ikke er i.
+  S.doerFest = null;
+  S.adgangLukket = true; S.lukBesked = null;
+  try { render(); } catch(_e){}
+}
+
+// ⭐ 401 ER IKKE ALTID EN SPÆRRING — SÅ VI GÆTTER IKKE PÅ DEN.
+//   `spiller-sync` og `klub-noegler` svarer 401 af flere grunde, og
+//   deres fejlkoder er ikke målt herfra. I stedet spørges den ENE
+//   funktion, hvis svar ER målt: `min-status`. Er nøglen i orden,
+//   sker der intet — er den død, lukkes der ned. Princip 14.
+function maaskeSpaerret(r){
+  if (r && r.status === 401) { try { tjekAdgang(); } catch (_e) {} }
+  return r;
+}
+
 const NOEGLER_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/klub-noegler";
 
 // Samme form som sync(), men mod noeglebunden. Klubnoeglen er identiteten;
@@ -286,7 +350,7 @@ async function noegleKald(handling, krop) {
     if (r.ok && d && d.klub) {
       try { lager.gem("klubnavn", d.klub); KONFIG.klub = d.klub; } catch (_e) {}
     }
-    return r.ok ? d : { fejl: d.kode || "netvaerk", status: r.status, t: d.fejl };
+    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || "netvaerk", status: r.status, t: d.fejl });
   } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
 }
 
@@ -301,7 +365,7 @@ async function sync(handling, krop, spillerNoegle) {
       body: JSON.stringify({ handling, ...krop }), signal: st.signal });
     clearTimeout(ur);
     const d = await r.json().catch(() => ({}));
-    return r.ok ? d : { fejl: d.kode || "netvaerk", status: r.status, detaljer: d.detaljer };
+    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || "netvaerk", status: r.status, detaljer: d.detaljer });
   } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
 }
 
@@ -498,6 +562,8 @@ let S = {
   //   så ingen bliver smidt ud af en opdatering.
   doer: lager.hent("doer", null),
   konto: lager.hent("konto", null),
+  adgangLukket: false, lukNyNoegle: "", lukKode: "", lukSender: false, lukBesked: null,
+  lukVisKode: false,
   doerTrin: 0, doerFest: null, doerHenter: false, doerBesked: null,
   doerLogNavn: "", doerLogKode: "", doerVisKode: false,
   doerNoegle: "", doerKlub: "", doerRolle: "",
@@ -601,7 +667,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v4.2.0 \u00b7 30. august 2026";
+const VERSION = "v4.3.0 \u00b7 31. august 2026";
 
 function render(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
@@ -621,6 +687,15 @@ function render(){
   //   Derfor: så længe der er noget at fejre, er vi stadig i døren.
   const paaRejse = !!S.doerFest ||
     !(S.doerFaerdig || S.konto || (S.doer && S.doer.faerdig) || _gammelInde);
+  // ⭐⭐⭐ v4.3.0 · LUKNINGEN GÅR FORREST. Har serveren sagt, at nøglen
+  //   ikke gælder mere, er der ingen skærm bagved, der må tegnes — hverken
+  //   en trup eller en fest. Kun én besked og én vej videre.
+  if (S.adgangLukket) {
+    el("app").innerHTML = renderLukket() +
+      '<p style="text-align:center;font-size:11px;color:var(--daempet);opacity:.65;margin:18px 0 10px">' +
+      'StreakCoach · ' + VERSION + '</p>';
+    return;
+  }
   el("app").innerHTML = (paaRejse ? renderRejse() : renderTraener()) +
     '<p style="text-align:center;font-size:11px;color:var(--daempet);opacity:.65;margin:18px 0 10px">' +
     'StreakCoach \u00b7 ' + VERSION + '</p>';
@@ -684,7 +759,10 @@ function scDom(felt, v){
   //   — 12 tegn i grupper af fire, med bindestreg. STORE bogstaver og
   //   tallene 2-9. Hverken 0/O eller 1/I findes, så en forælder ikke skal
   //   gætte i et klubhus. Det står nu på skærmen i stedet for i motoren.
-  if (felt === "doerNoegle") {
+  // ⭐ v4.3.0 · `lukNyNoegle` er SAMME felt på en anden skærm — nøglen,
+  //   en træner taster, når klubben har lukket den gamle. Dommen skal være
+  //   ét sted, ellers driver de to fra hinanden.
+  if (felt === "doerNoegle" || felt === "lukNyNoegle") {
     var rene = v.toUpperCase().replace(/-/g, "");
     if (/[0O1I]/.test(v.toUpperCase()))
       return { ja: false, t: "nøgler har hverken 0/O eller 1/I — tjek tegnet" };
@@ -723,7 +801,8 @@ function scFelt(felt, ph, opts){
 //   Derfor mutéres DOM'en direkte, præcis som `_fordoerMaerk()` gør i
 //   StreakTennis. Ingen render() på en tastetryk.
 function scMaerk(){
-  ["doerNavn","doerBrugernavn","doerKode","doerKode2","doerMail","doerNoegle","doerLogNavn"]
+  ["doerNavn","doerBrugernavn","doerKode","doerKode2","doerMail","doerNoegle","doerLogNavn",
+   "lukNyNoegle"]
   .forEach(function(felt){
     var i = document.querySelector('[data-felt="' + felt + '"]');
     var m = document.getElementById("mrk-" + felt);
@@ -737,6 +816,62 @@ function scMaerk(){
       m.classList.toggle("nej", !!(d && !d.ja));
     }
   });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v4.3.0 · SKÆRMEN, DER SIGER DET LIGE UD
+//
+// Nicolai 31/8: «Tænker en træner skal kunne lukkes pænt meget ned.»
+//
+// «Pænt» er det svære ord. En træner, der er stoppet, skal ikke mødes af
+// knapper, der holder op med at virke uden en grund — og han skal heller
+// ikke miste sit menneske, bare fordi han mistede sin klub. Derfor:
+//   · beskeden siger HVEM der lukkede (klubben, ikke os) og HVORFOR
+//   · den siger, HVAD der er fjernet fra telefonen — ordret, ikke «data»
+//   · den siger, hvad der IKKE forsvandt: det, klubben allerede har fået
+//   · og den har ÉN vej videre: en ny nøgle, hvis han er skiftet klub
+//
+// ⭐ Vejen videre er `gem-noegle` — motoren, der har været bygget og målt
+//   siden 30/8 uden en eneste knap. Princip 70's egen fælde, lukket her.
+// ══════════════════════════════════════════════════════════════════════
+function renderLukket(){
+  var k = S.konto || lager.hent("konto", null);
+  var klub = (k && k.klub) || lager.hent("klubnavn", "") || "klubben";
+  var h = '<div class="rejse">';
+
+  h += '<div style="text-align:center">' +
+    '<div class="sc-op" style="font-size:46px;line-height:1">🔒</div>' +
+    '<h1 class="sc-op" style="animation-delay:.04s;margin-top:10px">Din adgang til ' + esc(klub) + ' er lukket</h1>' +
+    '<p class="und sc-op" style="animation-delay:.08s">Klubben har spærret din nøgle. Det er klubben, der bestemmer, hvem der er træner — vi kan ikke åbne den igen for dig.</p>' +
+    '</div>';
+
+  h += '<div class="kort sc-op" style="animation-delay:.12s;text-align:left">' +
+    '<b style="display:block;margin-bottom:6px">Det er fjernet fra denne telefon</b>' +
+    '<p class="lille" style="margin:0;line-height:1.6">Truppen · dine vurderinger · fokuspunkter · evalueringer · ugens fokus · stigeholdet · familiernes nøgler.</p>' +
+    '<p class="lille" style="margin:9px 0 0;line-height:1.6;color:var(--daempet)">Det, du allerede har sendt til spillerne, bliver stående hos klubben. Det er deres — ikke telefonens.</p>' +
+    '</div>';
+
+  // ── ER HAN SKIFTET KLUB, ER HAN IKKE FÆRDIG ────────────────────────
+  if (k && k.brugernavn) {
+    h += '<div class="kort sc-op" style="animation-delay:.16s;text-align:left">' +
+      '<b style="display:block;margin-bottom:4px">🔑 Har du fået en ny nøgle?</b>' +
+      '<p class="lille" style="margin:0 0 9px;line-height:1.55">Er du skiftet til en anden klub, beholder du din konto — tast den nye nøgle, så er du inde igen. Kodeordet skal med, fordi nøglen låses ind under det.</p>' +
+      '<p class="lille" style="margin:0 0 7px;color:var(--daempet)">Logget ind som <b>' + esc(k.brugernavn) + '</b></p>' +
+      scFelt("lukNyNoegle", "ABCD-EFGH-JKLM", { stort: true, maks: 20 }) +
+      '<div class="raekke" style="gap:6px;margin-top:7px">' +
+        '<input class="felt" style="flex:1;min-width:0" type="' + (S.lukVisKode ? "text" : "password") + '" data-felt="lukKode" value="' + esc(S.lukKode || "") + '" placeholder="dit kodeord" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="current-password">' +
+        '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px" data-act="luk-vis-kode">' + (S.lukVisKode ? "🙈" : "👁") + '</button></div>' +
+      '<button class="knap" style="margin-top:9px;width:100%;min-height:50px;background:var(--grus)"' +
+        (S.lukSender ? ' disabled' : '') + ' data-act="luk-gem-noegle">' +
+        (S.lukSender ? '⏳ tjekker …' : 'Gem den nye nøgle') + '</button>' +
+      (S.lukBesked ? '<p class="lille" style="margin:8px 0 0;line-height:1.5;color:' +
+        (S.lukBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.lukBesked.t) + '</p>' : '') +
+      '</div>';
+  }
+
+  h += '<button class="knap valg sc-op" style="animation-delay:.22s;margin-top:12px;background:none;border-color:var(--kant);color:var(--daempet)" data-act="luk-log-ud">Log ud på denne telefon</button>';
+  h += '<p class="lille sc-op" style="animation-delay:.26s;margin:14px 2px 0;color:var(--daempet);line-height:1.55">Er det en fejl, så spørg din cheftræner — han kan udstede en ny nøgle. Er der ingen cheftræner tilbage i klubben, så skriv til <a href="mailto:nicolai@sportsainalytics.com">nicolai@sportsainalytics.com</a>.</p>';
+  return h + '</div>';
 }
 
 function renderRejse(){
@@ -1573,7 +1708,7 @@ function traenerKvartal(t){
 //     findes ingen «glemt kodeord» for trænere.
 //   Malingen er væk. I stedet normaliseres VÆRDIEN, så skærm og server
 //   altid er enige. Kodeord og navn røres ikke.
-var SC_STORT = ["doerNoegle"];
+var SC_STORT = ["doerNoegle", "lukNyNoegle"];
 var SC_SMAAT = ["doerBrugernavn", "doerLogNavn", "doerMail"];
 document.addEventListener("input", function(e){
   var f = e.target.dataset && e.target.dataset.felt; if (!f) return;
@@ -1590,7 +1725,7 @@ document.addEventListener("input", function(e){
   S[f] = ny;
   // ⭐ v4.0.0 · fordørens felter svarer ved hvert bogstav — UDEN
   //   gentegning (princip 38). Kun de felter, der har en dom.
-  if (f.indexOf("doer") === 0) { try { scMaerk(); } catch (_e) {} }
+  if (f.indexOf("doer") === 0 || f === "lukNyNoegle") { try { scMaerk(); } catch (_e) {} }
 });
 document.addEventListener("click", function(e){
   const t = e.target.closest("[data-act]"); if (!t) return;
@@ -1715,6 +1850,13 @@ document.addEventListener("click", function(e){
           : (r.klub + " · " + (r.rolle === "admin" ? "cheftræner" : "træner") + ". Alt er klar."),
         sidste:true, bolde:true };
       render();
+      // ⛔⭐⭐ v4.3.0 · MÅLT 30/8: `login` SPØRGER ALDRIG, OM NØGLEN LEVER.
+      //   Den åbner skrinet, og kan rollen ikke slås op, står den gemte
+      //   rolle tilbage — nøglen udleveres alligevel. En spærret træner
+      //   kom altså indenfor, hilste og fik sin døde nøgle igen.
+      //   Motoren er 14 KB og patches ikke herfra (bjælke-fælden), så
+      //   platformen spørger selv, i samme åndedrag som den lukker ind.
+      try { tjekAdgang(); } catch (_e) {}
     }).catch(function(){
       S.doerHenter = false;
       S.doerBesked = { fejl:true, t:"Ingen forbindelse — prøv igen." }; render(); }); }
@@ -1795,6 +1937,57 @@ document.addEventListener("click", function(e){
     }).catch(function(){
       S.doerHenter = false;
       S.doerBesked = { fejl:true, t:"Ingen forbindelse — prøv igen." }; render(); }); }
+
+  // ══ v4.3.0 · DEN LUKKEDE SKÆRMS TRE KNAPPER ══════════════════════
+  else if (act==="luk-vis-kode"){ S.lukVisKode = !S.lukVisKode; render(); }
+
+  // ⭐ EN NY NØGLE PÅ EN GAMMEL KONTO. `gem-noegle` krypterer den om
+  //   under kodeordet og flytter kontoen til den nye klub og rolle.
+  //   Målt i motoren: brugernavn + kodeord i kroppen, nøglen i hovedet.
+  else if (act==="luk-gem-noegle"){
+    if (S.lukSender) return;
+    var _lk = S.konto || lager.hent("konto", null);
+    if (!_lk || !_lk.brugernavn) { S.lukBesked={fejl:true,t:"Der er ingen konto på denne telefon — log ind i stedet."}; render(); return; }
+    var _lny = (S.lukNyNoegle||"").trim().toUpperCase();
+    var _ld = scDom("lukNyNoegle", _lny);
+    if (!_ld || !_ld.ja) { S.lukBesked={fejl:true,t:"Nøglen ser ikke rigtig ud — 12 tegn i grupper af fire."}; render(); return; }
+    if (!(S.lukKode||"")) { S.lukBesked={fejl:true,t:"Skriv dit kodeord — nøglen låses ind under det."}; render(); return; }
+    S.lukSender = true; S.lukBesked = null; render();
+    kontoKald("gem-noegle", { brugernavn: _lk.brugernavn, kode: S.lukKode }, _lny).then(function(r){
+      S.lukSender = false;
+      if (r && r.fejl) {
+        // ⛔ Princip 35: en manglende forbindelse er ingen dom. Skærmen
+        //   bliver stående, og der loves ingenting.
+        S.lukBesked = { fejl:true, t: r.fejl === "netvaerk"
+          ? "Ingen forbindelse — prøv igen. Der er ikke sket noget."
+          : (r.t || "Nøglen kunne ikke gemmes.") };
+        render(); return;
+      }
+      // Serveren har sagt ja. Nøglen bor på telefonen igen, og klubben
+      // og rollen kommer fra SVARET — ikke fra det, der stod før.
+      lager.gem("klubkode", _lny);
+      if (r.klub) { lager.gem("klubnavn", r.klub); KONFIG.klub = r.klub; }
+      if (r.rolle) { S.minRolle = r.rolle; try { lager.gem("minrolle", r.rolle); } catch(_e){} }
+      var _nk = { brugernavn: _lk.brugernavn, navn: _lk.navn,
+                  klub: r.klub || _lk.klub, rolle: r.rolle || _lk.rolle };
+      lager.gem("konto", _nk); S.konto = _nk;
+      S.lukKode = ""; S.lukNyNoegle = ""; S.lukVisKode = false;
+      S.adgangLukket = false; S.lukBesked = null;
+      // ⚠️ Truppen kommer IKKE med. Den bor kun på telefonen (Julie-
+      //   spørgsmålet), og en ny klub skal starte på en tom liste —
+      //   ikke arve børnene fra den forrige. Det siges højt.
+      S.doerFest = { ikon:"🔑", h:"Du er inde i " + (r.klub || "klubben"),
+        u:"Nøglen er gemt. Truppen starter tom — børnene fra din forrige klub følger ikke med.",
+        sidste:true, bolde:true };
+      render();
+    }).catch(function(){
+      S.lukSender = false;
+      S.lukBesked = { fejl:true, t:"Ingen forbindelse — prøv igen. Der er ikke sket noget." }; render(); }); }
+
+  else if (act==="luk-log-ud"){
+    ["konto","klubkode","traenernavn","klubnavn","minrolle","doer"].forEach(function(n){
+      try { localStorage.removeItem("tp-" + n); } catch(_e){} });
+    try { window.location.reload(); } catch(_e){} }
 
   // ── LOG UD · rydder telefonen, ikke kontoen. ──────────────────────
   else if (act==="log-ud"){
@@ -2021,6 +2214,10 @@ window.__oskarInit = function(){
   setTimeout(function(){ try {
     if (lager.hent("klubkode","") && !S.tilmHentet) hentTilmeldinger();
   } catch (e) {} }, 500);
+  // ⭐⭐⭐ v4.3.0 · LEVER NØGLEN STADIG? Spørges ved HVER åbning, fordi
+  //   en spærring sker, mens telefonen ligger i lommen. Svaret er det
+  //   eneste, der lukker ned — udebliver det, sker der intet.
+  setTimeout(function(){ try { tjekAdgang(); } catch (e) {} }, 900);
   render();
 };
 window.__oskarInit();

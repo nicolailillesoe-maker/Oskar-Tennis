@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.86.0 · 30. august 2026";
+const VERSION = "v4.87.0 · 31. august 2026";
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
 try { SPILLER = lagerRaa("sai-spiller") || ""; } catch(e) {}
@@ -8870,13 +8870,31 @@ function _tegn() {
         _ekrop += '<div style="margin-top:13px;padding-top:12px;border-top:1px solid var(--kant)">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px">' +
           '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83c\udf81 ' +
-          (EN ? "FREE ACCESS" : "GRATIS ADGANG") + '</div>' +
+          // ⭐ v4.87.0 · OVERSKRIFTEN LOVEDE ET FILTER, LISTEN IKKE HAVDE.
+          //   Nicolai 31/8: «Her står GRATIS ADGANG øverst. Nederst står at
+          //   det er spillere uden klub. Jeg tænker kun det skal være dem,
+          //   der HAR gratis adgang.»
+          //   Han har ret: kortet hed «GRATIS ADGANG», men listede ALLE
+          //   uden klub — alle syv stod på `fuld` i forvejen og havde ikke
+          //   fået noget af nogen. To navne på én liste.
+          //   ⚠️ Målt i basen 31/8: `spillerdata` har KUN `plan`. Ingen
+          //     kolonne siger, HVEM der satte den, så der findes ikke et
+          //     «har fået en gave»-flag at filtrere på. Det kræver en ny
+          //     kolonne og bygges efter 8/9 (køreplanens §7).
+          //   Indtil da hedder kortet det, det GØR, og forklaringen står
+          //   FØR listen i stedet for efter den.
+          (EN ? "GIVE FREE ACCESS" : "GIV GRATIS ADGANG") + '</div>' +
           '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-a="gaveAabn">' +
             (S.gaveAaben ? (EN?"Close":"Luk") : (EN?"Show":"Vis")) + '</button></div>';
         if (S.gaveAaben) {
           // ⛔ Kun spillere UDEN klub. En klubs plan r\u00f8res aldrig herfra \u2014
           //   det er motorens regel, og skærmen siger det samme.
           const _g = ((_k && _k.godkendte) || []).filter(function(x){ return (x.klub || "") === "Uden klub"; });
+          // ⭐ Forklaringen FØR listen. Stod den nedenunder, havde man
+          //   allerede læst syv navne og troet, de havde fået en gave.
+          _ekrop += '<p class="lille" style="margin:0 0 8px;opacity:.75">' + (EN
+            ? "Every player <b>without a club</b> is listed here \u2014 not only the ones you have given something. A club\u2019s plan is paid for by the club and is never touched from here."
+            : "Her st\u00e5r <b>alle spillere uden klub</b> \u2014 ikke kun dem, du har givet noget. En klubs plan betales af klubben og r\u00f8res aldrig herfra.") + '</p>';
           if (!_g.length) {
             _ekrop += '<p class="lille" style="margin:0">' + (EN
               ? "Nobody without a club right now." : "Der er ingen uden klub lige nu.") + '</p>';
@@ -8892,16 +8910,22 @@ function _tegn() {
                     (S.gaveSender === x.h ? "\u23f3" : (pl === "gaest" ? (EN?"Basic":"Basis") : pl === "fuld" ? (EN?"Full":"Fuld") : (EN?"Free streaming":"Fri streaming"))) + '</button>';
                 }).join("") + '</div></div>';
             });
-            _ekrop += '<p class="lille" style="margin:8px 0 0;opacity:.75">' + (EN
-              ? "Only players without a club appear here \u2014 a club\u2019s plan is paid for by the club and is never touched from here."
-              : "Kun spillere uden klub st\u00e5r her \u2014 en klubs plan betales af klubben og r\u00f8res aldrig herfra.") + '</p>';
           }
         }
         _ekrop += '</div>';
         if (S.ejerBesked) _ekrop += '<p class="lille" style="margin:9px 0 0;color:' +
           (S.ejerBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.ejerBesked.t) + '</p>';
 
-        h += _opsKort("ejer", "\ud83d\udd10", (EN?"WHO GETS IN":"HVEM KOMMER IND"),
+        // ⭐ v4.87.0 · NAVNET FULGTE IKKE MED INDHOLDET.
+        //   Nicolai 31/8: «Hvem kommer ind, kan vi ikke ændre det til
+        //   bruger-administration?»
+        //   Kortet hed «HVEM KOMMER IND», dengang det KUN var porten. Med
+        //   v4.86.0 fik det ejerens to knapper — opret en klub, giv gratis
+        //   adgang — og navnet dækkede ikke længere halvdelen af det.
+        //   ⭐ Tone-reglen («der tales til SPILLEREN») rammer ikke her: målt
+        //     i kilden vises kortet kun bag `S.portStatus.ejer`. Det er
+        //     ejerens eget værktøj, og så må det hedde det, det er.
+        h += _opsKort("ejer", "\ud83d\udd10", (EN?"USERS & CLUBS":"BRUGERE OG KLUBBER"),
           (_venter.length ? _venter.length + " " + (EN?"waiting":"venter") : (_k ? (_k.inde || 0) + " " + (EN?"inside":"inde") : "\u2014")),
           _venter.length ? "var(--guld)" : "var(--daempet)", _ekrop);
       }

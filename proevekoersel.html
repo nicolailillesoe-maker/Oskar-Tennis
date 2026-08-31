@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Prøvekørsel · StreakTennis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@500;700&display=swap">
+
+<style>
+:root{
+  --papir:#EEF1F4; --kort:#FFFFFF; --kant:#D3DBE2; --kant-blod:#E3E9EE;
+  --blaek:#132029; --daempet:#5D6E7B; --svag:#8496A3;
+  --grus:#B8532C; --grus-blod:rgba(184,83,44,.09);
+  --is:#2A7593; --is-blod:rgba(42,117,147,.10);
+  --gron:#2C7F52; --gron-blod:rgba(44,127,82,.11);
+  --rod:#B33327; --rod-blod:rgba(179,51,39,.10);
+  --gul:#A6761F; --gul-blod:rgba(166,118,31,.12);
+  --skygge:0 1px 2px rgba(19,32,41,.05), 0 6px 18px -10px rgba(19,32,41,.18);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --papir:#0D161D; --kort:#16232C; --kant:#2A3A46; --kant-blod:#21303A;
+    --blaek:#E4ECF1; --daempet:#93A6B3; --svag:#6D8391;
+    --grus:#E08154; --grus-blod:rgba(224,129,84,.13);
+    --is:#5FB2D2; --is-blod:rgba(95,178,210,.13);
+    --gron:#54BE85; --gron-blod:rgba(84,190,133,.14);
+    --rod:#E5695C; --rod-blod:rgba(229,105,92,.14);
+    --gul:#DBA845; --gul-blod:rgba(219,168,69,.15);
+    --skygge:0 1px 2px rgba(0,0,0,.3), 0 8px 22px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --papir:#0D161D; --kort:#16232C; --kant:#2A3A46; --kant-blod:#21303A;
+  --blaek:#E4ECF1; --daempet:#93A6B3; --svag:#6D8391;
+  --grus:#E08154; --grus-blod:rgba(224,129,84,.13);
+  --is:#5FB2D2; --is-blod:rgba(95,178,210,.13);
+  --gron:#54BE85; --gron-blod:rgba(84,190,133,.14);
+  --rod:#E5695C; --rod-blod:rgba(229,105,92,.14);
+  --gul:#DBA845; --gul-blod:rgba(219,168,69,.15);
+  --skygge:0 1px 2px rgba(0,0,0,.3), 0 8px 22px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--papir); color:var(--blaek);
+  font-family:"Source Serif 4",Georgia,"Times New Roman",serif;
+  font-size:16.5px; line-height:1.62;
+  -webkit-text-size-adjust:100%;
+}
+.ramme{max-width:40rem;margin:0 auto;padding:0 18px 90px}
+
+/* ── TOPPEN ───────────────────────────────────────────── */
+.hoved{padding:34px 0 4px}
+.mrk{
+  font-family:Archivo,system-ui,sans-serif;font-weight:600;font-size:11px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--grus);
+}
+h1{
+  font-family:Archivo,system-ui,sans-serif;font-weight:800;
+  font-size:clamp(30px,8vw,42px);line-height:1.04;letter-spacing:-.02em;
+  margin:9px 0 0;text-wrap:balance;
+}
+.ingress{margin:14px 0 0;color:var(--daempet);font-size:17px}
+.ingress b{color:var(--blaek)}
+
+/* ── MÅLEREN ──────────────────────────────────────────── */
+.maaler{
+  position:sticky;top:0;z-index:20;margin:22px -18px 0;padding:11px 18px;
+  background:color-mix(in srgb,var(--papir) 88%,transparent);
+  backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  border-bottom:1px solid var(--kant-blod);
+}
+.bjaelke{display:flex;height:7px;border-radius:4px;overflow:hidden;background:var(--kant-blod)}
+.bjaelke span{display:block;transition:width .3s ease}
+.tal{
+  display:flex;gap:15px;margin-top:8px;flex-wrap:wrap;align-items:baseline;
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11.5px;
+  font-weight:500;letter-spacing:.02em;
+}
+.tal i{font-style:normal;font-weight:700}
+.tal .g{color:var(--gron)} .tal .r{color:var(--rod)} .tal .s{color:var(--gul)}
+.tal .rest{color:var(--svag);margin-left:auto}
+
+/* ── AFSNIT ───────────────────────────────────────────── */
+.afsnit{margin:38px 0 0}
+.afsnit-h{
+  font-family:Archivo,system-ui,sans-serif;font-weight:800;font-size:20px;
+  letter-spacing:-.01em;margin:0;display:flex;gap:10px;align-items:baseline;
+}
+.afsnit-h em{
+  font-style:normal;font-family:"JetBrains Mono",monospace;font-size:15px;
+  font-weight:700;color:var(--grus);
+}
+.afsnit-u{margin:6px 0 0;color:var(--daempet);font-size:15.5px}
+
+/* ── SAG ──────────────────────────────────────────────── */
+.sag{
+  background:var(--kort);border:1px solid var(--kant);border-radius:11px;
+  box-shadow:var(--skygge);margin-top:14px;overflow:hidden;
+  border-left:4px solid var(--is);
+}
+.sag.maa{border-left-color:var(--grus)}
+.sag.gjort{border-left-color:var(--gron)}
+.sag.brudt{border-left-color:var(--rod)}
+.sag-h{padding:15px 16px 0;display:flex;gap:9px;align-items:baseline}
+.sag-id{
+  font-family:"JetBrains Mono",monospace;font-weight:700;font-size:12.5px;
+  color:var(--svag);flex:none;padding-top:2px;
+}
+.sag-t{
+  font-family:Archivo,system-ui,sans-serif;font-weight:600;font-size:17.5px;
+  line-height:1.28;margin:0;flex:1;text-wrap:balance;
+}
+.stjerne{
+  font-family:Archivo,sans-serif;font-size:9.5px;font-weight:700;letter-spacing:.1em;
+  color:var(--grus);background:var(--grus-blod);border-radius:3px;
+  padding:3px 6px;flex:none;align-self:center;white-space:nowrap;
+}
+.hvor{
+  margin:8px 16px 0;font-family:"JetBrains Mono",monospace;font-size:11px;
+  color:var(--daempet);letter-spacing:.02em;
+}
+.trin{margin:11px 0 0;padding:0 16px 0 38px}
+.trin li{margin:0 0 5px}
+.trin li::marker{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--svag)}
+.vent{
+  margin:13px 16px 0;padding:11px 13px;background:var(--gron-blod);
+  border-radius:8px;font-size:15.5px;
+}
+.vent b{
+  display:block;font-family:Archivo,sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--gron);margin-bottom:3px;
+}
+.pas{
+  margin:9px 16px 0;padding:10px 13px;background:var(--gul-blod);
+  border-radius:8px;font-size:14.5px;color:var(--blaek);
+}
+.pas b{color:var(--gul)}
+
+/* ── SVARET ───────────────────────────────────────────── */
+.svar{display:flex;gap:7px;padding:14px 16px 0;flex-wrap:wrap}
+.svar button{
+  flex:1 1 0;min-width:96px;min-height:46px;cursor:pointer;
+  font-family:Archivo,system-ui,sans-serif;font-size:13.5px;font-weight:600;
+  border:1px solid var(--kant);border-radius:8px;background:transparent;
+  color:var(--daempet);transition:all .13s ease;padding:6px 4px;
+}
+.svar button:hover{border-color:var(--svag);color:var(--blaek)}
+.svar button:focus-visible{outline:2px solid var(--is);outline-offset:2px}
+.svar button[aria-pressed="true"]{font-weight:700}
+.svar button.ok[aria-pressed="true"]{background:var(--gron-blod);border-color:var(--gron);color:var(--gron)}
+.svar button.fejl[aria-pressed="true"]{background:var(--rod-blod);border-color:var(--rod);color:var(--rod)}
+.svar button.sprang[aria-pressed="true"]{background:var(--gul-blod);border-color:var(--gul);color:var(--gul)}
+.note{padding:11px 16px 16px}
+.note textarea, .frit textarea{
+  width:100%;min-height:44px;resize:vertical;padding:10px 11px;
+  border:1px solid var(--kant);border-radius:8px;background:var(--papir);
+  color:var(--blaek);font-family:"Source Serif 4",Georgia,serif;font-size:15.5px;
+  line-height:1.5;
+}
+.note textarea:focus, .frit textarea:focus{outline:2px solid var(--is);outline-offset:1px;border-color:var(--is)}
+.note textarea::placeholder, .frit textarea::placeholder{color:var(--svag)}
+
+/* ── DE TRE SPØRGSMÅL ─────────────────────────────────── */
+.frit{
+  background:var(--kort);border:1px solid var(--kant);border-radius:11px;
+  box-shadow:var(--skygge);padding:18px 16px;margin-top:14px;
+  border-top:4px solid var(--grus);
+}
+.frit h3{
+  font-family:Archivo,sans-serif;font-weight:600;font-size:16.5px;margin:0 0 3px;
+}
+.frit p{margin:0 0 8px;color:var(--daempet);font-size:14.5px}
+.frit .blok + .blok{margin-top:18px;padding-top:18px;border-top:1px solid var(--kant-blod)}
+.frit textarea{min-height:76px}
+
+/* ── SEND ─────────────────────────────────────────────── */
+.send{
+  margin-top:26px;background:var(--kort);border:1px solid var(--kant);
+  border-radius:11px;box-shadow:var(--skygge);padding:16px;
+  border-top:4px solid var(--is);
+}
+.send button{
+  width:100%;min-height:52px;cursor:pointer;border-radius:9px;
+  font-family:Archivo,system-ui,sans-serif;font-size:16px;font-weight:700;
+  background:var(--is);color:#fff;border:none;transition:filter .13s ease;
+}
+.send button:hover{filter:brightness(1.08)}
+.send button:focus-visible{outline:2px solid var(--blaek);outline-offset:2px}
+.send-u{margin:9px 0 0;color:var(--daempet);font-size:14px;text-align:center}
+.send textarea{
+  width:100%;min-height:170px;margin-top:12px;padding:10px 11px;
+  border:1px solid var(--kant);border-radius:8px;background:var(--papir);
+  color:var(--blaek);font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:12.5px;line-height:1.5;
+}
+
+/* ── FOD ──────────────────────────────────────────────── */
+.gemt{
+  position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(14px);
+  background:var(--blaek);color:var(--papir);border-radius:20px;
+  padding:8px 16px;font-family:Archivo,sans-serif;font-size:12.5px;font-weight:600;
+  box-shadow:var(--skygge);opacity:0;transition:all .22s ease;pointer-events:none;z-index:40;
+}
+.gemt.vis{opacity:1;transform:translateX(-50%) translateY(0)}
+.fod{
+  margin-top:34px;padding-top:18px;border-top:1px solid var(--kant-blod);
+  color:var(--svag);font-size:13.5px;
+}
+.fod code{font-family:"JetBrains Mono",monospace;font-size:12.5px}
+.kun-laes{
+  margin:14px 0 0;padding:11px 13px;border-radius:8px;
+  background:var(--gul-blod);color:var(--blaek);font-size:14.5px;
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<script id="tilstand" type="application/json">{"svar":{},"noter":{},"frit":{},"opdateret":null}</script>
+
+</head>
+<body>
+<div class="ramme">
+
+  <header class="hoved">
+    <div class="mrk">StreakTennis · StreakCoach</div>
+    <h1>Prøvekørsel</h1>
+    <p class="ingress">Tak fordi du gider. <b>Du er den eneste, der kan se det her med friske øjne</b> — vi andre har set skærmene tusind gange og kan ikke længere se, hvad der er svært.</p>
+    <p class="ingress">Du skal ikke lede efter fejl. Du skal bare bruge det som et menneske og sige, hvad der skete. <b>Kryds af undervejs. Svarene bliver i din egen browser — til sidst sender du dem samlet med én knap.</b></p>
+  </header>
+
+  <div class="maaler" role="status" aria-live="polite">
+    <div class="bjaelke" id="bjaelke"></div>
+    <div class="tal" id="tal"></div>
+  </div>
+
+  <div id="kun-laes"></div>
+  <div id="sager"></div>
+
+  <section class="afsnit">
+    <h2 class="afsnit-h"><em>D</em> Tre spørgsmål, der er vigtigere end fluebenene</h2>
+    <p class="afsnit-u">Krydserne fortæller os, om koden virker. Det her fortæller os, om <em>produktet</em> gør.</p>
+    <div class="frit" id="frit"></div>
+  </section>
+
+  <div class="send">
+    <button id="send-knap" type="button">📤 Send alle mine svar</button>
+    <p class="send-u">Samler det hele til én besked, du kan sende eller sætte ind i en sms.</p>
+    <textarea id="send-tekst" hidden aria-label="Dine svar som tekst"></textarea>
+  </div>
+
+  <p class="fod">
+    Prøveklubberne lukkes ned, når du er færdig — ingen af de nøgler, du har brugt, virker bagefter.
+    Brug gerne opdigtede spillernavne.<br>
+    <code>SportsAInalytics · CVR 40524002</code>
+  </p>
+</div>
+
+<div class="gemt" id="gemt">Gemt ✓</div>
+
+<script>
+(function(){
+"use strict";
+
+var SAGER = [
+  { af:"A", overskrift:"Du er træneren", under:"Klubbens side hedder StreakCoach. Du har fået en nøgle til «Prøveklubben» — den er din adgang som cheftræner.",
+    liste:[
+    { id:"A1", maa:true, t:"Opret din trænerkonto", hvor:"tennis.sportsainalytics.com/trainer-platform.html · i Safari",
+      trin:["Åbn adressen.","Tryk «Ny træner? Start her».","Læs de fire fliser — og sig bagefter, om du forstod, hvad det her er.","Tast nøglen, du har fået.","Vælg et navn, et brugernavn og et kodeord. <b>Skriv kodeordet ned</b> — der findes ikke «glemt kodeord» endnu."],
+      vent:"Du bliver budt velkommen, og øverst står «PRØVEKLUBBEN · CHEFTRÆNER».",
+      pas:"Kunne du finde ud af, hvad en «nøgle» var, uden at spørge? Det er det vigtigste svar på hele siden." },
+    { id:"A2", maa:true, t:"Udsted to nøgler til familierne", hvor:"forsiden · 🔑 UDSTED NØGLE",
+      trin:["Tryk på den øverste flise.","Lav en nøgle med etiketten <b>familien Prøve</b>.","Kopiér beskeden — <b>gem den et sted, du kan finde den igen</b>.","Lav én til med etiketten <b>familien To</b>."],
+      vent:"Nøglen står på skærmen én gang, med en knap der kopierer en færdig besked til familien.",
+      pas:"Nøglen kan <b>ikke</b> ses igen bagefter. Var det tydeligt nok, inden du trykkede videre?" },
+    { id:"A3", maa:false, t:"Skriv en lille trup ind", hvor:"⚙️ Indstillinger · 👥 MIN TRUP",
+      trin:["Skriv to opdigtede spillere ind, fx «Alma Prøve» og «Viggo Prøve».","Sæt dem på samme hold, fx «U12 Prøve»."],
+      vent:"Eksempeldataene forsvinder, og dine to spillere står der i stedet." },
+    { id:"A4", maa:false, t:"Sæt ugens fokus", hvor:"forsiden · ⚡ VURDÉR TRÆNING",
+      trin:["Vælg ét fokusområde for ugen — teknisk, taktisk, fysisk eller mentalt."],
+      vent:"Valget bliver stående, også hvis du går ud og ind af skærmen igen." },
+    { id:"A5", maa:true, t:"Vurdér træningen for begge spillere", hvor:"forsiden · ⚡ VURDÉR TRÆNING",
+      trin:["Giv begge spillere en score på de tre områder.","Tag tid på det — det skal kunne gøres på under 20 sekunder pr. hold."],
+      vent:"Alle scorer bliver gemt, uden at du skal trykke «gem» nogen steder.",
+      pas:"Hvor lang tid tog det <b>rigtigt</b>? Skriv tallet i noten." },
+    { id:"A6", maa:false, t:"Log ud — og ind igen", hvor:"⚙️ Indstillinger · 👤 DIN KONTO",
+      trin:["Tryk «Log ud» (den skal trykkes to gange).","Log ind igen med dit brugernavn og kodeord."],
+      vent:"Du er inde igen, og din trup og dine vurderinger er der stadig." },
+    { id:"A7", maa:true, t:"Log ind som på en helt ny telefon", hvor:"et privat vindue, eller en anden browser",
+      trin:["Åbn adressen i et <b>privat vindue</b> (eller en anden browser).","Log ind med samme brugernavn og kodeord."],
+      vent:"Du kommer ind, og klubben står i toppen — <b>uden</b> at du taster nøglen igen.",
+      pas:"⚠️ Truppen følger <b>ikke</b> med. Det er meningen, men sig gerne om det føltes forkert." },
+    { id:"A8", maa:false, t:"Skift til den anden klub", hvor:"⚙️ Indstillinger · 👤 DIN KONTO · 🔄 Skift klub",
+      trin:["Tast nøglen til «Prøveklub To», du også har fået.","Tryk «Tjek nøglen» og <b>læs advarslen</b>.","Gennemfør skiftet."],
+      vent:"Advarslen siger præcis, hvad der bliver fjernet fra telefonen. Bagefter står «PRØVEKLUB TO» i toppen, og truppen er tom.",
+      pas:"Var advarslen til at forstå — eller var den bare skræmmende?" }
+  ]},
+
+  { af:"B", overskrift:"Du er forælderen", under:"Nu er du en mor, der har fået en kode af klubben. Brug én af nøglerne fra A2. Start helst på en <b>anden</b> telefon end trænerens.",
+    liste:[
+    { id:"B1", maa:true, t:"Find appen og læg den på hjemmeskærmen", hvor:"tennis.sportsainalytics.com/StreakTennis/ · i Safari",
+      trin:["Åbn adressen — <b>husk skråstregen til sidst</b>.","Følg vejledningen til at lægge den på hjemmeskærmen.","Luk Safari og åbn den fra ikonet i stedet."],
+      vent:"Der ligger et ikon på hjemmeskærmen, og appen åbner uden Safaris adresselinje.",
+      pas:"Det her er det sted, flest falder fra. Sig helt ærligt, hvor det blev besværligt." },
+    { id:"B2", maa:true, t:"Opret spilleren med familiens nøgle", hvor:"appen · fordøren",
+      trin:["Vælg at oprette en ny spiller.","Brug et <b>opdigtet</b> fornavn.","Tast familienøglen fra A2, hvor den bliver bedt om."],
+      vent:"Spilleren kommer <b>direkte ind</b> — ingen ventetid, ingen kø, og klubbens navn står på profilen.",
+      pas:"Hvis der stod «din adgang venter på et ja», så er noget galt. Skriv det i noten." },
+    { id:"B3", maa:true, t:"Registrér en hel kamp", hvor:"appen · 🎾 KAMP",
+      trin:["Start en kamp mod en opdigtet modstander.","Tast et par sæt igennem bold for bold.","Afslut kampen."],
+      vent:"Kampen står på listen bagefter med det rigtige resultat.",
+      pas:"Kunne du taste med <b>én hånd</b>, mens du forestillede dig, at du stod ved banen?" },
+    { id:"B4", maa:false, t:"Kør analysen", hvor:"appen · på den afsluttede kamp",
+      trin:["Bed om en analyse af kampen.","Læs den igennem."],
+      vent:"Der kommer en analyse med tal og tekst — og den handler om den kamp, du lige tastede.",
+      pas:"Ville du sende den til dit eget barn? Hvorfor / hvorfor ikke?" },
+    { id:"B5", maa:false, t:"Se trænerens vurdering komme ind", hvor:"appen · 💪 TRÆN · «Din træner»",
+      trin:["Kig efter de vurderinger, du gav som træner i A5.","(Spilleren skal være den, du gav en nøgle i A2.)"],
+      vent:"Trænerens tal står i spillerens app.",
+      pas:"⚠️ Det virker kun, hvis nøglen er koblet på spilleren i truppen. Sig, hvis det ikke skete." },
+    { id:"B6", maa:false, t:"Tag en sikkerhedskopi", hvor:"appen · 📊 STATS · BACKUP",
+      trin:["Tryk «Lav fuld backup».","Se, om du forstår, hvad du får."],
+      vent:"Du får en tekst, du kan gemme eller sende til dig selv." },
+    { id:"B7", maa:false, t:"Slå notifikationer til", hvor:"appen · 📬",
+      trin:["Slå beskeder til.","Vælg, hvad du vil have besked om."],
+      vent:"Telefonen spørger om lov, og valgene bliver stående.",
+      pas:"⚠️ På iPhone virker det <b>kun</b>, hvis appen ligger på hjemmeskærmen (B1)." }
+  ]},
+
+  { af:"C", overskrift:"Det, der skal gå galt", under:"Lige så vigtigt som at tingene virker: at appen siger noget <b>forståeligt</b>, når de ikke gør. Her prøver du med vilje at gøre det forkert.",
+    liste:[
+    { id:"C1", maa:true, t:"Tast en nøgle, der ikke findes", hvor:"hvor som helst, der spørges om en nøgle",
+      trin:["Tast noget vrøvl, fx <code>XXXX-YYYY-ZZZZ</code>."],
+      vent:"Der kommer en besked, der siger hvad der er galt <b>og hvem du skal spørge</b> — ikke bare «fejl».",
+      pas:"Skriv beskeden ordret i noten. Ville din mor forstå den?" },
+    { id:"C2", maa:true, t:"Tast trænernøglen i spillerens app", hvor:"StreakTennis · fordøren",
+      trin:["Prøv at oprette en spiller med <b>trænernøglen</b> fra A1 i stedet for familiens."],
+      vent:"Appen siger, at det er den forkerte slags nøgle, og hvor den hører hjemme." },
+    { id:"C3", maa:false, t:"Tast familiens nøgle i StreakCoach", hvor:"StreakCoach · fordøren",
+      trin:["Prøv den anden vej rundt: familiens nøgle på klubbens side."],
+      vent:"Den siger, at det er en spillernøgle, og at den hører hjemme i StreakTennis-appen." },
+    { id:"C4", maa:false, t:"Tag et brugernavn, der er taget", hvor:"begge steder",
+      trin:["Prøv at oprette en konto med et brugernavn, du allerede har brugt."],
+      vent:"Den siger det <b>med det samme</b>, mens du skriver — ikke først når du trykker opret." },
+    { id:"C5", maa:true, t:"Slå flytilstand til midt i en kamp", hvor:"StreakTennis · under en kamp",
+      trin:["Start en kamp og tast et par bolde.","Slå <b>flytilstand</b> til på telefonen.","Bliv ved med at taste bolde.","Slå flytilstand fra igen."],
+      vent:"Appen bliver ved med at svare på hvert tryk. Ingenting forsvinder, og kampen er der stadig bagefter.",
+      pas:"⛔ Hvis en knap holder op med at svare, eller noget bliver væk — <b>det er den vigtigste fejl, du kan finde</b>. Skriv præcis hvad du gjorde." }
+  ]}
+];
+
+var SPOERGSMAAL = [
+  { id:"F1", h:"Hvor stoppede du op?",
+    p:"Ikke hvad der gik i stykker — hvor du <b>tøvede</b>, læste en linje to gange eller ikke vidste, hvad du skulle trykke på.",
+    ph:"Fx: «På skærmen med nøglen vidste jeg ikke, om jeg skulle skrive bindestregerne …»" },
+  { id:"F2", h:"Hvad kaldte du tingene?",
+    p:"Sagde du «koden», hvor der stod «nøglen»? Sagde du «holdet», hvor der stod «truppen»? <b>Så er det ordet på skærmen, der skal laves om — ikke dig.</b>",
+    ph:"Fx: «Jeg tænkte hele tiden på det som en invitation, ikke en nøgle.»" },
+  { id:"F3", h:"Hvad troede du ville ske — som ikke skete?",
+    p:"Den slags er umulig at få øje på indefra.",
+    ph:"Fx: «Jeg troede, spilleren dukkede op i min trup af sig selv, når jeg havde givet en nøgle.»" }
+];
+
+/* ── TILSTAND ─────────────────────────────────────────── */
+// ⭐ På vores eget domæne gemmes svarene i BROWSERENS eget lager.
+//   Ingen server, ingen konto — de forlader ikke telefonen, før hun
+//   trykker «Send». Det, der står i siden fra start, er tomt.
+var NOEGLE = "sai-proevekoersel-v1";
+var T;
+try { T = JSON.parse(localStorage.getItem(NOEGLE) || "null"); } catch (e) { T = null; }
+if (!T) { try { T = JSON.parse(document.getElementById("tilstand").textContent) || {}; }
+          catch (e2) { T = {}; } }
+T.svar = T.svar || {}; T.noter = T.noter || {}; T.frit = T.frit || {};
+
+var ALLE = [];
+SAGER.forEach(function(g){ g.liste.forEach(function(s){ ALLE.push(s); }); });
+
+var kunLaes = false, gemmer = null;
+
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+
+/* ── TEGN ─────────────────────────────────────────────── */
+function tegnSager(){
+  var h = "";
+  SAGER.forEach(function(g){
+    h += '<section class="afsnit"><h2 class="afsnit-h"><em>' + g.af + '</em> ' + g.overskrift + '</h2>' +
+         '<p class="afsnit-u">' + g.under + '</p>';
+    g.liste.forEach(function(s){
+      var sv = T.svar[s.id] || "";
+      var kl = "sag" + (s.maa ? " maa" : "") +
+        (sv === "ok" ? " gjort" : sv === "fejl" ? " brudt" : "");
+      h += '<article class="' + kl + '" id="sag-' + s.id + '">' +
+        '<div class="sag-h"><span class="sag-id">' + s.id + '</span>' +
+        '<h3 class="sag-t">' + s.t + '</h3>' +
+        (s.maa ? '<span class="stjerne">SKAL VIRKE</span>' : '') + '</div>' +
+        '<p class="hvor">' + s.hvor + '</p>' +
+        '<ol class="trin">' + s.trin.map(function(x){ return '<li>' + x + '</li>'; }).join("") + '</ol>' +
+        '<div class="vent"><b>Det skal ske</b>' + s.vent + '</div>' +
+        (s.pas ? '<div class="pas">' + s.pas + '</div>' : '') +
+        '<div class="svar">' +
+          knap(s.id, "ok", "Det virkede") +
+          knap(s.id, "fejl", "Det virkede ikke") +
+          knap(s.id, "sprang", "Sprang over") +
+        '</div>' +
+        '<div class="note"><textarea data-note="' + s.id + '" placeholder="Hvad skete der? Skriv det med dine egne ord — også hvis det virkede."' +
+          (kunLaes ? " readonly" : "") + '>' + esc(T.noter[s.id] || "") + '</textarea></div>' +
+        '</article>';
+    });
+    h += '</section>';
+  });
+  document.getElementById("sager").innerHTML = h;
+}
+
+function knap(id, v, tekst){
+  var valgt = T.svar[id] === v;
+  return '<button class="' + v + '" data-sag="' + id + '" data-v="' + v + '" ' +
+    'aria-pressed="' + (valgt ? "true" : "false") + '"' + (kunLaes ? " disabled" : "") + '>' +
+    tekst + '</button>';
+}
+
+function tegnFrit(){
+  document.getElementById("frit").innerHTML = SPOERGSMAAL.map(function(q){
+    return '<div class="blok"><h3>' + q.h + '</h3><p>' + q.p + '</p>' +
+      '<textarea data-frit="' + q.id + '" placeholder="' + esc(q.ph) + '"' +
+      (kunLaes ? " readonly" : "") + '>' + esc(T.frit[q.id] || "") + '</textarea></div>';
+  }).join("");
+}
+
+function tegnMaaler(){
+  var n = ALLE.length, g = 0, r = 0, s = 0;
+  ALLE.forEach(function(x){
+    var v = T.svar[x.id];
+    if (v === "ok") g++; else if (v === "fejl") r++; else if (v === "sprang") s++;
+  });
+  var p = function(x){ return (x / n * 100).toFixed(2) + "%"; };
+  document.getElementById("bjaelke").innerHTML =
+    '<span style="width:' + p(g) + ';background:var(--gron)"></span>' +
+    '<span style="width:' + p(r) + ';background:var(--rod)"></span>' +
+    '<span style="width:' + p(s) + ';background:var(--gul)"></span>';
+  var maaRest = ALLE.filter(function(x){ return x.maa && !T.svar[x.id]; }).length;
+  document.getElementById("tal").innerHTML =
+    '<span class="g"><i>' + g + '</i> virkede</span>' +
+    '<span class="r"><i>' + r + '</i> fejl</span>' +
+    '<span class="s"><i>' + s + '</i> sprunget over</span>' +
+    '<span class="rest">' + (n - g - r - s) + ' af ' + n + ' tilbage' +
+      (maaRest ? ' · ' + maaRest + ' skal-virke' : '') + '</span>';
+}
+
+/* ── GEM ──────────────────────────────────────────────── */
+function kvitter(tekst){
+  var e = document.getElementById("gemt");
+  e.textContent = tekst; e.classList.add("vis");
+  clearTimeout(kvitter._t);
+  kvitter._t = setTimeout(function(){ e.classList.remove("vis"); }, 1900);
+}
+
+function laesKun(grund){
+  if (kunLaes) return;
+  kunLaes = true;
+  document.getElementById("kun-laes").innerHTML =
+    '<div class="kun-laes">Du kan læse siden, men ikke krydse af her — ' + grund +
+    ' Skriv svarene ned et andet sted.</div>';
+  tegnSager(); tegnFrit();
+}
+
+function planlaegGem(){
+  if (kunLaes) return;
+  clearTimeout(gemmer);
+  gemmer = setTimeout(gem, 700);
+}
+
+// ⛔ PRINCIP 35: en knap skal altid svare. Kan lageret ikke skrives
+//   (privat vindue, fyldt disk), SIGES det — der lades ikke som om.
+function gem(){
+  if (kunLaes) return;
+  T.opdateret = new Date().toISOString();
+  try { localStorage.setItem(NOEGLE, JSON.stringify(T)); kvitter("Gemt ✓"); }
+  catch (e) { kvitter("Kunne ikke gemme her — brug «Send» inden du lukker"); }
+}
+
+/* ── SEND ─────────────────────────────────────────────── */
+function byggRapport(){
+  var d = new Date(), to = function(n){ return (n < 10 ? "0" : "") + n; };
+  var ud = "PRØVEKØRSEL · " + to(d.getDate()) + "/" + to(d.getMonth() + 1) + " kl. " +
+           to(d.getHours()) + "." + to(d.getMinutes()) + "\n";
+  var g = 0, r = 0, sp = 0;
+  ALLE.forEach(function(x){ var v = T.svar[x.id];
+    if (v === "ok") g++; else if (v === "fejl") r++; else if (v === "sprang") sp++; });
+  ud += g + " virkede · " + r + " virkede IKKE · " + sp + " sprunget over · " +
+        (ALLE.length - g - r - sp) + " ikke prøvet\n";
+
+  // ⭐ Fejlene står ØVERST. Det er dem, der skal handles på.
+  var fejl = ALLE.filter(function(x){ return T.svar[x.id] === "fejl"; });
+  if (fejl.length) {
+    ud += "\n=== VIRKEDE IKKE ===\n";
+    fejl.forEach(function(x){
+      ud += "\n" + x.id + " · " + x.t + "\n" + (T.noter[x.id] || "(ingen note)") + "\n"; });
+  }
+  ud += "\n=== ALLE SAGER ===\n";
+  SAGER.forEach(function(blokk){
+    ud += "\n-- " + blokk.af + " · " + blokk.overskrift.toUpperCase() + " --\n";
+    blokk.liste.forEach(function(x){
+      var v = T.svar[x.id];
+      var m = v === "ok" ? "OK  " : v === "fejl" ? "FEJL" : v === "sprang" ? "SPRG" : "----";
+      ud += m + "  " + x.id + " " + x.t + "\n";
+      if (T.noter[x.id]) ud += "        " + T.noter[x.id].replace(/\n/g, "\n        ") + "\n";
+    });
+  });
+  ud += "\n=== DE TRE SPØRGSMÅL ===\n";
+  SPOERGSMAAL.forEach(function(q){
+    ud += "\n" + q.h + "\n" + (T.frit[q.id] || "(ubesvaret)") + "\n"; });
+  return ud;
+}
+
+function send(){
+  var tekst = byggRapport();
+  var felt = document.getElementById("send-tekst");
+  if (navigator.share) {
+    navigator.share({ title: "Prøvekørsel", text: tekst }).catch(function(){ visTekst(felt, tekst); });
+    return;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(tekst)
+      .then(function(){ kvitter("Kopieret ✓ — sæt den ind i en besked"); })
+      .catch(function(){ visTekst(felt, tekst); });
+    return;
+  }
+  visTekst(felt, tekst);
+}
+
+// Sidste udvej: læg teksten frem, så den kan markeres i hånden.
+function visTekst(felt, tekst){
+  felt.value = tekst; felt.hidden = false; felt.focus(); felt.select();
+  kvitter("Marker teksten og kopiér den");
+}
+
+/* ── HANDLINGER ───────────────────────────────────────── */
+document.addEventListener("click", function(e){
+  var b = e.target.closest("button[data-sag]"); if (!b || kunLaes) return;
+  var id = b.dataset.sag, v = b.dataset.v;
+  if (T.svar[id] === v) delete T.svar[id]; else T.svar[id] = v;
+  var kort = document.getElementById("sag-" + id);
+  if (kort) {
+    kort.className = "sag" + (ALLE.filter(function(x){ return x.id === id; })[0].maa ? " maa" : "") +
+      (T.svar[id] === "ok" ? " gjort" : T.svar[id] === "fejl" ? " brudt" : "");
+    kort.querySelectorAll("button[data-sag]").forEach(function(k){
+      k.setAttribute("aria-pressed", T.svar[id] === k.dataset.v ? "true" : "false"); });
+  }
+  tegnMaaler(); planlaegGem();
+});
+
+document.addEventListener("input", function(e){
+  var t = e.target;
+  if (t.dataset && t.dataset.note !== undefined) { T.noter[t.dataset.note] = t.value; planlaegGem(); }
+  else if (t.dataset && t.dataset.frit !== undefined) { T.frit[t.dataset.frit] = t.value; planlaegGem(); }
+});
+
+/* ── START ────────────────────────────────────────────── */
+tegnSager(); tegnFrit(); tegnMaaler();
+
+document.getElementById("send-knap").addEventListener("click", send);
+
+// Kan browseren slet ikke gemme (privat vindue), siges det med det samme
+// — ikke først når en times arbejde er væk.
+try { localStorage.setItem(NOEGLE + "-proev", "1"); localStorage.removeItem(NOEGLE + "-proev"); }
+catch (e) {
+  document.getElementById("kun-laes").innerHTML =
+    '<div class="kun-laes">⚠️ Din browser gemmer ikke noget her (privat vindue?). ' +
+    'Du kan godt krydse af — men <b>tryk «Send alle mine svar», før du lukker siden</b>, ' +
+    'ellers er de væk.</div>';
+}
+
+})();
+</script>
+</body>
+</html>

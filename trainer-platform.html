@@ -706,7 +706,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v4.4.0 \u00b7 31. august 2026";
+const VERSION = "v4.6.0 \u00b7 31. august 2026";
 
 function render(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
@@ -1105,7 +1105,7 @@ function renderTraener(){
   // Prototype-banneret gaelder kun eksempeldata. Har traeneren skrevet sin egen
   // trup ind, er det hans rigtige spillere — og saa maa der ikke staa "fake data".
   if (!(S.truppen||[]).length) {
-    h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> Skriv din egen trup ind under 👥 MIN TRUP — så forsvinder eksemplerne. 💡 Vurderinger og evalueringer lander i spillerens egen app, når spilleren har en nøgle.</div>';
+    h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> De forsvinder, så snart din første rigtige spiller er i truppen. 💡 Den nemmeste vej: udsted en nøgle under 🔑 UDSTED NØGLE — når familien har tastet den, dukker spilleren op under 📥 NYE TILMELDINGER, og et tryk på Godkend lægger ham i truppen.</div>';
   }
   if (S.tab==="hjem") {
     h += '<p style="margin:16px 2px 4px;font-size:12.5px;color:var(--daempet)">Vælg, hvad du vil i gang med</p>';
@@ -1157,6 +1157,69 @@ function faneKnap(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'"
 //   Kortet er URØRT — det har bare fået sin egen flise på forsiden, så
 //   aftenens vigtigste handling ikke skal findes.
 // ══════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════
+// ⛔⛔ v4.5.0 · KVITTERINGEN STOD DET FORKERTE STED OG SAGDE DET FORKERTE
+//
+// Nicolai 31/8, med telefonen i hånden og et skærmbillede:
+//   «Jeg oprettede en uden navn. Kunne ikke helt se hvor nøglen kom frem…
+//    og du kan se her hvorfor.»
+//
+// Skærmbilledet viste en TRÆNERNØGLE stående under overskriften
+// «🔑 SPILLERNØGLER», med knappen «📋 Kopiér besked til FAMILIEN», og
+// med linjen «Én nøgle pr. familie — aldrig til trænerdelen» lige under.
+//
+// ⛔⛔ DET ER IKKE EN SKØNHEDSFEJL. Cheftræneren kan følge skærmens egen
+//   instruktion og sende en TRÆNERNØGLE til en familie. Så har familien
+//   adgang til hele truppen — præcis det, rollerne blev bygget for at
+//   forhindre. 8/9 er dét den handling, Carsten skal udføre foran tre
+//   familier.
+//
+// ⭐ Og det milde i det: `fam-kopier` skrev HELE TIDEN den rigtige tekst
+//   (den skelner på `famNyRolle`). Motoren og beskeden var i orden.
+//   **Det var skærmen, der ikke fortalte ham, hvad han havde i hånden.**
+//   Princip 70's spejlbillede: gjort rigtigt, sagt forkert.
+//
+// FIRE TING RETTET, OG DE HÆNGER SAMMEN:
+//   ① kvitteringen tegnes DÉR, hvor nøglen hører til — trykker han
+//      «+ Træner» nederst, kommer svaret nederst, ikke oppe i toppen
+//      uden for skærmen («kunne ikke se hvor nøglen kom frem»)
+//   ② knappen og kortet siger, HVILKEN slags nøgle det er
+//   ③ kvitteringer og fejl (`famBesked`) lander i det afsnit, de kom fra
+//   ④ de to etiketfelter er skilt ad. Før delte de ÉN state under to
+//      inputs på samme skærm: skrev man i det ene, stod værdien også i
+//      det andet — men først efter næste gentegning. Det er dét, der
+//      gjorde en nøgle «uden navn».
+// ══════════════════════════════════════════════════════════════════
+function noegleKvittering(afsnit){
+  if (!S.famNyNoegle) return '';
+  var erT = S.famNyRolle === "traener";
+  if (erT !== (afsnit === "traener")) return '';   // ⭐ kun i sit eget afsnit
+  var farve = erT ? 'var(--guld)' : 'var(--is)';
+  return '<div style="border:1.5px solid ' + farve + ';border-radius:10px;padding:12px;margin-top:9px;text-align:center">' +
+    '<div class="lille" style="font-weight:800;letter-spacing:1.2px;color:' + farve + ';margin-bottom:4px">' +
+      (erT ? '🧑‍🏫 TRÆNERNØGLE' : '🎾 FAMILIENØGLE') + '</div>' +
+    '<div class="lille" style="margin-bottom:5px">Ny nøgle' +
+      (S.famNyEtiket ? ' til <b>' + esc(S.famNyEtiket) + '</b>' : ' <b>uden navn</b>') +
+      ' — <b>vises kun nu</b>:</div>' +
+    '<div style="font-size:18px;font-weight:800;letter-spacing:2px;user-select:all">' + esc(S.famNyNoegle) + '</div>' +
+    '<button class="knap" style="width:100%;margin-top:9px;min-height:44px;background:' +
+      (erT ? 'var(--guld);color:#12203a' : 'var(--grus)') + '" data-act="fam-kopier">' +
+      (S.famKopieret ? '✓ Kopieret'
+        : (erT ? '📋 Kopiér besked til træneren' : '📋 Kopiér besked til familien')) + '</button>' +
+    (erT
+      ? '<p class="lille" style="margin:7px 0 0;opacity:.85">⛔ Den her må <b>aldrig</b> gives til en familie — den åbner hele truppen.</p>'
+      : '<p class="lille" style="margin:7px 0 0;opacity:.75">Åbner kun spillerens egen app — aldrig trænerdelen.</p>') +
+    '<button class="knap valg" style="width:100%;margin-top:6px;min-height:44px" data-act="fam-luk-ny">Færdig — jeg har sendt den</button></div>';
+}
+
+// Kvitteringer og fejl skal stå, hvor der blev trykket.
+function famBeskedHer(afsnit){
+  if (!S.famBesked) return '';
+  if ((S.famBesked.hvor || "spiller") !== afsnit) return '';
+  return '<p class="lille" style="margin:8px 0 0;color:' +
+    (S.famBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.famBesked.t) + '</p>';
+}
+
 function noegleKortet(){
   let h = '';
   // ── FAMILIENØGLER (v3.2.0) · traeneren inviterer familierne SELV.
@@ -1169,16 +1232,10 @@ function noegleKortet(){
           (S.minRolle === "admin" ? '<span style="color:var(--guld)"> \u00b7 ADMIN</span>' : '') + '</div>' +
           '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="fam-liste">' +
           (S.famHenter ? '\u2026' : (S.famListe ? 'Opdat\u00e9r' : 'Vis')) + '</button></div>';
-      if (S.famNyNoegle) {
-        // \u26a0\ufe0f VISES KUN NU. Serveren gemmer kun hashen — lukkes kortet,
-        // findes noeglen ingen steder mere. Derfor kraever "Faerdig" et tryk.
-        h += '<div style="border:1.5px solid var(--guld);border-radius:10px;padding:12px;margin-top:9px;text-align:center">' +
-          '<div class="lille" style="margin-bottom:5px">Ny n\u00f8gle' + (S.famNyEtiket ? ' til <b>'+esc(S.famNyEtiket)+'</b>' : '') + ' \u2014 <b>vises kun nu</b>:</div>' +
-          '<div style="font-size:18px;font-weight:800;letter-spacing:2px;user-select:all">'+esc(S.famNyNoegle)+'</div>' +
-          '<button class="knap" style="width:100%;margin-top:9px;min-height:44px;background:var(--grus)" data-act="fam-kopier">' +
-          (S.famKopieret ? '\u2713 Kopieret' : '\ud83d\udccb Kopi\u00e9r besked til familien') + '</button>' +
-          '<button class="knap valg" style="width:100%;margin-top:6px;min-height:44px" data-act="fam-luk-ny">F\u00e6rdig \u2014 jeg har sendt den</button></div>';
-      } else {
+      // \u26a0\ufe0f VISES KUN NU. Serveren gemmer kun hashen — lukkes kortet,
+      // findes noeglen ingen steder mere. Derfor kraever "Faerdig" et tryk.
+      h += noegleKvittering("spiller");
+      if (!S.famNyNoegle || S.famNyRolle === "traener") {
         h += '<div class="raekke" style="margin-top:9px">' +
           '<input class="felt" style="flex:1;min-width:0" data-felt="famEtiket" value="'+esc(S.famEtiket||'')+'" placeholder="fx familien Jensen" maxlength="40" autocapitalize="words">' +
           '<button class="knap" style="flex:none;background:var(--grus);min-height:44px" data-act="fam-udsted">' +
@@ -1206,7 +1263,7 @@ function noegleKortet(){
       } else if (S.famListe) {
         h += '<p class="lille" style="margin:8px 0 0">Ingen spillern\u00f8gler udstedt endnu.</p>';
       }
-      if (S.famBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.famBesked.fejl?'var(--tabt)':'var(--vundet)') + '">'+esc(S.famBesked.t)+'</p>';
+      h += famBeskedHer("spiller");
       h += '<p class="lille" style="margin:8px 0 0;opacity:.7">\u00c9n n\u00f8gle pr. familie. Den giver adgang til jeres klub i StreakTennis \u2014 aldrig til tr\u00e6nerdelen \u2014 og kan sp\u00e6rres her n\u00e5r som helst.</p>';
       // ⭐⭐⭐ v4.0.0 · TRÆNERNØGLER — KUN FOR CHEFTRÆNEREN.
       //   Nicolai 30/8: «han bliver admin og kan udstede træner nøgler.»
@@ -1218,9 +1275,10 @@ function noegleKortet(){
           '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">\ud83e\uddd1\u200d\ud83c\udfeb TR\u00c6NERN\u00d8GLER</div>' +
           '<p class="lille" style="margin:5px 0 0;opacity:.75">\u00c9n n\u00f8gle pr. tr\u00e6ner \u2014 aldrig en delt. Skifter en tr\u00e6ner klub, sp\u00e6rrer du hans egen og r\u00f8rer ikke de andres.</p>' +
           '<div class="raekke" style="margin-top:9px">' +
-            '<input class="felt" style="flex:1;min-width:0" data-felt="famEtiket" value="'+esc(S.famEtiket||'')+'" placeholder="fx Gani" maxlength="40" autocapitalize="words">' +
-            '<button class="knap" style="flex:none;background:var(--guld);color:#12203a;min-height:44px;font-weight:800" data-act="fam-udsted" data-v="traener">' +
-            (S.famUdsteder ? '\u23f3 \u2026' : '\u2795 Tr\u00e6ner') + '</button></div>' +
+            '<input class="felt" style="flex:1;min-width:0" data-felt="famEtiketT" value="'+esc(S.famEtiketT||'')+'" placeholder="fx Gani" maxlength="40" autocapitalize="words">' +
+            '<button class="knap" style="flex:none;background:var(--guld);color:#12203a;min-height:44px;font-weight:800;padding:8px 14px" data-act="fam-udsted" data-v="traener">' +
+            (S.famUdsteder ? '\u23f3' : '\u2795 Tr\u00e6ner') + '</button></div>' +
+          noegleKvittering("traener") + famBeskedHer("traener") +
           (_traenerN.length
             ? _traenerN.map(function(k3){
                 var _b = k3.sidst_brugt ? new Date(k3.sidst_brugt).toLocaleDateString('da-DK') : 'aldrig brugt';
@@ -1383,7 +1441,34 @@ function traenerIndstillinger(){
         '<span data-act="trup-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.trupAaben?'\u2715':'\u270f\ufe0f') + '</span></div>' +
       '<p class="lille" style="margin:6px 0 0">' + (egen
         ? egen + ' spiller' + (egen===1?'':'e') + ' i ' + antG + ' gruppe' + (antG===1?'':'r') + ' \u00b7 ' + medN + ' med n\u00f8gle'
-        : '\u26a1 Du ser <b>eksempeldata</b>. Skriv din f\u00f8rste spiller ind \u2014 s\u00e5 forsvinder eksemplerne.') + '</p>';
+        : '\u26a1 Du ser <b>eksempeldata</b>.') + '</p>';
+    // ══════════════════════════════════════════════════════════════
+    // ⛔⛔ v4.6.0 · TRUPPEN BAD OM NOGET, CHEFTRÆNEREN IKKE HAR.
+    //   Nicolai 31/8, efter at Carsten var oprettet: «Tror ikke han kan
+    //   sætte hans team ordentligt.»
+    //   Skærmen sagde: «Skriv din første spiller ind — så forsvinder
+    //   eksemplerne», og feltet nedenunder bad om en SPILLERNØGLE.
+    //   ⛔ Men cheftræneren HAR ikke spillernøglen. Han udsteder den,
+    //     den vises ÉN gang, han sender den til familien og trykker
+    //     «Færdig». Den findes ikke mere på hans skærm.
+    //   ⛔ Og hjælpeteksten sagde «Nøglen udleveres af klubben sammen
+    //     med familiens egen» — han ER klubben.
+    //   ⭐⭐ DEN RIGTIGE VEJ FANDTES ALLEREDE: når familien har tastet
+    //     nøglen ind, dukker de op under NYE TILMELDINGER, og et tryk på
+    //     Godkend føjer dem til truppen MED deres håndtag (se tilm-svar).
+    //     **Truppen fylder sig selv.** Skærmen sagde bare det modsatte.
+    //   Her står rækkefølgen nu, og den manuelle vej er dét, den er:
+    //   en undtagelse for spillere, der endnu ikke har en nøgle.
+    if (!egen) {
+      h += '<div style="margin-top:9px;padding:10px 12px;background:rgba(47,191,107,.08);border-radius:9px">' +
+        '<b style="font-size:12.5px;display:block;margin-bottom:5px">S\u00e5dan fylder truppen sig selv</b>' +
+        '<div class="lille" style="line-height:1.65">' +
+        '<b>1.</b> Udsted en n\u00f8gle pr. familie under \ud83d\udd11 UDSTED N\u00d8GLE.<br>' +
+        '<b>2.</b> Familien taster n\u00f8glen i StreakTennis.<br>' +
+        '<b>3.</b> De dukker op under \ud83d\udce5 NYE TILMELDINGER \u2014 tryk <b>Godkend</b>.<br>' +
+        '<b>4.</b> S\u00e5 st\u00e5r spilleren her, <b>koblet til sin n\u00f8gle</b>, og dine vurderinger lander i hans app.</div>' +
+        '<p class="lille" style="margin:8px 0 0;opacity:.8">\u26a0\ufe0f Du beh\u00f8ver <b>ikke</b> skrive dem ind i h\u00e5nden. Det nedenfor er kun til spillere, du vil vurdere, <b>f\u00f8r</b> de har f\u00e5et en n\u00f8gle \u2014 de kan kobles til bagefter.</p></div>';
+    }
     if (S.trupAaben) {
       if (egen) {
         h += '<div style="margin-top:9px">';
@@ -1411,7 +1496,10 @@ function traenerIndstillinger(){
         '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:'+(S.visTrupN?'none':'disc')+'" data-felt="trupNoegle" value="'+esc(S.trupNoegle||'')+'" placeholder="spillern\u00f8gle (kan udfyldes senere)" autocapitalize="off" spellcheck="false" autocomplete="off">' +
         '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:13px" data-act="vis-skift" data-v="visTrupN">'+(S.visTrupN?'\ud83d\ude48':'\ud83d\udc41')+'</button></div>' +
         '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="trup-tilfoej">+ Tilf\u00f8j spiller</button></div>' +
-        '<p class="lille" style="margin:8px 0 0;font-style:italic">Skriv navnet, som klubben vil have det vist \u2014 fornavn, fornavn og initial, eller fuldt navn. N\u00f8glen udleveres af klubben sammen med familiens egen.</p>';
+        '<p class="lille" style="margin:8px 0 0;font-style:italic">Skriv navnet, som klubben vil have det vist \u2014 fornavn, fornavn og initial, eller fuldt navn.</p>' +
+        // ⭐ v4.6.0 · nøglefeltet er en UNDTAGELSE, ikke et krav. Cheftræneren
+        //   har det normalt ikke, og skal ikke lede efter det.
+        '<p class="lille" style="margin:5px 0 0;opacity:.75">\ud83d\udd11 <b>N\u00f8glefeltet kan st\u00e5 tomt.</b> Godkender du spilleren under \ud83d\udce5 NYE TILMELDINGER, kobles n\u00f8glen p\u00e5 af sig selv. Feltet er kun til, hvis du har f\u00e5et et h\u00e5ndtag udleveret.</p>';
     }
   }
     if (S.syncBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
@@ -2227,21 +2315,24 @@ document.addEventListener("click", function(e){
   else if (act==="tilm-hent"){ hentTilmeldinger(); }
   else if (act==="fam-udsted"){
     if (S.famUdsteder) return;
-    if (!lager.hent("klubkode","")) { S.famBesked={fejl:true,t:"Indtast klubkoden f\u00f8rst."}; render(); return; }
+    var _hvor = (v === "traener") ? "traener" : "spiller";
+    if (!lager.hent("klubkode","")) { S.famBesked={fejl:true,hvor:_hvor,t:"Indtast klubkoden f\u00f8rst."}; render(); return; }
     S.famUdsteder = true; S.famBesked = null; render();
-    var _etk = (S.famEtiket||"").trim();
+    // ⭐ v4.5.0 · hvert afsnit har sit EGET felt. Før delte de ét.
+    var _etk = ((v === "traener" ? S.famEtiketT : S.famEtiket)||"").trim();
     // ⭐ v4.0.0 · `v` baerer rollen: tom/"spiller" = familie, "traener" =
     //   en traener. Kun en ADMIN faar 200 paa den sidste (motoren doemmer,
     //   ikke skaermen — knappen vises bare ikke for andre).
     var _rolle = (v === "traener") ? "traener" : "spiller";
     noegleKald("udsted", Object.assign({ rolle: _rolle }, _etk ? { etiket: _etk } : {})).then(function(r){
       S.famUdsteder = false;
-      if (r && r.fejl) { S.famBesked={fejl:true,t:"Kunne ikke udstede: "+(r.t||r.fejl)}; render(); return; }
+      if (r && r.fejl) { S.famBesked={fejl:true,hvor:_hvor,t:"Kunne ikke udstede: "+(r.t||r.fejl)}; render(); return; }
       S.famNyNoegle = r.noegle; S.famNyEtiket = r.etiket; S.famNyRolle = r.rolle || _rolle;
-      S.famEtiket = ""; S.famKopieret = false;
+      if (v === "traener") S.famEtiketT = ""; else S.famEtiket = "";
+      S.famKopieret = false;
       render();
       noegleKald("liste", {}).then(function(r2){ if (r2 && r2.noegler) { S.famListe = r2.noegler; S.minRolle = r2.rolle || S.minRolle; render(); } });
-    }).catch(function(){ S.famUdsteder=false; S.famBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
+    }).catch(function(){ S.famUdsteder=false; S.famBesked={fejl:true,hvor:_hvor,t:"Ingen forbindelse."}; render(); }); }
   else if (act==="fam-kopier"){
     var _kn = (typeof KONFIG !== "undefined" && KONFIG.klub) || "klubben";
     // ⭐⭐ v4.0.0 · EN TRAENERNOEGLE ER IKKE EN FAMILIENOEGLE, og beskeden
@@ -2273,10 +2364,15 @@ document.addEventListener("click", function(e){
     if (S.famSpaerBed !== v) { S.famSpaerBed = v; render(); return; }
     S.famSpaerBed = null;
     noegleKald("spaer", { id: v }).then(function(r){
-      if (r && r.fejl) { S.famBesked={fejl:true,t:"Kunne ikke sp\u00e6rre: "+(r.t||r.fejl)}; render(); return; }
-      S.famBesked={fejl:false,t:(r.rolle==="traener"?"Tr\u00e6nern\u00f8glen":"N\u00f8glen")+(r.etiket?" til "+r.etiket:"")+" er sp\u00e6rret \u2713"};
+      if (r && r.fejl) { S.famBesked={fejl:true,hvor:"spiller",t:"Kunne ikke sp\u00e6rre: "+(r.t||r.fejl)}; render(); return; }
+      // ⛔ FANGET PÅ ET SKÆRMBILLEDE 31/8: «Trænernøglen er spærret ✓» stod
+      //   i GRØNT lige under en AKTIV familienøgle. Det så ud, som om
+      //   familiens nøgle var blevet spærret. Kvitteringen bor nu i det
+      //   afsnit, den handler om.
+      S.famBesked={fejl:false, hvor:(r.rolle==="traener"?"traener":"spiller"),
+        t:(r.rolle==="traener"?"Tr\u00e6nern\u00f8glen":"N\u00f8glen")+(r.etiket?" til "+r.etiket:"")+" er sp\u00e6rret \u2713"};
       noegleKald("liste", {}).then(function(r2){ if (r2 && r2.noegler) { S.famListe = r2.noegler; S.minRolle = r2.rolle || S.minRolle; } render(); });
-    }).catch(function(){ S.famBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
+    }).catch(function(){ S.famBesked={fejl:true,hvor:"spiller",t:"Ingen forbindelse."}; render(); }); }
   else if (act==="tilm-svar"){
     var dele = String(v).split("~~"), noegle = dele[0], nyStatus = dele[1];
     var post = (S.tilmeldinger||[]).filter(function(x){ return x.haandtag === noegle || x.spillernoegle === noegle; })[0];

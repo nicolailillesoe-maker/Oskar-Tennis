@@ -518,9 +518,13 @@ function hentTilmeldinger(){
       });
       lager.gem("srvnavne", S.srvNavne || {});
       S.tilmHentet = new Date().toISOString();
-      var afv = S.tilmeldinger.filter(function(x){ return x.status === "afventer"; }).length;
-      S.syncBesked = { fejl:false, t: afv ? afv + " ny" + (afv===1?"":"e") + " tilmelding" + (afv===1?"":"er") + " \u2713"
-                                        : "Ingen nye tilmeldinger \u2713" };
+      // ⭐ v4.7.0 · tælles begge grupper. Før talte den kun 'afventer' og
+      //   sagde «Ingen nye tilmeldinger ✓», mens en ny spiller stod i
+      //   klubben og manglede i truppen.
+      var _t4 = nyeSpillere(); var _a4 = _t4.venter.length + _t4.nye.length;
+      S.syncBesked = { fejl:false, t: _a4 ? _a4 + " ny" + (_a4===1?"":"e") + " spiller" + (_a4===1?"":"e") + " \u2713"
+                                        : (S.tilmeldinger.length ? "Alle er i truppen \u2713"
+                                                                 : "Ingen har tastet en n\u00f8gle endnu \u2713") };
       render();
     }).catch(function(){ S.tilmHenter=false; S.syncBesked={fejl:true,t:"Ingen forbindelse."}; render(); });
 }
@@ -706,7 +710,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v4.6.0 \u00b7 31. august 2026";
+const VERSION = "v4.7.0 \u00b7 1. september 2026";
 
 function render(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
@@ -1105,7 +1109,7 @@ function renderTraener(){
   // Prototype-banneret gaelder kun eksempeldata. Har traeneren skrevet sin egen
   // trup ind, er det hans rigtige spillere — og saa maa der ikke staa "fake data".
   if (!(S.truppen||[]).length) {
-    h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> De forsvinder, så snart din første rigtige spiller er i truppen. 💡 Den nemmeste vej: udsted en nøgle under 🔑 UDSTED NØGLE — når familien har tastet den, dukker spilleren op under 📥 NYE TILMELDINGER, og et tryk på Godkend lægger ham i truppen.</div>';
+    h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> De forsvinder, så snart din første rigtige spiller er i truppen. 💡 Den nemmeste vej: udsted en nøgle under 🔑 UDSTED NØGLE — når familien har tastet den, dukker spilleren op under 📥 NYE SPILLERE, og et tryk på <b>Læg i trup</b> gør ham til din.</div>';
   }
   if (S.tab==="hjem") {
     h += '<p style="margin:16px 2px 4px;font-size:12.5px;color:var(--daempet)">Vælg, hvad du vil i gang med</p>';
@@ -1212,6 +1216,28 @@ function noegleKvittering(afsnit){
     '<button class="knap valg" style="width:100%;margin-top:6px;min-height:44px" data-act="fam-luk-ny">Færdig — jeg har sendt den</button></div>';
 }
 
+// ⭐⭐⭐ v4.7.0 · HVEM MANGLER I TRUPPEN?
+// Det er DET spørgsmål, træneren har — ikke «hvem venter på svar».
+// En familie med en gyldig nøgle er allerede godkendt af døren; den
+// eneste, der stadig mangler noget, er TRÆNEREN, som ikke har spilleren
+// i sin trup endnu.
+function iTruppen(p){
+  var n2 = p.haandtag || p.spillernoegle;
+  return (S.truppen || []).some(function(x){
+    return (n2 && x.noegle === n2) || (p.fornavn && x.navn === p.fornavn);
+  });
+}
+// To grupper, to forskellige handlinger:
+//   venter  = status 'afventer'  → klubben skal sige ja (serverkald)
+//   nye     = status 'godkendt', men ikke i truppen → ét lokalt tryk
+function nyeSpillere(){
+  var alle = S.tilmeldinger || [];
+  return {
+    venter: alle.filter(function(x){ return x.status === "afventer"; }),
+    nye:    alle.filter(function(x){ return x.status === "godkendt" && !iTruppen(x); })
+  };
+}
+
 // Kvitteringer og fejl skal stå, hvor der blev trykket.
 function famBeskedHer(afsnit){
   if (!S.famBesked) return '';
@@ -1309,26 +1335,52 @@ function traenerIndstillinger(){
   let h = '';
     // ── NYE TILMELDINGER · familier, der har oprettet sig og venter paa klubben
     {
-      const afv = (S.tilmeldinger||[]).filter(function(x){ return x.status === "afventer"; });
-      h += '<div class="kort" style="border-left:3px solid ' + (afv.length ? 'var(--guld)' : 'var(--kant)') + '">' +
+      // ⭐⭐⭐ v4.7.0 · KORTET SVARER NU PÅ TRÆNERENS SPØRGSMÅL.
+      //   Før filtrerede det på 'afventer' alene — og en familie med en
+      //   gyldig nøgle er ALLEREDE godkendt af døren. Den normale vej
+      //   ramte derfor aldrig listen (målt 1/9 kl. 08.16).
+      const _ny = nyeSpillere();
+      const _ialt = _ny.venter.length + _ny.nye.length;
+      h += '<div class="kort" style="border-left:3px solid ' + (_ialt ? 'var(--guld)' : 'var(--kant)') + '">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-          '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udce5 NYE TILMELDINGER' +
-          (afv.length ? ' <span style="background:var(--guld);color:var(--nat);padding:1px 6px;border-radius:7px;margin-left:5px">'+afv.length+'</span>' : '') + '</div>' +
+          '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udce5 NYE SPILLERE' +
+          (_ialt ? ' <span style="background:var(--guld);color:var(--nat);padding:1px 6px;border-radius:7px;margin-left:5px">'+_ialt+'</span>' : '') + '</div>' +
           '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="tilm-hent">' +
           (S.tilmHenter ? '\u2026' : (S.tilmHentet ? 'Opdatér' : 'Tjek')) + '</button></div>';
       if (!S.tilmHentet) {
-        h += '<p class="lille" style="margin:6px 0 0">Tryk Tjek for at se, om nogen familier har oprettet sig.</p>';
-      } else if (!afv.length) {
-        h += '<p class="lille" style="margin:6px 0 0">Ingen venter på svar lige nu.</p>';
+        h += '<p class="lille" style="margin:6px 0 0">Tryk Tjek for at se, om nogen familier har tastet deres n\u00f8gle.</p>';
+      } else if (!_ialt) {
+        // ⭐ To forskellige slags «tomt» — og de betyder ikke det samme.
+        h += '<p class="lille" style="margin:6px 0 0">' +
+          ((S.tilmeldinger||[]).length
+            ? 'Alle klubbens spillere er i din trup \u2713'
+            : 'Ingen familier har tastet en n\u00f8gle endnu.') + '</p>';
       } else {
-        afv.forEach(function(t2){
-          h += '<div style="border-top:1px solid var(--kant);padding:9px 0">' +
-            '<div style="font-size:13px;font-weight:700">'+esc(t2.fornavn||'Spiller')+'</div>' +
-            '<div class="lille" style="margin-bottom:7px">'+esc(t2.hold||'\u2014')+(t2.aargang?' \u00b7 '+esc(t2.aargang):'')+'</div>' +
-            '<div class="raekke"><button class="knap" style="background:var(--vundet)" data-act="tilm-svar" data-v="'+esc(t2.haandtag||t2.spillernoegle)+'~~godkendt">\u2713 Godkend</button>' +
-            '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-act="tilm-svar" data-v="'+esc(t2.haandtag||t2.spillernoegle)+'~~afvist">Afvis</button></div></div>';
-        });
-        h += '<p class="lille" style="margin:8px 0 0;font-style:italic">Godkendte spillere lægges automatisk i din trup.</p>';
+        // ── ① KOMMET IND MED EN NØGLE · mangler kun i truppen
+        if (_ny.nye.length) {
+          h += '<p class="lille" style="margin:8px 0 2px;font-weight:700;color:var(--is)">Kommet ind med en n\u00f8gle</p>';
+          _ny.nye.forEach(function(t2){
+            h += '<div style="border-top:1px solid var(--kant);padding:9px 0">' +
+              '<div style="font-size:13px;font-weight:700">'+esc(t2.fornavn||'Spiller')+'</div>' +
+              '<div class="lille" style="margin-bottom:7px">'+esc(t2.hold||'\u2014')+(t2.aargang?' \u00b7 '+esc(t2.aargang):'')+'</div>' +
+              '<div class="raekke"><button class="knap" style="background:var(--grus)" data-act="tilm-trup" data-v="'+esc(t2.haandtag||t2.spillernoegle)+'">\u2795 L\u00e6g i trup</button></div></div>';
+          });
+        }
+        // ── ② VENTER PÅ KLUBBENS JA · oprettet UDEN nøgle
+        if (_ny.venter.length) {
+          h += '<p class="lille" style="margin:10px 0 2px;font-weight:700;color:var(--guld)">Venter p\u00e5 jeres ja</p>';
+          _ny.venter.forEach(function(t2){
+            h += '<div style="border-top:1px solid var(--kant);padding:9px 0">' +
+              '<div style="font-size:13px;font-weight:700">'+esc(t2.fornavn||'Spiller')+'</div>' +
+              '<div class="lille" style="margin-bottom:7px">'+esc(t2.hold||'\u2014')+(t2.aargang?' \u00b7 '+esc(t2.aargang):'')+'</div>' +
+              '<div class="raekke"><button class="knap" style="background:var(--vundet)" data-act="tilm-svar" data-v="'+esc(t2.haandtag||t2.spillernoegle)+'~~godkendt">\u2713 Godkend</button>' +
+              '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-act="tilm-svar" data-v="'+esc(t2.haandtag||t2.spillernoegle)+'~~afvist">Afvis</button></div></div>';
+          });
+        }
+        h += '<p class="lille" style="margin:8px 0 0;font-style:italic">' +
+          (_ny.nye.length ? 'De \u00f8verste er allerede lukket ind af deres n\u00f8gle \u2014 de mangler kun at st\u00e5 i DIN trup. '
+                          : '') +
+          'Godkendte spillere l\u00e6gges i truppen med det samme.</p>';
       }
       h += '</div>';
     }
@@ -1465,7 +1517,7 @@ function traenerIndstillinger(){
         '<div class="lille" style="line-height:1.65">' +
         '<b>1.</b> Udsted en n\u00f8gle pr. familie under \ud83d\udd11 UDSTED N\u00d8GLE.<br>' +
         '<b>2.</b> Familien taster n\u00f8glen i StreakTennis.<br>' +
-        '<b>3.</b> De dukker op under \ud83d\udce5 NYE TILMELDINGER \u2014 tryk <b>Godkend</b>.<br>' +
+        '<b>3.</b> De dukker op under \ud83d\udce5 NYE SPILLERE \u2014 tryk <b>L\u00e6g i trup</b>.<br>' +
         '<b>4.</b> S\u00e5 st\u00e5r spilleren her, <b>koblet til sin n\u00f8gle</b>, og dine vurderinger lander i hans app.</div>' +
         '<p class="lille" style="margin:8px 0 0;opacity:.8">\u26a0\ufe0f Du beh\u00f8ver <b>ikke</b> skrive dem ind i h\u00e5nden. Det nedenfor er kun til spillere, du vil vurdere, <b>f\u00f8r</b> de har f\u00e5et en n\u00f8gle \u2014 de kan kobles til bagefter.</p></div>';
     }
@@ -1499,7 +1551,7 @@ function traenerIndstillinger(){
         '<p class="lille" style="margin:8px 0 0;font-style:italic">Skriv navnet, som klubben vil have det vist \u2014 fornavn, fornavn og initial, eller fuldt navn.</p>' +
         // ⭐ v4.6.0 · nøglefeltet er en UNDTAGELSE, ikke et krav. Cheftræneren
         //   har det normalt ikke, og skal ikke lede efter det.
-        '<p class="lille" style="margin:5px 0 0;opacity:.75">\ud83d\udd11 <b>N\u00f8glefeltet kan st\u00e5 tomt.</b> Godkender du spilleren under \ud83d\udce5 NYE TILMELDINGER, kobles n\u00f8glen p\u00e5 af sig selv. Feltet er kun til, hvis du har f\u00e5et et h\u00e5ndtag udleveret.</p>';
+        '<p class="lille" style="margin:5px 0 0;opacity:.75">\ud83d\udd11 <b>N\u00f8glefeltet kan st\u00e5 tomt.</b> L\u00e6gger du spilleren i truppen under \ud83d\udce5 NYE SPILLERE, kobles n\u00f8glen p\u00e5 af sig selv. Feltet er kun til, hvis du har f\u00e5et et h\u00e5ndtag udleveret.</p>';
     }
   }
     if (S.syncBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
@@ -2373,6 +2425,23 @@ document.addEventListener("click", function(e){
         t:(r.rolle==="traener"?"Tr\u00e6nern\u00f8glen":"N\u00f8glen")+(r.etiket?" til "+r.etiket:"")+" er sp\u00e6rret \u2713"};
       noegleKald("liste", {}).then(function(r2){ if (r2 && r2.noegler) { S.famListe = r2.noegler; S.minRolle = r2.rolle || S.minRolle; } render(); });
     }).catch(function(){ S.famBesked={fejl:true,hvor:"spiller",t:"Ingen forbindelse."}; render(); }); }
+  // ⭐⭐ v4.7.0 · LÆG I TRUP. Spilleren er ALLEREDE godkendt af doeren, saa
+  //   der er intet at spoerge serveren om — det ville kun kunne fejle.
+  //   Det her er trænerens EGEN liste, og den bor på hans telefon.
+  else if (act==="tilm-trup"){
+    var _n4 = String(v||"");
+    var _p4 = (S.tilmeldinger||[]).filter(function(x){
+      return x.haandtag === _n4 || x.spillernoegle === _n4; })[0];
+    if (!_p4) { S.syncBesked={fejl:true,t:"Kunne ikke finde spilleren \u2014 tryk Opdat\u00e9r."}; render(); return; }
+    S.truppen = S.truppen || [];
+    if (!S.truppen.some(function(x){ return x.noegle === _n4 || x.navn === _p4.fornavn; })) {
+      S.truppen.push({ navn: _p4.fornavn || "Spiller", gruppe: _p4.hold || "Mit hold", noegle: _n4 });
+      lager.gem("truppen", S.truppen);
+      S.noegler = S.noegler || {}; S.noegler[_p4.fornavn] = _n4; lager.gem("noegler", S.noegler);
+      byggTrup();
+    }
+    S.syncBesked = { fejl:false, t: (_p4.fornavn || "Spilleren") + " er lagt i truppen \u2713" };
+    render(); }
   else if (act==="tilm-svar"){
     var dele = String(v).split("~~"), noegle = dele[0], nyStatus = dele[1];
     var post = (S.tilmeldinger||[]).filter(function(x){ return x.haandtag === noegle || x.spillernoegle === noegle; })[0];

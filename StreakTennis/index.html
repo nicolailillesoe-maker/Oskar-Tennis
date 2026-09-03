@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.91.0 · 1. september 2026";
+const VERSION = "v4.93.0 · 2. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -6365,6 +6365,13 @@ function _fladeMaal() {
   // mangler resten af appen sin plads til bundbjaelken.
   try { document.body.classList.toggle("flade", !!f); } catch (_e) {}
   if (!f) return;
+  // ⭐ v4.93.0 · ③ EN RULNING, iOS EFTERLOD. Når tastaturet lukker, kan
+  //   siden stå rullet et stykke ned, selv om den ikke KAN rulle — og saa
+  //   maales fladens top for hoejt, og den bliver for lav. Intet felt har
+  //   fokus = tastaturet er vaek = der er intet at rulle for.
+  try {
+    if (!_skriver() && (window.pageYOffset || 0) > 0) window.scrollTo(0, 0);
+  } catch (_e) {}
   try {
     const nav = document.querySelector(".bundnav");
     const nr = nav ? nav.getBoundingClientRect() : null;
@@ -6413,6 +6420,13 @@ try {
     if (document.visibilityState === "visible") { try { A.liveTjek(); } catch (_e) {} }
   });
   window.addEventListener("resize", _fladeMaal);
+  // ⭐ v4.93.0 · ① TASTATURET FYRER visualViewport.resize — ikke altid
+  //   window.resize. Nicolai 2/9: «når den sender, så hopper den op i
+  //   skærmen» — fladen var målt, mens tastaturet var oppe, og ingen
+  //   målte igen, da det lukkede.
+  try {
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", function(){ _fladeMaal(); });
+  } catch (_e) {}
   window.addEventListener("orientationchange", function () { setTimeout(_fladeMaal, 120); });
 } catch (_e) {}
 
@@ -7281,14 +7295,14 @@ function _tegn() {
               _b("What friends see", "Your first name, your username, your streak and — while a match is live — the score. Never your messages. If you share a match (live or from the archive), the score, tournament and opponent travel with it; friends see the opponent shortened.") +
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
               _b("Search", "Approved players can find you by searching your username — the result shows first name and username only. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
-              _b("Messages", "Live for a day, at most 200. Delete removes them for both of you. Notifications show a name and a place — never content.") +
+              _b("Messages", "A message disappears a day after your friend has read it — never before. At most 200 per conversation, and after 30 days at the latest. Delete removes it for both of you. Notifications show a name and a place — never content.") +
               _b("Price", "With a club code the club pays. Full access is 49 kr/month incl. 3 live-streamed matches per month; beyond that +49 kr/month for unlimited, or 15 kr per live match. Watching is always free. We contact you about payment; nothing is charged automatically.") +
               _b("Leaving", "Log out wipes the phone. Ask us and the account and everything with it is deleted — for good.")
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
               _b("Hvad venner ser", "Fornavn, brugernavn, streaken og — mens en kamp er live — stillingen. Aldrig jeres beskeder. Deler I en kamp (live eller fra arkivet), rejser stillingen, turneringen og modstanderens navn med — venner ser modstanderen forkortet.") +
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
               _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises kun fornavn og brugernavn. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
-              _b("Beskeder", "Lever et døgn, højst 200. Slet fjerner for jer begge. Notifikationer viser navn og sted — aldrig indhold.") +
+              _b("Beskeder", "En besked forsvinder et døgn efter, din ven har læst den — aldrig før. Højst 200 pr. samtale, og senest efter 30 dage. Slet fjerner for jer begge. Notifikationer viser navn og sted — aldrig indhold.") +
               _b("Prisen", "Med klubkode betaler klubben. Fuld adgang koster 49 kr/md inkl. 3 live-delte kampe pr. måned — derefter +49 kr/md for uendelig streaming, eller 15 kr pr. live-kamp. At se med er altid gratis. Vi kontakter jer om betalingen; intet trækkes automatisk.") +
               _b("Vejen ud", "Log ud rydder telefonen. Skriv til os, og kontoen med alt i slettes — helt.")) +
           '<p class="lille" style="margin:4px 0 0;opacity:.6">StreakTennis · SportsAInalytics · CVR 40524002</p>' +
@@ -9615,8 +9629,8 @@ function _tegn() {
         '<p class="lille" style="margin:10px 0 4px;padding-top:8px;border-top:1px dashed var(--kant)"><b>💬 ' + (EN
           ? "Messages" : "Beskeder") + '</b></p>' +
         '<p class="lille" style="margin:0;line-height:1.55">' + (EN
-          ? "Messages live for a day, at most 200 — the friendship stays. Delete, ⚑ and Remove friend all delete them for both of you. In the room, everyone reads along."
-          : "Beskeder lever et døgn, højst 200 — venskabet består. Slet, ⚑ og Fjern ven sletter for jer begge. I rummet læser alle med.") + '</p>' +
+          ? "A message disappears a day after your friend has read it — never before (at most 200, and after 30 days at the latest). The friendship stays. Delete, ⚑ and Remove friend all delete for both of you. In the room, messages live for a day and everyone reads along."
+          : "En besked forsvinder et døgn efter, din ven har læst den — aldrig før (højst 200, og senest efter 30 dage). Venskabet består. Slet, ⚑ og Fjern ven sletter for jer begge. I rummet lever beskeder et døgn, og alle læser med.") + '</p>' +
         '<p class="lille" style="margin:6px 0 0;opacity:.7;line-height:1.55">' + (EN
           ? "Tap a message to edit it. Swipe left to delete or report — swipe a friend&rsquo;s message right to mark it unread."
           : "Tryk på en besked for at rette den. Træk den til venstre for at slette eller rapportere — og en besked fra din ven til højre for at markere den ulæst.") + '</p>';
@@ -11072,6 +11086,14 @@ window.__oskarInit = function(){
   // ⭐⭐ v4.23.0 · Det, pulsen udskoed, tegnes i det oejeblik man er faerdig
   // med at skrive. De 60 ms er, fordi focusout kommer FOER det naeste felt
   // faar fokus — springer man fra felt til felt, skal skaermen stadig staa.
+  // ⭐ v4.93.0 · ② FELTET SLIPPER FOKUS = tastaturet er paa vej ned.
+  //   Maal igen efter animationen — og én gang til, for iOS lukker det i
+  //   to tempi. Billigt: to maalinger, ingen gentegning.
+  rod.addEventListener("focusout", function(e){
+    if (e.target && e.target.dataset && e.target.dataset.felt) {
+      setTimeout(_fladeMaal, 300); setTimeout(_fladeMaal, 700);
+    }
+  });
   rod.addEventListener("focusout", function(){
     if (!S._udskudt) return;
     setTimeout(function(){ if (!_skriver()) { S._udskudt = false; render(); } }, 60);

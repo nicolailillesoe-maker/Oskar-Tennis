@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.93.0 · 2. september 2026";
+const VERSION = "v4.94.0 · 3. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -9420,7 +9420,18 @@ function _tegn() {
 
       // ── KLUBKODE ──────────────────────────────────────────────────
       var _kKlub;
-      if (S.klubKode && !S.nyKodeAaben) {
+      if (VISNING === "team") {
+        // ⭐ v4.94.0 · TEAM-VISNINGEN ARVER KLUBBEN. Nicolai 3/9: «Den skal
+        //   arve det der er fra ham.» Serveren kender spillerens klub gennem
+        //   team-nøglen, og analyser hentes på hans adgang (analyse-lov v4).
+        //   Ingen kode at taste — og ingen advarsel om at taste den.
+        _kKlub = '<p class="lille" style="margin:0 0 6px">' + (EN
+            ? "Follows the player. The team key already carries the club — matches, training and analyses run on <b>the player’s</b> access. Nothing to enter here."
+            : "Følger spilleren. Team-nøglen bærer allerede klubben — kampe, træning og analyser kører på <b>spillerens</b> adgang. Du skal ikke taste noget her.") + '</p>' +
+          '<p class="lille" style="margin:0;opacity:.7">' + (EN
+            ? "Not in the team view yet: opponent analyses — they still need the club’s key."
+            : "Endnu ikke i team-visningen: modstander-analyser — de kræver stadig klubbens nøgle.") + '</p>';
+      } else if (S.klubKode && !S.nyKodeAaben) {
         _kKlub = '<p class="lille" style="margin:0 0 8px">' + (EN
             ? "Connected. Analyses and the coach layer are on — see “Your data” below for exactly what is shared."
             : "Forbundet. Analyser og trænerlaget er slået til — se “Dine data” nedenfor for præcis hvad der deles.") + '</p>' +
@@ -9510,8 +9521,8 @@ function _tegn() {
           famAntal ? (famAntal === 1 ? (EN?"1 key":"1 nøgle") : famAntal + (EN?" keys":" nøgler")) : (EN?"Set up your team":"S\u00e6t dit team"), "var(--daempet)", famKrop);
       }
       h += _opsKort("klub", "🏷", (EN?"CLUB CODE":"KLUBKODE"),
-        (S.klubKode ? (EN?"connected ✓":"forbundet ✓") : (EN?"no club":"ingen klub")),
-        (S.klubKode ? "var(--vundet)" : "var(--daempet)"), _kKlub);
+        (VISNING === "team" ? (EN?"follows the player":"følger spilleren") : (S.klubKode ? (EN?"connected ✓":"forbundet ✓") : (EN?"no club":"ingen klub"))),
+        (VISNING === "team" ? "var(--is)" : (S.klubKode ? "var(--vundet)" : "var(--daempet)")), _kKlub);
 
       // ══════════════════════════════════════════════════════════════
       // ⭐ DINE DATA · 21/8. Nicolai: "Og alt bliver vel ikke paa
@@ -10537,7 +10548,12 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         '<p style="font-size:11px;color:var(--daempet);margin-top:6px">'+(harData?(EN?(SPILLER+" = all ")+kilder.length+" registered matches (set columns = sums across matches). ":(SPILLER+" = alle ")+kilder.length+" registrerede kampe (sæt-kolonner = summeret på tværs). "):(EN?"⚠ The whole table is the example match until the first real match is saved. ":"⚠ Hele tabellen er eksempel-kampen, indtil første rigtige kamp gemmes. "))+(EN?((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner")+" = ATP 2025/26 (rounded). Benchmarks, not verdicts — the DIRECTION counts. Set 1 vs set 2 reveals whether the level holds when the match gets long.":((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner")+" = ATP 2025/26 (afrundet). Pejlemærker, ikke facit — det er RETNINGEN, der tæller. Sæt 1 mod sæt 2 afslører, om niveauet holder, når kampen bliver lang.")+'</p></div>';
     })();
     if (!S.gemte.length) h += '<p style="font-size:13px;color:var(--daempet)">'+(EN?'New matches with point-by-point data are recorded under 🎾 Match and collected here: per-match statistics and development over time.':'Nye kampe med point-for-point data registreres under 🎾 Kamp og lander her under baselinen.')+'</p>';
-    h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px">' +
+    // ⭐ v4.94.0 · I team-visningen findes der ingen kode at taste: analyser
+    //   hentes på spillerens adgang gennem team-nøglen (analyse-lov v4).
+    if (VISNING === "team") h += '<p class="lille" style="margin:2px 0 10px">' + (EN
+      ? "Analyses are fetched on the player’s access through the team key — no code needed here."
+      : "Analyser hentes på spillerens adgang gennem team-nøglen — ingen kode her.") + '</p>';
+    else h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px">' +
       '<button class="knap" style="flex:none;padding:6px 10px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="klubKodeAabn">⚙ '+(EN?"Club code":"Klubkode")+' '+(S.klubKode?'✓':'—')+'</button>' +
       '<span class="lille" style="margin:0">'+(S.klubKode?(EN?"Analyses can be fetched on this device.":"Analyser kan hentes på denne enhed."):(EN?"Needed once to fetch analyses.":"Skal indtastes én gang for at hente analyser."))+'</span></div>';
     if (S.kodeAaben) {

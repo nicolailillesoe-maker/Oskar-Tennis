@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.94.0 · 3. september 2026";
+const VERSION = "v4.95.0 · 3. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -1531,6 +1531,19 @@ function iDetDelteLag() {
   }
 }
 
+// ⭐⭐ v4.95.0 · TEAMET SER KUN STREAKS (Nicolai 3/9: «Bare fjern knappen
+// med både rum og venner så man bare kan se streaks.»)
+// Teamet er de mennesker, spilleren selv lukker ind. Det ser data —
+// aldrig beskeder, aldrig vennelisten, aldrig rummene. Sand i team-
+// visningen (tm1-rummet) OG på en ren familie-enhed: samme team, to
+// slags telefoner. Læser lageret direkte, fordi S.rolle sættes senere i
+// opstarten end det første sted, reglen skal gælde (invitations-hilsenen).
+// ⚠️ Ét sted, elleve kald — ændres reglen, ændres den HER.
+function teamKunStreaks() {
+  try { return VISNING === "team" || S.rolle === "familie" || lager.hent("sai-rolle") === "familie"; }
+  catch (_e) { return VISNING === "team" || S.rolle === "familie"; }
+}
+
 async function inviteretTjek() {
   // ⭐ v4.19.0 · DOEREN SPOERGER PORTEN, ikke et tilfaeldigt kald.
   // Foer spurgte den `gruppe-hent` og laeste fejlkoden. Det virkede, men
@@ -1720,7 +1733,8 @@ function _invitTag() {
     // vaere «vist» til en skaerm, ingen kunne se den paa, og den rigtige
     // foerste start ville staa tom. Maalt 28/8: felt=null, ingen hilsen.
     // En invitation er ikke vist, foer nogen KAN se den.
-    if (lager.hent("sai-spiller") && lager.hent("sai-invit-set") !== "1") {
+    // ⭐ v4.95.0 · ikke for teamet — der findes intet vennepanel at hilse i.
+    if (lager.hent("sai-spiller") && lager.hent("sai-invit-set") !== "1" && !teamKunStreaks()) {
       S.tab = "stige"; S.venneAaben = true; S.zonePanel = "venner";
       S.invitHilsen = true;
       try { lager.gem("sai-invit-set", "1"); } catch (_e) {}
@@ -3164,6 +3178,10 @@ const A = {
     //     SIDEN AF. Et hegn i appen har ingen dør at banke på —
     //     det findes kun med en søgning, og søgningen skal dække
     //     BEGGE skrivemåder af den samme regel.
+    // ⭐ v4.95.0 · TEAMET SER KUN STREAKS: vennelisten, rummene og buddene
+    //   hentes ikke for en skærm, der ikke findes (princip 64). Serveren
+    //   ville svare — det er appen, der ikke spørger.
+    if (teamKunStreaks()) return;
     if (S.spillerNoegle && iDetDelteLag() && !S.vennerHenter) A.venneHent();
     if (S.spillerNoegle && iDetDelteLag() && !S.grHenter) A.grHent();
     // ⭐ Bud hentes KUN for familier, der allerede er i det delte lag —
@@ -3894,7 +3912,7 @@ const A = {
     render(); A.snakHent();
   },
   snakLuk: () => { S.snakRum = null; S.snakBeskeder = null; S.snakValgtId = null;
-    S.tab = "stige"; S.zonePanel = "rum"; render(); },
+    S.tab = "stige"; S.zonePanel = (teamKunStreaks() ? null : "rum"); render(); },   // ⭐ v4.95.0
   snakHent: async (puls) => {
     if (!S.snakRum || S.snakHenter) return;
     S.snakHenter = true;
@@ -4338,7 +4356,9 @@ const A = {
     }
     render();
   },
-  zonePanel: (v) => { S.zonePanel = (S.zonePanel === v ? null : v); render();
+  zonePanel: (v) => {
+    if (teamKunStreaks()) return;   // ⭐ v4.95.0 · teamet har ingen paneler
+    S.zonePanel = (S.zonePanel === v ? null : v); render();
     // ⛔ v4.51.0 · HEGNET MANGLEDE HELT HER. Maalt paa en fremmed uden
     // klub, uden venner og uden konto: hun aabnede venne-panelet, og
     // appen ringede hjem. Fejlen var i v4.50.0 ogsaa — den er fundet nu,
@@ -5150,7 +5170,7 @@ const A = {
   // heller ikke noget i den at ligge vaagen over, modsat kvitteringen.
   // Egen handling i `venne-snak`, saa spiller-sync ikke skal roeres.
   ulaestHent: async () => {
-    if (!S.spillerNoegle || S.rolle === "familie") return;
+    if (!S.spillerNoegle || S.rolle === "familie" || teamKunStreaks()) return;   // ⭐ v4.95.0
     if (String(S.spillerNoegle).indexOf("fam-") === 0) return;
     try {
       const r = await fetch(VENNESNAK_URL, { method: "POST",
@@ -6691,6 +6711,7 @@ function __saiRute(raa) {
     // ⭐ En genvej, der springer døren over, springer også hegnet over.
     S.verden = "udv";
     if (hvad === "venner") {
+      if (teamKunStreaks()) return false;   // ⭐ v4.95.0 · som chat/rum-ruterne
       A.stigeAabn(); S.zonePanel = "venner";
       render(); if (A.ulaestHent) A.ulaestHent(); return true;
     }
@@ -7863,10 +7884,13 @@ function _tegn() {
         // forkert — streaken regnes af familiens egen log og har aldrig haft
         // brug for en server. Den er der nu altid.
         _flise("stigeAabn","","🔥",(EN?"Streak Zone":"Streak Zone"),
-          (S.klubKode && S.traenerData && S.traenerData.stigeHoldTil
+          // ⭐ v4.95.0 · teamet ser spillerens streaks — hverken venner eller badge
+          (teamKunStreaks()
+            ? (EN?"the player’s streaks":"spillerens streaks")
+            : (S.klubKode && S.traenerData && S.traenerData.stigeHoldTil
             ? (EN?"your group's streaks":"holdets streaks")
-            : (EN?"sessions in a row & friends":"træninger i træk & venner")),"dev-kant-guld",
-          S.ulaestIAlt) +
+            : (EN?"sessions in a row & friends":"træninger i træk & venner"))),"dev-kant-guld",
+          (teamKunStreaks() ? 0 : S.ulaestIAlt)) +
         _flise("tab","fysisk","💪",(EN?"Train":"Træn"),(S.klubKode ? (EN?"overview, log & your coach":"overblik, log & din træner") : (EN?"overview & your log":"overblik & din log")),"dev-kant-guld") +
         _flise("tab","historik","📊",(EN?"Statistics":"Statistik"),S.gemte.length+(EN?" matches · trends":" kampe · tendenser"),"dev-kant-staal") +
         _flise("tab","planer","🎯",(EN?"Rivals":"Modstandere"),(EN?"plans & notes":"planer & noter"),"dev-kant-staal") +
@@ -8216,6 +8240,32 @@ function _tegn() {
               ? "Log a session and you are on 1."
               : "Log en træning, så står du på 1.") + '</p>') +
         '</div>';
+      } else if (teamKunStreaks()) {
+        // ⭐⭐ v4.95.0 · SPILLERENS STREAK — det, teamet er her for.
+        // Tallet er serverens: spiller-sync regner `streak` af spillerens
+        // egen træningslog ved hvert gem, og `hent` giver teamet rækken.
+        // Det er så nyt som spillerens seneste synk — og det står der.
+        var _tsp = (S.traenerData && S.traenerData.spiller) || null;
+        var _tsn = _tsp ? (Number(_tsp.streak) || 0) : null;
+        var _tnavn = (_tsp && _tsp.fornavn) || SPILLER || (EN ? "the player" : "spilleren");
+        var _tvarm = _tsn > 0;
+        var _tsen = null;
+        try { if (_tsp && _tsp.opdateret) { var _d = new Date(_tsp.opdateret); if (!isNaN(_d)) _tsen = _d.getDate() + "/" + (_d.getMonth() + 1) + " " + (_d.getHours()<10?"0":"") + _d.getHours() + "." + (_d.getMinutes()<10?"0":"") + _d.getMinutes(); } } catch (_e) {}
+        h += '<div class="kort dev-kant ' + (_tvarm ? 'dev-kant-guld' : 'dev-kant-staal') + '" style="text-align:center;padding:20px 14px 16px">' +
+          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:4px">' + esc(_tnavn).toUpperCase() + '</div>' +
+          '<div style="font-size:' + (_tvarm ? '46' : '36') + 'px;line-height:1;' + (_tvarm ? '' : 'filter:grayscale(1);opacity:.45') + '">🔥</div>' +
+          (_tsp
+            ? '<div style="font-size:64px;font-weight:800;line-height:1.05;margin:6px 0 0;color:' + (_tvarm ? 'var(--guld)' : 'var(--daempet)') + '">' + _tsn + '</div>' +
+              '<div class="lille" style="margin:2px 0 0;letter-spacing:.5px">' + (EN ? "SESSIONS IN A ROW" : "TRÆNINGER I TRÆK") + '</div>' +
+              '<p class="lille" style="margin:12px 0 0;padding-top:10px;border-top:1px dashed var(--kant)">' + (EN
+                ? "As of the player’s last sync" + (_tsen ? " · " + _tsen : "") + "."
+                : "Som ved spillerens seneste synk" + (_tsen ? " · " + _tsen : "") + ".") + '</p>'
+            : '<p class="lille" style="margin:10px 0 0">' + (EN
+                ? "The player’s streak has not arrived on this phone yet."
+                : "Spillerens streak er ikke nået frem til denne telefon endnu.") + '</p>') +
+          '<p class="lille" data-a="synkroniser" style="margin:8px 0 0;cursor:pointer;color:var(--daempet);opacity:.75">' +
+            (S.syncHenter ? (EN ? "⏳ Fetching…" : "⏳ Henter…") : (EN ? "Fetch again" : "Hent igen")) + '</p>' +
+          '</div>';
       }
 
       // ══ HOLDETS STIGE · KUN MED KLUB ══════════════════════════════
@@ -8292,7 +8342,7 @@ function _tegn() {
         // To fliser, ét tal hver, ét panel ad gangen. Ingen brødtekst:
         // flisen siger hvad der ER, panelet viser det.
         // ══════════════════════════════════════════════════════════════
-        var _zp = S.zonePanel;
+        var _zp = (teamKunStreaks() ? null : S.zonePanel);   // ⭐ v4.95.0
         var _nRum = (S.grListe || []).length;
         var _nVen = (S.venner || []).length;
         var _zflise = function(v, ik, titel, tal) {
@@ -8303,7 +8353,9 @@ function _tegn() {
             + '<b style="font-size:13px;letter-spacing:1.5px">' + titel + '</b>'
             + '<small style="color:' + (_zp === v ? 'var(--is)' : 'var(--daempet)') + '">' + tal + '</small></button>';
         };
-        h += '<div class="dev-grid" id="zone-fliser" style="margin:12px 0">'
+        // ⭐ v4.95.0 · TEAMET SER KUN STREAKS: ingen fliser, ingen paneler.
+        //   (Panelerne nedenfor hænger på _zp, som er null for teamet.)
+        if (!teamKunStreaks()) h += '<div class="dev-grid" id="zone-fliser" style="margin:12px 0">'
           + _zflise("rum", "\ud83d\udeaa", (EN?"ROOMS":"RUM"),
               _nRum ? (_nRum + " " + (EN ? (_nRum === 1 ? "room" : "rooms") : "rum")) : (EN?"Gather the crew":"Saml banden"))
           + _zflise("venner", "\ud83e\udd1d", (EN?"FRIENDS":"VENNER"),

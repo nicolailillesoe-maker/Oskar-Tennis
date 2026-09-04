@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.95.0 · 3. september 2026";
+const VERSION = "v4.97.0 · 4. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -1805,6 +1805,18 @@ window.addEventListener("hashchange", function () {
 try { if (lager.hent("sai-rolle") === "familie") S.rolle = "familie"; } catch(e) {}
 try { const cl = JSON.parse(lager.hent("sai-chat-laest") || "{}"); if (cl && typeof cl === "object") S.chatLaest = cl; } catch(e) {}
 
+// ⭐ v4.96.0 · TEAM-SPEJLET: boksens udledte nøgle i linket (&sky=<bits>).
+//   32 bytes base64 = 44 tegn; alt andet afvises som støj. Ét sted, tre
+//   kaldesteder (opstart · hashchange · Indløs team-nøgle).
+function skyBitsFra(tekst) {
+  try {
+    const m = /(?:^|[#&?])sky=([A-Za-z0-9+\/=%]+)/.exec(String(tekst || ""));
+    if (!m) return null;
+    let v = m[1]; try { v = decodeURIComponent(v); } catch (_e) {}
+    return /^[A-Za-z0-9+\/]{43}=$/.test(v) ? v : null;
+  } catch (_e) { return null; }
+}
+
 // ⭐ FAMILIE-LINKET · ?familie=KODE (v4.2). Som venne-linket: tilbuddet
 // staar klar, men SELVE tilslutningen er et tryk — foraelderens handling.
 try {
@@ -1814,6 +1826,8 @@ try {
   if (!_fp) _fp = new URLSearchParams(location.search).get("familie");
   if (_fp && /^fam-[0-9a-f]{32}$/.test(_fp.trim())) {
     S.famTilbud = _fp.trim();
+    // ⭐ v4.96.0 · boksens nøgle følger med i samme fragment (&sky=…).
+    S.famSkyBits = skyBitsFra(location.hash);
     history.replaceState(null, "", location.pathname);
   }
 } catch(e) {}
@@ -1827,6 +1841,7 @@ window.addEventListener("hashchange", function () {
     let v = m[1]; try { v = decodeURIComponent(v); } catch (_e) {}
     if (!/^fam-[0-9a-f]{32}$/.test(v.trim())) return;
     S.famTilbud = v.trim();
+    S.famSkyBits = skyBitsFra(location.hash);   // ⭐ v4.96.0
     history.replaceState(null, "", location.pathname);
     render();
   } catch (e) {}
@@ -3043,7 +3058,12 @@ const A = {
   liveFortryd: () => { S.liveOvertag = null; render(); },
   liveStart: async (bekraeftet) => {
     const EN = S.sprog === "en";
-    if (!S.klubKode) { S.kodeAaben = true; render(); return; }
+    // ⭐ v4.97.0 · LIVE FRA SPEJLET (Nicolai 4/9: «Live virker ikke fra
+    //   spejlet»). Teamet har ingen klubkode (v4.94.0: «følger spilleren»),
+    //   og hegnet her sendte trykket til et kodefelt i stedet for at dele.
+    //   Motoren kræver ingen klub for live-gem og deler på SPILLERENS
+    //   adgang gennem team-nøglen. Egen visning: uændret hegn.
+    if (!S.klubKode && !teamKunStreaks()) { S.kodeAaben = true; render(); return; }
     // ⭐ v4.80.0 · TEAM-ENHEDEN SPØRGES FØRST.
     //   En team-enhed (far, mor, den anden telefon) deler EJERENS
     //   spillernøgle. Trykker den "del kampen", mens spillerens egen
@@ -3368,7 +3388,9 @@ const A = {
       if (S.kampeLaast) return;
       // ⛔ Ingen kopi, før man er lukket ind. Dørskærmen lover ordret
       //   «vi gemmer intet, før I er inde» — og motoren afviser også.
-      if (!(S.portStatus && S.portStatus.status === "godkendt")) return;
+      // ⭐ v4.96.0 · teamet spørger ikke porten (den svarer ikke en team-
+      //   nøgle); motoren holder porten selv (403 for en afventer, målt).
+      if (!teamKunStreaks() && !(S.portStatus && S.portStatus.status === "godkendt")) return;
       const krop = A.skyKrop(true);   // true = i den krypterede boks
       // ⭐ Er intet ændret, sendes intet. Et aftryk af klarteksten bliver
       //   på TELEFONEN — serveren skal ikke kunne bekræfte et gæt om
@@ -3385,9 +3407,34 @@ const A = {
       if (!straks && aftryk && aftryk === lager.hent("sai-sky-aftryk")) return;
       try {
         S.skySender = true; if (straks) render();
-        const krypt = await skyLaas(krop, bits);
-        const r = await skyKald("gem", { krypt, salt,
+        // ⭐⭐ v4.96.0 · BASIS-LÅSEN (sky-kopi v2). Vi sender det stempel, vi
+        //   sidst så. Siger motoren 409 «foraeldet», har en anden telefon
+        //   (teamet — eller ens egen anden enhed) været her imellem: så
+        //   hentes boksen, flettes ind, og der gemmes igen oven på DEN.
+        //   Aldrig overskrive i stilhed; aldrig tabe det, den anden skrev.
+        let krypt = await skyLaas(krop, bits);
+        let r = await skyKald("gem", { krypt, salt, basis: lager.hent("sai-sky-tid") || null,
           enhed: (erIOS() ? "iPhone" : "Enhed") + " \u00b7 " + browserNavn() });
+        if (r && r.fejl === "foraeldet") {
+          const foer = await skyKald("hent", {});
+          if (foer && !foer.fejl && !foer.tom) {
+            const d = await skyAab(foer.krypt, bits);
+            if (!d) { S.skySender = false; if (straks) render(); return; }   // en boks, vi ikke kan åbne, røres ikke
+            A.fletInd(d);
+            lager.gem("sai-sky-tid", foer.opdateret || "");
+            const krop2 = A.skyKrop(true);
+            try { aftryk = String(JSON.stringify(krop2.kampe).length) + ":" +
+              String(JSON.stringify(krop2.fysLog).length) + ":" + String(JSON.stringify(krop2.ttLog).length) + ":" +
+              String(JSON.stringify(krop2.scout || {}).length) + ":" + String(JSON.stringify(krop2.indst || {}).length) + ":" +
+              String((krop2.navn || "").length) + ":" + String((krop2.kampAktiv || "").length); } catch (_e) {}
+            krypt = await skyLaas(krop2, bits);
+            r = await skyKald("gem", { krypt, salt, basis: foer.opdateret || null,
+              enhed: (erIOS() ? "iPhone" : "Enhed") + " \u00b7 " + browserNavn() });
+          } else if (foer && !foer.fejl && foer.tom) {
+            r = await skyKald("gem", { krypt, salt, basis: null,
+              enhed: (erIOS() ? "iPhone" : "Enhed") + " \u00b7 " + browserNavn() });
+          }
+        }
         S.skySender = false;
         if (r && !r.fejl) {
           lager.gem("sai-sky-aftryk", aftryk);
@@ -3412,7 +3459,17 @@ const A = {
     try {
       const foer = await skyKald("hent", {});
       if (!foer || foer.fejl || foer.tom) {
-        if (!stille) S.skyBesked = { fejl: false, t: EN ? "No backup found." : "Der er ingen sikkerhedskopi." };
+        if (!stille) S.skyBesked = { fejl: false, t: (foer && foer.tom && teamKunStreaks())
+          ? (EN ? "The player has no backup yet — the mirror waits for it." : "Spilleren har ingen sikkerhedskopi endnu — spejlet venter på den.")
+          : (foer && foer.fejl === "adgang" && teamKunStreaks())
+            ? (EN ? "The team key is blocked or unknown — ask the player for a new link." : "Team-nøglen er spærret eller ukendt — bed spilleren om et nyt link.")
+            : (EN ? "No backup found." : "Der er ingen sikkerhedskopi.") };
+        return 0;
+      }
+      if (foer.tom === false && teamKunStreaks() && !lager.hent("sai-sky-noegle") && !kode) {
+        if (!stille) S.skyBesked = { fejl: true, t: EN
+          ? "This phone does not hold the key to the player’s backup — ask the player for a new team link."
+          : "Telefonen har ikke nøglen til spillerens sikkerhedskopi — bed spilleren om et nyt team-link." };
         return 0;
       }
       // Nøglen udledes af DET salt, boksen kom med — ikke af telefonens.
@@ -3426,6 +3483,11 @@ const A = {
         //   sikring, indtil boksen er åbnet eller bevidst slettet.
         S.skyLaast = true;
         try { lager.gem("sai-sky-laast", "1"); } catch (_e) {}
+        // ⭐ v4.96.0 · hos teamet er der intet kodeord at prøve: nøglen
+        //   fra linket passer ikke længere (spilleren har skiftet kodeord).
+        if (teamKunStreaks()) { S.skyBesked = { fejl: true, t: EN
+          ? "The key in the team link no longer fits the player’s backup (the password was changed). Ask for a new team link — nothing has been overwritten."
+          : "Nøglen fra team-linket passer ikke længere til spillerens sikkerhedskopi (kodeordet er skiftet). Bed om et nyt team-link — der er ikke overskrevet noget." }; return 0; }
         S.skyBesked = { fejl: true, t: EN
           ? "There is a backup, but it cannot be opened with this password. Nothing has been overwritten \u2014 log in with the password it was made with, or delete it below."
           : "Der ligger en sikkerhedskopi, men den kan ikke \u00e5bnes med dette kodeord. Der er ikke overskrevet noget \u2014 log ind med det kodeord, den blev lavet med, eller slet den nedenfor." };
@@ -3435,6 +3497,7 @@ const A = {
       S.skyLaast = false;
       try { lager.slet("sai-sky-laast"); } catch (_e) {}
       lager.gem("sai-sky-salt", foer.salt); lager.gem("sai-sky-noegle", bits);
+      lager.gem("sai-sky-tid", foer.opdateret || "");   // ⭐ v4.96.0 · basis til næste gem
       const n = A.fletInd(d);
       if (n === null) return 0;
       S.skyStatus = { har: true, bytes: foer.bytes, opdateret: foer.opdateret };
@@ -4592,7 +4655,12 @@ const A = {
     if (!S.famNyKode) return;
     // v4.90.0: FRAGMENTET, IKKE FORESPØRGSLEN — som #ven= (sikkerhedsreglen).
     // ?familie= læses stadig, så allerede delte links virker.
-    const url = location.origin + location.pathname + "#familie=" + S.famNyKode;
+    // ⭐ v4.96.0 · TEAM-SPEJLET: linket bærer boksens UDLEDTE nøgle (aldrig
+    //   kodeordet), så teamet kan åbne den boks, der findes. I fragmentet.
+    //   Findes der ingen boks-nøgle på telefonen, sendes linket uden — og
+    //   team-visningen siger ærligt, at spejlet venter på sikkerhedskopien.
+    let _skyDel = ""; try { const _b = lager.hent("sai-sky-noegle"); if (_b && !S.skyLaast) _skyDel = "&sky=" + encodeURIComponent(_b); } catch (_e) {}
+    const url = location.origin + location.pathname + "#familie=" + S.famNyKode + _skyDel;
     const t = (S.sprog === "en"
       ? "Join our team in StreakTennis — open the link and tap ”Join the team”: "
       : "Vær med på holdet i StreakTennis — åbn linket og tryk ”Bliv en del af teamet”: ");
@@ -4650,6 +4718,8 @@ const A = {
         window.localStorage.setItem("tm1-sai-rolle", "familie");
         window.localStorage.setItem("tm1-sai-venne-aktiv", "1");
         window.localStorage.setItem("tm1-sai-laas", "op");
+        // ⭐ v4.96.0 · boksens nøgle bor i TEAMETS rum — egen sai-sky-* røres aldrig.
+        if (S.famSkyBits) window.localStorage.setItem("tm1-sai-sky-noegle", S.famSkyBits);
         if (r.fornavn) window.localStorage.setItem("tm1-sai-spiller", r.fornavn);
         window.localStorage.setItem("sai-profil-team", JSON.stringify({ navn: r.fornavn || "" }));
         window.localStorage.setItem("sai-profil-aktiv", "team");
@@ -4665,6 +4735,7 @@ const A = {
       lager.gem("sai-rolle", "familie");
       lager.gem("sai-venne-aktiv", "1");
       lager.gem("sai-laas", "op");
+      if (S.famSkyBits) lager.gem("sai-sky-noegle", S.famSkyBits);   // ⭐ v4.96.0 (rå på en familie-enhed, tm1- i team-visningen)
       if (r.fornavn) lager.gem("sai-spiller", r.fornavn);
       // Indloeses en ny noegle INDE i team-visningen, foelger registrets navn med.
       if (VISNING === "team" && r.fornavn) window.localStorage.setItem("sai-profil-team", JSON.stringify({ navn: r.fornavn }));
@@ -4685,7 +4756,7 @@ const A = {
         : "Det ligner ikke en team-nøgle (fam-…). Sæt hele linket eller selve nøglen ind.") };
       render(); return;
     }
-    S.famTilbud = m[0]; S.famIndloesUdkast = ""; S.famBesked = null;
+    S.famTilbud = m[0]; S.famSkyBits = skyBitsFra(S.famIndloesUdkast); S.famIndloesUdkast = ""; S.famBesked = null;
     A.famBliv();
   },
   // ⭐ v4.90.0 · SKIFTET: én skrivning, én genfoedsel. Kontakten staar
@@ -7249,6 +7320,10 @@ function _tegn() {
           : (S.sprog === "en"
             ? "This phone becomes part of the team: you enter and see data — never the messages between the player and the friends."
             : "Denne telefon bliver en del af teamet: du taster og ser data — aldrig beskederne mellem spilleren og vennerne.")) + '</p>' +
+        // ⭐ v4.96.0 · spejlet: siger på forhånd, om linket bærer boksens nøgle.
+        '<p class="lille" style="margin:0 0 12px;color:' + (S.famSkyBits ? 'var(--is)' : 'var(--guld)') + '">' + (S.famSkyBits
+          ? (S.sprog === "en" ? "The link also carries the key to the player’s backup: matches, training and analyses are mirrored here. Messages never." : "Linket bærer også nøglen til spillerens sikkerhedskopi: kampe, træning og analyser spejles herover. Beskeder aldrig.")
+          : (S.sprog === "en" ? "The player has not turned the backup on yet — the mirror of matches and training waits for that. Streaks work already." : "Spilleren har ikke slået sikkerhedskopien til endnu — spejlet af kampe og træning venter på det. Streaks virker allerede.")) + '</p>' +
         '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="famBliv">' + (S.famHenter ? "⏳ …" : (S.sprog === "en" ? "Join the team" : "Bliv en del af teamet")) + '</button>' +
         '<button class="knap valg" data-a="famAfvis">' + (S.sprog === "en" ? "Not now" : "Ikke nu") + '</button></div>' +
         (S.famBesked ? '<p class="lille" style="margin:8px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '') + '</div>';
@@ -9003,7 +9078,11 @@ function _tegn() {
               ? "You are looking at the team right now. Your own player still lives on this phone — nothing is mixed."
               : "Du ser teamet lige nu. Din egen spiller bor stadig på telefonen — intet blandes.") + '</p>' +
             '<button class="knap" style="width:100%;min-height:44px;background:var(--grus)" data-a="profilSkift" data-v="egen">' +
-            (EN ? "Switch to my own player" : "Skift til min egen spiller") + (_egetNavn ? " (" + esc(_egetNavn) + ")" : "") + '</button>');
+            (EN ? "Switch to my own player" : "Skift til min egen spiller") + (_egetNavn ? " (" + esc(_egetNavn) + ")" : "") + '</button>' +
+            // ⭐ v4.96.0 · spejlet kan hentes herfra også
+            '<button class="knap valg" style="width:100%;min-height:44px;margin-top:7px" data-a="skyHentNu"' + (S.skySender ? ' disabled' : '') + '>' +
+            (S.skySender ? '\u23f3 \u2026' : '\ud83e\ude9e ' + (EN ? "Fetch the mirror" : "Hent spejl")) + '</button>' +
+            (S.skyBesked ? '<p class="lille" style="margin:7px 0 0;color:' + (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>' : ''));
         } else if (_pt) {
           h += _opsKort("profil", "🔁", (EN?"SWITCH VIEW":"SKIFT VISNING"),
             "Team " + esc(_pt.navn || ""), "var(--is)",
@@ -10478,9 +10557,16 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       // ⭐⭐ v4.84.0 · en låst kopi må kunne SES fra flisen. Før stod den
       //   ærlige besked nede i panelet — og en familie, der ikke åbnede
       //   det, fik aldrig at vide, at der ikke blev gemt mere.
-      + _stflise("backup", "\ud83d\udcbe", (EN?"BACKUP":"BACKUP"),
+      // ⭐ v4.96.0 · hos teamet er flisen SPEJLET — samme boks, set fra den anden side.
+      + (teamKunStreaks()
+        ? _stflise("backup", "\ud83e\ude9e", (EN?"MIRROR":"SPEJLET"),
+            (S.skyLaast ? (EN?"\u26a0\ufe0f key no longer fits":"\u26a0\ufe0f nøglen passer ikke")
+              : !lager.hent("sai-sky-noegle") ? (EN?"waiting for the player":"venter på spilleren")
+              : (S.skyStatus && S.skyStatus.har) ? (EN?"\u2713 fetched":"\u2713 hentet") : (EN?"tap to fetch":"tryk for at hente")),
+            S.skyLaast ? "dev-kant-roed" : "")
+        : _stflise("backup", "\ud83d\udcbe", (EN?"BACKUP":"BACKUP"),
           (S.skyLaast ? (EN?"\u26a0\ufe0f locked \u2014 open it":"\u26a0\ufe0f låst — åbn den") : (EN?"save & move":"gem & flyt")),
-          S.skyLaast ? "dev-kant-roed" : "")
+          S.skyLaast ? "dev-kant-roed" : ""))
       + '</div>';
 
       if (_sp === "form") {
@@ -10602,9 +10688,9 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     if (!S.gemte.length) h += '<p style="font-size:13px;color:var(--daempet)">'+(EN?'New matches with point-by-point data are recorded under 🎾 Match and collected here: per-match statistics and development over time.':'Nye kampe med point-for-point data registreres under 🎾 Kamp og lander her under baselinen.')+'</p>';
     // ⭐ v4.94.0 · I team-visningen findes der ingen kode at taste: analyser
     //   hentes på spillerens adgang gennem team-nøglen (analyse-lov v4).
-    if (VISNING === "team") h += '<p class="lille" style="margin:2px 0 10px">' + (EN
-      ? "Analyses are fetched on the player’s access through the team key — no code needed here."
-      : "Analyser hentes på spillerens adgang gennem team-nøglen — ingen kode her.") + '</p>';
+    if (teamKunStreaks()) h += '<p class="lille" style="margin:2px 0 10px">' + (EN
+      ? "Matches, training and analyses here are the player’s mirror — shared by the player through the team key. Analyses are fetched on the player’s access; no code needed here."
+      : "Kampe, træning og analyser her er spillerens spejl — delt af spilleren gennem team-nøglen. Analyser hentes på spillerens adgang; ingen kode her.") + '</p>';
     else h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px">' +
       '<button class="knap" style="flex:none;padding:6px 10px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="klubKodeAabn">⚙ '+(EN?"Club code":"Klubkode")+' '+(S.klubKode?'✓':'—')+'</button>' +
       '<span class="lille" style="margin:0">'+(S.klubKode?(EN?"Analyses can be fetched on this device.":"Analyser kan hentes på denne enhed."):(EN?"Needed once to fetch analyses.":"Skal indtastes én gang for at hente analyser."))+'</span></div>';
@@ -10651,6 +10737,11 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
             (aAaben
               ? '<p class="lille" style="margin:8px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(k.analyse) + '</p>'
               : '<p class="lille" style="margin:6px 0 0;color:var(--daempet)">' + esc(k.analyse.replace(/\s+/g," ").slice(0,90)) + '…</p>') +
+            // ⭐ v4.96.0 · sandheden om, hvem der kan se den — begge steder.
+            (teamKunStreaks()
+              ? '<p class="lille" style="margin:6px 0 0;opacity:.7">' + (EN ? "Shared by the player through the team key." : "Delt af spilleren gennem team-nøglen.") + '</p>'
+              : ((S.famKoder || []).some(function (x) { return x && x.status === "aktiv"; })
+                ? '<p class="lille" style="margin:6px 0 0;opacity:.7">' + (EN ? "Your team can see this." : "Dit team kan se den.") + '</p>' : '')) +
             '</div>'
           : '') +
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
@@ -10705,7 +10796,29 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     }
     h += '</div>';
     }
-    if (_sp === "backup") {
+    if (_sp === "backup" && teamKunStreaks()) {
+      // ⭐⭐ v4.96.0 · SPEJLET, SET FRA TEAMET. Ingen manuel backup, ingen
+      //   sletning herfra — kun hent, og sandheden om hvad der rejser.
+      const _harB = !!lager.hent("sai-sky-noegle");
+      const _sk = S.skyStatus;
+      h += '<div class="kort" style="border-left:3px solid ' + (S.skyLaast ? 'var(--tabt)' : _harB ? 'var(--is)' : 'var(--guld)') + '">' +
+        '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83e\ude9e ' + (EN ? "THE PLAYER’S MIRROR" : "SPILLERENS SPEJL") + '</div>' +
+        '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
+          ? "Matches, every ball, the training log and the analyses come from the player’s own encrypted backup. <b>The key travelled in the team link</b> — the server still cannot open the box. What you enter here is put back into the same box, so the player sees it too."
+          : "Kampe, hver bold, træningsloggen og analyserne kommer fra spillerens egen krypterede sikkerhedskopi. <b>Nøglen rejste i team-linket</b> — serveren kan stadig ikke åbne boksen. Det, du taster her, lægges tilbage i samme boks, så spilleren også ser det.") + '</p>' +
+        '<p class="lille" style="margin:8px 0 0;line-height:1.5;opacity:.85">' + (EN
+          ? "Honest limits: new matches and sessions travel both ways; an edit of a match already on the other phone can appear as a second copy, and a deletion does not travel. Messages are never part of it."
+          : "Ærlige grænser: nye kampe og pas rejser begge veje; retter man en kamp, den anden telefon allerede har, kan den dukke op som en kopi — og en sletning rejser ikke. Beskeder er aldrig med.") + '</p>' +
+        (!_harB ? '<p class="lille" style="margin:8px 0 0;color:var(--guld)">' + (EN
+          ? "This phone has no key to the backup: the player had not turned it on when the link was made. Ask for a new team link once the backup is on."
+          : "Telefonen har ingen nøgle til sikkerhedskopien: spilleren havde ikke slået den til, da linket blev lavet. Bed om et nyt team-link, når kopien er slået til.") + '</p>' : '') +
+        (_sk && _sk.har && _sk.opdateret ? '<p class="lille" style="margin:7px 0 0;opacity:.6">' + (EN ? "Player’s box from " : "Spillerens boks fra ") + esc(new Date(_sk.opdateret).toLocaleString("da-DK")) + (_sk.bytes ? ' \u00b7 ' + Math.max(1, Math.round(_sk.bytes / 1024)) + ' KB' : '') + '</p>' : '') +
+        '<div class="raekke" style="margin-top:9px;gap:6px">' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' + (S.skySender || !_harB ? ' disabled' : '') + ' data-a="skyHentNu">' +
+          (S.skySender ? '\u23f3 \u2026' : (EN ? "\ud83e\ude9e Fetch the mirror" : "\ud83e\ude9e Hent spejl")) + '</button></div>' +
+        (S.skyBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>' : '') +
+        '</div>';
+    } else if (_sp === "backup") {
     // ══════════════════════════════════════════════════════════════════
     // ⭐⭐⭐ v4.79.0 · DEN AUTOMATISKE KOPI STÅR ØVERST.
     //   Den manuelle nedenunder er stadig der og virker — men den, ingen
@@ -11015,6 +11128,12 @@ function autoSynk(){
     // Samme hegn, ét opslag; svaret huskes hele besoeget.
     if (S.spillerNoegle && S.rolle !== "familie" && iDetDelteLag() && S.portStatus === null)
       setTimeout(function(){ try { inviteretTjek(); } catch (_e) {} }, 400);
+  } catch (e) {}
+  // ⭐ v4.96.0 · TEAM-SPEJLET: har telefonen nøglen til spillerens boks,
+  //   hentes og flettes den stille ved opstart. Én gang pr. åbning.
+  try {
+    if (teamKunStreaks() && lager.hent("sai-sky-noegle") && !S.skyLaast)
+      setTimeout(function(){ try { A.skyGendan(null, true).then(function(){ render(); }); } catch (_e) {} }, 900);
   } catch (e) {}
   // 19/8: fuld synk (skub + hent) — Nicolai: "automatisér al den transport".
   try { A.synkroniser(); return; } catch (e) {}

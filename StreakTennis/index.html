@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.104.0 · 5. september 2026";
+const VERSION = "v4.105.0 · 5. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -1831,6 +1831,7 @@ try {
     S.famTilbud = _fp.trim();
     // ⭐ v4.96.0 · boksens nøgle følger med i samme fragment (&sky=…).
     S.famSkyBits = skyBitsFra(location.hash);
+    S.famPostPub = postPubFra(location.hash);   // ⭐ v4.105.0 · ormehullets offentlige nøgle
     history.replaceState(null, "", location.pathname);
   }
 } catch(e) {}
@@ -1845,6 +1846,7 @@ window.addEventListener("hashchange", function () {
     if (!/^fam-[0-9a-f]{32}$/.test(v.trim())) return;
     S.famTilbud = v.trim();
     S.famSkyBits = skyBitsFra(location.hash);   // ⭐ v4.96.0
+    S.famPostPub = postPubFra(location.hash);   // ⭐ v4.105.0
     history.replaceState(null, "", location.pathname);
     render();
   } catch (e) {}
@@ -1981,6 +1983,70 @@ async function skyAab(krypt, bitsB64) {
     const raa = await crypto.subtle.decrypt(
       { name: "AES-GCM", iv: _fraB64(d[1]) }, n, _fraB64(d[2]));
     return JSON.parse(await _udpak(new Uint8Array(raa), d[0] === "v1z"));
+  } catch (_e) { return null; }
+}
+
+// ═════════════════════════════════════════════════════════════════
+// ⭐⭐ v4.105.0 · ORMEHULLET — ENVEJS, LÅST MED SPILLERENS OFFENTLIGE NØGLE
+//   Nicolai 5/9: «Det må stadig være muligt at en kamp fra et team-medlem
+//   uden spejl bliver skubbet tilbage. Det er så ikke et spejl der men et
+//   envejs ormehul.»
+//   Uden spejlnøglen kan teamets telefon ikke låse noget ind i boksen (den
+//   er låst med spillerens kodeord). Derfor får ormehullet sin egen lås:
+//   spillerens telefon laver et nøglepar (ECDH P-256). Den OFFENTLIGE
+//   halvdel rejser i team-linket (65 bytes rå → 88 tegn) — den kan kun
+//   LÅSE, aldrig åbne. Teamet laver et flygtigt par pr. konvolut, udleder
+//   en fælles hemmelighed, hasher den til en AES-GCM-nøgle og låser kampen.
+//   Konvolutten: `v1p.<flygtig offentlig>.<iv>.<ciffertekst>`; første byte i
+//   klarteksten siger, om den er gzippet. Kun spillerens private halvdel
+//   (lokalt + i boksen) kan åbne. Serveren ser aldrig en bold.
+//   ⚠️ Ingen HKDF med vilje: SHA-256 af den delte hemmelighed findes i
+//   enhver WebCrypto, også ældre Safari — og hemmeligheden er frisk pr.
+//   konvolut, så nøglen bruges præcis én gang.
+// ═════════════════════════════════════════════════════════════════
+const POST_KURVE = "P-256";
+async function postNoeglepar() {
+  const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: POST_KURVE }, true, ["deriveBits"]);
+  const pub = _b64(new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey)));
+  const priv = JSON.stringify(await crypto.subtle.exportKey("jwk", kp.privateKey));
+  return { pub, priv };
+}
+async function _postAes(privKey, pubRawB64) {
+  const pub = await crypto.subtle.importKey("raw", _fraB64(pubRawB64), { name: "ECDH", namedCurve: POST_KURVE }, false, []);
+  const delt = await crypto.subtle.deriveBits({ name: "ECDH", public: pub }, privKey, 256);
+  const hash = await crypto.subtle.digest("SHA-256", delt);
+  return await crypto.subtle.importKey("raw", hash, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+async function postLaas(objekt, modtagerPubB64) {
+  const flygtig = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: POST_KURVE }, true, ["deriveBits"]);
+  const aes = await _postAes(flygtig.privateKey, modtagerPubB64);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const p = await _pak(JSON.stringify(objekt));
+  const krop = new Uint8Array(p.b.length + 1); krop[0] = p.z ? 1 : 0; krop.set(p.b, 1);
+  const c = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, aes, krop);
+  const ep = _b64(new Uint8Array(await crypto.subtle.exportKey("raw", flygtig.publicKey)));
+  return "v1p." + ep + "." + _b64(iv) + "." + _b64(new Uint8Array(c));
+}
+// ⚠️ null i stedet for at kaste — en konvolut, der ikke kan åbnes, må
+//   aldrig vælte en opstart (princip 35). Den bliver stående i postkassen.
+async function postAab(krypt, privJwk) {
+  try {
+    const d = String(krypt || "").split(".");
+    if (d.length !== 4 || d[0] !== "v1p") return null;
+    const priv = await crypto.subtle.importKey("jwk", JSON.parse(privJwk), { name: "ECDH", namedCurve: POST_KURVE }, false, ["deriveBits"]);
+    const aes = await _postAes(priv, d[1]);
+    const raa = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: _fraB64(d[2]) }, aes, _fraB64(d[3])));
+    return JSON.parse(await _udpak(raa.subarray(1), raa[0] === 1));
+  } catch (_e) { return null; }
+}
+// Den offentlige nøgle i linket (&post=…): 65 bytes rå P-256 = 88 tegn
+// base64, altid «BA…» og ét «=». Alt andet er støj.
+function postPubFra(tekst) {
+  try {
+    const m = /(?:^|[#&?])post=([A-Za-z0-9+\/=%]+)/.exec(String(tekst || ""));
+    if (!m) return null;
+    let v = m[1]; try { v = decodeURIComponent(v); } catch (_e) {}
+    return /^B[A-Za-z0-9+\/]{86}=$/.test(v) ? v : null;
   } catch (_e) { return null; }
 }
 
@@ -2945,6 +3011,12 @@ const A = {
             S.fletEkstra.push(_n + (S.sprog === "en" ? " settings" : " indstillinger"));
           }
         }
+        // ⭐ v4.105.0 · nøgleparret kommer hjem, hvis telefonen intet har.
+        //   Har telefonen sit eget, vinder telefonen (et link, der er
+        //   sendt fra DEN, skal blive ved med at virke).
+        if (!teamKunStreaks() && d.postPrivat && d.postOffentlig && !lager.hent("sai-post-privat")) {
+          try { lager.gem("sai-post-privat", String(d.postPrivat)); lager.gem("sai-post-offentlig", String(d.postOffentlig)); } catch (_e) {}
+        }
         if (d.scout && typeof d.scout === "object") {
           let _sn = 0;
           S.scout = S.scout || {};
@@ -3089,6 +3161,8 @@ const A = {
       aktiv: false,
     } : null;
     S.gemte.unshift(S.aktiv); gemAlle();
+    // ⭐⭐ v4.105.0 · ORMEHULLET: teamet uden spejl sender kampen hjem.
+    if (teamKunStreaks() && !lager.hent("sai-sky-noegle") && lager.hent("sai-post-til")) { try { A.postSend(S.aktiv); } catch (_e) {} }
     udviklingAuto();   // ⭐ v4.104.0 · hver 5. kamp åbner brevet
     if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 600);   // auto-transport 19/8: kampen står hos træneren uden ét tryk
     S.aktiv = null; S.afventer = null; S.resInput = ""; gemAktiv();
@@ -3426,6 +3500,10 @@ const A = {
       indst: A._skyIndst() };
     if (!iBoks) { try { delete ud.indst.skadet; } catch (_e) {} }
     try { const n = lager.hent("sai-spiller"); if (n) ud.navn = n; } catch (_e) {}
+    // ⭐ v4.105.0 · ormehullets nøglepar rejser i boksen — kun i den låste
+    //   (klartekst-backuppen kan sendes hvorhen som helst). Prisen ved en
+    //   manuel flytning: et nyt par laves ved næste nøgle, gamle links dør.
+    if (iBoks) { try { const pp = lager.hent("sai-post-privat"), po = lager.hent("sai-post-offentlig"); if (pp && po) { ud.postPrivat = pp; ud.postOffentlig = po; } } catch (_e) {} }
     // Kampen, der er I GANG. Nicolai: «Mister man telefonen midt i en kamp,
     // er den væk.» Den følger med som RÅ tekst — appen renser den selv, når
     // den flettes ind, og den flettes kun ind på en telefon uden en kamp.
@@ -3433,6 +3511,64 @@ const A = {
     return ud;
   },
 
+  // ═══ v4.105.0 · ORMEHULLET ═════════════════════════════════════════
+  famSpejlSaet: (v) => { S.famSpejl = v === "1"; S.famKodeSpoerg = false; S.famBesked = null; render(); },
+  // Teamet uden spejl: ÉN kamp, renset gennem hvidlisten, låst med
+  // spillerens offentlige nøgle, lagt i postkassen. Kampen BLIVER også her.
+  postSend: async (k) => {
+    const EN = S.sprog === "en";
+    const til = lager.hent("sai-post-til"); if (!til || !k) return;
+    try {
+      const ren = rensKamp(JSON.parse(JSON.stringify(k))); if (!ren) return;
+      delete ren.analyse;   // princip 19: analysen hænger på spillerens egen adgang
+      // Afsenderen er telefonens EGEN spiller (rå nøgle — i team-visningen er
+      // `lager` Oskars rum). På en ren familie-enhed findes intet eget navn.
+      let _fra = ""; try { _fra = (VISNING === "team" ? (window.localStorage.getItem("sai-spiller") || "") : ""); } catch (_e) {}
+      if (!_fra) _fra = EN ? "your team" : "dit team";
+      const krypt = await postLaas({ v: 1, kamp: ren, fra: _fra, tid: new Date().toISOString() }, til);
+      const r = await skyKald("post-laeg", { krypt, fra: _fra.slice(0, 40) });
+      S.postBesked = r && !r.fejl
+        ? { fejl: false, t: EN ? "The match was sent home to the player through the wormhole 🕳️" : "Kampen er sendt hjem til spilleren gennem ormehullet 🕳️" }
+        : { fejl: true, t: r && r.fejl === "fuld"
+            ? (EN ? "The player’s mailbox is full — it empties when the app is opened there." : "Spillerens postkasse er fuld — den tømmes, når appen åbnes dér.")
+            : (EN ? "The match could not be sent right now — it stays on this phone." : "Kampen kunne ikke sendes lige nu — den bliver på denne telefon.") };
+    } catch (_e) { S.postBesked = { fejl: true, t: EN ? "The match could not be sent right now — it stays on this phone." : "Kampen kunne ikke sendes lige nu — den bliver på denne telefon." }; }
+    render();
+  },
+  // Spillerens egen telefon: hent, åbn, flet, kvittér — i den rækkefølge.
+  // En konvolut kvitteres først, når den ER flettet ind (princip 70).
+  postHent: async (stille) => {
+    const EN = S.sprog === "en";
+    if (teamKunStreaks() || !S.spillerNoegle || S.postHenter) return 0;
+    const priv = lager.hent("sai-post-privat"); if (!priv) return 0;
+    S.postHenter = true; if (!stille) render();
+    try {
+      const r = await skyKald("post-hent", {});
+      if (!r || r.fejl || !Array.isArray(r.post)) { S.postHenter = false; if (!stille) { S.postBesked = { fejl: true, t: EN ? "Could not reach the mailbox." : "Kunne ikke nå postkassen." }; render(); } return 0; }
+      const kampe = [], ids = [], fra = [];
+      for (const p of r.post) {
+        const d = await postAab(p.krypt, priv);
+        if (d && d.kamp) { kampe.push(d.kamp); ids.push(p.id); if (p.fra) fra.push(p.fra); }
+      }
+      let nye = 0;
+      if (kampe.length) { nye = A.fletInd({ kampe }) || 0; try { lager.slet("sai-sky-aftryk"); } catch (_e) {} A.skySik(true); }
+      if (ids.length) await skyKald("post-kvit", { ids });
+      S.postHenter = false;
+      const _lukket = r.post.length - ids.length;
+      if (kampe.length || !stille) S.postBesked = { fejl: false, t: (EN
+        ? (nye + " match" + (nye === 1 ? "" : "es") + " came home from your team" + (fra.length ? " (" + fra.filter(function(x, i){ return fra.indexOf(x) === i; }).join(", ") + ")" : "") + (kampe.length > nye ? " — " + (kampe.length - nye) + " already here" : ""))
+        : (nye + " kamp" + (nye === 1 ? "" : "e") + " kom hjem fra dit team" + (fra.length ? " (" + fra.filter(function(x, i){ return fra.indexOf(x) === i; }).join(", ") + ")" : "") + (kampe.length > nye ? " — " + (kampe.length - nye) + " lå her allerede" : "")))
+        + (_lukket ? (EN ? " · " + _lukket + " could not be opened and stay in the mailbox" : " · " + _lukket + " kunne ikke åbnes og bliver i postkassen") : "") };
+      render();
+      return nye;
+    } catch (_e) { S.postHenter = false; return 0; }
+  },
+  // ⭐ v4.105.0 · ANNULLÉR — kun ved 0 bolde (fund 5/9: eneste vej ud var
+  //   «Afslut & gem», som gemte en tom kamp i STATS, synk og boks).
+  kampAnnuller: () => {
+    if (!S.aktiv || (S.aktiv.point && S.aktiv.point.length)) return;
+    S.aktiv = null; S.afventer = null; S.resInput = ""; S.wiz = 1; gemAktiv(); render();
+  },
   skySik: (straks) => {
     try { clearTimeout(window.__skyUr); } catch (_e) {}
     const koer = async () => {
@@ -4712,9 +4848,37 @@ const A = {
   },
   famNy: async () => {
     if (S.famHenter) return;
+    const EN = S.sprog === "en";
+    // ⭐⭐ v4.105.0 · SPEJL-VALGET (Nicolai 5/9: «man vælger om der skal være
+    //   et spejl ved udstedelsen af hver team nøgle»). Ja uden boks →
+    //   kodeordet spørges dén ene gang og EFTERPRØVES mod kontoen, før
+    //   nøglen udledes — en boks under et forkert kodeord er en boks,
+    //   ingen kan åbne (skyLaast-fælden fra 30/8).
+    if (S.famSpejl !== false && !lager.hent("sai-sky-noegle") && !S.skyLaast) {
+      const _kode = String(S.famKode || "");
+      if (!_kode) { S.famKodeSpoerg = true; S.famBesked = { t: EN
+        ? "To share the mirror, the backup must exist first — type your password once, and it is made."
+        : "For at dele spejlet skal sikkerhedskopien findes først — skriv dit kodeord én gang, så laves den." }; render(); return; }
+      S.famHenter = true; S.famBesked = null; render();
+      const _navn = String(S.mitNavn || lager.hent("sai-brugernavn") || "").trim();
+      const _lr = await A.kontoKald("login", { navn: _navn, kode: _kode });
+      if (_lr.fejl) { S.famHenter = false; S.famBesked = { t: EN ? "The password does not match." : "Kodeordet passer ikke." }; render(); return; }
+      try { await A.skyNoegleSaet(_kode); } catch (_e) {}
+      S.famKode = ""; S.famKodeSpoerg = false;
+      try { lager.slet("sai-sky-aftryk"); } catch (_e) {}
+      A.skySik(true);
+      S.famHenter = false;
+    }
+    // ⭐ v4.105.0 · ORMEHULLET: nøgleparret laves første gang, der udstedes
+    //   en team-nøgle — den private halvdel bor lokalt og i boksen.
+    if (!lager.hent("sai-post-offentlig") || !lager.hent("sai-post-privat")) {
+      try { const kp = await postNoeglepar(); lager.gem("sai-post-offentlig", kp.pub); lager.gem("sai-post-privat", kp.priv);
+        try { lager.slet("sai-sky-aftryk"); } catch (_e) {} A.skySik(true); } catch (_e) {}
+    }
     S.famHenter = true; S.famBesked = null; render();
     const r = await sync("familie-kode", S.famEtiket ? { etiket: S.famEtiket.slice(0, 20) } : {});
     S.famHenter = false;
+    S.famNySpejl = S.famSpejl !== false && !!lager.hent("sai-sky-noegle") && !S.skyLaast;
     if (r.fejl) S.famBesked = { t: r.status === 429
       ? (S.sprog === "en" ? "At most 6 team keys." : "Højst 6 team-nøgler.")
       : (S.sprog === "en" ? "The key could not be made right now." : "Nøglen kunne ikke laves lige nu.") };
@@ -4729,8 +4893,10 @@ const A = {
     //   kodeordet), så teamet kan åbne den boks, der findes. I fragmentet.
     //   Findes der ingen boks-nøgle på telefonen, sendes linket uden — og
     //   team-visningen siger ærligt, at spejlet venter på sikkerhedskopien.
-    let _skyDel = ""; try { const _b = lager.hent("sai-sky-noegle"); if (_b && !S.skyLaast) _skyDel = "&sky=" + encodeURIComponent(_b); } catch (_e) {}
-    const url = location.origin + location.pathname + "#familie=" + S.famNyKode + _skyDel;
+    // ⭐ v4.105.0 · spejlet KUN ved Ja (S.famNySpejl) — ormehullets offentlige nøgle ALTID.
+    let _skyDel = ""; try { const _b = lager.hent("sai-sky-noegle"); if (S.famNySpejl && _b && !S.skyLaast) _skyDel = "&sky=" + encodeURIComponent(_b); } catch (_e) {}
+    let _postDel = ""; try { const _p = lager.hent("sai-post-offentlig"); if (_p) _postDel = "&post=" + encodeURIComponent(_p); } catch (_e) {}
+    const url = location.origin + location.pathname + "#familie=" + S.famNyKode + _skyDel + _postDel;
     const t = (S.sprog === "en"
       ? "Join our team in StreakTennis — open the link and tap ”Join the team”: "
       : "Vær med på holdet i StreakTennis — åbn linket og tryk ”Bliv en del af teamet”: ");
@@ -4797,6 +4963,7 @@ const A = {
         window.localStorage.setItem("tm1-sai-laas", "op");
         // ⭐ v4.96.0 · boksens nøgle bor i TEAMETS rum — egen sai-sky-* røres aldrig.
         if (S.famSkyBits) window.localStorage.setItem("tm1-sai-sky-noegle", S.famSkyBits);
+        if (S.famPostPub) window.localStorage.setItem("tm1-sai-post-til", S.famPostPub);   // ⭐ v4.105.0 · ormehullet
         if (r.fornavn) window.localStorage.setItem("tm1-sai-spiller", r.fornavn);
         window.localStorage.setItem("sai-profil-team", JSON.stringify({ navn: r.fornavn || "" }));
         window.localStorage.setItem("sai-profil-aktiv", "team");
@@ -4813,6 +4980,7 @@ const A = {
       lager.gem("sai-venne-aktiv", "1");
       lager.gem("sai-laas", "op");
       if (S.famSkyBits) lager.gem("sai-sky-noegle", S.famSkyBits);   // ⭐ v4.96.0 (rå på en familie-enhed, tm1- i team-visningen)
+      if (S.famPostPub) lager.gem("sai-post-til", S.famPostPub);       // ⭐ v4.105.0 · ormehullet
       if (r.fornavn) lager.gem("sai-spiller", r.fornavn);
       // Indloeses en ny noegle INDE i team-visningen, foelger registrets navn med.
       if (VISNING === "team" && r.fornavn) window.localStorage.setItem("sai-profil-team", JSON.stringify({ navn: r.fornavn }));
@@ -4833,7 +5001,7 @@ const A = {
         : "Det ligner ikke en team-nøgle (fam-…). Sæt hele linket eller selve nøglen ind.") };
       render(); return;
     }
-    S.famTilbud = m[0]; S.famSkyBits = skyBitsFra(S.famIndloesUdkast); S.famIndloesUdkast = ""; S.famBesked = null;
+    S.famTilbud = m[0]; S.famSkyBits = skyBitsFra(S.famIndloesUdkast); S.famPostPub = postPubFra(S.famIndloesUdkast); S.famIndloesUdkast = ""; S.famBesked = null;
     A.famBliv();
   },
   // ⭐ v4.90.0 · SKIFTET: én skrivning, én genfoedsel. Kontakten staar
@@ -9756,6 +9924,18 @@ function _tegn() {
           ? "Give someone on your team their own key. They enter and see everything — except the messages. The link works once."
           : "Giv en fra dit team sin egen nøgle. De taster og ser alt — undtagen beskederne. Linket virker én gang.") + '</p>' +
           '<input data-felt="famEtiket" maxlength="20" placeholder="' + (EN?"Label (optional)":"Etiket (valgfrit)") + '" value="' + esc(S.famEtiket || "") + '">' +
+          // ⭐⭐ v4.105.0 · SPEJL-VALGET pr. nøgle (Nicolai 5/9). Ja = teamet ser
+          //   kampe, træning og analyser. Nej = teamet ser streaks og kan taste;
+          //   det, de taster, kommer hjem gennem ormehullet.
+          '<div class="raekke" style="margin-top:8px;gap:6px">' +
+            '<button class="knap valg' + (S.famSpejl !== false ? " til" : "") + '" style="flex:1;min-height:44px;font-size:12px" data-a="famSpejlSaet" data-v="1">🪞 ' + (EN?"Share the mirror":"Del spejlet") + '</button>' +
+            '<button class="knap valg' + (S.famSpejl === false ? " til" : "") + '" style="flex:1;min-height:44px;font-size:12px" data-a="famSpejlSaet" data-v="0">🕳️ ' + (EN?"No mirror":"Uden spejl") + '</button></div>' +
+          '<p class="lille" style="margin:6px 0 0">' + (S.famSpejl !== false
+            ? (EN ? "With the mirror they see your matches, training and analyses — and what they enter lands with you."
+                  : "Med spejlet ser de dine kampe, træning og analyser — og det, de taster, lander hos dig.")
+            : (EN ? "Without the mirror they see your streaks and can enter matches — those are sent home to you through the wormhole. They cannot see yours."
+                  : "Uden spejlet ser de dine streaks og kan taste kampe — dem sendes hjem til dig gennem ormehullet. De kan ikke se dine.")) + '</p>' +
+          (S.famKodeSpoerg ? '<input class="felt" style="margin-top:7px" type="password" data-felt="famKode" value="' + esc(S.famKode || "") + '" placeholder="' + (EN?"your password (once)":"dit kodeord (én gang)") + '" autocomplete="current-password">' : '') +
           '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="famNy">' + (S.famHenter ? "⏳ …" : (EN?"Get a team key":"Få en team-nøgle")) + '</button>';
         if (S.famNyKode) {
           famKrop += '<div class="kort dev-kant dev-kant-guld" style="margin-top:9px;padding:12px;text-align:center">' +
@@ -10146,6 +10326,9 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         (S.aktiv.point.length ? S.aktiv.point.slice(-14).map(p => '<span class="prik" style="background:'+(p.r==="V"?"var(--vundet)":"var(--tabt)")+';margin-top:'+(p.r==="V"?0:10)+'px"></span>').join("")
         : '<span style="font-size:11px;color:var(--kridt);opacity:.85">'+(EN?'The match footprints — won above the line, lost below':'Kampens fodspor — vundne over stregen, tabte under')+'</span>') + '</div></div>';
 
+      // ⭐ v4.105.0 · en kamp uden bolde kan annulleres — uden at blive gemt.
+      //   Står HER, lige under fodsporet, så den ses uden at rulle (princip 62).
+      if (!(S.aktiv.point && S.aktiv.point.length)) h += '<div class="raekke" style="margin:2px 0 6px"><button class="knap valg" style="width:100%;padding:9px;color:var(--daempet);font-size:12px" data-a="kampAnnuller">✖ '+(EN?"Cancel the match (nothing saved)":"Annullér kampen (intet gemmes)")+'</button></div>';
       if (S._kvit) h += '<div class="banner guld">🎾 <b>'+(S._kvit==="mod_returfejl"?(EN?"Registered: opponent RETURN ERROR":"Registreret: modstander-RETURFEJL"):(EN?"Registered: opponent ACE":"Registreret: modstander-ES"))+'</b></div>';
       const sidste3 = S.aktiv.point.slice(-3);
       if (sidste3.length === 3 && sidste3.every(p => p.r==="T" && (p.å==="uf"||p.å==="dobbelt"||p.å==="returfejl")))
@@ -10264,6 +10447,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       h += '<div class="kort statlinje">'+(EN?'Serve points won: ':'Serve vundet: ')+'<b>'+s.serve[0]+'/'+s.serve[1]+'</b> · '+(EN?'1st serve in: ':'1. serv i spil: ')+'<b>'+s.s1pct+' %</b> · '+(EN?'Return: ':'Retur: ')+'<b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>'+(EN?'Winners: ':'Vindere: ')+'<b style="color:var(--vundet)">'+s.vindere+'</b> · '+(EN?'Unforced errors: ':'Gratis fejl: ')+'<b style="color:'+(s.uf>s.vindere?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b> · '+(EN?'Break points: ':'Breakbolde: ')+'<b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b>'+(EN?' converted, ':' udnyttet, ')+'<b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b>'+(EN?' saved':' afværget')+'<br>'+(s.haand.medSide?((EN?'<br>Free errors — forehand: ':'<br>Gratis fejl — forhånd: ')+'<b>'+s.haand.ufFH+'</b>'+(EN?' · backhand: ':' · baghånd: ')+'<b>'+s.haand.ufBH+'</b>'+' <span style="opacity:.65">('+s.haand.medSide+'/'+s.haand.muligIalt+')</span>'):'')+(function(){ const sn = s.st.setsO + s.st.setsM + 1; const ps = s.perSaet[sn-1] || { v: 0, t: 0, uf: 0, vin: 0 }; return '<br>'+(EN?'This set: ':'Dette sæt: ')+'<b>'+ps.v+'-'+ps.t+'</b> · '+(EN?'UE ':'gratis fejl ')+'<b>'+ps.uf+'</b> · '+(EN?'winners ':'vindere ')+'<b>'+ps.vin+'</b>'; })()+((s.haand.ufFH+s.haand.ufBH>=4 && Math.abs(s.haand.ufBH-s.haand.ufFH)>=2)?' <span style="color:var(--tabt)">'+(EN?'· mostly on the ':'· mest på ')+(s.haand.ufBH>s.haand.ufFH?(EN?'backhand':'baghånden'):(EN?'forehand':'forhånden'))+'</span>':'')+'</div>';
       h += '<input placeholder="'+(EN?'Result (auto-filled if empty)':'Resultat (udfyldes automatisk hvis tomt)')+'" value="'+esc(S.resInput)+'" data-felt="resInput">';
       h += '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="afslut">'+(EN?"✔ Finish &amp; save the match":"✔ Afslut &amp; gem kampen")+'</button></div>';
+
     }
   }
 
@@ -10692,7 +10876,10 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         + '<small style="color:' + (_sp === v ? 'var(--is)' : 'var(--daempet)') + '">' + tal + '</small></button>';
     };
     // ⭐ v4.100.0 · teamet uden spejl-nøgle: sandheden står FØRST, ikke i et panel.
-    if (teamKunStreaks() && !lager.hent("sai-sky-noegle")) h += '<p class="lille" style="margin:8px 0 2px;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0">' + (EN
+    if (teamKunStreaks() && !lager.hent("sai-sky-noegle") && lager.hent("sai-post-til")) h += '<p class="lille" style="margin:8px 0 2px;padding:8px 10px;border-left:3px solid var(--is);border-radius:0 8px 8px 0">' + (EN
+      ? "No mirror on this key — matches you finish here go home to the player through the wormhole 🕳️."
+      : "Intet spejl på denne nøgle — kampe, du afslutter her, går hjem til spilleren gennem ormehullet 🕳️.") + '</p>';
+    else if (teamKunStreaks() && !lager.hent("sai-sky-noegle")) h += '<p class="lille" style="margin:8px 0 2px;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0">' + (EN
       ? "What you enter here lives only on this phone until the player gives access to his mirror (a new team link with the backup key). Then everything travels to him — and his matches come here."
       : "Det, du taster her, bor kun på denne telefon, indtil spilleren giver adgang til sit spejl (et nyt team-link med sikkerhedskopiens nøgle). Så rejser alt herfra til ham — og hans kampe kommer hertil.") + '</p>';
     h += '<div class="dev-grid" style="margin:12px 0">'
@@ -10861,11 +11048,18 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     if (!S.gemte.length) h += '<p style="font-size:13px;color:var(--daempet)">'+(EN?'New matches with point-by-point data are recorded under 🎾 Match and collected here: per-match statistics and development over time.':'Nye kampe med point-for-point data registreres under 🎾 Kamp og lander her under baselinen.')+'</p>';
     // ⭐ v4.94.0 · I team-visningen findes der ingen kode at taste: analyser
     //   hentes på spillerens adgang gennem team-nøglen (analyse-lov v4).
+    // ⭐ v4.105.0 · ormehullets kvittering står her, hvor Afslut lander (STATS).
+    if (teamKunStreaks() && S.postBesked) h += '<p class="lille" style="margin:2px 0 8px;padding:8px 10px;border-left:3px solid ' + (S.postBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + ';border-radius:0 8px 8px 0">' + esc(S.postBesked.t) + '</p>';
     if (teamKunStreaks()) h += (lager.hent("sai-sky-noegle")
       ? '<p class="lille" style="margin:2px 0 10px">' + (EN
         ? "Matches, training and analyses here are the player’s mirror — shared by the player through the team key. Analyses are fetched on the player’s access; no code needed here."
         : "Kampe, træning og analyser her er spillerens spejl — delt af spilleren gennem team-nøglen. Analyser hentes på spillerens adgang; ingen kode her.") + '</p>'
       // ⭐ v4.100.0 · uden spejl-nøgle: sandheden om, hvor kampene bor.
+      // ⭐ v4.105.0 · …og med ormehullet: kampene rejser hjem, én ad gangen.
+      : lager.hent("sai-post-til")
+      ? '<p class="lille" style="margin:2px 0 10px;padding:8px 10px;border-left:3px solid var(--is);border-radius:0 8px 8px 0">' + (EN
+        ? "No mirror on this key: you cannot see the player’s matches. Every match you finish here is sent home to the player through the wormhole 🕳️ — and stays here too."
+        : "Intet spejl på denne nøgle: du kan ikke se spillerens kampe. Hver kamp, du afslutter her, sendes hjem til spilleren gennem ormehullet 🕳️ — og bliver også stående her.") + '</p>'
       : '<p class="lille" style="margin:2px 0 10px;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0">' + (EN
         ? "What you enter here lives only on this phone until the player gives access to his mirror (a new team link with the backup key). Then everything here travels to him — and his matches come here."
         : "Det, du taster her, bor kun på denne telefon, indtil spilleren giver adgang til sit spejl (et nyt team-link med sikkerhedskopiens nøgle). Så rejser alt herfra til ham — og hans kampe kommer hertil.") + '</p>');
@@ -11022,6 +11216,13 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '<span class="lille" style="color:' + (S.skyLaast ? 'var(--tabt)' : (_sk && _sk.har) ? 'var(--vundet)' : 'var(--daempet)') + '">' +
           (S.skySender ? '\u23f3 \u2026' : S.skyLaast ? '\ud83d\udd12 ' + (EN ? "locked" : "låst")
             : (_sk && _sk.har) ? '\u2713 ' + _naar : (EN ? "not yet" : "ikke endnu")) + '</span></div>';
+      // ⭐ v4.105.0 · ORMEHULLET: postkassen fra teamet. Kun på spillerens
+      //   egen telefon, kun når nøgleparret findes (dvs. en nøgle er udstedt).
+      if (S.minKonto && lager.hent("sai-post-privat")) {
+        h += '<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><button class="knap valg" style="flex:none;min-height:40px;padding:0 12px;font-size:12px" data-a="postHent">' + (S.postHenter ? "⏳ …" : "🕳️ " + (EN ? "Check the wormhole" : "Se i ormehullet")) + '</button>' +
+          '<span class="lille" style="margin:0">' + (EN ? "Matches your team enters without the mirror land here." : "Kampe, dit team taster uden spejl, lander her.") + '</span></div>';
+      }
+      if (S.postBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.postBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.postBesked.t) + '</p>';
       if (!S.minKonto) {
         // ⛔ Uden konto er der ingen at gemme for — og ingen vej tilbage.
         h += '<p class="lille" style="margin:8px 0 0">' + (EN
@@ -11326,6 +11527,12 @@ function autoSynk(){
           A.skyGendan(null, true).then(function(){ render(); });
         });
       } catch (_e) {} }, 1200);
+  } catch (e) {}
+  // ⭐ v4.105.0 · ORMEHULLET: spillerens egen telefon kigger i postkassen
+  //   ved opstart — stille; skærmen siger kun noget, hvis der KOM noget.
+  try {
+    if (!teamKunStreaks() && S.spillerNoegle && S.rolle !== "familie" && lager.hent("sai-post-privat"))
+      setTimeout(function(){ try { A.postHent(true); } catch (_e) {} }, 1500);
   } catch (e) {}
   // 19/8: fuld synk (skub + hent) — Nicolai: "automatisér al den transport".
   try { A.synkroniser(); return; } catch (e) {}

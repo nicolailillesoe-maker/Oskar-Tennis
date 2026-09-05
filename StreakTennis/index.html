@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.103.0 · 4. september 2026";
+const VERSION = "v4.104.0 · 5. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -1388,7 +1388,7 @@ const rensKamp = (g) => {
   return { modstander: _trim(g.modstander) || "Ukendt modstander", turnering: _trim(g.turnering) || "",
     dato: g.dato || new Date().toISOString().slice(0,10),
     oskarFirst: typeof g.oskarFirst === "boolean" ? g.oskarFirst : true,
-    mtb: typeof g.mtb === "boolean" ? g.mtb : true, saetTil: g.saetTil === 4 ? 4 : 6, noAd: g.noAd === true, afsluttet: g.afsluttet === true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : vandtIflgResultat(g.resultat), resultat: g.resultat || "", analyse: g.analyse || "", justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
+    mtb: typeof g.mtb === "boolean" ? g.mtb : true, saetTil: g.saetTil === 4 ? 4 : 6, noAd: g.noAd === true, afsluttet: g.afsluttet === true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : vandtIflgResultat(g.resultat), resultat: g.resultat || "", analyse: g.analyse || "", tre: Array.isArray(g.tre) ? g.tre.slice(0, 3) : null, justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
     point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1, l: [1,2,3].indexOf(q.l) >= 0 ? q.l : 0, h: [1,2].indexOf(q.h) >= 0 ? q.h : 0, z: [1,2,3].indexOf(q.z) >= 0 ? q.z : 0 })) };
 };
 try { const sp = lager.hent("sai-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
@@ -1469,6 +1469,8 @@ try { const fk = lager.hent("sai-foelgekode"); if (fk) S.foelgekode = fk; } catc
 try { S.venneAktiv = lager.hent("sai-venne-aktiv") === "1"; } catch(e) {}
 try { S.liveAktiv = lager.hent("sai-liveaktiv") === "1"; } catch(e) {}
 try { const ra = JSON.parse(lager.hent("sai-rivalanalyser") || "{}"); if (ra && typeof ra === "object") S.rivalAnalyser = ra; } catch(e) {}
+// ⭐ v4.104.0 · UDVIKLINGSBREVET — ét brev over de seneste kampe, i ord.
+try { const ub = JSON.parse(lager.hent("sai-udvikling") || "null"); if (ub && typeof ub === "object" && ub.tekst) S.udvikling = ub; } catch(e) {}
 
 // ⭐ DOEREN PAA KAMPEN (22/8 nat): registrering kraever en INVITATION.
 // "Saa kan de ikke bruge den - men faa den i haanden og blive fristet."
@@ -1871,6 +1873,7 @@ try {
 // bliver det ikke sendt herfra og ville blive afvist med 422 alligevel.
 const ANALYSE_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-kamp";
 const RIVAL_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-rival";
+const UDVIKLING_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-udvikling";   // ⭐ v4.104.0 · udviklingsbrevet
 // ══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.79.0 · SKYGGEKOPIEN — EN BOKS, SERVEREN IKKE KAN ÅBNE
 //
@@ -2415,6 +2418,50 @@ function byggAnalysePayload(k) {
   return ud;
 }
 
+// ⭐ v4.104.0 · UDVIKLINGSBREVET. Nicolai 4/9: «Vi har udviklingen på tal —
+//   men ikke i ord.» Grundlaget er KUN tal: de 3-8 seneste kampe gennem SAMME
+//   hvidliste som analysen, plus hver kamps TRE TING som struktur (aldrig
+//   k.analyse, som spilleren kan have rettet — princip 19). Døren er den
+//   samme som analysens: klubkode eller et token fra analyse-lov, hvor
+//   aftrykket er sha256("udvikling|" + kampaftryk…) — så et brev-token aldrig
+//   kan bruges til en kamp. Et brev tæller som én kamp på månedsloftet.
+const UDV_MIN = 3, UDV_MAKS = 8, UDV_HVER = 5;
+function udvKampe() {
+  // S.gemte er nyest først — brevet vil have ældste først. Kun kampe med bolde.
+  return (S.gemte || []).filter(function(k){ return k && Array.isArray(k.point) && k.point.length >= 8; }).slice(0, UDV_MAKS).reverse();
+}
+async function udvAftryk(liste) {
+  const dele = [];
+  for (const k of liste) dele.push(await kampAftryk(k));
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("udvikling|" + dele.join("|")));
+  return Array.from(new Uint8Array(h)).map(function(b){ return b.toString(16).padStart(2, "0"); }).join("");
+}
+async function udvAdgang(aftryk, signal) {
+  if (S.klubKode) return { hoveder: { "x-klub-noegle": S.klubKode } };
+  if (!S.spillerNoegle) return { fejl: "mangler-adgang" };
+  try {
+    const r = await fetch(LOV_URL, { method: "POST", signal: signal,
+      headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+      body: JSON.stringify({ aftryk: aftryk }) });
+    const d = await r.json().catch(function(){ return {}; });
+    if (!r.ok || !d.token) return { fejl: d.kode || "netvaerk", status: r.status };
+    return { hoveder: { "x-analyse-token": d.token } };
+  } catch (e) { return { fejl: "netvaerk" }; }
+}
+// ⭐ Automatikken (princip 41): brevet åbner sig selv efter hver 5. gemte
+//   kamp — mekanikken belønner at SPILLE, ikke at trykke. Aldrig i
+//   team-visningen (der tastes ikke kampe dér, og spejlet bærer brevet).
+function udviklingAuto() {
+  try {
+    if (teamKunStreaks()) return;
+    const antal = (S.gemte || []).length;
+    if (antal < UDV_HVER || antal % UDV_HVER !== 0) return;
+    if (S.udvikling && S.udvikling.antalVed === antal) return;
+    if (S.udvHenter) return;
+    setTimeout(function(){ try { A.udviklingHent("auto"); } catch (_e) {} }, 1500);
+  } catch (_e) {}
+}
+
 function analyseFejltekst(kode, status, EN) {
   // ⭐ v4.7.9 · doerens egne svar, i menneskesprog
   if (kode === "brugt") return EN
@@ -2841,6 +2888,14 @@ const A = {
       lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
       lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
       // ⭐ Analyserne flettes med, uden at overskrive dem, telefonen har.
+      // ⭐ v4.104.0 · udviklingsbrevet: det nyeste vinder, intet slettes.
+      if (d.udvikling && typeof d.udvikling === "object" && d.udvikling.tekst) {
+        try {
+          if (!S.udvikling || String(d.udvikling.dato || "") > String(S.udvikling.dato || "")) {
+            S.udvikling = d.udvikling; lager.gem("sai-udvikling", JSON.stringify(S.udvikling));
+          }
+        } catch (_e) {}
+      }
       if (d.rivalAnalyser && typeof d.rivalAnalyser === "object") {
         try {
           S.rivalAnalyser = S.rivalAnalyser || {};
@@ -3034,6 +3089,7 @@ const A = {
       aktiv: false,
     } : null;
     S.gemte.unshift(S.aktiv); gemAlle();
+    udviklingAuto();   // ⭐ v4.104.0 · hver 5. kamp åbner brevet
     if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 600);   // auto-transport 19/8: kampen står hos træneren uden ét tryk
     S.aktiv = null; S.afventer = null; S.resInput = ""; gemAktiv();
     if (_delt) {
@@ -3365,6 +3421,7 @@ const A = {
   skyKrop: (iBoks) => {
     const ud = { v: 2, tid: new Date().toISOString(),
       kampe: S.gemte || [], fysLog: S.fysLog || [], ttLog: S.ttLog || [],
+      udvikling: S.udvikling || null,   // ⭐ v4.104.0 · brevet rejser med
       rivalAnalyser: S.rivalAnalyser || {}, scout: S.scout || {},
       indst: A._skyIndst() };
     if (!iBoks) { try { delete ud.indst.skadet; } catch (_e) {} }
@@ -5916,6 +5973,43 @@ const A = {
     };
     l.readAsDataURL(f);
   },
+  // ⭐ v4.104.0 · UDVIKLINGSBREVET hentes.
+  udviklingHent: (hvordan) => {
+    const EN = S.sprog === "en";
+    if (S.udvHenter) return;
+    const liste = udvKampe();
+    if (liste.length < UDV_MIN) { S.udvBesked = { fejl: true, t: (EN ? "The letter needs at least 3 matches with points — you have " : "Brevet kræver mindst 3 kampe med bolde — du har ") + liste.length + "." }; render(); return; }
+    if (!S.klubKode && !S.spillerNoegle) { S.udvBesked = { fejl: true, t: analyseFejltekst("mangler-adgang", 0, EN) }; render(); return; }
+    S.udvHenter = true; S.udvBesked = null; render();
+    const nyttelast = liste.map(function(k){
+      const p = byggAnalysePayload(k);
+      if (Array.isArray(k.tre) && k.tre.length) p.tre = k.tre.slice(0, 3).map(function(t){ return { f: String(t.f || ""), o: String(t.o || "").slice(0, 40), t: String(t.t || "").slice(0, 40), h: String(t.h || "").slice(0, 140) }; });
+      return p;
+    });
+    const styring = new AbortController();
+    const ur = setTimeout(function(){ styring.abort(); }, 150000);
+    udvAftryk(nyttelast).then(function(aftryk){
+      return udvAdgang(aftryk, styring.signal).then(function(ad){
+        if (ad.fejl) return { s: ad.status || 0, ok: false, d: { kode: ad.fejl } };
+        return fetch(UDVIKLING_URL, { method: "POST",
+          headers: Object.assign({ "content-type": "application/json" }, ad.hoveder),
+          body: JSON.stringify({ sprog: EN ? "en" : "da", kampe: nyttelast }), signal: styring.signal
+        }).then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return { s: r.status, ok: r.ok, d: d }; }); });
+      });
+    }).then(function(sv){
+      clearTimeout(ur); S.udvHenter = false;
+      if (sv.ok && sv.d && sv.d.brev) {
+        S.udvikling = { tekst: sv.d.brev, dato: new Date().toISOString(), kampe: liste.length, antalVed: (S.gemte || []).length,
+          fra: liste[0].dato || "", til: liste[liste.length - 1].dato || "", sprog: EN ? "en" : "da" };
+        try { lager.gem("sai-udvikling", JSON.stringify(S.udvikling)); } catch (_e) {}
+        S.udvBesked = { fejl: false, t: hvordan === "auto" ? (EN ? "Five matches in — the letter wrote itself." : "Fem kampe i hus — brevet skrev sig selv.") : (EN ? "The letter is written and saved." : "Brevet er skrevet og gemt.") };
+        try { A.skySik && A.skySik(); } catch (_e) {}
+      } else {
+        S.udvBesked = { fejl: true, t: (sv.d && sv.d.kode === "antal") ? (EN ? "The letter needs 3-8 matches." : "Brevet kræver 3-8 kampe.") : analyseFejltekst(sv.d && sv.d.kode, sv.s, EN) };
+      }
+      render();
+    }).catch(function(){ clearTimeout(ur); S.udvHenter = false; S.udvBesked = { fejl: true, t: analyseFejltekst(null, 0, EN) }; render(); });
+  },
   hentAnalyse: (i) => {
     const n = +i, k = S.gemte[n], EN = S.sprog === "en";
     if (!k) return;
@@ -5940,7 +6034,13 @@ const A = {
     }).then(function(sv) {
       clearTimeout(ur);
       if (sv.ok && sv.d && sv.d.analyse) {
-        if (S.gemte[n]) { S.gemte[n].analyse = sv.d.analyse; gemAlle(); }
+        if (S.gemte[n]) {
+          S.gemte[n].analyse = sv.d.analyse;
+          // ⭐ v4.104.0 · TRE TING som DATA (analyse-kamp v23). Struktur, ikke
+          //   tekst — det er det, udviklingsbrevet må læse (princip 19).
+          if (Array.isArray(sv.d.tre) && sv.d.tre.length) S.gemte[n].tre = sv.d.tre.slice(0, 3);
+          gemAlle();
+        }
         S.henter = null; analysePulsStop(); S._sf = S._sf || {}; S._sf["1"] = true;
         S.hentBesked = { i: n, fejl: false, t: EN ? "Analysis fetched and saved to the match." : "Analysen er hentet og gemt p\u00e5 kampen." };
       } else {
@@ -10698,6 +10798,25 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         '</table>' +
         '<p style="font-size:11px;color:var(--guld)">'+(EN?("⚠ Not "+SPILLER+"'s numbers! Replaced automatically by real statistics when at least 3 matches are saved — currently "):("⚠ Ikke "+SPILLER+"s"+" tal! Erstattes automatisk af rigtig statistik, når mindst 3 kampe er gemt — lige nu "))+S.gemte.length+'/3.</p></div>';
     }
+    // ⭐ v4.104.0 · 📖 UDVIKLINGEN — I ORD. Nicolai 4/9: «Vi har udviklingen på
+    //   tal — men ikke i ord.» Brevet står under tallene, aldrig i stedet for.
+    (function(){
+      const _liste = udvKampe(), _u = S.udvikling;
+      h += '<div class="kort" style="border-left:3px solid var(--is)" id="udv-kort"><h3>📖 ' + (EN ? "THE LETTER — in words" : "UDVIKLINGEN — i ord") + '</h3>';
+      if (_u && _u.tekst) {
+        h += '<p class="lille" style="margin:0 0 6px">' + esc(String(_u.kampe || "")) + (EN ? " matches · " : " kampe · ") + esc(String(_u.fra || "")) + " → " + esc(String(_u.til || "")) + ' · ' + (EN ? "written " : "skrevet ") + esc(String(_u.dato || "").slice(0, 10)) + '</p>' +
+             '<p style="margin:0 0 10px;white-space:pre-wrap;line-height:1.45;color:var(--kridt)">' + esc(_u.tekst) + '</p>';
+      } else {
+        h += '<p class="lille" style="margin:0 0 10px">' + (EN
+          ? "One letter across your latest matches: what held, what moved, what still stands. It writes itself after every fifth match — or when you press."
+          : "Ét brev over dine seneste kampe: hvad holdt, hvad flyttede sig, hvad står stadig. Det skriver sig selv efter hver femte kamp — eller når du trykker.") + '</p>';
+      }
+      if (S.udvBesked) h += '<p class="lille" style="margin:0 0 8px;color:' + (S.udvBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.udvBesked.t) + '</p>';
+      if (S.udvHenter) h += '<p class="lille" style="margin:0">⏳ ' + (EN ? "Writing the letter …" : "Skriver brevet …") + '</p>';
+      else if (_liste.length >= UDV_MIN) h += '<button class="knap' + (_u && _u.tekst ? ' valg' : '') + '" style="width:100%;min-height:44px" data-a="udviklingHent">' + (_u && _u.tekst ? (EN ? "Write a new letter" : "Skriv et nyt brev") : (EN ? "Write the letter" : "Skriv udviklingen")) + '</button>';
+      else h += '<p class="lille" style="margin:0;color:var(--daempet)">' + (EN ? "Needs 3 matches with points — you have " : "Kræver 3 kampe med bolde — du har ") + _liste.length + '.</p>';
+      h += '</div>';
+    })();
     }
     // 🆚 Sinner-benchmark — kun når flisen er valgt
     if (_kp === "bench") (function(){

@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.107.0 · 6. september 2026";
+const VERSION = "v4.108.0 · 6. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -466,12 +466,53 @@ const VERSION = "v4.107.0 · 6. september 2026";
 //   én skrivning + location.reload() — hele appen genfødes i det andet
 //   navnerum, og AL eksisterende kode virker uændret dér.
 let VISNING = "";
-try { VISNING = window.localStorage.getItem("sai-profil-aktiv") || ""; } catch(e) {}
-if (VISNING !== "team") VISNING = "";
+// ⭐⭐ v4.108.0 · FLERE TEAMS (Nicolai 6/9: «man skal kunne være en del af
+//   andre teams»). Kontakten `sai-profil-aktiv` er nu "" (egen), "team"
+//   (det første team, tm1- — uændret for alle telefoner fra før) eller
+//   "tm2", "tm3" … Navnerummet følger kontakten. Registret over teams bor
+//   i `sai-teams` (fælles); `sai-profil-team` spejler det første team,
+//   så al ældre kode, der kigger dér, ser det samme som før.
+let TEAM_NS = "";
+try {
+  const _pa = window.localStorage.getItem("sai-profil-aktiv") || "";
+  if (_pa === "team") { VISNING = "team"; TEAM_NS = "tm1-"; }
+  else if (/^tm[2-9]$/.test(_pa)) { VISNING = "team"; TEAM_NS = _pa + "-"; }
+} catch(e) {}
 // Kontakterne selv + sproget er fælles for telefonen — alt andet følger visningen.
-const LAGER_FAELLES = { "sai-profil-aktiv": 1, "sai-profil-team": 1, "sai-sprog": 1 };
+const LAGER_FAELLES = { "sai-profil-aktiv": 1, "sai-profil-team": 1, "sai-teams": 1, "sai-sprog": 1 };
 function lagerNoegle(k) {
-  return (VISNING === "team" && !LAGER_FAELLES[k] && String(k).indexOf("sai-") === 0) ? "tm1-" + k : k;
+  return (VISNING === "team" && !LAGER_FAELLES[k] && String(k).indexOf("sai-") === 0) ? TEAM_NS + k : k;
+}
+// Registret: [{ ns: "tm1", navn: "Oskar", id: "<familie-id>", spejl: true }]
+function teamsListe() {
+  try {
+    const t = JSON.parse(window.localStorage.getItem("sai-teams") || "null");
+    if (Array.isArray(t)) return t.filter(function (x) { return x && /^tm[1-9]$/.test(String(x.ns || "")); });
+    const g = JSON.parse(window.localStorage.getItem("sai-profil-team") || "null");
+    return g ? [{ ns: "tm1", navn: String(g.navn || "") }] : [];
+  } catch (_e) { return []; }
+}
+function teamsGem(liste) {
+  try {
+    window.localStorage.setItem("sai-teams", JSON.stringify(liste));
+    if (liste.length) window.localStorage.setItem("sai-profil-team", JSON.stringify({ navn: liste[0].navn || "" }));
+    else window.localStorage.removeItem("sai-profil-team");
+  } catch (_e) {}
+}
+// Kontaktens værdi for et navnerum: tm1 → "team" (som før), tm2 → "tm2".
+function teamKontakt(ns) { return ns === "tm1" ? "team" : ns; }
+function teamNsAktiv() { return TEAM_NS ? TEAM_NS.slice(0, -1) : ""; }
+function teamNsLedigt() {
+  const brugt = {}; teamsListe().forEach(function (t) { brugt[t.ns] = 1; });
+  for (let i = 1; i <= 9; i++) if (!brugt["tm" + i]) return "tm" + i;
+  return null;
+}
+function teamRyd(ns) {
+  try {
+    const doede = [];
+    for (let i = 0; i < window.localStorage.length; i++) { const k = window.localStorage.key(i); if (k && k.indexOf(ns + "-") === 0) doede.push(k); }
+    doede.forEach(function (k) { window.localStorage.removeItem(k); });
+  } catch (_e) {}
 }
 let SPILLER = "";
 let KLUB = "", KLUBLOGO = "";
@@ -1297,7 +1338,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, side: true, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, fletKasseret: 0, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenPanel: null, kampePanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, liveOvertag: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, ejerBesked: null, klubOpretAaben: false, klubNavnUdkast: "", klubNyNoegle: null, klubNyKlub: "", klubOpretSender: false, klubKopieret: false, gaveAaben: false, gaveSender: null, gaveSoeg: "", klubListe: null, klubHenter: false, klubSpaerSpoerg: null, klubSpaerSender: null, ejerKlubBesked: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null, teamLukket: false, teamForladSpoerg: false,
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, side: true, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, fletKasseret: 0, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenPanel: null, kampePanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, liveOvertag: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, ejerBesked: null, klubOpretAaben: false, klubNavnUdkast: "", klubNyNoegle: null, klubNyKlub: "", klubOpretSender: false, klubKopieret: false, gaveAaben: false, gaveSender: null, gaveSoeg: "", klubListe: null, klubHenter: false, klubSpaerSpoerg: null, klubSpaerSender: null, ejerKlubBesked: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null, teamLukket: false, teamForladSpoerg: false, teamInvUdkast: "", budInd: null, budUd: null, budSender: false, budBesked: null, spejlVenter: null,
   // ⭐ v4.79.0 · skyggekopien
   skyStatus: null, skySender: false, skyBesked: null, skySlet: false, skyAaben: false,
   kampeLaast: false, kampeTabt: 0, kampeRaa: null, kampeRaaVis: false, fletEkstra: [], skyGammelKode: "", skyLaasOpAaben: false,
@@ -1927,6 +1968,24 @@ function modstanderUdad(navn) {
 }
 
 const SKY_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/sky-kopi";
+// ⭐⭐ v4.108.0 · TEAM-BUD: invitationer i appen. Egen nøgle i headeren —
+//   i team-visningen slås EGEN nøgle op råt, fordi `S.spillerNoegle` dér
+//   er teamets. Kun `spejl-hent` kaldes med team-nøglen.
+const TEAMBUD_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/team-bud";
+function egenNoegle() { try { return window.localStorage.getItem("sai-spillernoegle") || ""; } catch (_e) { return ""; } }
+async function teamBudKald(handling, krop, noegle) {
+  const sn = noegle || egenNoegle();
+  if (!sn) return { fejl: "mangler-noegle" };
+  const st = new AbortController(); const ur = setTimeout(() => st.abort(), 20000);
+  try {
+    const r = await fetch(TEAMBUD_URL, { method: "POST", signal: st.signal,
+      headers: { "content-type": "application/json", "x-spiller-noegle": sn },
+      body: JSON.stringify(Object.assign({ handling }, krop || {})) });
+    clearTimeout(ur);
+    const d = await r.json().catch(() => ({}));
+    return r.ok ? d : { fejl: d.kode || "netvaerk", status: r.status, t: d.fejl, fornavn: d.fornavn };
+  } catch (_e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+}
 // ⭐ v4.84.0 · Nøglerne, skyggekopien bærer ud over kampe og logs.
 //   ⚠️ "skadet" er en JURIDISK linje, ikke en teknisk — se A.skyKrop.
 const SKY_INDSTILLINGER = ["haand", "benchmark", "skala10", "zoner", "side", "stige-tilvalgt", "sprog", "navn-oenske", "skadet"];   // ⭐ v4.99.0 · side
@@ -3670,8 +3729,8 @@ const A = {
       }
       if (foer.tom === false && teamKunStreaks() && !lager.hent("sai-sky-noegle") && !kode) {
         if (!stille) S.skyBesked = { fejl: true, t: EN
-          ? "This phone does not hold the key to the player’s backup — ask the player for a new team link."
-          : "Telefonen har ikke nøglen til spillerens sikkerhedskopi — bed spilleren om et nyt team-link." };
+          ? "This phone does not hold the key to the player’s backup — ask the player to share the mirror from the app (\u2699\ufe0f \u2192 THE TEAM)."
+          : "Telefonen har ikke nøglen til spillerens sikkerhedskopi — bed spilleren dele spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET)." };
         return 0;
       }
       // Nøglen udledes af DET salt, boksen kom med — ikke af telefonens.
@@ -3688,8 +3747,8 @@ const A = {
         // ⭐ v4.96.0 · hos teamet er der intet kodeord at prøve: nøglen
         //   fra linket passer ikke længere (spilleren har skiftet kodeord).
         if (teamKunStreaks()) { S.skyBesked = { fejl: true, t: EN
-          ? "The key in the team link no longer fits the player’s backup (the password was changed). Ask for a new team link — nothing has been overwritten."
-          : "Nøglen fra team-linket passer ikke længere til spillerens sikkerhedskopi (kodeordet er skiftet). Bed om et nyt team-link — der er ikke overskrevet noget." }; return 0; }
+          ? "The mirror key no longer fits the player’s backup (the password was changed). It arrives again the next time the player opens the app — nothing has been overwritten."
+          : "Spejl-nøglen passer ikke længere til spillerens sikkerhedskopi (kodeordet er skiftet). Den kommer igen, næste gang spilleren åbner sin app — der er ikke overskrevet noget." }; return 0; }
         S.skyBesked = { fejl: true, t: EN
           ? "There is a backup, but it cannot be opened with this password. Nothing has been overwritten \u2014 log in with the password it was made with, or delete it below."
           : "Der ligger en sikkerhedskopi, men den kan ikke \u00e5bnes med dette kodeord. Der er ikke overskrevet noget \u2014 log ind med det kodeord, den blev lavet med, eller slet den nedenfor." };
@@ -4859,7 +4918,8 @@ const A = {
   famHent: async () => {
     if (S.famHenter) return;
     S.famHenter = true; render();
-    const r = await sync("familie-liste", {});
+    // v4.108.0: team-bud's liste bærer spejl og «i appen» — nøglerne aldrig.
+    const r = await teamBudKald("team-liste", {});
     S.famHenter = false;
     if (!r.fejl) S.famKoder = r.koder || [];
     render();
@@ -4986,6 +5046,7 @@ const A = {
         window.localStorage.setItem("sai-profil-team", JSON.stringify({ navn: r.fornavn || "" }));
         window.localStorage.setItem("sai-profil-aktiv", "team");
         window.localStorage.removeItem("tm1-sai-team-lukket");   // v4.107.0 · en ny nøgle låser op
+        teamsGem([{ ns: "tm1", navn: r.fornavn || "" }].concat(teamsListe().filter(function (x) { return x.ns !== "tm1"; })));   // v4.108.0
       } catch(e) {}
       location.reload();
       return;
@@ -5012,6 +5073,166 @@ const A = {
   // koerer i beskedappens EGEN browser med sit EGET lager (adresse-
   // reglen) — saa den rigtige app saa aldrig noeglen. Nu kan den saettes
   // ind direkte. Tager imod baade den noegne kode og et helt indklistret link.
+  // ══ v4.108.0 · TEAM-BUD · INVITATION I APPEN ═══════════════════════
+  // Spilleren skriver et brugernavn. Medlemmet siger ja i sin egen app.
+  // Der sendes ingen links — det var linket, der var problemet (6/9).
+  budTjekNavn: async () => {
+    const bn = String(S.teamInvUdkast || "").trim();
+    if (!bn) return;
+    const r = await teamBudKald("find", { brugernavn: bn });
+    S.budBesked = r.fejl ? null : (r.fundet ? { fejl: false, t: "\u2713 " + r.fornavn } : { fejl: true, t: S.sprog === "en" ? "No player with that username." : "Ingen spiller med det brugernavn." });
+    render();
+  },
+  budSend: async () => {
+    if (S.budSender) return;
+    const EN = S.sprog === "en";
+    const bn = String(S.teamInvUdkast || "").trim();
+    if (!bn) { S.budBesked = { fejl: true, t: EN ? "Type the username from their StreakTennis profile." : "Skriv brugernavnet fra deres StreakTennis-profil." }; render(); return; }
+    // Spejl uden boks → kodeordet én gang, efterprøvet mod kontoen (som famNy, v4.105.0)
+    if (S.famSpejl !== false && !lager.hent("sai-sky-noegle") && !S.skyLaast) {
+      const _kode = String(S.famKode || "");
+      if (!_kode) { S.famKodeSpoerg = true; S.budBesked = { fejl: false, t: EN
+        ? "To share the mirror, the backup must exist first — type your password once, and it is made."
+        : "For at dele spejlet skal sikkerhedskopien findes først — skriv dit kodeord én gang, så laves den." }; render(); return; }
+      S.budSender = true; S.budBesked = null; render();
+      const _navn = String(S.mitNavn || lager.hent("sai-brugernavn") || "").trim();
+      const _lr = await A.kontoKald("login", { navn: _navn, kode: _kode });
+      if (_lr.fejl) { S.budSender = false; S.budBesked = { fejl: true, t: EN ? "The password does not match." : "Kodeordet passer ikke." }; render(); return; }
+      try { await A.skyNoegleSaet(_kode); } catch (_e) {}
+      S.famKode = ""; S.famKodeSpoerg = false;
+      try { lager.slet("sai-sky-aftryk"); } catch (_e) {}
+      A.skySik(true);
+      S.budSender = false;
+    }
+    // Ormehullets nøglepar laves første gang, der inviteres — og den
+    // offentlige del lægges på serveren (den er offentlig).
+    await A.postPubSend();
+    S.budSender = true; S.budBesked = null; render();
+    const r = await teamBudKald("bud-send", { brugernavn: bn, spejl: S.famSpejl !== false });
+    S.budSender = false;
+    if (r.fejl) {
+      S.budBesked = { fejl: true, t: r.fejl === "ukendt" ? (EN ? "No player with that username." : "Ingen spiller med det brugernavn.")
+        : r.fejl === "medlem" ? (EN ? (r.fornavn || "They") + " is already on your team." : (r.fornavn || "De") + " er allerede med på dit team.")
+        : r.fejl === "sendt" ? (EN ? "The invitation is already sent — it waits for their answer." : "Invitationen er allerede sendt — den venter på svar.")
+        : r.fejl === "fuld" ? (EN ? "At most 10 open invitations." : "Højst 10 åbne invitationer.")
+        : (EN ? "Could not send right now." : "Kunne ikke sende lige nu.") };
+    } else {
+      S.teamInvUdkast = "";
+      S.budBesked = { fejl: false, t: (EN ? "Invitation sent to " : "Invitation sendt til ") + (r.fornavn || bn) + (EN ? " — they say yes in their own app." : " — de siger ja i deres egen app.") };
+      A.budHent(true);
+    }
+    render();
+  },
+  budTraek: async (v) => {
+    await teamBudKald("bud-traek", { id: Number(v) });
+    A.budHent(true);
+  },
+  // Begge veje: `ind` er invitationer TIL mig (kortet på HJEM), `ud` er mine.
+  budHent: async (stille) => {
+    if (VISNING === "team" || !egenNoegle()) return;
+    const r = await teamBudKald("bud-liste", {});
+    if (r.fejl) return;
+    S.budInd = r.ind || []; S.budUd = r.ud || [];
+    render();
+  },
+  // ⭐⭐ Medlemmet siger ja: nøgleparret laves (om nødvendigt), serveren
+  //   laver team-nøglen, og telefonen får et NYT navnerum til teamet.
+  budSvar: async (v) => {
+    if (S.budSender) return;
+    const EN = S.sprog === "en";
+    const d = String(v || "").split(":"); const id = Number(d[0]); const ja = d[1] === "ja";
+    const bud = (S.budInd || []).filter(function (b) { return b.id === id; })[0];
+    if (!bud) return;
+    S.budSender = true; render();
+    let pub = null;
+    if (ja) {
+      try {
+        if (!lager.hent("sai-post-offentlig") || !lager.hent("sai-post-privat")) {
+          const kp = await postNoeglepar(); lager.gem("sai-post-offentlig", kp.pub); lager.gem("sai-post-privat", kp.priv);
+          try { lager.slet("sai-sky-aftryk"); } catch (_e) {} try { A.skySik(true); } catch (_e) {}
+        }
+        pub = lager.hent("sai-post-offentlig");
+      } catch (_e) {}
+      if (!teamNsLedigt()) { S.budSender = false; S.budBesked = { fejl: true, t: EN ? "This phone already holds 9 teams." : "Telefonen har allerede 9 teams." }; render(); return; }
+    }
+    const r = await teamBudKald("bud-svar", { id, ja, pub });
+    S.budSender = false;
+    if (r.fejl) { S.budBesked = { fejl: true, t: r.fejl === "medlem" ? (EN ? "You are already on that team." : "Du er allerede med på det team.") : (EN ? "Could not answer right now." : "Kunne ikke svare lige nu.") }; A.budHent(true); render(); return; }
+    if (!ja) { A.budHent(true); return; }
+    // Navnerummet fødes — råt, for den aktive visning er stadig «egen».
+    const ns = teamNsLedigt();
+    try {
+      const p = ns + "-";
+      window.localStorage.setItem(p + "sai-spillernoegle", r.noegle);
+      window.localStorage.setItem(p + "sai-rolle", "familie");
+      window.localStorage.setItem(p + "sai-venne-aktiv", "1");
+      window.localStorage.setItem(p + "sai-laas", "op");
+      window.localStorage.setItem(p + "sai-inviteret", "1");
+      if (r.fornavn) window.localStorage.setItem(p + "sai-spiller", r.fornavn);
+      if (r.post_pub) window.localStorage.setItem(p + "sai-post-til", r.post_pub);
+      if (r.spejl) window.localStorage.setItem(p + "sai-spejl-venter", "1");
+      const liste = teamsListe(); liste.push({ ns, navn: r.fornavn || "", spejl: !!r.spejl, id: r.id || null }); teamsGem(liste);
+    } catch (_e) {}
+    S.budBesked = { fejl: false, t: (EN ? "You are on Team " : "Du er med på Team ") + (r.fornavn || "") + (r.spejl
+      ? (EN ? ". The mirror arrives the next time the player opens the app." : ". Spejlet kommer, næste gang spilleren åbner sin app.")
+      : ""), ns };
+    A.budHent(true); render();
+  },
+  // Spillerens offentlige ormehul-nøgle op på serveren — én gang.
+  postPubSend: async () => {
+    try {
+      if (!lager.hent("sai-post-offentlig") || !lager.hent("sai-post-privat")) {
+        const kp = await postNoeglepar(); lager.gem("sai-post-offentlig", kp.pub); lager.gem("sai-post-privat", kp.priv);
+        try { lager.slet("sai-sky-aftryk"); } catch (_e) {} A.skySik(true);
+      }
+      if (lager.hent("sai-post-pub-sendt") === lager.hent("sai-post-offentlig")) return;
+      const r = await teamBudKald("post-pub-saet", { pub: lager.hent("sai-post-offentlig") });
+      if (!r.fejl) lager.gem("sai-post-pub-sendt", lager.hent("sai-post-offentlig"));
+    } catch (_e) {}
+  },
+  // ⭐⭐ SPEJLET, SPILLERENS SIDE: hvem venter? Spejl-nøglen låses til hver
+  //   enkelts offentlige nøgle og lægges op. Serveren ser kun ciffer.
+  spejlSend: async (forny) => {
+    if (VISNING === "team" || !egenNoegle()) return;
+    const bits = lager.hent("sai-sky-noegle"); if (!bits || S.skyLaast) return;
+    // ⭐ Kodeordet skiftet (ny spejl-nøgle) → alle konvolutter kasseres og
+    //   lægges igen. Det, der sidst blev sendt, huskes lokalt.
+    const sendt = lager.hent("sai-spejl-sendt");
+    if (forny || (sendt && sendt !== bits)) { const f = await teamBudKald("spejl-forny", {}); if (f.fejl) return; }
+    const r = await teamBudKald("spejl-afventer", {});
+    if (r.fejl) return;
+    for (const v of (r.venter || [])) {
+      try { const k = await postLaas({ v: 1, sky: bits }, v.pub); await teamBudKald("spejl-laeg", { id: v.id, konvolut: k }); } catch (_e) {}
+    }
+    lager.gem("sai-spejl-sendt", bits);
+    if ((r.venter || []).length || forny) A.famHent();
+  },
+  spejlFornyNu: async () => { S.famBesked = null; await A.spejlSend(true); S.budBesked = { fejl: false, t: S.sprog === "en" ? "The mirror was shared again with everyone on the team." : "Spejlet er delt igen med alle på teamet." }; render(); },
+  // ⭐⭐ SPEJLET, MEDLEMMETS SIDE (team-visningen): konvolutten hentes med
+  //   team-nøglen og åbnes med EGEN private nøgle (rå — den bor hos egen spiller).
+  spejlHent: async () => {
+    if (VISNING !== "team" || !S.spillerNoegle) return;
+    // Kaldes, når spejlet venter — ELLER når boksen står låst (kodeordet
+    // er skiftet hos spilleren): så gælder kun en NYERE konvolut.
+    const laast = !!lager.hent("sai-sky-laast");
+    if (lager.hent("sai-sky-noegle") && !laast) return;
+    const EN = S.sprog === "en";
+    const r = await teamBudKald("spejl-hent", {}, S.spillerNoegle);
+    if (r.fejl) return;
+    if (r.post_pub && !lager.hent("sai-post-til")) lager.gem("sai-post-til", r.post_pub);
+    if (!r.spejl) { lager.slet("sai-spejl-venter"); S.spejlVenter = null; render(); return; }
+    if (!r.konvolut || (laast && r.lagt && r.lagt === lager.hent("sai-spejl-lagt"))) { S.spejlVenter = { t: EN ? "The mirror arrives the next time the player opens the app." : "Spejlet kommer, næste gang spilleren åbner sin app." }; render(); return; }
+    let priv = null; try { priv = window.localStorage.getItem("sai-post-privat"); } catch (_e) {}
+    if (!priv) { S.spejlVenter = { t: EN ? "This phone has no key for the mirror — ask the player to invite you again." : "Telefonen har ingen nøgle til spejlet — bed spilleren invitere dig igen." }; render(); return; }
+    const d = await postAab(r.konvolut, priv);
+    if (!d || !d.sky) { S.spejlVenter = { t: EN ? "The mirror could not be opened." : "Spejlet kunne ikke åbnes." }; render(); return; }
+    lager.gem("sai-sky-noegle", d.sky); lager.slet("sai-spejl-venter"); try { lager.slet("sai-sky-aftryk"); } catch (_e) {}
+    if (r.lagt) lager.gem("sai-spejl-lagt", r.lagt);
+    S.skyLaast = false; try { lager.slet("sai-sky-laast"); } catch (_e) {}
+    S.spejlVenter = null;
+    try { await A.skyGendan(null, true); } catch (_e) {}
+    render();
+  },
   // ⭐⭐ v4.107.0 · EN LUKKET NØGLE LÅSER TEAM-VISNINGEN (valg A, Nicolai 6/9).
   //   Fundet af Nicolai: «Oskar har fjernet sin gamle nøgle … men jeg kan
   //   stadig skifte til Team Oskar.» Serveren sagde nej (401 adgang) —
@@ -5048,12 +5269,18 @@ const A = {
     location.href = location.pathname + "?p=" + Date.now() + "#" + frag;
   },
   teamForladSpoerg: (v) => { S.teamForladSpoerg = (v === "ja"); render(); },
-  teamForlad: () => {
+  teamForlad: async () => {
+    // v4.108.0: sig det til serveren FØRST (medlemmets egen nøgle) — så er
+    // nøglen død dér, uanset hvad telefonen ellers gør. Netværk ned →
+    // rummet ryddes alligevel; serveren lukker døren ved næste kald (401).
+    const ns = teamNsAktiv() || "tm1";
     try {
-      const doede = [];
-      for (let i = 0; i < window.localStorage.length; i++) { const k = window.localStorage.key(i); if (k && k.indexOf("tm1-") === 0) doede.push(k); }
-      doede.forEach(function (k) { window.localStorage.removeItem(k); });
-      window.localStorage.removeItem("sai-profil-team");
+      const t = teamsListe().filter(function (x) { return x.ns === ns; })[0];
+      if (t && t.id) await teamBudKald("forlad", { id: t.id });
+    } catch (_e) {}
+    try {
+      teamRyd(ns);
+      teamsGem(teamsListe().filter(function (x) { return x.ns !== ns; }));
       window.localStorage.setItem("sai-profil-aktiv", "");
     } catch (_e) {}
     location.reload();
@@ -5073,7 +5300,9 @@ const A = {
   // ⭐ v4.90.0 · SKIFTET: én skrivning, én genfoedsel. Kontakten staar
   // UDEN FOR navnerummene og skrives derfor raat.
   profilSkift: (v) => {
-    try { window.localStorage.setItem("sai-profil-aktiv", v === "team" ? "team" : ""); } catch(e) { return; }
+    // v4.108.0: "egen" · "team" (tm1) · "tm2".."tm9"
+    const k = (v === "team" || /^tm[2-9]$/.test(String(v || ""))) ? String(v) : "";
+    try { window.localStorage.setItem("sai-profil-aktiv", k); } catch(e) { return; }
     location.reload();
   },
   famAfvis: () => { S.famTilbud = null; render(); },
@@ -7651,10 +7880,7 @@ function _tegn() {
       '<p class="lille" style="margin:0 0 12px">' + (EN
         ? esc(_navn) + " has closed the team key this phone uses. What you entered here stays on the phone \u2014 but you cannot see anything new or send anything until you get a new key."
         : esc(_navn) + " har lukket den team-n\u00f8gle, denne telefon bruger. Det, du har tastet her, bliver p\u00e5 telefonen \u2014 men du kan ikke se nyt eller sende noget, f\u00f8r du f\u00e5r en ny n\u00f8gle.") + '</p>' +
-      '<p class="lille" style="margin:0 0 6px"><b>' + (EN ? "Got a new team link?" : "Har du f\u00e5et et nyt team-link?") + '</b></p>' +
-      '<input data-felt="famIndloesUdkast" placeholder="fam-\u2026" value="' + esc(S.famIndloesUdkast || "") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
-      '<button class="knap" style="margin-top:7px;width:100%;min-height:44px" data-a="famIndloesLaast">' + (EN ? "Redeem new key" : "Indl\u00f8s ny n\u00f8gle") + '</button>' +
-      (S.famBesked ? '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '') +
+      '<p class="lille" style="margin:0 0 6px"><b>' + (EN ? "Want back in? Ask the player to invite you again from ⚙️ → THE TEAM in the app." : "Vil du med igen? Bed spilleren invitere dig igen fra \u2699\ufe0f \u2192 TEAMET i appen.") + '</b></p>' +
       (_egetNavn ? '<button class="knap valg" style="margin-top:14px;width:100%;min-height:44px" data-a="profilSkift" data-v="egen">' + (EN ? "Switch to my own player" : "Skift til min egen spiller") + " (" + esc(_egetNavn) + ")" + '</button>' : '') +
       (S.teamForladSpoerg
         ? '<div class="kort" style="margin:14px 0 0;border-color:var(--tabt)"><p class="lille" style="margin:0 0 8px">' + (EN
@@ -8332,6 +8558,19 @@ function _tegn() {
           (_afv ? '' : '<button class="knap valg" style="flex:none;width:auto;min-height:40px;padding:6px 12px;font-size:12px" data-a="doerTjek">' + (S.portHenter ? "⏳" : (EN ? "Check" : "Tjek")) + '</button>') +
           '</div>';
       }
+      // ⭐⭐⭐ v4.108.0 · «OSKAR VIL HAVE DIG MED PÅ SIT TEAM» — kortet står
+      //   på HJEM, ikke bag en fane. Ja → et nyt team på telefonen; nej → væk.
+      if (VISNING !== "team" && S.budInd && S.budInd.length) S.budInd.forEach(function (b) {
+        h += '<div class="kort" style="margin:0 0 10px;border-color:var(--guld)">' +
+          '<p class="lille" style="margin:0 0 8px"><b>' + esc(b.fra || "") + '</b> ' + (EN ? "wants you on the team" : "vil have dig med på sit team") + ' ' + (b.spejl ? "🪞" : "🕳️") + '<br>' +
+          (b.spejl ? (EN ? "With the mirror: you see the matches, training and analyses — and what you enter lands with the player." : "Med spejlet: du ser kampe, træning og analyser — og det, du taster, lander hos spilleren.")
+                   : (EN ? "Without the mirror: you see the streaks and can enter matches — they are sent home through the wormhole." : "Uden spejl: du ser streaks og kan taste kampe — de sendes hjem gennem ormehullet.")) +
+          ' ' + (EN ? "Never the messages." : "Aldrig beskederne.") + '</p>' +
+          '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--grus)" data-a="budSvar" data-v="' + esc(String(b.id)) + ':ja">' + (S.budSender ? "⏳ …" : (EN ? "Yes, I’m in" : "Ja, jeg er med")) + '</button>' +
+          '<button class="knap valg" style="min-height:44px" data-a="budSvar" data-v="' + esc(String(b.id)) + ':nej">' + (EN ? "No thanks" : "Nej tak") + '</button></div></div>';
+      });
+      if (VISNING !== "team" && S.budBesked && S.budBesked.ns) h += '<div class="kort" style="margin:0 0 10px;border-color:var(--vundet)"><p class="lille" style="margin:0 0 8px;color:var(--vundet)">' + esc(S.budBesked.t) + '</p>' +
+        '<button class="knap" style="width:100%;min-height:44px;background:var(--grus)" data-a="profilSkift" data-v="' + teamKontakt(S.budBesked.ns) + '">' + (EN ? "Switch to the team" : "Skift til teamet") + '</button></div>';
       h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"START MATCH":"START KAMP") + '</b><br><small id="hero-sub">' + (EN?"register points live from the court":"registrér point live fra banen") + '</small></span><span class="dev-pil">→</span></button>';
       h += '<div class="dev-grid">' +
         // "Din træner"-flisen UDGIK 22/8 — indholdet er absorberet i TRÆN
@@ -9465,10 +9704,17 @@ function _tegn() {
       // skifter man bare view»). Flisen findes KUN, naar telefonen har to
       // visninger — alle andre ser praecis det, de saa i gaar.
       try {
-        const _ptRaa = window.localStorage.getItem("sai-profil-team");
-        const _pt = _ptRaa ? JSON.parse(_ptRaa) : null;
+        // v4.108.0 · registret over teams — alle vises, den aktive er markeret
+        const _teams = teamsListe();
+        const _knap = function (t) {
+          let _laast = false; try { _laast = !!window.localStorage.getItem(t.ns + "-sai-team-lukket"); } catch (_e) {}
+          return (_laast ? '<p class="lille" style="margin:6px 0 4px;color:var(--guld)">\ud83d\udd12 ' + (EN ? "The player has closed the key \u2014 Team " + esc(t.navn || "") + " is locked." : "Spilleren har lukket n\u00f8glen \u2014 Team " + esc(t.navn || "") + " er l\u00e5st.") + '</p>' : '') +
+            '<button class="knap" style="width:100%;min-height:44px;margin-top:6px;background:var(--grus)" data-a="profilSkift" data-v="' + teamKontakt(t.ns) + '">' +
+            (EN ? "Switch to" : "Skift til") + " Team " + esc(t.navn || "") + (t.spejl ? " 🪞" : "") + '</button>';
+        };
         if (VISNING === "team") {
           let _egetNavn = ""; try { _egetNavn = window.localStorage.getItem("sai-spiller") || ""; } catch(_e) {}
+          const _andre = _teams.filter(function (t) { return t.ns !== teamNsAktiv(); });
           h += _opsKort("profil", "🔁", (EN?"SWITCH VIEW":"SKIFT VISNING"),
             "TEAM " + esc(String(SPILLER || "").toUpperCase()), "var(--guld)",
             '<p class="lille" style="margin:0 0 8px">' + (EN
@@ -9476,20 +9722,18 @@ function _tegn() {
               : "Du ser teamet lige nu. Din egen spiller bor stadig på telefonen — intet blandes.") + '</p>' +
             '<button class="knap" style="width:100%;min-height:44px;background:var(--grus)" data-a="profilSkift" data-v="egen">' +
             (EN ? "Switch to my own player" : "Skift til min egen spiller") + (_egetNavn ? " (" + esc(_egetNavn) + ")" : "") + '</button>' +
+            _andre.map(_knap).join("") +
             // ⭐ v4.96.0 · spejlet kan hentes herfra også
             '<button class="knap valg" style="width:100%;min-height:44px;margin-top:7px" data-a="skyHentNu"' + (S.skySender ? ' disabled' : '') + '>' +
             (S.skySender ? '\u23f3 \u2026' : '\ud83e\ude9e ' + (EN ? "Fetch the mirror" : "Hent spejl")) + '</button>' +
             (S.skyBesked ? '<p class="lille" style="margin:7px 0 0;color:' + (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>' : ''));
-        } else if (_pt) {
+        } else if (_teams.length) {
           h += _opsKort("profil", "🔁", (EN?"SWITCH VIEW":"SKIFT VISNING"),
-            "Team " + esc(_pt.navn || ""), "var(--is)",
-            '<p class="lille" style="margin:0 0 8px">' + (EN
+            (_teams.length === 1 ? "Team " + esc(_teams[0].navn || "") : _teams.length + (EN ? " teams" : " teams")), "var(--is)",
+            '<p class="lille" style="margin:0 0 4px">' + (EN
               ? "This phone also holds a team view: there you enter and see the team's data — your own matches stay here."
               : "Telefonen har også en team-visning: dér taster og ser du teamets data — dine egne kampe bliver her.") + '</p>' +
-            ((function(){ try { return !!window.localStorage.getItem("tm1-sai-team-lukket"); } catch (_e) { return false; } })()
-              ? '<p class="lille" style="margin:0 0 8px;color:var(--guld)">\ud83d\udd12 ' + (EN ? "The player has closed the key \u2014 the team view is locked until you redeem a new one." : "Spilleren har lukket n\u00f8glen \u2014 team-visningen er l\u00e5st, indtil du indl\u00f8ser en ny.") + '</p>' : '') +
-            '<button class="knap" style="width:100%;min-height:44px;background:var(--grus)" data-a="profilSkift" data-v="team">' +
-            (EN ? "Switch to" : "Skift til") + " Team " + esc(_pt.navn || "") + '</button>');
+            _teams.map(_knap).join(""));
         }
       } catch(_e) {}
 
@@ -10022,52 +10266,60 @@ function _tegn() {
         h += _opsKort("familie", "👪", (EN?"THE TEAM":"TEAMET"), (EN?"team key":"team-nøgle"), "var(--is)",
           '<p class="lille" style="margin:0">' + (EN
             ? "This phone holds a team key: it enters and sees data — never the messages between the player and the friends."
-            : "Denne telefon har en team-nøgle: den taster og ser data — aldrig beskederne mellem spilleren og vennerne.") + '</p>');
+            : "Denne telefon har en team-nøgle: den taster og ser data — aldrig beskederne mellem spilleren og vennerne.") + '</p>' +
+          (S.spejlVenter ? '<p class="lille" style="margin:6px 0 0;color:var(--guld)">🪞 ' + esc(S.spejlVenter.t) + '</p>' : '') +
+          // v4.108.0 · vejen ud står her — ikke kun bag en lukket nøgle
+          (VISNING === "team" ? (S.teamForladSpoerg
+            ? '<div class="kort" style="margin:10px 0 0;border-color:var(--tabt)"><p class="lille" style="margin:0 0 8px">' + (EN
+                ? "Leave the team? Team " + esc(String(SPILLER || "")) + " is removed from this phone — matches you entered here are gone. The player’s own data is not touched."
+                : "Forlad teamet? Team " + esc(String(SPILLER || "")) + " fjernes fra denne telefon — kampe, du tastede her, forsvinder. Spillerens egne data røres ikke.") + '</p>' +
+              '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="teamForlad">' + (EN ? "Leave" : "Forlad") + '</button>' +
+              '<button class="knap valg" style="min-height:44px" data-a="teamForladSpoerg" data-v="nej">' + (EN ? "Cancel" : "Fortryd") + '</button></div></div>'
+            : '<button class="knap valg" style="margin-top:8px;width:100%;min-height:44px;color:var(--daempet)" data-a="teamForladSpoerg" data-v="ja">' + (EN ? "Leave the team" : "Forlad teamet") + '</button>') : ''));
       } else {
+        // ⭐⭐⭐ v4.108.0 · INVITATION I APPEN (Nicolai 6/9: «lad os droppe
+        //   alle links der sendes rundt og invitere direkte via appen»).
+        //   Brugernavnet skrives, spejlet vælges, medlemmet siger ja i sin
+        //   egen app. Ingen nøgle, intet link forlader telefonen.
         let famKrop = '<p class="lille" style="margin:0 0 8px">' + (EN
-          ? "Give someone on your team their own key. They enter and see everything — except the messages. The link works once."
-          : "Giv en fra dit team sin egen nøgle. De taster og ser alt — undtagen beskederne. Linket virker én gang.") + '</p>' +
-          '<input data-felt="famEtiket" maxlength="20" placeholder="' + (EN?"Label (optional)":"Etiket (valgfrit)") + '" value="' + esc(S.famEtiket || "") + '">' +
-          // ⭐⭐ v4.105.0 · SPEJL-VALGET pr. nøgle (Nicolai 5/9). Ja = teamet ser
-          //   kampe, træning og analyser. Nej = teamet ser streaks og kan taste;
-          //   det, de taster, kommer hjem gennem ormehullet.
+          ? "Invite someone from your team — type the username from their StreakTennis profile. They say yes in their own app. They enter and see everything except the messages."
+          : "Inviter en fra dit team — skriv brugernavnet fra deres StreakTennis-profil. De siger ja i deres egen app. De taster og ser alt — undtagen beskederne.") + '</p>' +
+          '<div style="display:flex;gap:6px;align-items:stretch">' +
+          '<input style="flex:1;min-width:0" data-felt="teamInvUdkast" placeholder="' + (EN?"username":"brugernavn") + '" value="' + esc(S.teamInvUdkast || "") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
+          '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;font-size:13px" data-a="budTjekNavn">🔍</button></div>' +
           '<div class="raekke" style="margin-top:8px;gap:6px">' +
             '<button class="knap valg' + (S.famSpejl !== false ? " til" : "") + '" style="flex:1;min-height:44px;font-size:12px" data-a="famSpejlSaet" data-v="1">🪞 ' + (EN?"Share the mirror":"Del spejlet") + '</button>' +
             '<button class="knap valg' + (S.famSpejl === false ? " til" : "") + '" style="flex:1;min-height:44px;font-size:12px" data-a="famSpejlSaet" data-v="0">🕳️ ' + (EN?"No mirror":"Uden spejl") + '</button></div>' +
           '<p class="lille" style="margin:6px 0 0">' + (S.famSpejl !== false
-            ? (EN ? "With the mirror they see your matches, training and analyses — and what they enter lands with you."
-                  : "Med spejlet ser de dine kampe, træning og analyser — og det, de taster, lander hos dig.")
+            ? (EN ? "With the mirror they see your matches, training and analyses — and what they enter lands with you. The mirror key travels locked — the server cannot open it."
+                  : "Med spejlet ser de dine kampe, træning og analyser — og det, de taster, lander hos dig. Spejl-nøglen rejser låst — serveren kan ikke åbne den.")
             : (EN ? "Without the mirror they see your streaks and can enter matches — those are sent home to you through the wormhole. They cannot see yours."
                   : "Uden spejlet ser de dine streaks og kan taste kampe — dem sendes hjem til dig gennem ormehullet. De kan ikke se dine.")) + '</p>' +
           (S.famKodeSpoerg ? '<input class="felt" style="margin-top:7px" type="password" data-felt="famKode" value="' + esc(S.famKode || "") + '" placeholder="' + (EN?"your password (once)":"dit kodeord (én gang)") + '" autocomplete="current-password">' : '') +
-          '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="famNy">' + (S.famHenter ? "⏳ …" : (EN?"Get a team key":"Få en team-nøgle")) + '</button>';
-        if (S.famNyKode) {
-          famKrop += '<div class="kort dev-kant dev-kant-guld" style="margin-top:9px;padding:12px;text-align:center">' +
-            '<div style="font-size:12px;font-weight:700;letter-spacing:1px;word-break:break-all;color:var(--guld);font-variant-numeric:tabular-nums">' + esc(S.famNyKode) + '</div>' +
-            '<p class="lille" style="margin:8px 0 0">' + (EN
-              ? "Shown ONCE — send the link now. The app sends nothing itself."
-              : "Vises ÉN gang — send linket nu. Appen sender ikke selv noget.") + '</p>' +
-            '<button class="knap" style="margin-top:9px;min-height:44px;background:var(--grus)" data-a="famDel">' + (S.kopieret === "famLink" ? (EN?"Link copied ✓":"Link kopieret ✓") : "📤 " + (EN?"Share team link":"Del team-link")) + '</button></div>';
+          '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="budSend">' + (S.budSender ? "⏳ …" : "📨 " + (EN?"Invite":"Inviter")) + '</button>' +
+          (S.budBesked ? '<p class="lille" style="margin:6px 0 0;color:' + (S.budBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.budBesked.t) + '</p>' : '');
+        // Åbne invitationer — med «træk tilbage»
+        const _aabne = (S.budUd || []).filter(function (b) { return b.status === "afventer"; });
+        if (_aabne.length) {
+          famKrop += '<p class="lille" style="margin:10px 0 2px;font-weight:700">' + (EN ? "Waiting for an answer" : "Venter på svar") + '</p>';
+          _aabne.forEach(function (b) {
+            famKrop += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--kant)">' +
+              '<div class="lille" style="flex:1;min-width:0;margin:0">' + esc(b.til || "") + ' · ' + (b.spejl ? "🪞" : "🕳️") + '</div>' +
+              '<button class="knap valg" style="flex:none;min-height:40px;padding:0 11px;font-size:12px;color:var(--daempet)" data-a="budTraek" data-v="' + esc(String(b.id)) + '">' + (EN?"Withdraw":"Træk tilbage") + '</button></div>';
+          });
         }
-        if (S.famKoder === null) famKrop += '<button class="knap valg" style="margin-top:8px;width:100%;min-height:44px;font-size:12px" data-a="famHent">' + (S.famHenter ? "⏳ …" : (EN?"Show issued keys":"Vis udstedte nøgler")) + '</button>';
+        if (S.famKoder === null) famKrop += '<button class="knap valg" style="margin-top:8px;width:100%;min-height:44px;font-size:12px" data-a="famHent">' + (S.famHenter ? "⏳ …" : (EN?"Show the team":"Vis teamet")) + '</button>';
         else if (S.famKoder.length) S.famKoder.forEach(function(f){
           famKrop += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--kant)">' +
             '<div class="lille" style="flex:1;min-width:0;margin:0">' + esc(f.etiket || (EN?"(no label)":"(uden etiket)")) +
+            (f.spejl ? ' · 🪞' + (f.spejl_delt ? '' : ' <span style="color:var(--guld)">' + (EN?"(mirror on its way)":"(spejlet er på vej)") + '</span>') : ' · 🕳️') +
+            (f.i_appen ? '' : ' · <span style="opacity:.7">' + (EN?"via link":"via link") + '</span>') +
             (f.status === "spaerret" ? ' · <span style="color:var(--tabt)">' + (EN?"blocked":"spærret") + '</span>' : '') + '</div>' +
             (f.status === "aktiv" ? '<button class="knap valg" style="flex:none;min-height:40px;padding:0 11px;font-size:12px;color:var(--daempet)" data-a="famSpaer" data-v="' + esc(f.id) + '">' + (EN?"Remove":"Fjern") + '</button>' : '') + '</div>';
         });
-        else famKrop += '<p class="lille" style="margin:8px 0 0;opacity:.7">' + (EN?"No keys issued yet.":"Ingen nøgler udstedt endnu.") + '</p>';
-        // ⭐ v4.90.0 · DEN ANDEN VEJ: har DU faaet en noegle, saettes den
-        // ind her — praecis som venner. Egen spiller bliver staaende.
-        famKrop += '<div style="border-top:1px solid var(--kant);margin-top:10px;padding-top:10px">' +
-          '<p class="lille" style="margin:0 0 6px">' + (EN
-            ? "Got a team key from another player? Redeem it here — <b>your own player stays</b>, you just get an extra view to switch to."
-            : "Har du fået en team-nøgle af en anden spiller? Sæt den ind her — <b>din egen spiller bliver stående</b>, du får bare en ekstra visning at skifte til.") +
-          ((function(){ try { return !!window.localStorage.getItem("sai-profil-team"); } catch(_e){ return false; } })()
-            ? " " + (EN ? "<b>This phone already has a team view — a new key replaces it.</b>"
-                        : "<b>Telefonen har allerede en team-visning — en ny nøgle afløser den.</b>") : "") + '</p>' +
-          '<input data-felt="famIndloesUdkast" placeholder="fam-…" value="' + esc(S.famIndloesUdkast || "") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
-          '<button class="knap valg" style="margin-top:7px;width:100%;min-height:44px;font-size:13px" data-a="famIndloes">' + (S.famHenter ? "⏳ …" : (EN?"Redeem team key":"Indløs team-nøgle")) + '</button></div>';
+        else famKrop += '<p class="lille" style="margin:8px 0 0;opacity:.7">' + (EN?"No one on the team yet.":"Ingen på teamet endnu.") + '</p>';
+        if (S.famKoder && S.famKoder.some(function (f) { return f.spejl && f.status === "aktiv" && f.i_appen; }) && lager.hent("sai-sky-noegle") && !S.skyLaast)
+          famKrop += '<button class="knap valg" style="margin-top:8px;width:100%;min-height:44px;font-size:12px" data-a="spejlFornyNu">🪞 ' + (EN ? "Share the mirror again (after a password change)" : "Del spejlet igen (efter et kodeordsskift)") + '</button>';
         famKrop += (S.famBesked ? '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '');
         const famAntal = S.famKoder ? S.famKoder.filter(function(f){ return f.status === "aktiv"; }).length : 0;
         h += _opsKort("familie", "👪", (EN?"THE TEAM":"TEAMET"),
@@ -10984,8 +11236,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       ? "No mirror on this key — matches you finish here go home to the player through the wormhole 🕳️."
       : "Intet spejl på denne nøgle — kampe, du afslutter her, går hjem til spilleren gennem ormehullet 🕳️.") + '</p>';
     else if (teamKunStreaks() && !lager.hent("sai-sky-noegle")) h += '<p class="lille" style="margin:8px 0 2px;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0">' + (EN
-      ? "What you enter here lives only on this phone until the player gives access to his mirror (a new team link with the backup key). Then everything travels to him — and his matches come here."
-      : "Det, du taster her, bor kun på denne telefon, indtil spilleren giver adgang til sit spejl (et nyt team-link med sikkerhedskopiens nøgle). Så rejser alt herfra til ham — og hans kampe kommer hertil.") + '</p>';
+      ? "What you enter here lives only on this phone" + (S.spejlVenter ? " \u2014 the mirror arrives the next time the player opens the app." : " until the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM). Then everything travels to him \u2014 and his matches come here.")
+      : "Det, du taster her, bor kun p\u00e5 denne telefon" + (S.spejlVenter ? " \u2014 spejlet kommer, n\u00e6ste gang spilleren \u00e5bner sin app." : ", indtil spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET). S\u00e5 rejser alt herfra til ham \u2014 og hans kampe kommer hertil.")) + '</p>';
     h += '<div class="dev-grid" style="margin:12px 0">'
       // ⭐ v4.84.0 · er kamplisten låst, må fliserne ikke sige «ingen kampe
       //   endnu» ved siden af et kort, der siger, at de ikke kunne læses.
@@ -11165,8 +11417,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         ? "No mirror on this key: you cannot see the player’s matches. Every match you finish here is sent home to the player through the wormhole 🕳️ — and stays here too."
         : "Intet spejl på denne nøgle: du kan ikke se spillerens kampe. Hver kamp, du afslutter her, sendes hjem til spilleren gennem ormehullet 🕳️ — og bliver også stående her.") + '</p>'
       : '<p class="lille" style="margin:2px 0 10px;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0">' + (EN
-        ? "What you enter here lives only on this phone until the player gives access to his mirror (a new team link with the backup key). Then everything here travels to him — and his matches come here."
-        : "Det, du taster her, bor kun på denne telefon, indtil spilleren giver adgang til sit spejl (et nyt team-link med sikkerhedskopiens nøgle). Så rejser alt herfra til ham — og hans kampe kommer hertil.") + '</p>');
+        ? "What you enter here lives only on this phone" + (S.spejlVenter ? " \u2014 the mirror arrives the next time the player opens the app." : " until the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM). Then everything here travels to him \u2014 and his matches come here.")
+        : "Det, du taster her, bor kun p\u00e5 denne telefon" + (S.spejlVenter ? " \u2014 spejlet kommer, n\u00e6ste gang spilleren \u00e5bner sin app." : ", indtil spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET). S\u00e5 rejser alt herfra til ham \u2014 og hans kampe kommer hertil.")) + '</p>');
     else h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px">' +
       '<button class="knap" style="flex:none;padding:6px 10px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="klubKodeAabn">⚙ '+(EN?"Club code":"Klubkode")+' '+(S.klubKode?'✓':'—')+'</button>' +
       '<span class="lille" style="margin:0">'+(S.klubKode?(EN?"Analyses can be fetched on this device.":"Analyser kan hentes på denne enhed."):(EN?"Needed once to fetch analyses.":"Skal indtastes én gang for at hente analyser."))+'</span></div>';
@@ -11280,14 +11532,14 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       h += '<div class="kort" style="border-left:3px solid ' + (S.skyLaast ? 'var(--tabt)' : _harB ? 'var(--is)' : 'var(--guld)') + '">' +
         '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83e\ude9e ' + (EN ? "THE PLAYER’S MIRROR" : "SPILLERENS SPEJL") + '</div>' +
         '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
-          ? "Matches, every ball, the training log and the analyses come from the player’s own encrypted backup. <b>The key travelled in the team link</b> — the server still cannot open the box. What you enter here is put back into the same box, so the player sees it too."
-          : "Kampe, hver bold, træningsloggen og analyserne kommer fra spillerens egen krypterede sikkerhedskopi. <b>Nøglen rejste i team-linket</b> — serveren kan stadig ikke åbne boksen. Det, du taster her, lægges tilbage i samme boks, så spilleren også ser det.") + '</p>' +
+          ? "Matches, every ball, the training log and the analyses come from the player’s own encrypted backup. <b>The key came locked from the player</b> — the server still cannot open the box. What you enter here is put back into the same box, so the player sees it too."
+          : "Kampe, hver bold, træningsloggen og analyserne kommer fra spillerens egen krypterede sikkerhedskopi. <b>Nøglen kom låst fra spilleren</b> — serveren kan stadig ikke åbne boksen. Det, du taster her, lægges tilbage i samme boks, så spilleren også ser det.") + '</p>' +
         '<p class="lille" style="margin:8px 0 0;line-height:1.5;opacity:.85">' + (EN
           ? "Honest limits: new matches and sessions travel both ways; an edit of a match already on the other phone can appear as a second copy, and a deletion does not travel. Messages are never part of it."
           : "Ærlige grænser: nye kampe og pas rejser begge veje; retter man en kamp, den anden telefon allerede har, kan den dukke op som en kopi — og en sletning rejser ikke. Beskeder er aldrig med.") + '</p>' +
         (!_harB ? '<p class="lille" style="margin:8px 0 0;color:var(--guld)">' + (EN
-          ? "This phone has no key to the backup: the player had not turned it on when the link was made. Ask for a new team link once the backup is on."
-          : "Telefonen har ingen nøgle til sikkerhedskopien: spilleren havde ikke slået den til, da linket blev lavet. Bed om et nyt team-link, når kopien er slået til.") + '</p>' : '') +
+          ? "This phone has no key to the backup yet" + (S.spejlVenter ? " \u2014 the mirror arrives the next time the player opens the app." : " \u2014 the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM).")
+          : "Telefonen har ingen n\u00f8gle til sikkerhedskopien endnu" + (S.spejlVenter ? " \u2014 spejlet kommer, n\u00e6ste gang spilleren \u00e5bner sin app." : " \u2014 spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET).")) + '</p>' : '') +
         (_sk && _sk.har && _sk.opdateret ? '<p class="lille" style="margin:7px 0 0;opacity:.6">' + (EN ? "Player’s box from " : "Spillerens boks fra ") + esc(new Date(_sk.opdateret).toLocaleString("da-DK")) + (_sk.bytes ? ' \u00b7 ' + Math.max(1, Math.round(_sk.bytes / 1024)) + ' KB' : '') + '</p>' : '') +
         '<div class="raekke" style="margin-top:9px;gap:6px">' +
           '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' + (S.skySender || !_harB ? ' disabled' : '') + ' data-a="skyHentNu">' +
@@ -11637,6 +11889,17 @@ function autoSynk(){
   try {
     if (!teamKunStreaks() && S.spillerNoegle && S.rolle !== "familie" && lager.hent("sai-post-privat"))
       setTimeout(function(){ try { A.postHent(true); } catch (_e) {} }, 1500);
+  } catch (e) {}
+  // ⭐⭐ v4.108.0 · TEAM-BUD ved opstart: egen visning henter invitationer
+  //   (kortet på HJEM) og lægger spejl-konvolutter til dem, der venter;
+  //   team-visningen henter sin spejl-konvolut, hvis den venter på den.
+  try {
+    if (VISNING !== "team" && S.spillerNoegle && S.rolle !== "familie") {
+      setTimeout(function(){ try { A.budHent(true); } catch (_e) {} }, 1600);
+      setTimeout(function(){ try { A.spejlSend(); } catch (_e) {} }, 2600);
+    }
+    if (VISNING === "team" && S.spillerNoegle && ((lager.hent("sai-spejl-venter") && !lager.hent("sai-sky-noegle")) || lager.hent("sai-sky-laast")))
+      setTimeout(function(){ try { A.spejlHent(); } catch (_e) {} }, 1700);
   } catch (e) {}
   // ⭐⭐ v4.107.0 · TEAM-VISNINGEN SPØRGER, OM NØGLEN STADIG GÆLDER.
   //   Et tidligere nej huskes (tm1-sai-team-lukket), så den låste skærm

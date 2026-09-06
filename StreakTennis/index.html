@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.105.0 · 5. september 2026";
+const VERSION = "v4.106.0 · 6. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -3876,6 +3876,21 @@ const A = {
       if (r.brugernavn) lager.gem("sai-brugernavn", r.brugernavn);
       lager.gem("sai-laas", "op");
     } catch (e) {}
+    // ⭐⭐ v4.106.0 · BOKSEN LÅSES OM TIL DET NYE KODEORD — som kodeskiftet gør.
+    //   Fundet 6/9: efter en nulstilling stod boksen låst med det gamle
+    //   kodeord; en ny telefon kunne ikke åbne den. Kun hvis DENNE telefon
+    //   har nøglen (ellers findes der intet at låse om), og kun hvis boksen
+    //   ikke er låst (v4.84.0-bremsen: et nyt salt oven i en boks, vi ikke
+    //   kunne åbne, gør den uåbnelig for altid). Sendes op FØR genstarten.
+    try {
+      if (lager.hent("sai-sky-noegle") && !S.skyLaast && S.spillerNoegle) {
+        await A.skyNoegleSaet(String(S.nulstilKode));
+        try { lager.slet("sai-sky-aftryk"); } catch (_e) {}
+        A.skySik(true);
+        await new Promise(function (ok) { const t0 = Date.now();
+          const ur = setInterval(function () { if ((!S.skySender && Date.now() - t0 > 900) || Date.now() - t0 > 12000) { clearInterval(ur); ok(); } }, 200); });
+      }
+    } catch (_e) {}
     S.nulstilToken = ""; S.nulstilKode = ""; S.nulstilKode2 = "";
     location.reload();
   },
@@ -9797,9 +9812,18 @@ function _tegn() {
             // ⚠️ Log ud rydder telefonen. Det SKAL stå, før man trykker —
             // og synkroniseringen sker først, så intet går tabt.
             _kk += '<div style="margin-top:10px;padding:10px;border:1px dashed var(--tabt);border-radius:9px">' +
-              '<p class="lille" style="margin:0 0 8px">' + (EN
-                ? "Log out? Everything is saved to your account first, and then this phone is wiped clean \u2014 so the next person cannot see your log. You get it all back when you log in again."
-                : "Log ud? Alt gemmes p\u00e5 din konto f\u00f8rst, og derefter ryddes telefonen \u2014 s\u00e5 den n\u00e6ste ikke kan se din log. Du f\u00e5r det hele igen, n\u00e5r du logger ind.") + '</p>' +
+              // ⭐⭐ v4.106.0 · SANDHEDEN OM DENNE TELEFON (betingelses-reglen).
+              //   «Alt gemmes på din konto først» var kun sandt med en boks — og
+              //   aldrig for team-rummet, som log ud også rydder. Målt 5/9.
+              '<p class="lille" style="margin:0 0 8px">' + ((lager.hent("sai-sky-noegle") && !S.skyLaast)
+                ? (EN
+                  ? "Log out? Your backup is updated first, and then this phone is wiped clean \u2014 so the next person cannot see your log. Log in again, and your matches, training and analyses come back from the backup."
+                  : "Log ud? Din sikkerhedskopi opdateres f\u00f8rst, og derefter ryddes telefonen \u2014 s\u00e5 den n\u00e6ste ikke kan se din log. Log ind igen, og dine kampe, tr\u00e6ning og analyser kommer tilbage fra kopien.")
+                : (EN
+                  ? "\u26a0\ufe0f This phone has no backup. Logging out wipes it clean \u2014 matches, every ball, training and analyses on THIS phone are gone. Take a full backup under STATS first, or change your password once (that creates the backup)."
+                  : "\u26a0\ufe0f Denne telefon har ingen sikkerhedskopi. Log ud rydder den \u2014 kampe, hver bold, tr\u00e6ning og analyser p\u00e5 DENNE telefon forsvinder. Tag en fuld backup under STATS f\u00f8rst, eller skift kodeord \u00e9n gang (det laver kopien).")) +
+                ((function(){ try { return !!window.localStorage.getItem("sai-profil-team"); } catch (_e) { return false; } })()
+                  ? (EN ? " Your team view is wiped too \u2014 a match not yet sent home to the player is lost." : " Din team-visning ryddes ogs\u00e5 \u2014 en kamp, der ikke er sendt hjem til spilleren, forsvinder.") : "") + '</p>' +
               '<div class="raekke">' +
               '<button class="knap" style="min-height:44px;background:var(--tabt)" data-a="logUdJa">' + (S.kontoHenter ? "\u23f3 \u2026" : (EN?"Log out":"Log ud")) + '</button>' +
               '<button class="knap valg" style="min-height:44px" data-a="logUdNej">' + (EN?"Stay":"Bliv") + '</button></div></div>';

@@ -605,6 +605,27 @@ function nySpiller(navn, gruppe){
     erBruger:false, gruppe:gruppe, fysStreak:0, tennisStreak:0, streak:0, vurdering:{}, kampe:0, sejre:0,
     sidsteTraening:"\u2014", traeningerKvartal:0, kampliste:[], statistik:null, rivaler:[] };
 }
+// ⭐⭐ v4.8.0 · TRÆNERENS EGNE VURDERINGER IND I OVERBLIKKET.
+//   Fund 5/9: rigtige spillere blev født med `vurdering:{}` og fik aldrig
+//   hændelserne fra `S.vurderinger` ind — snittet stod på 0.0 og prikken rød,
+//   uanset hvor mange pas træneren havde vurderet. Her udledes seneste score
+//   pr. område; samme dag vinder den sidst tastede (som gen-tryk-reglen).
+function vurderingAf(navn){
+  var ud = {};
+  (S.vurderinger || []).forEach(function(v){
+    if (!v || v.spiller !== navn || !OMRNAVN[v.omraade] || typeof v.score !== "number") return;
+    var f = ud[v.omraade];
+    if (f && String(f.dato) > String(v.dato)) return;
+    var d = String(v.dato || ""), pd = d.length >= 10 ? (+d.slice(8,10)) + "/" + (+d.slice(5,7)) : d;
+    // ⚠️ `UGEOMRAADER` er en const, der defineres EFTER det første `byggTrup()`
+    //   (linje ~656 mod ~647) — fanget af prøven: «Cannot access before
+    //   initialization». Derfor står de fire navne her (samme id'er som dér).
+    var fo = v.fokus ? ({ teknisk: "teknisk", taktisk: "taktisk", fysisk: "fysisk", mentalt: "mentalt" })[v.fokus] : null;
+    ud[v.omraade] = { score: v.score, dato: d,
+      tekst: "Vurderet " + pd + (fo ? " \u00b7 ugens fokus: " + fo : "") };
+  });
+  return ud;
+}
 function byggTrup(){
   if (!S.truppen || !S.truppen.length) return;   // tom trup = behold eksemplerne
   var grupper = {}, spillere = {}, raekke = [];
@@ -614,6 +635,7 @@ function byggTrup(){
     if (spillere[p.navn]) return;
     grupper[gr].spillere.push(p.navn);
     spillere[p.navn] = nySpiller(p.navn, gr);
+    spillere[p.navn].vurdering = vurderingAf(p.navn);   // v4.8.0
     if (p.noegle) { S.noegler = S.noegler || {}; S.noegler[p.navn] = p.noegle; }
   });
   DATA.grupper = grupper; DATA.spillere = spillere;
@@ -710,7 +732,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v4.7.0 \u00b7 1. september 2026";
+const VERSION = "v4.8.0 \u00b7 6. september 2026";
 
 function render(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
@@ -2036,6 +2058,7 @@ document.addEventListener("click", function(e){
                                       omraade: S.vurderOmraade, score: +v, fokus: ugensFokus() });
     S.vurderScores[sp] = +v;
     lager.gem("vurderinger", S.vurderinger);
+    if (S.truppen && S.truppen.length && DATA.spillere[sp]) DATA.spillere[sp].vurdering = vurderingAf(sp);   // v4.8.0
     render();
     sendVurdering(sp); }
   else if (act==="nyt-pas"){ S.vurderScores = {}; render(); }

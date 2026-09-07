@@ -589,7 +589,7 @@ let S = {
   skiftAaben: false, skiftNoegle: "", skiftKode: "", skiftVisKode: false,
   skiftHenter: false, skiftFund: null, skiftBesked: null, skiftBekraeft: false,
   doerTrin: 0, doerFest: null, doerHenter: false, doerBesked: null,
-  doerLogNavn: "", doerLogKode: "", doerVisKode: false,
+  doerLogNavn: "", doerLogKode: "", doerVisKode: false, doerNavnLedig: null,
   doerNoegle: "", doerKlub: "", doerRolle: "",
   doerNavn: "", doerBrugernavn: "", doerKode: "", doerKode2: "", doerMail: "",
   doerFaerdig: false, logUdSpoerg: false, forfraBekraeft: false,
@@ -732,7 +732,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v4.8.0 \u00b7 6. september 2026";
+const VERSION = "v4.9.0 \u00b7 7. september 2026";
 
 function render(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
@@ -805,7 +805,10 @@ function scDom(felt, v){
   if (felt === "doerBrugernavn") {
     if (!/^[a-zæøå][a-zæøå0-9_-]{2,19}$/.test(v.toLowerCase()))
       return { ja: false, t: "små bogstaver, tal, - og _ · start med et bogstav" };
-    return { ja: true, t: "ser rigtigt ud" };
+    // ⭐ v4.9.0 · serverens svar, når det er kommet — for DETTE navn
+    var L = S.doerNavnLedig;
+    if (L && L.navn === v.toLowerCase()) return L.ledig ? { ja: true, t: "ledigt" } : { ja: false, t: L.t || "det brugernavn er taget" };
+    return { ja: true, t: "ser rigtigt ud \u2014 tjekker\u2026" };
   }
   if (felt === "doerKode") {
     if (v.length < 8) return { ja: false, t: "mindst 8 tegn (" + v.length + " nu)" };
@@ -1109,7 +1112,9 @@ function renderRejse(){
     (S.doerKlub ? '<p class="lille sc-op" style="animation-delay:.1s;margin:-14px 2px 16px;color:var(--vundet)">✓ ' + esc(S.doerKlub) + ' · ' + (S.doerRolle === "admin" ? "cheftræner" : "træner") + '</p>' : '') +
     '<div class="sc-op" style="animation-delay:.12s">' + scFelt("doerNavn", "dit navn", { maks: 60 }) + '</div>' +
     '<div class="sc-op" style="animation-delay:.16s;margin-top:9px">' + scFelt("doerBrugernavn", "brugernavn", { lille: true, maks: 20 }) + '</div>' +
-    '<div class="sc-op" style="animation-delay:.2s;margin-top:9px">' + scFelt("doerKode", "kodeord (mindst 8 tegn)", { type: S.doerVisKode ? "text" : "password", lille: true, maks: 200 }) + '</div>' +
+    // ⭐ v4.9.0 · 👁 — man skal kunne SE, hvad man skriver (login havde det; oprettelsen ikke)
+    '<div class="sc-op" style="animation-delay:.2s;margin-top:9px;display:flex;gap:6px;align-items:flex-start"><div style="flex:1;min-width:0">' + scFelt("doerKode", "kodeord (mindst 8 tegn)", { type: S.doerVisKode ? "text" : "password", lille: true, maks: 200 }) + '</div>' +
+      '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;margin-top:0" data-act="doer-vis-kode" aria-label="vis kodeordet">' + (S.doerVisKode ? "🙈" : "👁") + '</button></div>' +
     '<div class="sc-op" style="animation-delay:.24s;margin-top:9px">' + scFelt("doerKode2", "gentag kodeordet", { type: S.doerVisKode ? "text" : "password", lille: true, maks: 200 }) + '</div>' +
     '<div class="sc-op" style="animation-delay:.28s;margin-top:9px">' + scFelt("doerMail", "din mail (frivilligt)", { lille: true, maks: 80 }) + '</div>' +
     '<p class="lille sc-op" style="animation-delay:.3s;margin:5px 2px 0;color:var(--daempet)">Mailen bruges kun, hvis du skal ind igen. Den vises aldrig for nogen.</p>' +
@@ -2007,6 +2012,25 @@ document.addEventListener("input", function(e){
   // ⭐ v4.0.0 · fordørens felter svarer ved hvert bogstav — UDEN
   //   gentegning (princip 38). Kun de felter, der har en dom.
   if (f.indexOf("doer") === 0 || f === "lukNyNoegle" || f === "skiftNoegle") { try { scMaerk(); } catch (_e) {} }
+  // ⭐ v4.9.0 · ER NAVNET LEDIGT? Svaret kommer, MENS der tastes (Nicolai 7/9:
+  //   «den skal tjekke navnet når man taster det. Ikke når man trykker godkend»).
+  //   Et halvt sekund efter sidste tast, og kun for et navn, der består mønstret.
+  if (f === "doerBrugernavn") {
+    S.doerNavnLedig = null;
+    clearTimeout(window.__navnUr);
+    var _navn = String(ny || "").trim().toLowerCase();
+    if (/^[a-zæøå][a-zæøå0-9_-]{2,19}$/.test(_navn)) {
+      window.__navnUr = setTimeout(function () {
+        kontoKald("navn-ledig", { brugernavn: _navn }, "").then(function (r) {
+          // `fejl` er her serverens TEKST (også ved 200) — kun et manglende `ledig` er en fejl
+          if (!r || typeof r.ledig !== "boolean" || String(S.doerBrugernavn || "").trim().toLowerCase() !== _navn) return;
+          S.doerNavnLedig = { navn: _navn, ledig: !!r.ledig, t: r.fejl || r.t || null };
+          if (r.ledig === false && r.kode === "navn-taget") S.doerNavnLedig.t = "det brugernavn er taget";
+          try { scMaerk(); } catch (_e) {}
+        });
+      }, 500);
+    }
+  }
 });
 document.addEventListener("click", function(e){
   const t = e.target.closest("[data-act]"); if (!t) return;
@@ -2201,6 +2225,7 @@ document.addEventListener("click", function(e){
                          mail: (S.doerMail||"").trim() }, (S.doerNoegle||"").trim()).then(function(r){
       S.doerHenter = false;
       if (r && r.fejl) {
+        if (r.fejl === "navn-taget") S.doerNavnLedig = { navn: (S.doerBrugernavn||"").trim().toLowerCase(), ledig: false, t: "det brugernavn er taget" };
         S.doerBesked = { fejl:true, t: r.fejl === "netvaerk"
           ? "Ingen forbindelse — prøv igen." : (r.t || "Kontoen kunne ikke oprettes.") };
         render(); return;

@@ -315,12 +315,12 @@ async function tjekAdgang(){
 //   navn på en fremmed klubs skærm. Derfor bor den ÉT sted.
 //   ⚠️ Den er også ordret den, skærmen viser brugeren. Ændres den her,
 //     skal `SKIFT_FJERNES` nedenfor følge med.
-var KLUB_TING = ["truppen","vurderinger","fokuspunkter","evalueringer","ugefokus",
+var KLUB_TING = ["truppen","grupper","vurderinger","fokuspunkter","evalueringer","ugefokus",
                  "stigehold","srvnavne","noegler","klubkode","klubnavn","minrolle"];
 
 function ryddKlubben(){
   KLUB_TING.forEach(function(n){ try { localStorage.removeItem("tp-" + n); } catch(_e){} });
-  S.truppen = []; S.vurderinger = []; S.fokuspunkter = {}; S.evalueringer = {};
+  S.truppen = []; S.grupper = []; S.vurderinger = []; S.fokuspunkter = {}; S.evalueringer = {};
   S.ugefokus = {}; S.stigeHold = []; S.noegler = {}; S.minRolle = null;
   S.tilmeldinger = []; S.tilmHentet = null; S.tilmHenter = false;
   S.aabenSpiller = null; S.vurderOmraade = null; S.vurderGruppe = null;
@@ -459,7 +459,7 @@ async function hentEvalUdkast(n) {
     const r = await fetch(EVAL_URL, {
       method: "POST",
       headers: { "content-type": "application/json", "x-klub-noegle": klub },
-      body: JSON.stringify({ sprog: "da", spiller: sp }),
+      body: JSON.stringify({ sprog: EVALSPROG, spiller: sp }),
       signal: styring.signal,
     });
     clearTimeout(ur);
@@ -570,6 +570,12 @@ let S = {
   // modstandernavne 13/8: fuldt navn TILLADT, aldrig paakraevet.
   truppen: lager.hent("truppen", []),
   trupAaben: false, trupNavn: "", trupGruppe: "", trupNoegle: "", trupSlet: null,
+  // ⭐⭐ v5.0.0 · GRUPPERNE ER TING, IKKE ETIKETTER. [{navn, aargang}] — oprettes
+  //   først, spillere lægges i bagefter. Migreres fra de gamle etiketter ved
+  //   første start (se migrerGrupper). Rækkefølgen er trænerens.
+  grupper: lager.hent("grupper", null),
+  grpAaben: false, grpNy: "", grpNyAargang: "", grpRet: null, grpRetNavn: "", grpRetAargang: "", grpSlet: null,
+  flytAaben: null, flytTil: "",
   // Tilmeldinger fra det delte lag. Holdes ADSKILT fra truppen med vilje:
   // truppen er dem, traeneren vurderer — tilmeldingerne er dem, der venter paa svar.
   tilmeldinger: [], tilmHenter: false, tilmHentet: null,
@@ -600,6 +606,34 @@ try { var _tn = lager.hent("traenernavn", ""); if (_tn) { S.traener = _tn;
   if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].navn = _tn; } } catch(e) {}
 
 // ── TRUPPEN erstatter eksempeldata, saa snart traeneren har skrevet en spiller ind.
+// ⭐⭐ v5.0.0 · GRUPPERNE
+function gruppeAf(navn){ return (S.grupper || []).filter(function(g){ return g.navn === navn; })[0] || null; }
+function grupperNavne(){ return (S.grupper || []).map(function(g){ return g.navn; }); }
+function gaetAargang(navn){ var m = /\bU(1[0-9]|[89])\b/i.exec(String(navn || "")); return m ? "U" + m[1] : ""; }
+function migrerGrupper(){
+  if (Array.isArray(S.grupper)) return;
+  var set = [], seen = {};
+  (S.truppen || []).forEach(function(p){
+    var g = String(p.gruppe || "").trim();
+    if (g === "Mit hold") { p.gruppe = ""; return; }          // den gamle standard var aldrig en gruppe
+    if (g && !seen[g]) { seen[g] = 1; set.push({ navn: g, aargang: gaetAargang(g) }); }
+  });
+  S.grupper = set; lager.gem("grupper", S.grupper); lager.gem("truppen", S.truppen || []);
+}
+migrerGrupper();
+var UDEN_GRUPPE = "Uden gruppe";   // visningsnøglen for spillere uden gruppe (oversættes af sproglaget)
+function gruppeSelect(felt, valgt, ekstraStil){
+  var h = '<select class="felt" data-felt="' + felt + '" style="' + (ekstraStil || '') + '">' +
+    '<option value=""' + (!valgt ? ' selected' : '') + '>' + UDEN_GRUPPE + '</option>';
+  (S.grupper || []).forEach(function(g){ h += '<option value="' + esc(g.navn) + '"' + (valgt === g.navn ? ' selected' : '') + '>' + esc(g.navn) + (g.aargang ? ' \u00b7 ' + esc(g.aargang) : '') + '</option>'; });
+  return h + '</select>';
+}
+// spillerens eget «hold» fra nøglen er et FORSLAG: findes gruppen, lander han i den — ellers uden gruppe
+function gruppeFraHold(hold){
+  var h = String(hold || "").trim().toLowerCase(); if (!h) return "";
+  var g = (S.grupper || []).filter(function(x){ return x.navn.toLowerCase() === h; })[0];
+  return g ? g.navn : "";
+}
 function nySpiller(navn, gruppe){
   return { navn:navn, rang:null, klub:(typeof KONFIG!=="undefined"?KONFIG.klub:"")||"", wtn:null,
     erBruger:false, gruppe:gruppe, fysStreak:0, tennisStreak:0, streak:0, vurdering:{}, kampe:0, sejre:0,
@@ -629,19 +663,25 @@ function vurderingAf(navn){
 function byggTrup(){
   if (!S.truppen || !S.truppen.length) return;   // tom trup = behold eksemplerne
   var grupper = {}, spillere = {}, raekke = [];
+  // v5.0.0: gruppernes egen rækkefølge først — også tomme grupper vises
+  (S.grupper || []).forEach(function(g){ grupper[g.navn] = { aargang: g.aargang || "", spillere: [] }; raekke.push(g.navn); });
   S.truppen.forEach(function(p){
-    var gr = (p.gruppe||"Mit hold").trim() || "Mit hold";
-    if (!grupper[gr]) { grupper[gr] = { aargang: gr, spillere: [] }; raekke.push(gr); }
+    var gr = String(p.gruppe || "").trim();
+    if (gr === "Mit hold") gr = "";
+    if (gr && !grupper[gr]) { grupper[gr] = { aargang: gaetAargang(gr), spillere: [] }; raekke.push(gr); }   // en etiket uden gruppe (bør ikke ske efter migrering)
+    if (!gr) { gr = UDEN_GRUPPE; if (!grupper[gr]) { grupper[gr] = { aargang: "", spillere: [] }; raekke.push(gr); } }
     if (spillere[p.navn]) return;
     grupper[gr].spillere.push(p.navn);
     spillere[p.navn] = nySpiller(p.navn, gr);
     spillere[p.navn].vurdering = vurderingAf(p.navn);   // v4.8.0
     if (p.noegle) { S.noegler = S.noegler || {}; S.noegler[p.navn] = p.noegle; }
   });
+  // «Uden gruppe» sidst — og kun hvis der står nogen i den
+  raekke = raekke.filter(function(g){ return g !== UDEN_GRUPPE; }).concat(grupper[UDEN_GRUPPE] ? [UDEN_GRUPPE] : []);
   DATA.grupper = grupper; DATA.spillere = spillere;
   if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].grupper = raekke;
   if (DATA.traenere && DATA.traenere[1]) DATA.traenere[1].grupper = [];
-  S.spiller = raekke.length ? grupper[raekke[0]].spillere[0] : S.spiller;
+  S.spiller = (S.truppen[0] || {}).navn || S.spiller;
   Object.keys(S.evalueringer||{}).forEach(function(navn){
     var d2 = DATA.spillere[navn];
     if (d2 && S.evalueringer[navn] && S.evalueringer[navn].tekst) { d2.evalSendt = S.evalueringer[navn].tekst; d2.evalNy = true; }
@@ -732,7 +772,494 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v4.9.0 \u00b7 7. september 2026";
+const VERSION = "v5.0.0 \u00b7 7. september 2026";
+
+// ═══════════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
+//   Teksterne står i skærmene, som de altid har gjort (dansk). Oversætteren
+//   går DOM'en igennem efter hver tegning og bytter de tekster, ordbogen
+//   kender — hele tekstnoder, placeholders, aria-labels. Nøgler med {n}
+//   (et tal) og {x} (et ord/navn) dækker de sammensatte beskeder.
+//   ⚠️ Prisen, sagt højt: en tekst, ordbogen ikke kender, står på dansk.
+//   Derfor er ordbogen bygget af et KRAVL over alle skærme — ikke et grep.
+//   Skærmens sprog bor på telefonen. Evalueringernes sprog bor for sig:
+//   Ganis spillere læser dansk, selv om Gani læser engelsk.
+// ═══════════════════════════════════════════════════════════════════════
+var SPROG = (function(){ var v = lager.hent("sprog", null); if (v === "da" || v === "en") return v;
+  try { return /^en/i.test(navigator.language || "") ? "en" : "da"; } catch (_e) { return "da"; } })();
+var EVALSPROG = (function(){ var v = lager.hent("evalsprog", null); return (v === "da" || v === "en") ? v : "da"; })();
+var EN = {
+"klubbens side af StreakTennis": "the club side of StreakTennis",
+"🔑 Log ind": "🔑 Log in",
+"Dit brugernavn — eller mailen på kontoen.": "Your username — or the e-mail on the account.",
+"Log ind": "Log in",
+"ELLER": "OR",
+"Ny træner? Start her →": "New coach? Start here →",
+"brugernavn eller mail": "username or e-mail",
+"kodeord": "password",
+"SKRIDT 1 AF 3": "STEP 1 OF 3",
+"SKRIDT 2 AF 3": "STEP 2 OF 3",
+"SKRIDT 3 AF 3": "STEP 3 OF 3",
+"Hvad er StreakCoach?": "What is StreakCoach?",
+"Klubbens egen side. Her vurderer du hele holdet, sætter ugens fokus og giver familierne deres nøgle til StreakTennis.": "The club's own side. Here you rate the whole squad, set the focus of the week and give the families their key to StreakTennis.",
+"Vurdér hele holdet": "Rate the whole squad",
+"Under 20 sekunder efter træning. Ét tryk pr. spiller.": "Under 20 seconds after practice. One tap per player.",
+"Evalueringer, du godkender": "Evaluations you approve",
+"Et udkast skrives ud fra dine egne tal. Du retter og siger god for det.": "A draft is written from your own numbers. You edit it and sign it off.",
+"Ugens fokus": "Focus of the week",
+"Ét punkt, hele holdet arbejder med. Det står i spillerens app.": "One point the whole squad works on. It shows in the player's app.",
+"Nøgler til familierne": "Keys for the families",
+"Du inviterer selv. Vi er ikke inde over — det er klubbens rum.": "You invite them yourself. We are not involved — it is the club's space.",
+"Spillerne har deres egen app. Her er der kun trænere.": "The players have their own app. Coaches only in here.",
+"Videre →": "Next →",
+"← Tilbage": "← Back",
+"Videre": "Next",
+"Din trænernøgle": "Your coach key",
+"Den har du fået af klubben. Vi udsteder den ikke — det gør cheftræneren, og det er med vilje.": "The club gave it to you. We don't issue it — the head coach does, and that is on purpose.",
+"Forbind": "Connect",
+"Har du ingen nøgle endnu, så spørg din cheftræner. Er klubben ikke i gang, så skriv til": "No key yet? Ask your head coach. If the club hasn't started, write to",
+"Cheftræner i {x}": "Head coach at {x}",
+"Træner i {x}": "Coach at {x}",
+"Nøglen passer. Du kan udstede både træner- og spillernøgler.": "The key fits. You can issue both coach and player keys.",
+"Nøglen passer. Du kan udstede spillernøgler til familierne.": "The key fits. You can issue player keys to the families.",
+"Din konto": "Your account",
+"Så kan du logge ind på enhver telefon — og din nøgle følger med. Den er låst med dit kodeord; heller ikke vi kan læse den.": "Then you can log in on any phone — and your key comes along. It is locked with your password; not even we can read it.",
+"✓ {x} · cheftræner": "✓ {x} · head coach",
+"✓ {x} · træner": "✓ {x} · coach",
+"Mailen bruges kun, hvis du skal ind igen. Den vises aldrig for nogen.": "The e-mail is only used if you need to get back in. It is never shown to anyone.",
+"Opret min konto": "Create my account",
+"dit navn": "your name",
+"brugernavn": "username",
+"kodeord (mindst 8 tegn)": "password (at least 8 characters)",
+"vis kodeordet": "show the password",
+"gentag kodeordet": "repeat the password",
+"din mail (frivilligt)": "your e-mail (optional)",
+"✓ ledigt": "✓ available",
+"ledigt": "available",
+"ser rigtigt ud": "looks right",
+"ser rigtigt ud — tjekker…": "looks right — checking…",
+"små bogstaver, tal, - og _ · start med et bogstav": "lower-case letters, digits, - and _ · start with a letter",
+"det brugernavn er taget": "that username is taken",
+"✕ det brugernavn er taget": "✕ that username is taken",
+"de to er ikke ens": "the two don't match",
+"de er ens": "they match",
+"skriv dit fulde navn": "write your full name",
+"nøgler har hverken 0/O eller 1/I — tjek tegnet": "keys have neither 0/O nor 1/I — check the character",
+"kun store bogstaver, tallene 2-9 og bindestreg": "capital letters, digits 2-9 and hyphens only",
+"12 tegn i alt — der er {n}": "12 characters in total — there are {n}",
+"ser ikke ud som en mail": "doesn't look like an e-mail",
+"Velkommen, {x}!": "Welcome, {x}!",
+"Din konto er klar. Du kan logge ind på enhver telefon med {x}.": "Your account is ready. You can log in on any phone with {x}.",
+"Åbn StreakCoach": "Open StreakCoach",
+"CHEFTRÆNER": "HEAD COACH",
+"TRÆNER": "COACH",
+"Hej {x} 👋": "Hi {x} 👋",
+"Eksempeldata.": "Example data.",
+"Læg i trup": "Add to squad",
+"gør ham til din.": "makes them yours.",
+"Vælg, hvad du vil i gang med": "Choose what you want to do",
+"UDSTED NØGLE": "ISSUE KEY",
+"én pr. familie — vises kun én gang": "one per family — shown only once",
+"GRUPPER": "GROUPS",
+"hold, spillere & udvikling": "groups, players & development",
+"VURDÉR TRÆNING": "RATE PRACTICE",
+"hele holdet på under 20 sek.": "the whole squad in under 20 sec.",
+"EVALUERING": "EVALUATION",
+"AI-udkast — du godkender alt": "AI draft — you approve everything",
+"INDSTILLINGER": "SETTINGS",
+"klubkode, trup & kopi": "club code, squad & backup",
+"{n} spillere · snit {n}/10 · fælles mål pr. {x}": "{n} players · avg {n}/10 · shared goal per {x}",
+"{n} spiller · snit {n}/10 · fælles mål pr. {x}": "{n} player · avg {n}/10 · shared goal per {x}",
+"{n} spillere · snit {n}/10": "{n} players · avg {n}/10",
+"{n} spiller · snit {n}/10": "{n} player · avg {n}/10",
+"DTF #{n} · {n} kampe · sidst: {x}": "DTF #{n} · {n} matches · last: {x}",
+"{n} kampe · sidst: {x}": "{n} matches · last: {x}",
+"{n} kamp · sidst: {x}": "{n} match · last: {x}",
+"I dag": "Today",
+"I går": "Yesterday",
+"{n} dage siden": "{n} days ago",
+"{n} dag siden": "{n} day ago",
+"Hvad trænede du? Vælg område — så giver du hver spiller en score på farveskalaen med ét tryk.": "What did you train? Pick an area — then you give every player a score on the colour scale with one tap.",
+"UGENS FOKUS": "FOCUS OF THE WEEK",
+"ikke valgt endnu": "not chosen yet",
+"DEN FYSISKE TRÆNING": "PHYSICAL TRAINING",
+"Den fysiske træning": "Physical training",
+"giv hele holdet en score": "give the whole squad a score",
+"TRÆNINGEN PÅ TRÆNERENS BANE": "PRACTICE ON THE COACH'S COURT",
+"Træningen på trænerens bane": "Practice on the coach's court",
+"TRÆNINGEN PÅ SPIL-SELV-BANEN": "PRACTICE ON THE PLAY-YOURSELF COURT",
+"Træningen på spil-selv-banen": "Practice on the play-yourself court",
+"FARVESKALA": "COLOUR SCALE",
+"= Stærkt utilfredsstillende": "= Highly unsatisfactory",
+"= Utilfredsstillende": "= Unsatisfactory",
+"= Nogenlunde": "= Fair",
+"= God indsats": "= Good effort",
+"= Meget stærk indsats": "= Very strong effort",
+"Stærkt utilfredsstillende": "Highly unsatisfactory",
+"Utilfredsstillende": "Unsatisfactory",
+"Nogenlunde": "Fair",
+"God indsats": "Good effort",
+"Meget stærk indsats": "Very strong effort",
+"spilleren er slet ikke i stand til at løse opgaven": "the player is not able to solve the task at all",
+"for uengageret, har svært ved at løfte sin arbejdsindsats": "too disengaged, struggles to lift the work effort",
+"udfører træning i rimeligt omfang, men for svingende": "does the training to a reasonable extent, but too inconsistently",
+"leverer en god arbejdsindsats og får meget ud af øvelserne": "delivers a good work effort and gets a lot out of the drills",
+"god arbejdsindsats i alle øvelser i hele træningen": "good work effort in every drill throughout the whole practice",
+"AI samler rundens scores og noter til en evaluering pr. spiller — i klubbens format. Du retter og godkender, så sendes den til spilleren.": "AI gathers the round's scores and notes into one evaluation per player — in the club's format. You edit and approve, then it is sent to the player.",
+"{n} træninger · {n} kampe": "{n} practices · {n} matches",
+"{n} træning · {n} kampe": "{n} practice · {n} matches",
+"{n} træninger · {n} kamp": "{n} practices · {n} match",
+"Generér": "Generate",
+"Ny": "New",
+"🔑 SPILLERNØGLER": "🔑 PLAYER KEYS",
+"· ADMIN": "· ADMIN",
+"Vis": "Show",
+"Skjul": "Hide",
+"➕ Ny nøgle": "➕ New key",
+"Én nøgle pr. familie. Den giver adgang til jeres klub i StreakTennis — aldrig til trænerdelen — og kan spærres her når som helst.": "One key per family. It gives access to your club in StreakTennis — never to the coach side — and can be blocked here at any time.",
+"🧑‍🏫 TRÆNERNØGLER": "🧑‍🏫 COACH KEYS",
+"Én nøgle pr. træner — aldrig en delt. Skifter en træner klub, spærrer du hans egen og rører ikke de andres.": "One key per coach — never a shared one. If a coach changes club, you block his own and leave the others untouched.",
+"➕ Træner": "➕ Coach",
+"⛔ Din egen administratornøgle kan ikke spærres herfra — ét fejlklik må ikke kunne lukke klubben ude af sin egen platform.": "⛔ Your own admin key cannot be blocked from here — one wrong tap must not be able to lock the club out of its own platform.",
+"⚠️ Er klubbens egen nøgle på listen, ligner den en trænernøgle. Spær kun en nøgle, du selv har udstedt.": "⚠️ If the club's own key is on the list, it looks like a coach key. Only block a key you issued yourself.",
+"fx familien Jensen": "e.g. the Jensen family",
+"fx Gani": "e.g. Gani",
+"⛔ spærret": "⛔ blocked",
+"Spær": "Block",
+"Sikker? Tryk igen": "Sure? Tap again",
+"· træner": "· coach",
+"Ingen trænernøgler udstedt endnu.": "No coach keys issued yet.",
+"Ingen nøgler udstedt endnu.": "No keys issued yet.",
+"🧑‍🏫 TRÆNERNØGLE": "🧑‍🏫 COACH KEY",
+"🎾 FAMILIENØGLE": "🎾 FAMILY KEY",
+"📋 Kopiér besked til træneren": "📋 Copy message to the coach",
+"📋 Kopiér besked til familien": "📋 Copy message to the family",
+"Færdig": "Done",
+"📥 NYE SPILLERE": "📥 NEW PLAYERS",
+"Tjek": "Check",
+"Opdatér": "Refresh",
+"Tryk Tjek for at se, om nogen familier har tastet deres nøgle.": "Tap Check to see whether any families have entered their key.",
+"Ingen familier har tastet en nøgle endnu.": "No families have entered a key yet.",
+"Ingen har tastet en nøgle endnu ✓": "Nobody has entered a key yet ✓",
+"Alle er i truppen ✓": "Everyone is in the squad ✓",
+"Alle klubbens spillere er i din trup ✓": "All the club's players are in your squad ✓",
+"De øverste er allerede lukket ind af deres nøgle — de mangler kun at stå i DIN trup.": "The ones at the top are already let in by their key — they only need to be in YOUR squad.",
+"Godkendte spillere lægges i truppen med det samme.": "Approved players are added to the squad right away.",
+"➕ Læg i trup": "➕ Add to squad",
+"⚙️ FORBINDELSE": "⚙️ CONNECTION",
+"Klubkode gemt · {n} spillere koblet til en nøgle. Vurderinger sendes automatisk.": "Club code saved · {n} players linked to a key. Ratings are sent automatically.",
+"Klubkode gemt · {n} spiller koblet til en nøgle. Vurderinger sendes automatisk.": "Club code saved · {n} player linked to a key. Ratings are sent automatically.",
+"📱": "📱",
+"Alt bliver på denne telefon.": "Everything stays on this phone.",
+"Intet sendes nogen steder. Indtast klubkoden, når du vil dele vurderinger med spillerne.": "Nothing is sent anywhere. Enter the club code when you want to share ratings with the players.",
+"Gem": "Save",
+"Koden gemmes kun på denne enhed og står ingen steder i koden.": "The code is stored on this device only and appears nowhere in the code.",
+"klubkode": "club code",
+"💾 SIKKERHEDSKOPI": "💾 BACKUP",
+"Dine vurderinger og evalueringer ligger kun i denne browser. Ryddes den, er de væk. Tag en kopi jævnligt.": "Your ratings and evaluations live only in this browser. Clear it and they are gone. Take a copy regularly.",
+"💾 Lav kopi": "💾 Make a copy",
+"♻️ Gendan": "♻️ Restore",
+"Indsæt en sikkerhedskopi her": "Paste a backup here",
+"⚠️ Tryk igen — ERSTATTER alt": "⚠️ Tap again — REPLACES everything",
+"👤 DIN KONTO": "👤 YOUR ACCOUNT",
+"Logget ind som": "Logged in as",
+"cheftræner": "head coach",
+"træner": "coach",
+"Du kan logge ind på enhver telefon med dit brugernavn — din nøgle følger med.": "You can log in on any phone with your username — your key comes along.",
+"🚪 Log ud": "🚪 Log out",
+"⚠️ Tryk igen — log ud": "⚠️ Tap again — log out",
+"🔄 Skift klub": "🔄 Change club",
+"⚠️ Din trup og dine vurderinger bor": "⚠️ Your squad and your ratings live",
+"kun på denne enhed": "only on this device",
+". Tag en sikkerhedskopi under ⚙️ FORBINDELSE, før du skifter telefon.": ". Take a backup under ⚙️ CONNECTION before you change phone.",
+"🧹 Start forfra": "🧹 Start over",
+"⚠️ Tryk igen — SLETTER alt her": "⚠️ Tap again — DELETES everything here",
+"Start forfra sletter trup, vurderinger, klubkode og login på denne telefon. Kontoen på serveren røres ikke.": "Start over deletes squad, ratings, club code and login on this phone. The account on the server is untouched.",
+"✕ Luk": "✕ Close",
+"Luk": "Close",
+"🔄 Skift til en anden klub": "🔄 Change to another club",
+"Har du fået en nøgle af en ny klub, taster du den her. Du beholder din konto, dit brugernavn og dit kodeord — det er kun klubben, der skifter.": "If a new club gave you a key, enter it here. You keep your account, your username and your password — only the club changes.",
+"Tjek nøglen": "Check the key",
+"Gem den nye nøgle": "Save the new key",
+"Skift til {x}": "Change to {x}",
+"⚠️ Tryk igen — skift til {x}": "⚠️ Tap again — change to {x}",
+"dit kodeord": "your password",
+"🔥 STREAK": "🔥 STREAK",
+"Skriv din trup ind under 👥 MIN TRUP først — så kan streaken tændes pr. hold.": "Enter your squad under 👥 MY SQUAD first — then the streak can be switched on per group.",
+"🔥 Til": "🔥 On",
+"Fra": "Off",
+"👥 MIN TRUP": "👥 MY SQUAD",
+"⚡ Du ser": "⚡ You are looking at",
+"eksempeldata": "example data",
+"Sådan fylder truppen sig selv": "How the squad fills itself",
+"Udsted en nøgle pr. familie under 🔑 UDSTED NØGLE.": "Issue one key per family under 🔑 ISSUE KEY.",
+"Familien taster nøglen i StreakTennis.": "The family enters the key in StreakTennis.",
+"De dukker op under 📥 NYE SPILLERE — tryk": "They show up under 📥 NEW PLAYERS — tap",
+"Så står spilleren her,": "Then the player is listed here,",
+"koblet til sin nøgle": "linked to their key",
+", og dine vurderinger lander i hans app.": ", and your ratings land in their app.",
+"⚠️ Du behøver": "⚠️ You do",
+"ikke": "not",
+"skrive dem ind i hånden. Det nedenfor er kun til spillere, du vil vurdere,": "need to type them in by hand. The form below is only for players you want to rate",
+"før": "before",
+"de har fået en nøgle — de kan kobles til bagefter.": "they have a key — they can be linked afterwards.",
+"{n} spiller i {n} gruppe · {n} med nøgle": "{n} player in {n} group · {n} with key",
+"{n} spillere i {n} gruppe · {n} med nøgle": "{n} players in {n} group · {n} with key",
+"{n} spiller i {n} grupper · {n} med nøgle": "{n} player in {n} groups · {n} with key",
+"{n} spillere i {n} grupper · {n} med nøgle": "{n} players in {n} groups · {n} with key",
+"{x} · ingen nøgle": "{x} · no key",
+"{x} · 🔑 koblet": "{x} · 🔑 linked",
+"Ret": "Edit",
+"Slet?": "Delete?",
+"+ Tilføj spiller": "+ Add player",
+"Skriv navnet, som klubben vil have det vist — fornavn, fornavn og initial, eller fuldt navn.": "Write the name the way the club wants it shown — first name, first name and initial, or full name.",
+"Nøglefeltet kan stå tomt.": "The key field can stay empty.",
+"Lægger du spilleren i truppen under 📥 NYE SPILLERE, kobles nøglen på af sig selv. Feltet er kun til, hvis du har fået et håndtag udleveret.": "If you add the player to the squad under 📥 NEW PLAYERS, the key is linked automatically. The field is only for a handle you have been given.",
+"{x} er tilføjet ✓": "{x} has been added ✓",
+"{x} er opdateret ✓": "{x} has been updated ✓",
+"{x} er fjernet.": "{x} has been removed.",
+"{x} er der allerede.": "{x} is already there.",
+"Tryk igen for at fjerne {x}.": "Tap again to remove {x}.",
+"navn, som klubben vil vise det": "name, as the club wants it shown",
+"gruppe, fx U14 Elite": "group, e.g. U14 Elite",
+"gruppe": "group",
+"spillernøgle (kan udfyldes senere)": "player key (can be filled in later)",
+"håndtag (16 tegn fra Tjek)": "handle (16 characters from Check)",
+"Navnet må højst være 40 tegn.": "The name can be at most 40 characters.",
+"Skriv spillerens fornavn.": "Write the player's first name.",
+"Truppen er tom — eksempeldata vises igen ved genindlæsning.": "The squad is empty — example data is shown again after a reload.",
+"‹ Tilbage": "‹ Back",
+"Kampe": "Matches",
+"Sejrsrate": "Win rate",
+"Træninger i træk": "Practices in a row",
+"Træninger": "Practices",
+"🔑 Ingen nøgle — vurderinger bliver på denne enhed. Nøglen sættes under ⚙ Indstillinger → MIN TRUP.": "🔑 No key — ratings stay on this device. The key is set under ⚙ Settings → MY SQUAD.",
+"🎯 FOKUSPUNKTER": "🎯 FOCUS POINTS",
+"Vælg": "Choose",
+"Ingen valgt endnu. Vælg op til tre — de følger spilleren, hvis træneren skifter.": "None chosen yet. Choose up to three — they follow the player if the coach changes.",
+"📋 Seneste vurdering pr. område": "📋 Latest rating per area",
+"🎾 Teknisk": "🎾 Technical",
+"🎯 Taktisk": "🎯 Tactical",
+"💪 Fysisk": "💪 Physical",
+"🧠 Mentalt": "🧠 Mental",
+"TEKNISK": "TECHNICAL",
+"TAKTISK": "TACTICAL",
+"FYSISK": "PHYSICAL",
+"MENTALT": "MENTAL",
+"teknisk": "technical",
+"taktisk": "tactical",
+"fysisk": "physical",
+"mentalt": "mental",
+"Skab plads til at slå slaget": "Make room to hit the shot",
+"Afstand til træfpunkt (benstilling)": "Distance to the contact point (footwork)",
+"Knæk i baghånden før træfpunkt": "Bend in the backhand before contact",
+"Hammergreb — grebsskiftet": "Hammer grip — the grip change",
+"Bue og højde på bolden": "Arc and height on the ball",
+"Long line på den forkerte bold": "Down the line on the wrong ball",
+"Spille flere krydsbolde": "Play more cross-court balls",
+"Angrib og approach long line": "Attack and approach down the line",
+"Ned i benene": "Get down in the legs",
+"Op på tæerne og forfoden": "Up on the toes and the forefoot",
+"Krydsover på tilbageløb": "Cross-over on the recovery run",
+"Justerer ved fejl": "Adjusts after mistakes",
+"Sige godt spillet til modstanderen": "Say well played to the opponent",
+"Acceptere fejl og få justeret": "Accept mistakes and adjust",
+"Acceptere og finde løsninger": "Accept and find solutions",
+"{n} af 3 valgt · faste valg, ingen fritekst — hurtigere på banen, og analysen kan regne på dem.": "{n} of 3 chosen · fixed choices, no free text — faster on court, and the analysis can count on them.",
+"{n} valgt. Tre er det, en spiller kan huske på vej ind til kampen — én pr. farve.": "{n} chosen. Three is what a player can remember walking on court — one per colour.",
+"Vælg ugens fokus, før du vurderer. Hver vurdering i uge {n} kobles automatisk til det — så kan udviklingen læses område for område.": "Choose the focus of the week before you rate. Every rating in week {n} is linked to it automatically — so development can be read area by area.",
+"vælg som fokus": "choose as focus",
+"ugens fokus": "focus of the week",
+"Alle vurderinger denne uge kobles til": "All ratings this week are linked to",
+". Tryk igen for at fjerne.": ". Tap again to remove.",
+"‹ Skift område": "‹ Change area",
+"💪 Den fysiske træning — vælg gruppe:": "💪 Physical training — choose group:",
+"🎾 Træningen på trænerens bane — vælg gruppe:": "🎾 Practice on the coach's court — choose group:",
+"🤝 Træningen på spil-selv-banen — vælg gruppe:": "🤝 Practice on the play-yourself court — choose group:",
+"{n} spillere": "{n} players",
+"{n} spiller": "{n} player",
+"💪 DEN FYSISKE TRÆNING": "💪 PHYSICAL TRAINING",
+"🎾 TRÆNINGEN PÅ TRÆNERENS BANE": "🎾 PRACTICE ON THE COACH'S COURT",
+"🤝 TRÆNINGEN PÅ SPIL-SELV-BANEN": "🤝 PRACTICE ON THE PLAY-YOURSELF COURT",
+"Dagens indsats": "Today's effort",
+"færdig": "done",
+"Ét tryk pr. spiller på farveskalaen — under 20 sek. i alt.": "One tap per player on the colour scale — under 20 sec. in total.",
+"I dag:": "Today:",
+"✓ Passet er gemt!": "✓ The session is saved!",
+"Hvert pas gemmes for sig i spillernes historik. Ved rundens slut samler AI det til en evaluering.": "Every session is saved separately in the players' history. At the end of the round AI gathers it into an evaluation.",
+"➕ Vurdér et nyt pas": "➕ Rate a new session",
+"Vurderet {x}": "Rated {x}",
+"Vurderet {x} · ugens fokus: {x}": "Rated {x} · focus of the week: {x}",
+"‹ Alle spillere": "‹ All players",
+"SKABELON": "TEMPLATE",
+"AI-UDKAST": "AI DRAFT",
+"AI-udkastet kunne ikke hentes ({x}) — skabelonen vises.": "The AI draft could not be fetched ({x}) — the template is shown.",
+"Ingen forbindelse — skabelonen vises.": "No connection — the template is shown.",
+"Ingen klubkode — skabelonen vises.": "No club code — the template is shown.",
+"Samlet fra scores + noter i klubbens format. Ret frit, godkend derefter.": "Gathered from scores + notes in the club's format. Edit freely, then approve.",
+"Bygget af rundens pas-scores, kampe og træningstal. Det er DIT udkast — ret frit, godkend derefter.": "Built from the round's session scores, matches and training numbers. It is YOUR draft — edit freely, then approve.",
+"⏳ Udkastet skrives …": "⏳ Writing the draft …",
+"Rundens pas-scores, kampe og træningstal samles til et udkast — cirka 20 sekunder. Du retter og godkender bagefter.": "The round's session scores, matches and training numbers are gathered into a draft — about 20 seconds. You edit and approve afterwards.",
+"Kassér": "Discard",
+"✓ Godkend & send": "✓ Approve & send",
+"✓ Evalueringen er sendt til {x}": "✓ The evaluation has been sent to {x}",
+"Evalueringen er gemt HER, men kunne ikke nå spillerens app: {x}": "The evaluation is saved HERE, but could not reach the player's app: {x}",
+"Evalueringen er gemt HER, men netværket svigtede — prøv Godkend & send igen.": "The evaluation is saved HERE, but the network failed — try Approve & send again.",
+"Evalueringen er kopieret ✓": "The evaluation has been copied ✓",
+"Deling kræver en nyere browser.": "Sharing needs a newer browser.",
+"Sendt til {x}": "Sent to {x}",
+"Skriv brugernavn og kodeord.": "Enter username and password.",
+"Brugernavn eller kodeord passer ikke.": "Username or password does not match.",
+"Du er inde. Din nøgle kunne ikke følge med — tast den under ⚙️ Indstillinger, så virker resten.": "You are in. Your key could not come along — enter it under ⚙️ Settings and the rest works.",
+"Tast nøglen fra din klub.": "Enter the key from your club.",
+"Nøglen kunne ikke tjekkes.": "The key could not be checked.",
+"Den nøgle kender vi ikke. Tjek den — eller spørg din cheftræner.": "We don't know that key. Check it — or ask your head coach.",
+"Den nøgle kender vi ikke. Tjek den — eller spørg din nye cheftræner.": "We don't know that key. Check it — or ask your new head coach.",
+"Det er en spillernøgle — den hører hjemme i StreakTennis-appen. Her skal klubbens træner- eller cheftrænernøgle bruges.": "That is a player key — it belongs in the StreakTennis app. Use the club's coach or head-coach key here.",
+"Det er en spillernøgle — den hører hjemme i StreakTennis-appen. Her skal en træner- eller cheftrænernøgle bruges.": "That is a player key — it belongs in the StreakTennis app. A coach or head-coach key is needed here.",
+"Der er allerede en konto på den nøgle ({x}). Gå tilbage og log ind.": "There is already an account on that key ({x}). Go back and log in.",
+"Der er allerede en konto på den nøgle ({x}). Bed klubbens cheftræner om din egen nøgle — to trænere må ikke dele én.": "There is already an account on that key ({x}). Ask the club's head coach for your own key — two coaches must not share one.",
+"Se de røde felter — der mangler noget.": "Look at the red fields — something is missing.",
+"Mailen ser ikke rigtig ud — ret den, eller lad feltet stå tomt.": "The e-mail doesn't look right — fix it, or leave the field empty.",
+"Kontoen kunne ikke oprettes.": "The account could not be created.",
+"kontoen kunne ikke oprettes lige nu — prøv et andet brugernavn eller igen om lidt": "the account could not be created right now — try another username or again in a moment",
+"Nøglen ser ikke rigtig ud — 12 tegn i grupper af fire.": "The key doesn't look right — 12 characters in groups of four.",
+"Ingen forbindelse — prøv igen. Der er ikke sket noget.": "No connection — try again. Nothing has happened.",
+"Ingen forbindelse — prøv igen.": "No connection — try again.",
+"Ingen forbindelse.": "No connection.",
+"Ingen forbindelse — prøv igen. Din trup er urørt.": "No connection — try again. Your squad is untouched.",
+"Nøglen kunne ikke gemmes. Din trup er urørt.": "The key could not be saved. Your squad is untouched.",
+"Nøglen kunne ikke gemmes.": "The key could not be saved.",
+"Der er ingen konto på denne telefon.": "There is no account on this phone.",
+"Der er ingen konto på denne telefon — log ind i stedet.": "There is no account on this phone — log in instead.",
+"Skriv dit kodeord — nøglen låses ind under det.": "Enter your password — the key is locked under it.",
+"Nøglen er gemt, og telefonen er ryddet for den forrige klub. Truppen starter tom — skriv din nye ind under 👥 MIN TRUP.": "The key is saved, and the phone is cleared of the previous club. The squad starts empty — enter your new one under 👥 MY SQUAD.",
+"Nøglen er gemt. Din trup og dine vurderinger står, hvor de stod.": "The key is saved. Your squad and your ratings are where they were.",
+"Nøglen er gemt. Truppen starter tom — børnene fra din forrige klub følger ikke med.": "The key is saved. The squad starts empty — the children from your previous club do not come along.",
+"Du er inde i {x}. Alt er klar.": "You are in at {x}. All set.",
+"Kunne ikke udstede: {x}": "Could not issue: {x}",
+"Kunne ikke spærre: {x}": "Could not block: {x}",
+"Kunne ikke hente: {x}": "Could not fetch: {x}",
+"Kunne ikke gemme: {x}": "Could not save: {x}",
+"Afvist: {x}": "Rejected: {x}",
+"Data blev afvist af vagten: {x}": "Data was rejected by the guard: {x}",
+"Indtast klubkoden først.": "Enter the club code first.",
+"Klubkoden er gemt på denne enhed ✓": "The club code is saved on this device ✓",
+"Kunne ikke kopiere — markér nøglen selv.": "Could not copy — select the key yourself.",
+"Kunne ikke kopiere — marker teksten manuelt.": "Could not copy — select the text manually.",
+"Kopiering kræver en nyere browser.": "Copying needs a newer browser.",
+"Sikkerhedskopien er kopieret ✓": "The backup has been copied ✓",
+"Indsæt en sikkerhedskopi først.": "Paste a backup first.",
+"Teksten er ikke en gyldig sikkerhedskopi.": "The text is not a valid backup.",
+"Det er ikke en træner-sikkerhedskopi.": "That is not a coach backup.",
+"Dette ERSTATTER alt på denne enhed. Tryk igen for at bekræfte.": "This REPLACES everything on this device. Tap again to confirm.",
+"Kunne ikke finde spilleren — tryk Opdatér.": "Could not find the player — tap Refresh.",
+"{x} er lagt i truppen ✓": "{x} has been added to the squad ✓",
+"{x} er godkendt og lagt i truppen ✓": "{x} has been approved and added to the squad ✓",
+"{x} er sat som ikke aktiv.": "{x} has been set as not active.",
+"🔥 Streaken er TÆNDT for {x} ✓": "🔥 The streak is ON for {x} ✓",
+"🔥 Streaken er slukket for {x} ✓": "🔥 The streak is off for {x} ✓",
+"🔥 Streaken er TÆNDT for {x} · {n} spillere har fået holdet sat ✓": "🔥 The streak is ON for {x} · {n} players had their group set ✓",
+"🔥 Streaken er TÆNDT for {x} · {n} spiller har fået holdet sat ✓": "🔥 The streak is ON for {x} · {n} player had their group set ✓",
+"{x} er lukket": "{x} is closed",
+"Ny nøgle fra klubben": "New key from the club",
+"Uden gruppe": "No group",
+"UDEN GRUPPE": "NO GROUP",
+"👥 GRUPPER": "👥 GROUPS",
+"Grupperne er dine: opret, omdøb, flyt spillere. Streaken og ugens fokus følger gruppen.": "The groups are yours: create, rename, move players. The streak and the focus of the week follow the group.",
+"+ Ny gruppe": "+ New group",
+"Opret gruppe": "Create group",
+"gruppens navn, fx U14 Elite": "group name, e.g. U14 Elite",
+"årgang (frivilligt)": "age group (optional)",
+"Skriv gruppens navn.": "Write the group's name.",
+"Gruppen {x} findes allerede.": "The group {x} already exists.",
+"Gruppen {x} er oprettet ✓": "The group {x} has been created ✓",
+"Gruppen hedder nu {x} ✓": "The group is now called {x} ✓",
+"Tryk igen for at nedlægge {x} — spillerne bliver i truppen uden gruppe.": "Tap again to remove {x} — the players stay in the squad without a group.",
+"Gruppen {x} er nedlagt. {n} spillere står nu uden gruppe.": "The group {x} has been removed. {n} players are now without a group.",
+"Gruppen {x} er nedlagt. {n} spiller står nu uden gruppe.": "The group {x} has been removed. {n} player is now without a group.",
+"Gruppen {x} er nedlagt.": "The group {x} has been removed.",
+"Nedlæg?": "Remove?",
+"Omdøb": "Rename",
+"Flyt": "Move",
+"{x} er flyttet til {x} ✓": "{x} has been moved to {x} ✓",
+"{x} står nu uden gruppe ✓": "{x} is now without a group ✓",
+"Opret en gruppe under 👥 GRUPPER først — så kan du lægge spillere i den. Indtil da står de uden gruppe.": "Create a group under 👥 GROUPS first — then you can put players in it. Until then they are without a group.",
+"uden gruppe": "no group",
+"{x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 GRUPPER.": "{x} calls their own group «{x}» — put {x} in a group under 👥 GROUPS.",
+"Ingen spillere i gruppen endnu — flyt dem hertil fra en anden gruppe, eller læg nye i truppen under ⚙️ INDSTILLINGER.": "No players in the group yet — move them here from another group, or add new ones to the squad under ⚙️ SETTINGS.",
+"🌐 SPROG · LANGUAGE": "🌐 LANGUAGE · SPROG",
+"Skærmen": "The screen",
+"Evalueringer til spillerne": "Evaluations to the players",
+"Skærmens sprog følger denne telefon. Evalueringerne skrives i det sprog, spillerne læser — det behøver ikke være dit.": "The screen language follows this phone. Evaluations are written in the language the players read — it doesn't have to be yours.",
+"Dansk": "Danish",
+"Engelsk": "English",
+"Alle spillere": "All players",
+"{n} spillere i alt": "{n} players in total",
+"{n} spiller i alt": "{n} player in total",
+"kampe": "matches",
+"Klubkode": "Club code",
+"Tryk igen — log ud": "Tap again — log out",
+"Kopiér": "Copy",
+"Kopieret ✓": "Copied ✓",
+"Gendannet ✓ {n} vurderinger · {n} evalueringer": "Restored ✓ {n} ratings · {n} evaluations",
+"Trænernøglen til {x} er spærret ✓": "The coach key for {x} has been blocked ✓",
+"Nøglen til {x} er spærret ✓": "The key for {x} has been blocked ✓",
+"Trænernøglen er spærret ✓": "The coach key has been blocked ✓",
+"Nøglen er spærret ✓": "The key has been blocked ✓",
+"Der er allerede en konto på den nøgle. Gå tilbage og log ind.": "There is already an account on that key. Go back and log in.",
+"Vurderet {x} · ugens fokus: teknisk": "Rated {x} · focus of the week: technical",
+"Vurderet {x} · ugens fokus: taktisk": "Rated {x} · focus of the week: tactical",
+"Vurderet {x} · ugens fokus: fysisk": "Rated {x} · focus of the week: physical",
+"Vurderet {x} · ugens fokus: mentalt": "Rated {x} · focus of the week: mental",
+"{x} er lagt i truppen ✓ · {x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 GRUPPER.": "{x} has been added to the squad ✓ · {x} calls their own group «{x}» — put {x} in a group under 👥 GROUPS.",
+"De forsvinder, så snart din første rigtige spiller er i truppen. 💡 Den nemmeste vej: udsted en nøgle under 🔑 UDSTED NØGLE — når familien har tastet den, dukker spilleren op under 📥 NYE SPILLERE, og et tryk på": "They disappear as soon as your first real player is in the squad. 💡 The easiest way: issue a key under 🔑 ISSUE KEY — once the family has entered it, the player shows up under ⚙️ SETTINGS → 📥 NEW PLAYERS, and one tap on",
+"Holdets træningsstreaks som venlig konkurrence i spillernes app — kun fornavne og tal. FRA som standard; du vælger til pr. hold, og hver familie skal OGSÅ selv sige ja i deres app (og i forældresamtykkets stige-punkt), før deres barn kan ses.": "The squad's training streaks as friendly competition in the players' app — first names and numbers only. OFF by default; you opt in per group, and every family must ALSO say yes in their own app (and in the streak item of the parental consent) before their child can be seen.",
+"Kommet ind med en nøgle": "Came in with a key",
+"Venter på klubben": "Waiting for the club"
+};
+var _ENr = {}, _ENx = [];
+(function(){
+  Object.keys(EN).forEach(function(k){
+    if (k.indexOf("{") === -1) { _ENr[k] = EN[k]; return; }
+    var re = "^" + k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\{n\\\}/g, "(\\d+(?:[.,]\\d+)?)").replace(/\\\{x\\\}/g, "(.+?)") + "$";
+    _ENx.push({ re: new RegExp(re), v: EN[k] });
+  });
+})();
+function oversaetTekst(s, sprog){
+  if (sprog !== "en" || !s) return s;
+  var t = String(s).replace(/\s+/g, " ").trim();
+  if (_ENr[t]) return _ENr[t];
+  for (var i = 0; i < _ENx.length; i++) {
+    var m = _ENx[i].re.exec(t);
+    if (m) { var j = 1; return _ENx[i].v.replace(/\{[nx]\}/g, function(){ return m[j++]; }); }
+  }
+  return s;
+}
+function T(s){ return oversaetTekst(s, SPROG); }          // skærmen
+function TE(s){ return oversaetTekst(s, EVALSPROG); }     // evalueringer til spillerne
+function oversaetAlt(rod){
+  if (SPROG !== "en") return;
+  rod = rod || el("app"); if (!rod) return;
+  var w = document.createTreeWalker(rod, NodeFilter.SHOW_TEXT), nd, liste = [];
+  while ((nd = w.nextNode())) liste.push(nd);
+  liste.forEach(function(nd){
+    var v = nd.nodeValue; if (!v || !v.trim()) return;
+    var p = nd.parentNode; if (p && (p.tagName === "SCRIPT" || p.tagName === "STYLE" || p.tagName === "TEXTAREA")) return;
+    var t = T(v);
+    if (t !== v) nd.nodeValue = v.match(/^\s*/)[0] + t + v.match(/\s*$/)[0];
+  });
+  var attrs = ["placeholder", "aria-label", "title"];
+  rod.querySelectorAll("[placeholder],[aria-label],[title]").forEach(function(e){
+    attrs.forEach(function(a){ var v = e.getAttribute(a); if (v) { var t = T(v); if (t !== v) e.setAttribute(a, t); } });
+  });
+}
+try { document.documentElement.lang = SPROG; } catch (_e) {}
+function sprogVaelger(kompakt){
+  var k = function(v, tekst){ return '<button class="knap valg' + (SPROG === v ? ' til' : '') + '" style="flex:1;min-height:40px;padding:6px 10px;font-size:12.5px" data-act="sprog-saet" data-v="' + v + '">' + tekst + '</button>'; };
+  return '<div style="display:flex;gap:6px' + (kompakt ? ';max-width:240px;margin:0 auto 4px' : '') + '">' + k("da", "🇩🇰 Dansk") + k("en", "🇬🇧 English") + '</div>';
+}
+
 
 function render(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
@@ -759,11 +1286,13 @@ function render(){
     el("app").innerHTML = renderLukket() +
       '<p style="text-align:center;font-size:11px;color:var(--daempet);opacity:.65;margin:18px 0 10px">' +
       'StreakCoach · ' + VERSION + '</p>';
+    oversaetAlt();   // v5.0.0
     return;
   }
   el("app").innerHTML = (paaRejse ? renderRejse() : renderTraener()) +
     '<p style="text-align:center;font-size:11px;color:var(--daempet);opacity:.65;margin:18px 0 10px">' +
     'StreakCoach \u00b7 ' + VERSION + '</p>';
+  oversaetAlt();   // v5.0.0 · sproglaget kører efter HVER tegning
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -879,7 +1408,7 @@ function scMaerk(){
     i.classList.toggle("ja", !!(d && d.ja));
     i.classList.toggle("nej", !!(d && !d.ja));
     if (m) {
-      m.textContent = d && d.t ? (d.ja ? "\u2713 " : "\u2715 ") + d.t : "";
+      m.textContent = d && d.t ? (d.ja ? "\u2713 " : "\u2715 ") + T(d.t) : "";
       m.classList.toggle("ja", !!(d && d.ja));
       m.classList.toggle("nej", !!(d && !d.ja));
     }
@@ -1045,7 +1574,9 @@ function renderRejse(){
       '<div class="sc-op sc-flamme" style="font-size:44px;line-height:1">🎾</div>' +
       '<div class="sc-op" style="animation-delay:.05s;font-size:23px;letter-spacing:5px;font-weight:800;color:var(--guld);margin-top:6px">STREAK<span style="color:var(--is)">COACH</span></div>' +
       '<p class="sc-op" style="animation-delay:.1s;font-size:12.5px;color:var(--daempet);margin:5px 0 0">klubbens side af StreakTennis</p>' +
-      '</div>';
+      '</div>' +
+      // ⭐ v5.0.0 · sproget vælges FØR man har en konto — Gani skal ikke gætte sig gennem en dansk dør
+      '<div class="sc-op" style="animation-delay:.12s;margin-top:10px">' + sprogVaelger(true) + '</div>';
 
     h += '<div class="kort sc-op" style="animation-delay:.14s;margin-top:16px;text-align:left">' +
       '<b style="display:block;margin-bottom:4px">🔑 Log ind</b>' +
@@ -1488,10 +2019,21 @@ function traenerIndstillinger(){
       '<p class="lille" style="margin:6px 0 0;opacity:.6">Start forfra sletter trup, vurderinger, klubkode og login p\u00e5 denne telefon. Kontoen p\u00e5 serveren r\u00f8res ikke.</p>' +
       '</div>';
   }
+    // ── SPROG · v5.0.0
+  {
+    var ev = function(v, tekst){ return '<button class="knap valg' + (EVALSPROG === v ? ' til' : '') + '" style="flex:1;min-height:40px;padding:6px 10px;font-size:12.5px" data-act="evalsprog-saet" data-v="' + v + '">' + tekst + '</button>'; };
+    h += '<div class="kort" style="border-left:3px solid var(--kant)">' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83c\udf10 SPROG \u00b7 LANGUAGE</div>' +
+      '<p class="lille" style="margin:6px 0 8px">Sk\u00e6rmens sprog f\u00f8lger denne telefon. Evalueringerne skrives i det sprog, spillerne l\u00e6ser \u2014 det beh\u00f8ver ikke v\u00e6re dit.</p>' +
+      '<div class="lille" style="font-weight:700;margin-bottom:4px">Sk\u00e6rmen</div>' + sprogVaelger(false) +
+      '<div class="lille" style="font-weight:700;margin:10px 0 4px">Evalueringer til spillerne</div>' +
+      '<div style="display:flex;gap:6px">' + ev("da", "\ud83c\udde9\ud83c\uddf0 Dansk") + ev("en", "\ud83c\uddec\ud83c\udde7 Engelsk") + '</div></div>';
+  }
     // ── STREAK-STIGEN · vaelges til pr. hold (Julie 17/8). FRA som standard.
   {
     const grupperILive = [];
-    (S.truppen||[]).forEach(function(p){ if (p.gruppe && grupperILive.indexOf(p.gruppe) === -1) grupperILive.push(p.gruppe); });
+    (S.grupper||[]).forEach(function(g){ if (grupperILive.indexOf(g.navn) === -1) grupperILive.push(g.navn); });
+    (S.truppen||[]).forEach(function(p){ if (p.gruppe && p.gruppe !== "Mit hold" && grupperILive.indexOf(p.gruppe) === -1) grupperILive.push(p.gruppe); });
     const antalTil = S.stigeHold.length;
     h += '<div class="kort" style="border-left:3px solid ' + (antalTil ? 'var(--guld)' : 'var(--kant)') + '">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udd25 STREAK</div>' +
@@ -1554,13 +2096,13 @@ function traenerIndstillinger(){
         (S.truppen||[]).forEach(function(p, i){
           h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:8px 0">' +
             '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+esc(p.navn)+'</div>' +
-            '<div class="lille">'+esc(p.gruppe||'\u2014')+(p.noegle?' \u00b7 \ud83d\udd11 koblet':' \u00b7 ingen n\u00f8gle')+'</div></div>' +
+            '<div class="lille">'+esc(p.gruppe||UDEN_GRUPPE)+(p.noegle?' \u00b7 \ud83d\udd11 koblet':' \u00b7 ingen n\u00f8gle')+'</div></div>' +
             '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px" data-act="trup-ret" data-v="'+i+'">'+(S.trupRet===i?'Luk':'Ret')+'</button>' +
             '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px;'+(S.trupSlet===i?'background:var(--tabt);color:#fff':'')+'" data-act="trup-slet" data-v="'+i+'">'+(S.trupSlet===i?'Slet?':'\ud83d\uddd1')+'</button></div>';
           // Ret-i-truppen (19/8): gruppe og n\u00f8gle rettes HER \u2014 aldrig inde p\u00e5 spilleren.
           if (S.trupRet === i) {
             h += '<div style="padding:0 0 8px">' +
-              '<input class="felt" data-felt="retGruppe" value="'+esc(S.retGruppe!==undefined?S.retGruppe:(p.gruppe||''))+'" placeholder="gruppe" autocapitalize="words">' +
+              gruppeSelect("retGruppe", (S.retGruppe!==undefined?S.retGruppe:(p.gruppe||'')), '') +
               '<div style="display:flex;gap:6px;margin-top:6px">' +
               '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:'+(S.visTrupN?'none':'disc')+'" data-felt="retNoegle" value="'+esc(S.retNoegle!==undefined?S.retNoegle:(p.noegle||''))+'" placeholder="h\u00e5ndtag (16 tegn fra Tjek)" autocapitalize="off" spellcheck="false" autocomplete="off">' +
               '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:13px" data-act="vis-skift" data-v="visTrupN">'+(S.visTrupN?'\ud83d\ude48':'\ud83d\udc41')+'</button></div>' +
@@ -1570,7 +2112,8 @@ function traenerIndstillinger(){
         h += '</div>';
       }
       h += '<input class="felt" style="margin-top:9px" data-felt="trupNavn" value="'+esc(S.trupNavn||'')+'" placeholder="navn, som klubben vil vise det" autocapitalize="words">' +
-        '<input class="felt" style="margin-top:6px" data-felt="trupGruppe" value="'+esc(S.trupGruppe||'')+'" placeholder="gruppe, fx U14 Elite" autocapitalize="words">' +
+        gruppeSelect("trupGruppe", S.trupGruppe || "", "margin-top:6px") +
+        (!(S.grupper||[]).length ? '<p class="lille" style="margin:5px 0 0;opacity:.8">Opret en gruppe under \ud83d\udc65 GRUPPER f\u00f8rst \u2014 s\u00e5 kan du l\u00e6gge spillere i den. Indtil da st\u00e5r de uden gruppe.</p>' : '') +
         '<div style="display:flex;gap:6px;margin-top:6px">' +
         '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:'+(S.visTrupN?'none':'disc')+'" data-felt="trupNoegle" value="'+esc(S.trupNoegle||'')+'" placeholder="spillern\u00f8gle (kan udfyldes senere)" autocapitalize="off" spellcheck="false" autocomplete="off">' +
         '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:13px" data-act="vis-skift" data-v="visTrupN">'+(S.visTrupN?'\ud83d\ude48':'\ud83d\udc41')+'</button></div>' +
@@ -1590,20 +2133,59 @@ function traenerIndstillinger(){
 function traenerGrupper(t){
   if (S.aabenSpiller) return spillerDetalje(S.aabenSpiller);
   let h = "";
+  const egenTrup = !!(S.truppen && S.truppen.length);
+  // ⭐⭐ v5.0.0 · GRUPPERNE STYRES HER. Kun når truppen er trænerens egen —
+  //   eksempeldataene er eksempler, ikke noget man omdøber.
+  if (egenTrup || (S.grupper && S.grupper.length)) {
+    h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+        '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udc65 GRUPPER</div>' +
+        '<span data-act="grp-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.grpAaben ? '\u2715' : '\u270f\ufe0f') + '</span></div>' +
+      '<p class="lille" style="margin:6px 0 0">Grupperne er dine: opret, omd\u00f8b, flyt spillere. Streaken og ugens fokus f\u00f8lger gruppen.</p>';
+    if (S.grpAaben) {
+      (S.grupper || []).forEach(function(g, i){
+        var antal = (S.truppen || []).filter(function(p){ return p.gruppe === g.navn; }).length;
+        h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:8px 0;margin-top:' + (i ? '0' : '8px') + '">' +
+          '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">' + esc(g.navn) + (g.aargang ? ' <span style="font-size:10.5px;font-weight:800;background:var(--kant);color:var(--is);padding:2px 7px;border-radius:9px;margin-left:4px">' + esc(g.aargang) + '</span>' : '') + '</div>' +
+          '<div class="lille">' + antal + (antal === 1 ? ' spiller' : ' spillere') + '</div></div>' +
+          '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px" data-act="grp-ret" data-v="' + i + '">' + (S.grpRet === i ? 'Luk' : 'Omd\u00f8b') + '</button>' +
+          '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px;' + (S.grpSlet === i ? 'background:var(--tabt);color:#fff' : '') + '" data-act="grp-slet" data-v="' + i + '">' + (S.grpSlet === i ? 'Nedl\u00e6g?' : '\ud83d\uddd1') + '</button></div>';
+        if (S.grpRet === i) {
+          h += '<div style="padding:0 0 8px">' +
+            '<input class="felt" data-felt="grpRetNavn" value="' + esc(S.grpRetNavn) + '" placeholder="gruppens navn, fx U14 Elite" autocapitalize="words" maxlength="30">' +
+            '<input class="felt" style="margin-top:6px" data-felt="grpRetAargang" value="' + esc(S.grpRetAargang) + '" placeholder="\u00e5rgang (frivilligt)" autocapitalize="characters" maxlength="10">' +
+            '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="grp-ret-gem" data-v="' + i + '">Gem</button></div></div>';
+        }
+      });
+      h += '<div style="border-top:1px solid var(--kant);padding-top:9px;margin-top:' + ((S.grupper||[]).length ? '0' : '9px') + '">' +
+        '<input class="felt" data-felt="grpNy" value="' + esc(S.grpNy || '') + '" placeholder="gruppens navn, fx U14 Elite" autocapitalize="words" maxlength="30">' +
+        '<input class="felt" style="margin-top:6px" data-felt="grpNyAargang" value="' + esc(S.grpNyAargang || '') + '" placeholder="\u00e5rgang (frivilligt)" autocapitalize="characters" maxlength="10">' +
+        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="grp-opret">+ Ny gruppe</button></div></div>';
+    }
+    if (S.syncBesked && S.syncBesked.hvor === "grupper") h += '<p class="lille" style="margin:6px 0 0;color:' + (S.syncBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
+    h += '</div>';
+  }
   t.grupper.forEach(function(gnavn){
     const g = DATA.grupper[gnavn], sp = g.spillere.map(n=>DATA.spillere[n]);
-    const snit = sp.reduce((a,s)=>a+snitVurd(s),0)/sp.length;
+    const snit = sp.length ? sp.reduce((a,s)=>a+snitVurd(s),0)/sp.length : 0;
     h += '<div class="kort"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">' +
-      '<h3>'+esc(gnavn)+'</h3><span style="font-size:11px;font-weight:800;background:var(--kant);color:var(--is);padding:3px 9px;border-radius:10px">'+g.aargang+'</span></div>' +
-      '<p class="lille">'+sp.length+' spillere · snit '+snit.toFixed(1)+'/10 · fælles mål pr. '+g.aargang+'</p>';
+      '<h3>'+esc(gnavn)+'</h3>' + (g.aargang ? '<span style="font-size:11px;font-weight:800;background:var(--kant);color:var(--is);padding:3px 9px;border-radius:10px">'+esc(g.aargang)+'</span>' : '') + '</div>' +
+      '<p class="lille">'+sp.length+(sp.length===1?' spiller':' spillere')+' · snit '+snit.toFixed(1)+'/10' + (g.aargang ? ' · fælles mål pr. '+esc(g.aargang) : '') + '</p>';
+    if (!sp.length) h += '<p class="lille" style="margin:6px 0 0;font-style:italic">Ingen spillere i gruppen endnu \u2014 flyt dem hertil fra en anden gruppe, eller l\u00e6g nye i truppen under \u2699\ufe0f INDSTILLINGER.</p>';
     sp.forEach(function(s){
       const sn = snitVurd(s), b = skala(Math.round(sn));
+      const kanFlyttes = egenTrup && (S.truppen||[]).some(function(p){ return p.navn === s.navn; });
       h += '<div class="spiller-rk" data-act="spiller-detalje" data-v="'+esc(s.navn)+'">' +
         '<div class="avatar" style="width:32px;height:32px;font-size:13px;'+(s.erBruger?'background:var(--is);color:var(--nat)':'')+'">'+init(s.navn)+'</div>' +
         '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">'+esc(s.navn)+(s.erBruger?' ⭐':'')+'</div>' +
-        '<div class="lille">'+(s.rang?'DTF #'+s.rang+' · ':'')+s.kampe+' kampe · sidst: '+s.sidsteTraening+'</div></div>' +
+        '<div class="lille">'+(s.rang?'DTF #'+s.rang+' · ':'')+s.kampe+(s.kampe===1?' kamp':' kampe')+' · sidst: '+s.sidsteTraening+'</div></div>' +
         '<div style="display:flex;align-items:center;gap:6px"><span style="width:11px;height:11px;border-radius:50%;background:'+b.farve+';display:inline-block"></span><b style="font-size:13px">'+sn.toFixed(1)+'</b></div>' +
+        (kanFlyttes ? '<button class="knap valg" style="flex:none;padding:5px 9px;font-size:11px;margin-left:2px" data-act="flyt-aabn" data-v="'+esc(s.navn)+'" aria-label="Flyt">\u21c4</button>' : '') +
         '<span style="color:var(--daempet)">›</span></div>';
+      if (S.flytAaben === s.navn) {
+        h += '<div style="display:flex;gap:6px;align-items:center;padding:4px 0 8px 42px">' + gruppeSelect("flytTil", S.flytTil, "flex:1;min-width:0;margin:0") +
+          '<button class="knap" style="flex:none;padding:8px 12px;font-size:12px;background:var(--grus)" data-act="flyt-gem" data-v="'+esc(s.navn)+'">Flyt</button></div>';
+      }
     });
     h += '</div>';
   });
@@ -1959,11 +2541,17 @@ function traenerKvartal(t){
     tekst = S.kvartalAI;
   } else {
     // Fald-tilbage: den lokale skabelon (som før AI-koblingen 19/8)
-    tekst = "Hej "+fornavn+"\n\nHermed evaluering fra "+KONFIG.maaned+" "+KONFIG.saeson+"\n\nSpiller: "+n+"\nTræner: "+t.navn+"\n";
+    // v5.0.0: skabelonen følger EVALSPROG, og måneden er den, vi er i (før stod der «juni» året rundt)
+    var _md = new Date(), _mdNavn = (EVALSPROG === "en"
+      ? ["January","February","March","April","May","June","July","August","September","October","November","December"]
+      : ["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"])[_md.getMonth()];
+    tekst = (EVALSPROG === "en"
+      ? "Hi "+fornavn+"\n\nHere is your evaluation from "+_mdNavn+" "+_md.getFullYear()+"\n\nPlayer: "+n+"\nCoach: "+t.navn+"\n"
+      : "Hej "+fornavn+"\n\nHermed evaluering fra "+_mdNavn+" "+_md.getFullYear()+"\n\nSpiller: "+n+"\nTræner: "+t.navn+"\n");
     KONFIG.omraader.forEach(function(o){
       const v = (s.vurdering||{})[o.id]; if (!v) return;
       const b = skala(v.score);
-      tekst += "\n"+o.navn+"\n"+b.emoji+" "+b.min+"-"+b.max+" = "+b.label+". "+v.tekst+"\n";
+      tekst += "\n"+TE(o.navn)+"\n"+b.emoji+" "+b.min+"-"+b.max+" = "+TE(b.label)+". "+TE(v.tekst)+"\n";
     });
   }
   S.kvartalTekst = tekst;
@@ -2033,9 +2621,12 @@ document.addEventListener("input", function(e){
   }
 });
 document.addEventListener("click", function(e){
+  if (e.target && e.target.tagName === "SELECT") return;   // v5.0.0 · et select i en række åbner ikke rækken
   const t = e.target.closest("[data-act]"); if (!t) return;
   const act = t.dataset.act, v = t.dataset.v;
-  if (act==="ops-aabn"){ S.opsAaben = !S.opsAaben; S.kkUdkast = lager.hent("klubkode",""); render(); }
+  if (act==="sprog-saet"){ SPROG = (v === "en" ? "en" : "da"); lager.gem("sprog", SPROG); try { document.documentElement.lang = SPROG; } catch (_e) {} render(); }
+  else if (act==="evalsprog-saet"){ EVALSPROG = (v === "en" ? "en" : "da"); lager.gem("evalsprog", EVALSPROG); render(); }
+  else if (act==="ops-aabn"){ S.opsAaben = !S.opsAaben; S.kkUdkast = lager.hent("klubkode",""); render(); }
   else if (act==="ops-gem"){
     lager.gem("klubkode", (S.kkUdkast||"").trim()); S.opsAaben=false;
     S.syncBesked = { fejl:false, t:"Klubkoden er gemt på denne enhed ✓" }; render(); }
@@ -2483,12 +3074,13 @@ document.addEventListener("click", function(e){
     if (!_p4) { S.syncBesked={fejl:true,t:"Kunne ikke finde spilleren \u2014 tryk Opdat\u00e9r."}; render(); return; }
     S.truppen = S.truppen || [];
     if (!S.truppen.some(function(x){ return x.noegle === _n4 || x.navn === _p4.fornavn; })) {
-      S.truppen.push({ navn: _p4.fornavn || "Spiller", gruppe: _p4.hold || "Mit hold", noegle: _n4 });
+      S.truppen.push({ navn: _p4.fornavn || "Spiller", gruppe: gruppeFraHold(_p4.hold), noegle: _n4 });
       lager.gem("truppen", S.truppen);
       S.noegler = S.noegler || {}; S.noegler[_p4.fornavn] = _n4; lager.gem("noegler", S.noegler);
       byggTrup();
     }
-    S.syncBesked = { fejl:false, t: (_p4.fornavn || "Spilleren") + " er lagt i truppen \u2713" };
+    S.syncBesked = { fejl:false, t: (_p4.fornavn || "Spilleren") + " er lagt i truppen \u2713" +
+      (_p4.hold && !gruppeFraHold(_p4.hold) ? " \u00b7 " + (_p4.fornavn || "Spilleren") + " kalder selv sit hold \u00ab" + _p4.hold + "\u00bb \u2014 l\u00e6g " + (_p4.fornavn || "spilleren") + " i en gruppe under \ud83d\udc65 GRUPPER." : "") };
     render(); }
   else if (act==="tilm-svar"){
     var dele = String(v).split("~~"), noegle = dele[0], nyStatus = dele[1];
@@ -2500,7 +3092,7 @@ document.addEventListener("click", function(e){
       if (nyStatus === "godkendt" && post) {
         S.truppen = S.truppen || [];
         if (!S.truppen.some(function(x){ return x.noegle === noegle || x.navn === post.fornavn; })) {
-          S.truppen.push({ navn: post.fornavn || "Spiller", gruppe: post.hold || "Mit hold", noegle: noegle });
+          S.truppen.push({ navn: post.fornavn || "Spiller", gruppe: gruppeFraHold(post.hold), noegle: noegle });
           lager.gem("truppen", S.truppen);
           S.noegler = S.noegler || {}; S.noegler[post.fornavn] = noegle; lager.gem("noegler", S.noegler);
           byggTrup();
@@ -2538,6 +3130,57 @@ document.addEventListener("click", function(e){
           .catch(function(){ if (--rest === 0) faerdig(); });
       });
     }).catch(function(){ S.stigeTravl=false; S.syncBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
+  // ══ v5.0.0 · GRUPPERNE ═══════════════════════════════════════════════
+  else if (act==="grp-aabn"){ S.grpAaben = !S.grpAaben; S.grpRet = null; S.grpSlet = null; render(); }
+  else if (act==="grp-opret"){
+    var gn = (S.grpNy || "").trim();
+    if (!gn) { S.syncBesked={fejl:true,hvor:"grupper",t:"Skriv gruppens navn."}; render(); return; }
+    if (gn === UDEN_GRUPPE || (S.grupper||[]).some(function(g){ return g.navn.toLowerCase() === gn.toLowerCase(); })) { S.syncBesked={fejl:true,hvor:"grupper",t:"Gruppen "+gn+" findes allerede."}; render(); return; }
+    S.grupper = S.grupper || []; S.grupper.push({ navn: gn, aargang: (S.grpNyAargang || gaetAargang(gn) || "").trim() });
+    lager.gem("grupper", S.grupper); S.grpNy = ""; S.grpNyAargang = "";
+    // en gammel etiket med samme navn hører nu til gruppen
+    (S.truppen||[]).forEach(function(p){ if (String(p.gruppe||"").toLowerCase() === gn.toLowerCase()) p.gruppe = gn; });
+    lager.gem("truppen", S.truppen||[]); byggTrup();
+    S.syncBesked={fejl:false,hvor:"grupper",t:"Gruppen "+gn+" er oprettet \u2713"}; render(); }
+  else if (act==="grp-ret"){ var gi = +v; var gg = (S.grupper||[])[gi]; if (!gg) return;
+    S.grpRet = (S.grpRet === gi ? null : gi); S.grpRetNavn = gg.navn; S.grpRetAargang = gg.aargang || ""; S.grpSlet = null; render(); }
+  else if (act==="grp-ret-gem"){
+    var gi2 = +v, g2 = (S.grupper||[])[gi2]; if (!g2) return;
+    var nyNavn = (S.grpRetNavn || "").trim(), nyAar = (S.grpRetAargang || "").trim();
+    if (!nyNavn) { S.syncBesked={fejl:true,hvor:"grupper",t:"Skriv gruppens navn."}; render(); return; }
+    if (nyNavn !== g2.navn && (nyNavn === UDEN_GRUPPE || (S.grupper||[]).some(function(g,j){ return j !== gi2 && g.navn.toLowerCase() === nyNavn.toLowerCase(); }))) { S.syncBesked={fejl:true,hvor:"grupper",t:"Gruppen "+nyNavn+" findes allerede."}; render(); return; }
+    var gammel = g2.navn; g2.navn = nyNavn; g2.aargang = nyAar; lager.gem("grupper", S.grupper);
+    if (nyNavn !== gammel) {
+      (S.truppen||[]).forEach(function(p){ if (p.gruppe === gammel) p.gruppe = nyNavn; });
+      lager.gem("truppen", S.truppen||[]);
+      // stigen følger navnet: er den tændt for gruppen, flyttes den med — og holdet sættes om hos spillerne med nøgle
+      var si = S.stigeHold.indexOf(gammel);
+      if (si !== -1) {
+        S.stigeHold[si] = nyNavn; lager.gem("stigehold", S.stigeHold);
+        sync("stige-hold", { hold: gammel, til: false }).catch(function(){});
+        sync("stige-hold", { hold: nyNavn, til: true }).catch(function(){});
+        (S.truppen||[]).filter(function(p){ return p.gruppe === nyNavn && p.noegle; }).forEach(function(p){ sync("saet-hold", Object.assign(spillerRef(p.noegle), { hold: nyNavn })).catch(function(){}); });
+      }
+    }
+    byggTrup(); S.grpRet = null;
+    S.syncBesked={fejl:false,hvor:"grupper",t:"Gruppen hedder nu "+nyNavn+" \u2713"}; render(); }
+  else if (act==="grp-slet"){
+    var gi3 = +v, g3 = (S.grupper||[])[gi3]; if (!g3) return;
+    if (S.grpSlet !== gi3) { S.grpSlet = gi3; S.syncBesked={fejl:true,hvor:"grupper",t:"Tryk igen for at nedl\u00e6gge "+g3.navn+" \u2014 spillerne bliver i truppen uden gruppe."}; render(); return; }
+    var ramte = 0; (S.truppen||[]).forEach(function(p){ if (p.gruppe === g3.navn) { p.gruppe = ""; ramte++; } });
+    S.grupper.splice(gi3, 1); lager.gem("grupper", S.grupper); lager.gem("truppen", S.truppen||[]);
+    if (S.stigeHold.indexOf(g3.navn) !== -1) { S.stigeHold = S.stigeHold.filter(function(x){ return x !== g3.navn; }); lager.gem("stigehold", S.stigeHold); sync("stige-hold", { hold: g3.navn, til: false }).catch(function(){}); }
+    S.grpSlet = null; S.grpRet = null; byggTrup();
+    S.syncBesked={fejl:false,hvor:"grupper",t:"Gruppen "+g3.navn+" er nedlagt." + (ramte ? " " + ramte + (ramte===1 ? " spiller st\u00e5r nu uden gruppe." : " spillere st\u00e5r nu uden gruppe.") : "")}; render(); }
+  else if (act==="flyt-aabn"){ e.stopPropagation(); var fp = (S.truppen||[]).filter(function(p){ return p.navn === v; })[0]; if (!fp) return;
+    S.flytAaben = (S.flytAaben === v ? null : v); S.flytTil = fp.gruppe || ""; render(); }
+  else if (act==="flyt-gem"){ e.stopPropagation();
+    var fp2 = (S.truppen||[]).filter(function(p){ return p.navn === v; })[0]; if (!fp2) return;
+    var til2 = gruppeAf((S.flytTil||"").trim()) ? (S.flytTil||"").trim() : "";
+    fp2.gruppe = til2; lager.gem("truppen", S.truppen);
+    if (fp2.noegle && til2 && S.stigeHold.indexOf(til2) !== -1) sync("saet-hold", Object.assign(spillerRef(fp2.noegle), { hold: til2 })).catch(function(){});
+    S.flytAaben = null; byggTrup();
+    S.syncBesked={fejl:false,hvor:"grupper",t: til2 ? fp2.navn + " er flyttet til " + til2 + " \u2713" : fp2.navn + " st\u00e5r nu uden gruppe \u2713"}; render(); }
   else if (act==="trup-aabn"){ S.trupAaben = !S.trupAaben; S.trupSlet = null; render(); }
   else if (act==="trup-tilfoej"){
     var nv = (S.trupNavn||"").trim();
@@ -2548,7 +3191,7 @@ document.addEventListener("click", function(e){
     S.truppen = S.truppen || [];
     if (S.truppen.some(function(x){return x.navn.toLowerCase()===nv.toLowerCase();})) {
       S.syncBesked={fejl:true,t:nv+" er der allerede."}; render(); return; }
-    S.truppen.push({ navn:nv, gruppe:(S.trupGruppe||"Mit hold").trim()||"Mit hold", noegle:(S.trupNoegle||"").trim() });
+    S.truppen.push({ navn:nv, gruppe:(gruppeAf((S.trupGruppe||"").trim()) ? (S.trupGruppe||"").trim() : ""), noegle:(S.trupNoegle||"").trim() });
     lager.gem("truppen", S.truppen);
     S.trupNavn = ""; S.trupNoegle = "";   // gruppen bliver staaende, saa naeste spiller gaar hurtigt
     byggTrup();
@@ -2560,7 +3203,7 @@ document.addEventListener("click", function(e){
   else if (act==="trup-ret"){ var ri2 = +v; S.trupRet = (S.trupRet===ri2?null:ri2); S.retGruppe = undefined; S.retNoegle = undefined; S.trupSlet = null; render(); }
   else if (act==="trup-ret-gem"){
     var ir = +v, pr2 = (S.truppen||[])[ir]; if (!pr2) return;
-    var nyG = (S.retGruppe!==undefined?S.retGruppe:pr2.gruppe||"").trim() || "Mit hold";
+    var nyG = (S.retGruppe!==undefined?S.retGruppe:pr2.gruppe||"").trim(); if (!gruppeAf(nyG)) nyG = "";
     var nyN = (S.retNoegle!==undefined?S.retNoegle:pr2.noegle||"").trim();
     pr2.gruppe = nyG;
     if (nyN !== pr2.noegle) {
@@ -2590,7 +3233,7 @@ document.addEventListener("click", function(e){
       dato:new Date().toISOString().slice(0,10), traener:S.traener||"",
       vurderinger:S.vurderinger||[], ugefokus:S.ugefokus||{},
       fokuspunkter:S.fokuspunkter||{}, noegler:S.noegler||{}, truppen:S.truppen||[],
-      evalueringer:S.evalueringer||{} });
+      grupper:S.grupper||[], evalueringer:S.evalueringer||{} });
     S.bkAaben = false; render(); }
   else if (act==="bk-kopier" || act==="bk-del"){
     var bt = S.bkTekst; if (!bt) return;
@@ -2611,6 +3254,7 @@ document.addEventListener("click", function(e){
     S.ugefokus = d.ugefokus || {}; S.fokuspunkter = d.fokuspunkter || {};
     S.noegler = d.noegler || {}; S.evalueringer = d.evalueringer || {};
     S.truppen = Array.isArray(d.truppen) ? d.truppen : [];
+    S.grupper = Array.isArray(d.grupper) ? d.grupper : null; migrerGrupper(); lager.gem("grupper", S.grupper);
     lager.gem("truppen", S.truppen); byggTrup();
     lager.gem("vurderinger", S.vurderinger); lager.gem("ugefokus", S.ugefokus);
     lager.gem("fokuspunkter", S.fokuspunkter); lager.gem("noegler", S.noegler);

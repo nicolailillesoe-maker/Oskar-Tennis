@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.111.0 · 7. september 2026";
+const VERSION = "v4.112.0 · 7. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -814,6 +814,29 @@ function _streakDage(fysLog, ttLog, idagISO) {
 }
 function minStreak() {
   return _streakDage(S.fysLog, S.ttLog, new Date().toISOString().slice(0,10));
+}
+// ⭐⭐ v4.112.0 · DET, SERVEREN HAR AF PAS, KOMMER HJEM — begge veje.
+//   Oskar 7/9: «Hvorfor er den væk?» — 0 i Streak Zone, mens serveren havde
+//   17 pas. Kun klub-vejen flettede tilbage; den private vej sendte kun op.
+//   Poster udefra har hverken note eller undertype (noten forlod aldrig den
+//   anden telefon) og markeres `_fjern`, så historikken kan sige det ærligt.
+function fletPasUdefra(log) {
+  if (!Array.isArray(log) || !log.length) return 0;
+  var nyeFys = 0, nyeTt = 0;
+  var kendt = {}; sikrePasId(S.fysLog).concat(sikrePasId(S.ttLog)).forEach(function(e){ kendt[e.id] = true; });
+  log.forEach(function(p){
+    if (!p || !p.id || kendt[p.id]) return;
+    var post = { id: p.id, d: p.d, m: p.m || 0, k: p.k || 0, t: 0, n: "", _fjern: true };
+    if (p.t === "fysisk") { S.fysLog.push(post); nyeFys++; } else { S.ttLog.push(post); nyeTt++; }
+    kendt[p.id] = true;
+  });
+  if (nyeFys || nyeTt) {
+    S.fysLog = sorterNyestFoerst(S.fysLog, "d"); S.ttLog = sorterNyestFoerst(S.ttLog, "d");
+    lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
+    lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
+    S._nyeUdefra = nyeFys + nyeTt;
+  }
+  return nyeFys + nyeTt;
 }
 
 // Traeningsloggen bygges nu TO steder (klub-synken og den private synk).
@@ -6087,6 +6110,9 @@ const A = {
     if (!S.klubKode) {
       const _p = { fornavn: (SPILLER), traeningslog: _traeningsLog() };
       const _r = await sync("gem", _p);
+      // ⭐ v4.112.0 · og passene kommer HJEM (målt: `hent` svarer også uden klub)
+      var _hjem = 0;
+      if (!_r.fejl) { try { const _h = await sync("hent", {}); if (_h && _h.spiller) _hjem = fletPasUdefra(_h.spiller.traeningslog); } catch (_e) {} }
       S.syncHenter = false;
       S.syncBesked = _r.fejl
         ? { fejl: true, t: _r.fejl === "kraever-invitation"
@@ -6100,7 +6126,8 @@ const A = {
             //     appen er.
             ? (EN ? "Your streak was not shared \u2014 you are not let in yet. Everything else on this phone works." : "Din streak blev ikke delt \u2014 du er ikke lukket ind endnu. Alt andet p\u00e5 telefonen virker.")
             : (EN ? "No connection \u2014 try again." : "Ingen forbindelse \u2014 pr\u00f8v igen.") }
-        : { fejl: false, t: EN ? "Your streak is shared with your friends \u2713" : "Din streak er delt med dine venner \u2713" };
+        : { fejl: false, t: (EN ? "Your streak is shared with your friends \u2713" : "Din streak er delt med dine venner \u2713")
+            + (_hjem ? (EN ? " \u2014 " + _hjem + " session(s) came home from the server" : " \u2014 " + _hjem + " pas kom hjem fra serveren") : "") };
       render(); return;
     }
 
@@ -6152,24 +6179,7 @@ const A = {
       // hverken note eller undertype — noten forlod aldrig den anden telefon.
       // De markeres `_fjern`, saa historikken kan sige det aerligt i stedet
       // for at lade som om der bare ikke var skrevet noget.
-      (function(){
-        var sp = ned.spiller || {}; var log = sp.traeningslog;
-        if (!Array.isArray(log) || !log.length) return;
-        var nyeFys = 0, nyeTt = 0;
-        var kendt = {}; sikrePasId(S.fysLog).concat(sikrePasId(S.ttLog)).forEach(function(e){ kendt[e.id] = true; });
-        log.forEach(function(p){
-          if (!p || !p.id || kendt[p.id]) return;
-          var post = { id: p.id, d: p.d, m: p.m || 0, k: p.k || 0, t: 0, n: "", _fjern: true };
-          if (p.t === "fysisk") { S.fysLog.push(post); nyeFys++; } else { S.ttLog.push(post); nyeTt++; }
-          kendt[p.id] = true;
-        });
-        if (nyeFys || nyeTt) {
-          S.fysLog = sorterNyestFoerst(S.fysLog, "d"); S.ttLog = sorterNyestFoerst(S.ttLog, "d");
-          lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
-          lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
-          S._nyeUdefra = nyeFys + nyeTt;
-        }
-      })();
+      fletPasUdefra((ned.spiller || {}).traeningslog);   // v4.112.0 · én funktion, to veje
       lager.gem("sai-traenerdata", JSON.stringify(S.traenerData));
       S.syncBesked = { fejl: false, t: (S._nyeUdefra
         ? (EN ? "Synced \u2713 \u2014 " + S._nyeUdefra + " session(s) from another device"

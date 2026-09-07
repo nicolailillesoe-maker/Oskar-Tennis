@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.108.0 · 6. september 2026";
+const VERSION = "v4.109.0 · 7. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -3256,12 +3256,12 @@ const A = {
   liveFortryd: () => { S.liveOvertag = null; render(); },
   liveStart: async (bekraeftet) => {
     const EN = S.sprog === "en";
-    // ⭐ v4.97.0 · LIVE FRA SPEJLET (Nicolai 4/9: «Live virker ikke fra
-    //   spejlet»). Teamet har ingen klubkode (v4.94.0: «følger spilleren»),
-    //   og hegnet her sendte trykket til et kodefelt i stedet for at dele.
-    //   Motoren kræver ingen klub for live-gem og deler på SPILLERENS
-    //   adgang gennem team-nøglen. Egen visning: uændret hegn.
-    if (!S.klubKode && !teamKunStreaks()) { S.kodeAaben = true; render(); return; }
+    // ⭐⭐ v4.109.0 · LIVE KRÆVER FULD ADGANG — IKKE EN KLUB.
+    //   7/9 foran Daniel Mølgaard: «Del kampen» på egen visning uden klub
+    //   satte et klubkode-felt frem og delte intet (v4.97.0 fjernede hegnet
+    //   for teamet, men lod det stå for spilleren selv). Motoren kræver ingen
+    //   klub for live-gem; gæsten afvises med 403 kraever-fuld-adgang. Så
+    //   hegnet er væk, og svaret kommer fra serveren — på dens egne vilkår.
     // ⭐ v4.80.0 · TEAM-ENHEDEN SPØRGES FØRST.
     //   En team-enhed (far, mor, den anden telefon) deler EJERENS
     //   spillernøgle. Trykker den "del kampen", mens spillerens egen
@@ -3290,7 +3290,10 @@ const A = {
     S.liveBesked = r.fejl
       ? { fejl: true, t: r.fejl === "mangler-spillernoegle" ? (EN?"Player key missing.":"Spillernøgle mangler.")
           : r.fejl === "adgang" ? (EN?"The key was rejected.":"Nøglen blev afvist.")
-          : (EN?"No connection — try again.":"Ingen forbindelse — prøv igen.") }
+          // ⭐ v4.109.0 · gæstens ærlige svar (motoren: 403 kraever-fuld-adgang)
+          : r.fejl === "kraever-fuld-adgang" ? (EN?"Live sharing needs full access — see Your account under ⚙️.":"Live-deling kræver fuld adgang — se Din konto under ⚙️.")
+          : r.fejl === "netvaerk" || !r.fejl ? (EN?"No connection — try again.":"Ingen forbindelse — prøv igen.")
+          : (EN?"Sharing was refused: ":"Delingen blev afvist: ") + String(r.fejl) }
       : { fejl: false, t: EN ? "The match is live ✓" : "Kampen er live ✓" };
     if (r.fejl) { S.liveAktiv = false; lager.gem("sai-liveaktiv", "0"); }
     render();

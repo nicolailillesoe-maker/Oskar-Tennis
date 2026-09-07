@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.109.0 · 7. september 2026";
+const VERSION = "v4.111.0 · 7. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -9841,6 +9841,25 @@ function _tegn() {
               '<span class="lille" style="display:block;opacity:.75">' +
                 (k.inde||0) + " " + (EN ? (k.inde === 1 ? "player inside" : "players inside") : (k.inde === 1 ? "spiller inde" : "spillere inde")) + ' \u00b7 ' +
                 (k.konti||0) + " " + (EN ? (k.konti === 1 ? "coach account" : "coach accounts") : (k.konti === 1 ? "tr\u00e6nerkonto" : "tr\u00e6nerkonti")) + '</span>';
+            // ⭐⭐ v4.110.0 · KLUBPULSEN (ejer-port v6). Tal og datoer — aldrig indhold.
+            //   Nicolai 7/9: «Klub-pulsen ja. Spejlet nej … troværdigheden.» Motoren
+            //   sender kun tællinger og datoer; kortet kan derfor ikke læse videre.
+            if (k.puls && k.aktiv) {
+              const P = k.puls;
+              const _dag = function(iso){ if (!iso) return null; const d = String(iso).slice(0, 10); const m = d.split("-"); return m.length === 3 ? (+m[2]) + "/" + (+m[1]) : d; };
+              const _tid = function(iso){ if (!iso) return null; try { const d = new Date(iso); if (isNaN(d)) return _dag(iso); return (d.getDate()) + "/" + (d.getMonth()+1) + " " + String(d.getHours()).padStart(2,"0") + "." + String(d.getMinutes()).padStart(2,"0"); } catch (_e) { return _dag(iso); } };
+              const _l = [];
+              _l.push((EN?"Coach last in: ":"Tr\u00e6ner sidst inde: ") + (P.traener_sidst ? _tid(P.traener_sidst) : (EN?"never":"aldrig")));
+              _l.push((P.vurd_ialt||0) + (EN?" ratings":" vurderinger") + (P.vurd_ialt ? ' \u00b7 ' + (P.vurd_7d||0) + (EN?" this week":" de sidste 7 dage") + ' \u00b7 ' + (EN?"latest ":"seneste ") + _dag(P.vurd_seneste) : ''));
+              _l.push((P.eval_ialt||0) + (EN?(P.eval_ialt===1?" evaluation sent":" evaluations sent"):(P.eval_ialt===1?" evaluering sendt":" evalueringer sendt")) + (P.eval_seneste ? ' \u00b7 ' + (EN?"latest ":"seneste ") + _dag(P.eval_seneste) : ''));
+              _l.push((EN?"Focus of the week: ":"Ugens fokus: ") + (P.ugefokus ? P.ugefokus + (P.ugefokus_uge ? ' (' + (EN?"week ":"uge ") + String(P.ugefokus_uge).split("-")[1] + ')' : '') : (EN?"not set":"ikke sat")));
+              _l.push((P.kampe_14d||0) + (EN?" matches":" kampe") + ' \u00b7 ' + (P.traening_14d||0) + (EN?" practice sessions, last 14 days":" tr\u00e6ningspas de sidste 14 dage"));
+              _l.push((EN?"Streak: ":"Streak: ") + (P.stige_hold ? (EN?"on for ":"t\u00e6ndt for ") + P.stige_hold + (EN?(P.stige_hold===1?" group":" groups"):(P.stige_hold===1?" hold":" hold")) + ' \u00b7 ' + (P.stige_ja||0) + (EN?" families said yes":" familier har sagt ja") : (EN?"off":"fra")) + (P.live_7d ? ' \u00b7 ' + P.live_7d + (EN?" live":" live-kamp") + (P.live_7d===1?"":"e") + (EN?" (7 days)":" (7 dage)") : ''));
+              _kkrop += '<div style="margin-top:7px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.04)">' +
+                '<div class="lille" style="margin:0 0 3px;font-weight:800;letter-spacing:1px;opacity:.8">\ud83d\udcf6 ' + (EN?"PULSE":"PULSEN") + '</div>' +
+                _l.map(function(x){ return '<span class="lille" style="display:block;margin:0;line-height:1.5">' + esc(x) + '</span>'; }).join('') +
+                '</div>';
+            }
             if (k.aktiv && !_sp) {
               _kkrop += '<button class="knap valg" style="margin-top:7px;min-height:40px;font-size:12px;padding:6px 12px" data-a="klubSpaerSpoerg" data-v="' + esc(k.klub) + '">' +
                 (EN ? "Block the club\u2026" : "Sp\u00e6r klubben\u2026") + '</button>';
@@ -11352,6 +11371,9 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       if (_u && _u.tekst) {
         h += '<p class="lille" style="margin:0 0 6px">' + esc(String(_u.kampe || "")) + (EN ? " matches · " : " kampe · ") + esc(String(_u.fra || "")) + " → " + esc(String(_u.til || "")) + ' · ' + (EN ? "written " : "skrevet ") + esc(String(_u.dato || "").slice(0, 10)) + '</p>' +
              '<p style="margin:0 0 10px;white-space:pre-wrap;line-height:1.45;color:var(--kridt)">' + esc(_u.tekst) + '</p>';
+        // ⭐ v4.111.0 · brevet kan sendes — til træneren, til mor, til sig selv (Nicolai 7/9)
+        S.udvTekst = String(_u.tekst || "");
+        h += eksportKnapper("udvTekst", EN);
       } else {
         h += '<p class="lille" style="margin:0 0 10px">' + (EN
           ? "One letter across your latest matches: what held, what moved, what still stands. It writes itself after every fifth match — or when you press."

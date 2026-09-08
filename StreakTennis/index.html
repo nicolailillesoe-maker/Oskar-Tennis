@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.113.0 · 8. september 2026";
+const VERSION = "v4.114.0 · 8. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -4123,6 +4123,7 @@ const A = {
     //   Efter boksen, så en kamp med navn står først, og arkivets navnløse
     //   udgave af den samme kamp bare bliver væk (samme id).
     try { await A.kamparkivHent(true); } catch (_e) {}
+    try { A.kamparkivSik(); } catch (_e) {}   // ⭐ v4.114.0 · og det, telefonen har, sendes
     render();
   },
   // (v4.52.0 · opretKonto UDGIK — oprettelsen bor i fordoeren: A.indGaa.)
@@ -12102,6 +12103,14 @@ function autoSynk(){
         ((S.gemte || []).length === 0 || lager.hent("sai-kamparkiv-set") !== S.spillerNoegle)) {
       window.__kamparkivStart = true;
       setTimeout(function(){ try { A.kamparkivHent(true).then(function(){ render(); }); } catch (_e) {} }, 1500);
+    }
+    // ⭐ v4.114.0 · OG DET, TELEFONEN HAR, SENDES — uden at nogen rører noget.
+    //   Målt 8/9 kl. 22.10: arkivet var tomt for alle, fordi gamle kampe
+    //   aldrig udløser gemAlle. Aftrykket gør kaldet idempotent: det, der
+    //   allerede står i arkivet, sendes ikke igen.
+    if (!window.__kamparkivStartSend && S.rolle !== "familie" && !S.kampeLaast && !teamKunStreaks() && (S.gemte || []).length) {
+      window.__kamparkivStartSend = true;
+      setTimeout(function(){ try { A.kamparkivSik(); } catch (_e) {} }, 3000);
     }
   } catch (_e) {}
   // ⭐ v4.59.0 · hegnet var aeldre end kontoen: «uden klub og uden

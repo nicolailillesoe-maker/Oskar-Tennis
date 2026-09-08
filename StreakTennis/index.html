@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.112.0 · 7. september 2026";
+const VERSION = "v4.113.0 · 8. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -780,6 +780,50 @@ function udledtPasId(e) {
   var h = 5381;
   for (var i = 0; i < raa.length; i++) h = ((h * 33) ^ raa.charCodeAt(i)) >>> 0;
   return "g" + h.toString(36) + "-" + String((e && e.d) || "").replace(/-/g, "");
+}
+// ⭐⭐⭐ v4.113.0 · KAMPENS ID ER DENS INDHOLD.
+//   Samme kamp skal have samme id på alle enheder — med eller uden
+//   modstanderens navn. Derfor udledes det af dato + resultat + bold-
+//   rækken (udfald + årsag), aldrig af navnet. Arkivet (uden navn) og
+//   boksen (med navn) mødes så på id'et, og fletInd lægger navnet oveni.
+function udledtKampId(k) {
+  var p = Array.isArray(k && k.point) ? k.point : [];
+  var t = String((k && k.dato) || "") + "|" + String((k && k.resultat) || "") + "|" +
+    p.map(function(q){ return (q && q.r === "V" ? "v" : "t") + String((q && q["\u00e5"]) || "x").slice(0, 3); }).join("");
+  var h = 2166136261;
+  for (var i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return "k" + h.toString(16).padStart(8, "0") + "-" + p.length.toString(36);
+}
+function sikreKampId(liste) {
+  if (!Array.isArray(liste)) return [];
+  liste.forEach(function (k) { if (k && typeof k === "object" && !k.id) k.id = udledtKampId(k); });
+  return liste;
+}
+// ⭐ NAVNET UD AF TEKSTEN, FØR DEN REJSER — og ind igen, når den vises.
+//   Analysen fik navnet i prompten (KAMP_HVIDLISTE), så teksten kan nævne
+//   det. I arkivet står ⟦M⟧. Danske genitiver («Alvaros serv») fanges med
+//   et valgfrit s. Standardnavne maskeres ikke — ordet «modstander» er ikke
+//   et navn.
+function _navnDele(navn) {
+  var v = String(navn || "").trim();
+  if (!v || /^(ukendt modstander|modstander|unknown opponent|opponent)$/i.test(v)) return [];
+  return v.split(/[\s,.\-\[\]()\/]+/).filter(function(t){ return t.length >= 2 && /^[\p{L}]+$/u.test(t) && !/^(ukendt|modstander|unknown|opponent)$/i.test(t); });
+}
+function navnMaskeret(tekst, navn) {
+  var t = String(tekst || ""); var dele = _navnDele(navn);
+  if (!t || !dele.length) return t;
+  dele.forEach(function(d){
+    var re = new RegExp("(^|[^\\p{L}])" + d.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(s?)(?![\\p{L}])", "giu");
+    t = t.replace(re, function(m, p, gen){ return p + "\u27e6M\u27e7" + (gen || ""); });
+  });
+  return t;
+}
+function navnTilbage(tekst, navn) {
+  var t = String(tekst || ""); if (t.indexOf("\u27e6M\u27e7") < 0) return t;
+  var v = String(navn || "").trim();
+  var erd = !v || v === "Modstander" || v === "Ukendt modstander";
+  var f = _navnDele(v)[0] || v;   // fornavnet — sådan stod det i analysen
+  return t.replace(/\u27e6M\u27e7/g, erd ? (S.sprog === "en" ? "the opponent" : "modstanderen") : f);
 }
 function sikrePasId(liste) {
   if (!Array.isArray(liste)) return [];
@@ -1453,6 +1497,7 @@ const rensKamp = (g) => {
     dato: g.dato || new Date().toISOString().slice(0,10),
     oskarFirst: typeof g.oskarFirst === "boolean" ? g.oskarFirst : true,
     mtb: typeof g.mtb === "boolean" ? g.mtb : true, saetTil: g.saetTil === 4 ? 4 : 6, noAd: g.noAd === true, afsluttet: g.afsluttet === true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : vandtIflgResultat(g.resultat), resultat: g.resultat || "", analyse: g.analyse || "", tre: Array.isArray(g.tre) ? g.tre.slice(0, 3) : null, justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
+    id: (typeof g.id === "string" && /^[a-z0-9][a-z0-9-]{3,39}$/.test(g.id)) ? g.id : undefined, navnLaas: g.navnLaas === true,   // ⭐ v4.113.0 · arkivet
     point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1, l: [1,2,3].indexOf(q.l) >= 0 ? q.l : 0, h: [1,2].indexOf(q.h) >= 0 ? q.h : 0, z: [1,2,3].indexOf(q.z) >= 0 ? q.z : 0 })) };
 };
 try { const sp = lager.hent("sai-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
@@ -1496,7 +1541,7 @@ try {
     if (_raaT && _raaT.trim() && _raaT.trim() !== "[]") { S.kampeLaast = true; S.kampeRaa = _raaT; }
     S.gemte = [];
   } else {
-    S.gemte = sorterNyestFoerst(_raa.map(rensKamp).filter(Boolean), "dato");
+    S.gemte = sikreKampId(sorterNyestFoerst(_raa.map(rensKamp).filter(Boolean), "dato"));   // ⭐ v4.113.0
     S.kampeTabt = _raa.length - S.gemte.length;
     // Lå der kampe i lageret, og overlevede INGEN af dem, er det ikke en
     // tom sæson — det er en læsefejl. Bremsen sættes.
@@ -2149,6 +2194,8 @@ async function skyKald(handling, krop) {
 }
 
 const SYNC_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/spiller-sync";
+// ⭐ v4.113.0 · ARKIVET: kampene uden navne, læsbart — gendannes med kontoen alene.
+const ARKIV_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/arkiv";
 // ⭐ v4.7.9 · ANALYSER UDEN KLUB. Doeren til analyserne for en familie
 // uden klub: taeller forbruget pr. kamp og udsteder et kortlivet token.
 const LOV_URL     = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-lov";
@@ -2648,6 +2695,7 @@ const gemAlle = () => {
   // ⭐⭐⭐ v4.79.0 · og så sikres der. ÉT sted, så en fremtidig
   //   kaldested-nummer-syv ikke bliver glemt.
   try { A.skySik(); } catch (_e) {}
+  try { A.kamparkivSik(); } catch (_e) {}   // ⭐ v4.113.0 · og arkivet
 };
 // Træningsloggene har deres egne gemme-linjer spredt i filen. Denne ene
 // dør bruges, hvor de skrives, af nøjagtig samme grund.
@@ -3016,9 +3064,24 @@ const A = {
       S.fletKasseret = raaKampe - nye.length;
       // Dedup-nøgle: modstander + resultat + antal point (robust nok til at fange samme kamp)
       const noegle = function(k){ return (k.modstander||"") + "|" + (k.resultat||"") + "|" + (k.point ? k.point.length : 0) + "|" + (k.dato||""); };
-      const findes = {}; S.gemte.forEach(function(k){ findes[noegle(k)] = true; });
-      let tilfoejet = 0;
-      nye.forEach(function(k){ if (!findes[noegle(k)]) { S.gemte.push(k); findes[noegle(k)] = true; tilfoejet++; } });
+      // ⭐⭐ v4.113.0 · ID FØRST. Arkivet leverer kampen uden navn, boksen
+      //   med — samme indhold, samme id. Mødes de, får den navnløse navnet
+      //   (og analysen med navnet i), og der lægges IKKE en kamp til.
+      sikreKampId(S.gemte); sikreKampId(nye);
+      const findes = {}, medId = {}; S.gemte.forEach(function(k){ findes[noegle(k)] = true; if (k.id) medId[k.id] = k; });
+      let tilfoejet = 0, navngivet = 0;
+      nye.forEach(function(k){
+        const eks = k.id ? medId[k.id] : null;
+        if (eks) {
+          if (eks.navnLaas && !k.navnLaas && k.modstander && k.modstander !== "Modstander") {
+            eks.modstander = k.modstander; eks.navnLaas = false;
+            if (k.analyse) eks.analyse = k.analyse; if (k.tre) eks.tre = k.tre; navngivet++;
+          }
+          return;
+        }
+        if (!findes[noegle(k)]) { S.gemte.push(k); findes[noegle(k)] = true; if (k.id) medId[k.id] = k; tilfoejet++; }
+      });
+      S.fletNavngivet = navngivet;
       // Sortér nyeste først hvis dato findes
       S.gemte.sort(function(a, b){ return (b.dato||"").localeCompare(a.dato||""); });
       // Flet også logs (dedup på dato+pas)
@@ -3657,6 +3720,130 @@ const A = {
     if (!S.aktiv || (S.aktiv.point && S.aktiv.point.length)) return;
     S.aktiv = null; S.afventer = null; S.resInput = ""; S.wiz = 1; gemAktiv(); render();
   },
+  // ═══ v4.113.0 · ARKIVET — «TENNIS ÅBENT, MENNESKER LÅST» ═════════════
+  //   Nicolai 8/9: «Man skal kunne miste sin telefon, få en ny og få alt
+  //   tilbage.» Boksen kan ikke åbnes uden kodeordet — ARKIVET kan.
+  //   Boldene, resultatet, analysen (med ⟦M⟧ for navnet) og brevet gemmes
+  //   læsbart, én række pr. kamp. Navne og noter rejser ALDRIG hertil —
+  //   motoren afviser dem ved navn, og appen sender dem ikke.
+  //   Skrives pr. kamp: en tom telefon skriver intet og sletter intet.
+  kamparkivKald: async (handling, krop) => {
+    if (!S.spillerNoegle) return { fejl: "mangler-noegle" };
+    const st = new AbortController(); const ur = setTimeout(() => st.abort(), 25000);
+    try {
+      const r = await fetch(ARKIV_URL, { method: "POST", signal: st.signal,
+        headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+        body: JSON.stringify(Object.assign({ handling }, krop || {})) });
+      clearTimeout(ur);
+      const d = await r.json().catch(() => ({}));
+      return r.ok ? d : { fejl: d.kode || "netvaerk", status: r.status, t: d.fejl };
+    } catch (_e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+  },
+  // Kroppen for ÉN kamp: hvidlisten minus navnet, analysen maskeret.
+  kamparkivKrop: (k) => {
+    const ud = { v: 1, dato: k.dato || "", turnering: String(k.turnering || "").slice(0, 40), resultat: String(k.resultat || "").slice(0, 24),
+      oskarFirst: k.oskarFirst !== false, mtb: k.mtb !== false, saetTil: k.saetTil === 4 ? 4 : 6, noAd: k.noAd === true, afsluttet: k.afsluttet === true,
+      justeringer: Array.isArray(k.justeringer) ? k.justeringer : [],
+      point: (k.point || []).map(function(q){ return { r: q.r === "V" ? "V" : "T", "\u00e5": q["\u00e5"] || "x", f: q.f === 2 ? 2 : 1, l: q.l || 0, h: q.h || 0, z: q.z || 0 }; }) };
+    if (typeof k.facitVandt === "boolean") ud.facitVandt = k.facitVandt;
+    if (k.analyse) ud.analyse = navnMaskeret(k.analyse, k.modstander).slice(0, 20000);
+    if (Array.isArray(k.tre) && k.tre.length) ud.tre = k.tre.slice(0, 3).map(function(t){ return { f: String(t.f || ""), o: navnMaskeret(String(t.o || ""), k.modstander).slice(0, 40), t: navnMaskeret(String(t.t || ""), k.modstander).slice(0, 40), h: navnMaskeret(String(t.h || ""), k.modstander).slice(0, 140) }; });
+    return ud;
+  },
+  _kamparkivAftryk: (k) => (k.point || []).length + ":" + String(k.analyse || "").length + ":" + (k.tre ? JSON.stringify(k.tre).length : 0) + ":" + String(k.resultat || "") + ":" + (k.justeringer || []).length + ":" + (k.afsluttet ? 1 : 0),
+  // Sender det, der er nyt eller ændret — 2,5 s efter sidste ændring.
+  kamparkivSik: (straks) => {
+    try { clearTimeout(window.__kamparkivUr); } catch (_e) {}
+    const koer = async () => {
+      if (!S.spillerNoegle || S.rolle === "familie" || S.kampeLaast) return;
+      try { if (teamKunStreaks()) return; } catch (_e) {}
+      if (S.portStatus && S.portStatus.status && S.portStatus.status !== "godkendt") return;   // porten: vi gemmer intet, før I er inde
+      let sendt = {}; try { sendt = JSON.parse(lager.hent("sai-kamparkiv-sendt") || "{}") || {}; } catch (_e) { sendt = {}; }
+      sikreKampId(S.gemte);
+      const kampe = [];
+      (S.gemte || []).forEach(function(k){
+        if (!k || !k.id || !Array.isArray(k.point) || !k.point.length) return;
+        const a = A._kamparkivAftryk(k);
+        if (sendt[k.id] === a) return;
+        kampe.push({ id: k.id, krop: A.kamparkivKrop(k), _a: a });
+      });
+      let udv = null;
+      if (S.udvikling && S.udvikling.tekst && sendt._udvikling !== String(S.udvikling.dato || "")) {
+        const navne = (S.gemte || []).map(function(k){ return k.modstander; });
+        let tekst = String(S.udvikling.tekst); navne.forEach(function(nv){ tekst = navnMaskeret(tekst, nv); });
+        udv = { tekst: tekst.slice(0, 20000), dato: String(S.udvikling.dato || ""), kampe: S.udvikling.kampe | 0, antalVed: S.udvikling.antalVed | 0 };
+      }
+      if (!kampe.length && !udv) return;
+      S.kamparkivSender = true; if (straks) render();
+      const r = await A.kamparkivKald("gem", { kampe: kampe.slice(0, 60).map(function(x){ return { id: x.id, krop: x.krop }; }), udvikling: udv || undefined });
+      S.kamparkivSender = false;
+      if (r && !r.fejl) {
+        const afvist = {}; (r.afvist || []).forEach(function(x){ afvist[x.id] = x.grund; });
+        kampe.slice(0, 60).forEach(function(x){ if (!afvist[x.id]) sendt[x.id] = x._a; });
+        if (udv && r.brev) sendt._udvikling = udv.dato;
+        lager.gem("sai-kamparkiv-sendt", JSON.stringify(sendt));
+        S.kamparkivSidst = r.opdateret || new Date().toISOString();
+        S.kamparkivStatus = { kampe: Object.keys(sendt).filter(function(x){ return x !== "_udvikling"; }).length, brev: !!sendt._udvikling };
+        // ⭐ Vagten siger, hvad den afviste (princip 75) — også her på skærmen.
+        if (r.afvist && r.afvist.length) S.kamparkivBesked = { fejl: true, t: (S.sprog === "en" ? r.afvist.length + " match(es) were refused by the archive: " : r.afvist.length + " kamp(e) blev afvist af arkivet: ") + r.afvist.map(function(x){ return x.grund; }).join(", ") };
+        else if (straks) S.kamparkivBesked = { fejl: false, t: S.sprog === "en" ? "Archive updated \u2713" : "Arkivet er opdateret \u2713" };
+        if (kampe.length > 60) setTimeout(function(){ A.kamparkivSik(); }, 800);   // resten i næste omgang
+      } else if (straks) {
+        S.kamparkivBesked = { fejl: true, t: r && r.fejl === "netvaerk" ? (S.sprog === "en" ? "No connection \u2014 try again." : "Ingen forbindelse \u2014 pr\u00f8v igen.") : ((r && r.t) || (S.sprog === "en" ? "Could not save." : "Kunne ikke gemme.")) };
+      }
+      if (straks) render();
+    };
+    if (straks) koer(); else window.__kamparkivUr = setTimeout(koer, 2500);
+  },
+  kamparkivSlet: async (id) => {
+    if (!S.spillerNoegle || !id) return;
+    try { let sendt = JSON.parse(lager.hent("sai-kamparkiv-sendt") || "{}") || {}; delete sendt[id]; lager.gem("sai-kamparkiv-sendt", JSON.stringify(sendt)); } catch (_e) {}
+    // ⚠️ Kommer kaldet ikke frem, står kampen i arkivet og kommer igen ved
+    //   næste hentning — spilleren kan slette igen. Intet slettes i stilhed.
+    try { await A.kamparkivKald("slet", { ids: [id] }); } catch (_e) {}
+  },
+  // Henter arkivet og fletter det ind: kun kampe, telefonen ikke har (id).
+  // En kamp herfra hedder «Modstander», til boksen giver navnet tilbage.
+  kamparkivHent: async (stille) => {
+    if (!S.spillerNoegle || S.rolle === "familie" || S.kampeLaast) return 0;
+    try { if (teamKunStreaks()) return 0; } catch (_e) {}
+    const EN = S.sprog === "en";
+    if (!stille) { S.kamparkivHenter = true; S.kamparkivBesked = null; render(); }
+    const r = await A.kamparkivKald("hent", {});
+    S.kamparkivHenter = false;
+    if (!r || r.fejl) {
+      if (!stille) S.kamparkivBesked = { fejl: true, t: r && r.fejl === "netvaerk" ? (EN ? "No connection \u2014 try again." : "Ingen forbindelse \u2014 pr\u00f8v igen.") : ((r && r.t) || (EN ? "Could not fetch the archive." : "Kunne ikke hente arkivet.")) };
+      if (!stille) render();
+      return 0;
+    }
+    try { lager.gem("sai-kamparkiv-set", S.spillerNoegle); } catch (_e) {}
+    const kampe = (r.kampe || []).map(function(x){
+      const k = Object.assign({}, x.krop || {}, { id: x.id, modstander: "Modstander", navnLaas: true });
+      if (k.analyse) k.analyse = navnTilbage(k.analyse, null);
+      if (Array.isArray(k.tre)) k.tre = k.tre.map(function(t){ return { f: t.f, o: navnTilbage(t.o, null), t: navnTilbage(t.t, null), h: navnTilbage(t.h, null) }; });
+      return k;
+    });
+    const foer = (S.gemte || []).length;
+    let nye = 0;
+    if (kampe.length) { nye = A.fletInd({ kampe }) || 0; }
+    let brev = false;
+    if (r.udvikling && r.udvikling.tekst && !(S.udvikling && S.udvikling.tekst)) {
+      S.udvikling = { tekst: navnTilbage(r.udvikling.tekst, null), dato: r.udvikling.dato || "", kampe: r.udvikling.kampe | 0, antalVed: r.udvikling.antalVed | 0 };
+      lager.gem("sai-udvikling", JSON.stringify(S.udvikling)); brev = true;
+    }
+    // ⭐ Det, arkivet gav, er allerede i arkivet — det skal ikke sendes op igen.
+    try { let sendt = JSON.parse(lager.hent("sai-kamparkiv-sendt") || "{}") || {}; kampe.forEach(function(k){ const e = (S.gemte || []).find(function(g){ return g.id === k.id; }); if (e) sendt[k.id] = A._kamparkivAftryk(e); }); lager.gem("sai-kamparkiv-sendt", JSON.stringify(sendt)); } catch (_e) {}
+    S.kamparkivStatus = { kampe: (r.kampe || []).length, brev: !!r.udvikling };
+    if (nye || brev) { S._kamparkivHjem = nye; }
+    if (!stille) S.kamparkivBesked = { fejl: false, t: nye
+      ? (EN ? nye + " match(es) came home from the archive" + (kampe.length ? " \u2014 opponents\u2019 names are in your locked backup" : "") : nye + " kamp(e) kom hjem fra arkivet" + " \u2014 modstandernes navne ligger i din l\u00e5ste sikkerhedskopi")
+      : (EN ? "Nothing new \u2014 the archive holds " + (r.kampe || []).length + " match(es), all already on this phone." : "Intet nyt \u2014 arkivet har " + (r.kampe || []).length + " kamp(e), og de er alle p\u00e5 telefonen.") };
+    if (!stille || nye || brev) render();
+    return nye + (brev ? 1 : 0) + (foer < 0 ? 0 : 0);
+  },
+  kamparkivHentNu: () => { A.kamparkivHent(false); },
+  kamparkivSikNu: () => { S.kamparkivBesked = null; A.kamparkivSik(true); },
+
   skySik: (straks) => {
     try { clearTimeout(window.__skyUr); } catch (_e) {}
     const koer = async () => {
@@ -3932,6 +4119,10 @@ const A = {
         A.skySik(true);
       }
     } catch (_e) {}
+    // ⭐ v4.113.0 · OG ARKIVET — det, der kommer tilbage UDEN kodeordet.
+    //   Efter boksen, så en kamp med navn står først, og arkivets navnløse
+    //   udgave af den samme kamp bare bliver væk (samme id).
+    try { await A.kamparkivHent(true); } catch (_e) {}
     render();
   },
   // (v4.52.0 · opretKonto UDGIK — oprettelsen bor i fordoeren: A.indGaa.)
@@ -6480,6 +6671,7 @@ const A = {
         try { lager.gem("sai-udvikling", JSON.stringify(S.udvikling)); } catch (_e) {}
         S.udvBesked = { fejl: false, t: hvordan === "auto" ? (EN ? "Five matches in — the letter wrote itself." : "Fem kampe i hus — brevet skrev sig selv.") : (EN ? "The letter is written and saved." : "Brevet er skrevet og gemt.") };
         try { A.skySik && A.skySik(); } catch (_e) {}
+        try { A.kamparkivSik && A.kamparkivSik(); } catch (_e) {}   // ⭐ v4.113.0 · brevet i arkivet
       } else {
         S.udvBesked = { fejl: true, t: (sv.d && sv.d.kode === "antal") ? (EN ? "The letter needs 3-8 matches." : "Brevet kræver 3-8 kampe.") : analyseFejltekst(sv.d && sv.d.kode, sv.s, EN) };
       }
@@ -6542,7 +6734,9 @@ const A = {
   sletSpoerg: (i) => { S.sletBekraeft = +i; render(); },
   sletFortryd: () => { S.sletBekraeft = null; render(); },
   slet: (i) => {
+    var _sletId = S.gemte[+i] && S.gemte[+i].id;   // ⭐ v4.113.0 · sletningen er et eget ord i arkivet
     S.gemte.splice(+i, 1); S.sletBekraeft = null; S.eksport = null; gemAlle();
+    if (_sletId) { try { A.kamparkivSlet(_sletId); } catch (_e) {} }
     // F7 (20/8): serveren FLETTER kampe (synk v2.7), så en slettet kamp kommer
     // tilbage ved næste synk og bliver stående hos træneren. Mærket her får
     // næste synk til at sende "erstat" — sletningen, familien lige bekræftede,
@@ -8008,6 +8202,7 @@ function _tegn() {
           '<div class="kort" style="padding:16px;text-align:left">' +
           (S.sprog === "en"
             ? _b("What lives on the phone", "Your notes and all free text stay on the phone. Analyses are computed from numbers — never from what you write.") +
+              _b("The backup", "Your matches (every ball, the result, the analysis) and your development letter are kept readable with us — without opponents’ names and without your notes — so they come back with your account alone. Names and notes are kept only in a box locked with your password; we cannot open it.") +
               _b("What friends see", "Your first name, your username, your streak and — while a match is live — the score. Never your messages. If you share a match (live or from the archive), the score, tournament and opponent travel with it; friends see the opponent shortened.") +
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
               _b("Search", "Approved players can find you by searching your username — the result shows first name and username only. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
@@ -8015,6 +8210,7 @@ function _tegn() {
               _b("Price", "With a club code the club pays. Full access is 49 kr/month incl. 3 live-streamed matches per month; beyond that +49 kr/month for unlimited, or 15 kr per live match. Watching is always free. We contact you about payment; nothing is charged automatically.") +
               _b("Leaving", "Log out wipes the phone. Ask us and the account and everything with it is deleted — for good.")
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
+              _b("Sikkerhedskopien", "Jeres kampe (hver bold, resultatet, analysen) og udviklingsbrevet gemmes læsbart hos os — uden modstandernes navne og uden jeres noter — så de kommer tilbage med kontoen alene. Navne og noter gemmes kun i en boks, der er låst med jeres kodeord; den kan vi ikke åbne.") +
               _b("Hvad venner ser", "Fornavn, brugernavn, streaken og — mens en kamp er live — stillingen. Aldrig jeres beskeder. Deler I en kamp (live eller fra arkivet), rejser stillingen, turneringen og modstanderens navn med — venner ser modstanderen forkortet.") +
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
               _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises kun fornavn og brugernavn. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
@@ -10554,8 +10750,8 @@ function _tegn() {
           : (EN?"automatic \u00b7 locked on this phone":"automatisk \u00b7 l\u00e5st p\u00e5 telefonen")),
         (S.skyLaast ? "var(--tabt)" : "var(--vundet)"),
         '<p class="lille" style="margin:0 0 9px">' + (EN
-          ? "Your matches, every ball, your training log and your analyses are copied automatically. <b>They are locked on this phone before they are sent</b> \u2014 the server keeps a box it cannot open. Log in on a new phone and it all comes back."
-          : "Dine kampe, hver bold, din tr\u00e6ningslog og dine analyser kopieres automatisk. <b>De l\u00e5ses p\u00e5 denne telefon, f\u00f8r de sendes</b> \u2014 serveren opbevarer en boks, den ikke kan \u00e5bne. Log ind p\u00e5 en ny telefon, og det hele kommer tilbage.") + '</p>' +
+          ? "Your matches, every ball, your training log and your analyses are copied automatically. <b>The balls, results and analyses are kept readable in the archive</b>, so they come back with your account alone \u2014 even if you forget your password. <b>Opponents\u2019 names and your notes are locked on this phone before they are sent</b>: the server keeps a box it cannot open, and they come back with your password. Log in on a new phone, and it all comes back."
+          : "Dine kampe, hver bold, din tr\u00e6ningslog og dine analyser kopieres automatisk. <b>Boldene, resultaterne og analyserne gemmes l\u00e6sbart i arkivet</b>, s\u00e5 de kommer tilbage med din konto alene \u2014 ogs\u00e5 hvis du glemmer dit kodeord. <b>Modstandernes navne og dine noter l\u00e5ses p\u00e5 denne telefon, f\u00f8r de sendes</b>: serveren opbevarer en boks, den ikke kan \u00e5bne, og de kommer tilbage med dit kodeord. Log ind p\u00e5 en ny telefon, og det hele kommer tilbage.") + '</p>' +
         '<button class="knap" style="width:100%;min-height:48px;background:var(--grus)" data-a="gaaKopi">' +
         (EN?"Open backup \u2192":"\u00c5bn sikkerhedskopien \u2192") + '</button>');
 
@@ -11312,6 +11508,11 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     //   ad gangen — analyserne er URØRT, det er VEJEN derhen, der er ny.
     //   Det ydre .kort er væk: kort inde i kort gav dobbelte rammer.
     // ══════════════════════════════════════════════════════════════════
+    // ⭐ v4.113.0 · kampe fra arkivet hedder «Modstander», til boksen giver navnet.
+    var _navnLaas = (S.gemte || []).filter(function(k){ return k && k.navnLaas; }).length;
+    if (_navnLaas) h += '<p class="lille" style="margin:0 0 8px;padding:8px 10px;border-left:3px solid var(--is);background:rgba(120,190,255,.08);border-radius:0 8px 8px 0;line-height:1.5">\ud83d\udd12 ' + (EN
+      ? _navnLaas + " match(es) came from the archive without the opponent\u2019s name \u2014 the names are in your locked backup. \u2699\ufe0f \u2192 BACKUP \u2192 <b>Fetch it</b> with your password brings them back."
+      : _navnLaas + " kamp(e) kom fra arkivet uden modstanderens navn \u2014 navnene ligger i din l\u00e5ste sikkerhedskopi. \u2699\ufe0f \u2192 SIKKERHEDSKOPI \u2192 <b>Hent den</b> med dit kodeord giver dem tilbage.") + '</p>';
     var _kp = S.kampePanel;
     var _kflise = function(v, ik, titel, tal) {
       return '<button class="dev-flise dev-kant' + (_kp === v ? ' dev-kant-is' : '') + '"'
@@ -11621,13 +11822,13 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           : "Det kr\u00e6ver en konto. Uden en bliver alt kun p\u00e5 denne telefon.") + '</p>';
       } else {
         h += '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
-          ? "Your matches, every ball, your training log and your analyses are copied automatically. <b>They are locked on this phone before they are sent</b> \u2014 the server keeps a box it cannot open. Log in on a new phone, and everything comes back."
-          : "Dine kampe, hver bold, din tr\u00e6ningslog og dine analyser kopieres automatisk. <b>De l\u00e5ses p\u00e5 denne telefon, f\u00f8r de sendes</b> \u2014 serveren opbevarer en boks, den ikke kan \u00e5bne. Log ind p\u00e5 en ny telefon, og det hele kommer tilbage.") + '</p>';
+          ? "Your matches, every ball, your training log and your analyses are copied automatically. <b>The balls, results and analyses are kept readable in the archive</b>, so they come back with your account alone \u2014 even if you forget your password. <b>Opponents\u2019 names and your notes are locked on this phone before they are sent</b>: the server keeps a box it cannot open, and they come back with your password. Log in on a new phone, and it all comes back."
+          : "Dine kampe, hver bold, din tr\u00e6ningslog og dine analyser kopieres automatisk. <b>Boldene, resultaterne og analyserne gemmes l\u00e6sbart i arkivet</b>, s\u00e5 de kommer tilbage med din konto alene \u2014 ogs\u00e5 hvis du glemmer dit kodeord. <b>Modstandernes navne og dine noter l\u00e5ses p\u00e5 denne telefon, f\u00f8r de sendes</b>: serveren opbevarer en boks, den ikke kan \u00e5bne, og de kommer tilbage med dit kodeord. Log ind p\u00e5 en ny telefon, og det hele kommer tilbage.") + '</p>';
         // ⚠️⚠️ PRISEN, SAGT HVOR DEN GÆLDER. Der findes ingen bagdør, og
         //   det er hele pointen — så det må ikke stå med småt et andet sted.
         h += '<p class="lille" style="margin:9px 0 0;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
-          ? "<b>Remember your password.</b> The box is locked with it. If you forget it <i>and</i> lose the phone, no one can open the copy \u2014 not even us. There is no back door, and that is the point."
-          : "<b>Husk dit kodeord.</b> Boksen er l\u00e5st med det. Glemmer du det <i>og</i> mister telefonen, kan ingen \u00e5bne kopien \u2014 heller ikke vi. Der er ingen bagd\u00f8r, og det er hele pointen.") + '</p>';
+          ? "<b>Remember your password.</b> The box is locked with it. If you forget it <i>and</i> lose the phone, no one can open the box \u2014 not even us: opponents\u2019 names and your notes are gone. Your matches, balls and analyses come back from the archive anyway."
+          : "<b>Husk dit kodeord.</b> Boksen er l\u00e5st med det. Glemmer du det <i>og</i> mister telefonen, kan ingen \u00e5bne boksen \u2014 heller ikke vi: modstandernes navne og dine noter er v\u00e6k. Dine kampe, bolde og analyser kommer tilbage fra arkivet alligevel.") + '</p>';
         if (_sk && _sk.har && _sk.bytes) {
           h += '<p class="lille" style="margin:7px 0 0;opacity:.6">' +
             Math.max(1, Math.round(_sk.bytes / 1024)) + ' KB' + (_sk.enhed ? ' \u00b7 ' + esc(_sk.enhed) : '') + '</p>';
@@ -11676,6 +11877,25 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>';
       h += '</div>';
     }
+    // ⭐⭐⭐ v4.113.0 · ARKIVET — det, der kommer tilbage UDEN kodeordet.
+    if (S.spillerNoegle && S.rolle !== "familie" && !teamKunStreaks()) {
+      var _as = S.kamparkivStatus, _sendtA = 0;
+      try { _sendtA = Object.keys(JSON.parse(lager.hent("sai-kamparkiv-sendt") || "{}") || {}).filter(function(k){ return k !== "_udvikling"; }).length; } catch (_e) {}
+      h += '<div class="kort" style="border-left:3px solid var(--is)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+          '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83d\udcda ' + (EN ? "MATCH ARCHIVE" : "KAMPARKIVET") + '</div>' +
+          '<span class="lille" style="color:var(--daempet)">' + (S.kamparkivSender || S.kamparkivHenter ? '\u23f3 \u2026'
+            : (_as ? (_as.kampe + (EN ? " on the server" : " p\u00e5 serveren")) : (_sendtA ? (_sendtA + (EN ? " sent" : " sendt")) : (EN ? "readable \u00b7 no names" : "l\u00e6sbart \u00b7 uden navne")))) + '</span></div>' +
+        '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
+          ? "The balls, results, analyses and your development letter are kept <b>readable</b> here \u2014 without opponents\u2019 names and without your notes. They come back with your account alone, even on a new phone with a new password. Opponents\u2019 names live only in the locked box above."
+          : "Boldene, resultaterne, analyserne og dit udviklingsbrev gemmes <b>l\u00e6sbart</b> her \u2014 uden modstandernes navne og uden dine noter. De kommer tilbage med din konto alene, ogs\u00e5 p\u00e5 en ny telefon med et nyt kodeord. Modstandernes navne bor kun i den l\u00e5ste boks ovenfor.") + '</p>' +
+        '<div class="raekke" style="margin-top:9px;gap:6px">' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' + (S.kamparkivSender ? ' disabled' : '') + ' data-a="kamparkivSikNu">' + (S.kamparkivSender ? '\u23f3 \u2026' : (EN ? "\ud83d\udcda Save now" : "\ud83d\udcda Gem nu")) + '</button>' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' + (S.kamparkivHenter ? ' disabled' : '') + ' data-a="kamparkivHentNu">' + (S.kamparkivHenter ? '\u23f3 \u2026' : (EN ? "\u267b\ufe0f Fetch the archive" : "\u267b\ufe0f Hent arkivet")) + '</button>' +
+        '</div>';
+      if (S.kamparkivBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.kamparkivBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.kamparkivBesked.t) + '</p>';
+      h += '</div>';
+    }
     h += '<div class="kort">';
     h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">💾 '+(EN?"Backup":"Sikkerhedskopi")+'</h2>' +
       '<p class="lille" style="margin:-4px 0 9px">' + (EN
@@ -11693,7 +11913,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         '<textarea data-felt="fletTekst" placeholder="TEAMOSKAR-BACKUP-V1 ..." style="height:80px;color:var(--kridt)">'+esc(S.fletTekst)+'</textarea>' +
         '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--vundet);color:var(--dyb)" data-a="fletKoer">'+(EN?"🔀 Merge in":"🔀 Flet ind")+'</button></div>';
     }
-    if (S.fletBesked && S.fletBesked.indexOf("OK") === 0) h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Merged in "+S.fletBesked.split(":")[1]+" new matches ✓":"Flettede "+S.fletBesked.split(":")[1]+" nye kampe ind ✓")+'</p>';
+    if (S.fletBesked && S.fletBesked.indexOf("OK") === 0) h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Merged in "+S.fletBesked.split(":")[1]+" new matches ✓":"Flettede "+S.fletBesked.split(":")[1]+" nye kampe ind ✓")
+      + (S.fletNavngivet ? (EN ? " \u00b7 " + S.fletNavngivet + " match(es) from the archive got their opponent\u2019s name" : " \u00b7 " + S.fletNavngivet + " kamp(e) fra arkivet fik modstanderens navn") : '') + '</p>';   // ⭐ v4.113.0
     // ⛔⭐ v4.81.0 · OG HVIS NOGET BLEV KASSERET, SIGES DET.
     //   Nicolai 30/8: «når jeg fletter hans kampe kommer de ikke med».
     //   `rensKamp` kræver et `point`-array — en kamp, der kun er ført
@@ -11873,6 +12094,16 @@ function autoSynk(){
   // Uden klub OG uden venner laver appen NUL netvaerkskald. Det er ikke
   // en indstilling — det er fravaeret af en grund til at ringe hjem.
   if (_autoSynkKoert || !S.spillerNoegle) return;
+  // ⭐ v4.113.0 · ARKIVET VED OPSTART — kun når der er grund: en telefon
+  //   uden kampe, eller første åbning med denne nøgle. Uden klub-hegn:
+  //   et sikkerhedsnet, der sparer et kald, gør en ny telefon blind (64).
+  try {
+    if (!window.__kamparkivStart && S.rolle !== "familie" && !S.kampeLaast && !teamKunStreaks() &&
+        ((S.gemte || []).length === 0 || lager.hent("sai-kamparkiv-set") !== S.spillerNoegle)) {
+      window.__kamparkivStart = true;
+      setTimeout(function(){ try { A.kamparkivHent(true).then(function(){ render(); }); } catch (_e) {} }, 1500);
+    }
+  } catch (_e) {}
   // ⭐ v4.59.0 · hegnet var aeldre end kontoen: «uden klub og uden
   // venner» lukkede Louise og Signe ude af HELE boot-blokken. Den
   // faelles regel doemmer nu — synkroniser() holder selv sit eget

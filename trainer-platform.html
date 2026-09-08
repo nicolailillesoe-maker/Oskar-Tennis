@@ -205,12 +205,124 @@ const LOGO = '<div class="topbar"><span class="brand"><img class="brandlogo" src
 // ── LAGER ────────────────────────────────────────────────────────────────
 // Alt gemmes lokalt under tp-*. Der findes ingen backend endnu; når Spor 2
 // kommer, skiftes disse fire kald ud — resten af appen skal ikke røres.
+// ⭐⭐ v5.1.0 · BOKS_TING er det, der følger træneren til skyen — låst.
+var BOKS_TING = ["truppen","grupper","vurderinger","fokuspunkter","evalueringer","ugefokus","stigehold","noegler","srvnavne","traenernavn"];
 const lager = {
   hent: (n, standard) => { try { const v = localStorage.getItem("tp-" + n);
     return v === null ? standard : JSON.parse(v); } catch (e) { return standard; } },
   gem: (n, v) => { try { localStorage.setItem("tp-" + n, JSON.stringify(v)); }
-    catch (e) { console.warn("kunne ikke gemme", n); } },
+    catch (e) { console.warn("kunne ikke gemme", n); }
+    // v5.1.0 · en ændring af boksens indhold får et stempel og en sending på vej
+    // (traenernavn, srvnavne og stigehold følger med i boksen, men kommer fra serveren/login — de er ikke trænerens ændringer)
+    if (BOKS_TING.indexOf(n) !== -1 && n !== "traenernavn" && n !== "srvnavne" && n !== "stigehold" && !window.__boksStille) { try { boksRoert(); } catch (_e) {} } },
 };
+
+// ═══════════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v5.1.0 · TRÆNERENS BOKS — «hvad sker der, hvis han mister sin telefon?»
+//   Tilstanden låses HER, i telefonen, med en nøgle udledt af kodeordet
+//   (PBKDF2-SHA256 → AES-GCM 256). Serveren får «v1t.iv.ct» og intet andet.
+//   Nøglen bor kun i tp-boksnoegle og udledes ved login/oprettelse.
+//   ⛔ Ingen anden end træneren kan låse boksen op — heller ikke ejeren.
+//     Det er ikke et løfte i en tekst; det er, at nøglen ikke findes andre
+//     steder. (Nicolai 7/9: «Spejlet nej … troværdigheden.»)
+// ═══════════════════════════════════════════════════════════════════════
+var BOKS_RUNDER = 210000;
+function tilB64(u){ var s2 = ""; for (var i = 0; i < u.length; i++) s2 += String.fromCharCode(u[i]); return btoa(s2); }
+function fraB64(b){ var s2 = atob(b), u = new Uint8Array(s2.length); for (var i = 0; i < s2.length; i++) u[i] = s2.charCodeAt(i); return u; }
+async function boksNoegleUdled(brugernavn, kode){
+  var salt = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("streakcoach-boks|" + String(brugernavn || "").trim().toLowerCase()));
+  var raa = await crypto.subtle.importKey("raw", new TextEncoder().encode(String(kode || "")), "PBKDF2", false, ["deriveBits"]);
+  var bits = await crypto.subtle.deriveBits({ name: "PBKDF2", salt: salt, iterations: BOKS_RUNDER, hash: "SHA-256" }, raa, 256);
+  return tilB64(new Uint8Array(bits));
+}
+async function boksAesNoegle(){
+  var b = lager.hent("boksnoegle", ""); if (!b) return null;
+  return await crypto.subtle.importKey("raw", fraB64(b), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+}
+async function boksLaas(obj){
+  var k = await boksAesNoegle(); if (!k) return null;
+  var iv = crypto.getRandomValues(new Uint8Array(12));
+  var ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, k, new TextEncoder().encode(JSON.stringify(obj)));
+  return "v1t." + tilB64(iv) + "." + tilB64(new Uint8Array(ct));
+}
+async function boksAab(str){
+  var k = await boksAesNoegle(); if (!k) return null;
+  var d = String(str || "").split("."); if (d.length !== 3 || d[0] !== "v1t") return null;
+  try {
+    var kl = await crypto.subtle.decrypt({ name: "AES-GCM", iv: fraB64(d[1]) }, k, fraB64(d[2]));
+    return JSON.parse(new TextDecoder().decode(kl));
+  } catch (_e) { return null; }
+}
+function boksTilstand(){
+  var ud = { format: "SAI-TRAENER-BOKS", version: 1 };
+  BOKS_TING.forEach(function(n){ ud[n] = lager.hent(n, null); });
+  return ud;
+}
+var _boksUr = null, _boksSender = false;
+function boksRoert(){
+  var nu = new Date().toISOString();
+  try { localStorage.setItem("tp-boks-lokal", JSON.stringify(nu)); } catch (_e) {}
+  clearTimeout(_boksUr); _boksUr = setTimeout(function(){ boksSend(); }, 2000);
+}
+function boksStempler(){ return { lokal: lager.hent("boks-lokal", ""), sendt: lager.hent("boks-sendt", "") }; }
+function boksUsendt(){ var st = boksStempler(); return !!st.lokal && (!st.sendt || Date.parse(st.lokal) > Date.parse(st.sendt)); }
+async function boksSend(){
+  if (_boksSender) return;
+  if (!lager.hent("boksnoegle", "") || !lager.hent("klubkode", "")) return;
+  var st = boksStempler(); if (!st.lokal) return;
+  _boksSender = true; S.boksStatus = { sender: true }; try { render(); } catch (_e) {}
+  try {
+    var laast = await boksLaas(boksTilstand());
+    if (!laast) { _boksSender = false; return; }
+    var r = await kontoKald("boks-gem", { boks: laast, stempel: st.lokal });
+    _boksSender = false;
+    if (r && !r.fejl && r.gemt) {
+      lager.gem("boks-sendt", st.lokal); S.boksStatus = { ok: true, tid: st.lokal, bytes: r.bytes || laast.length };
+    } else if (r && r.fejl === "nyere-i-skyen") {
+      S.boksStatus = { konflikt: true, skyen: r.stempel || null };
+    } else if (r && r.fejl === "ingen-konto") {
+      S.boksStatus = { fejl: "Skyen kender ikke kontoen \u2014 log ud og ind igen." };
+    } else {
+      S.boksStatus = { fejl: (r && r.fejl === "netvaerk") ? "Ingen forbindelse \u2014 sendes igen ved n\u00e6ste \u00e6ndring." : ("Skyen afviste boksen" + (r && r.t ? ": " + r.t : ".")) };
+    }
+  } catch (_e) { _boksSender = false; S.boksStatus = { fejl: "Ingen forbindelse \u2014 sendes igen ved n\u00e6ste \u00e6ndring." }; }
+  try { render(); } catch (_e) {}
+}
+// Skyen lægges ind: KUN de ti ting, uden at planlægge en ny sending.
+function boksLaegInd(t, stempel){
+  BOKS_TING.forEach(function(n){ try { if (t[n] === null || t[n] === undefined) localStorage.removeItem("tp-" + n); else localStorage.setItem("tp-" + n, JSON.stringify(t[n])); } catch (_e) {} });
+  try { localStorage.setItem("tp-boks-lokal", JSON.stringify(stempel)); localStorage.setItem("tp-boks-sendt", JSON.stringify(stempel)); } catch (_e) {}
+  S.truppen = lager.hent("truppen", []); S.grupper = lager.hent("grupper", null); S.vurderinger = lager.hent("vurderinger", []);
+  S.fokuspunkter = lager.hent("fokuspunkter", {}); S.evalueringer = lager.hent("evalueringer", {}); S.ugefokus = lager.hent("ugefokus", {});
+  S.stigeHold = lager.hent("stigehold", []); S.noegler = lager.hent("noegler", {}); S.srvNavne = lager.hent("srvnavne", {});
+  var tn = lager.hent("traenernavn", ""); if (tn) { S.traener = tn; if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].navn = tn; }
+  try { migrerGrupper(); } catch (_e) {}
+  if (S.truppen && S.truppen.length) byggTrup(); else genskabDemo();
+  Object.keys(S.evalueringer || {}).forEach(function(navn){ var d2 = DATA.spillere[navn];
+    if (d2 && S.evalueringer[navn] && S.evalueringer[navn].tekst) { d2.evalSendt = S.evalueringer[navn].tekst; d2.evalNy = true; } });
+}
+// tving=true: skyen lægges ind uanset (trænerens eget valg på skærmen)
+async function boksHent(tving){
+  if (!lager.hent("boksnoegle", "") || !lager.hent("klubkode", "")) return;
+  var r = await kontoKald("boks-hent", {});
+  if (!r || r.fejl) { if (tving) { S.boksStatus = { fejl: r && r.fejl === "netvaerk" ? "Ingen forbindelse \u2014 pr\u00f8v igen." : "Skyen kunne ikke hentes." }; try { render(); } catch (_e) {} } return; }
+  if (!r.boks) { if (tving) { S.boksStatus = { fejl: "Der ligger ingen boks i skyen endnu." }; try { render(); } catch (_e) {} } else if (boksUsendt() || lager.hent("boks-lokal", "") || (S.truppen && S.truppen.length)) { boksRoert(); } return; }
+  var t = await boksAab(r.boks);
+  if (!t || t.format !== "SAI-TRAENER-BOKS") { S.boksStatus = { fejl: "Boksen i skyen kunne ikke l\u00e5ses op med dit kodeord. Er kodeordet skiftet, s\u00e5 log ud og ind igen." }; try { render(); } catch (_e) {} return; }
+  var st = boksStempler();
+  var skyNyere = !st.sendt || Date.parse(String(r.stempel)) > Date.parse(st.sendt);
+  // en telefon med en trup, men uden stempler (fra før v5.1.0), får ALDRIG skyen lagt ind af sig selv
+  var lokalUkendt = !st.lokal && !st.sendt && S.truppen && S.truppen.length;
+  if (tving || (skyNyere && !boksUsendt() && !lokalUkendt)) {
+    boksLaegInd(t, new Date(Date.parse(String(r.stempel))).toISOString());
+    S.boksStatus = { hentet: true, tid: r.stempel };
+    try { render(); } catch (_e) {}
+  } else if (skyNyere && (boksUsendt() || lokalUkendt)) {
+    S.boksStatus = { konflikt: true, skyen: r.stempel }; try { render(); } catch (_e) {}
+  } else if (boksUsendt()) {
+    boksRoert();
+  }
+}
 
 // ⭐⭐⭐ v4.0.0 · KLUBBENS NAVN KOMMER FRA SERVEREN, IKKE FRA KODEN.
 //   KONFIG.klub stod hårdkodet på «Tennisklubben». Nøglebunden har hele
@@ -315,7 +427,7 @@ async function tjekAdgang(){
 //   navn på en fremmed klubs skærm. Derfor bor den ÉT sted.
 //   ⚠️ Den er også ordret den, skærmen viser brugeren. Ændres den her,
 //     skal `SKIFT_FJERNES` nedenfor følge med.
-var KLUB_TING = ["truppen","grupper","vurderinger","fokuspunkter","evalueringer","ugefokus",
+var KLUB_TING = ["truppen","grupper","vurderinger","fokuspunkter","evalueringer","ugefokus","boks-lokal","boks-sendt",
                  "stigehold","srvnavne","noegler","klubkode","klubnavn","minrolle"];
 
 function ryddKlubben(){
@@ -599,6 +711,8 @@ let S = {
   doerNoegle: "", doerKlub: "", doerRolle: "",
   doerNavn: "", doerBrugernavn: "", doerKode: "", doerKode2: "", doerMail: "",
   doerFaerdig: false, logUdSpoerg: false, forfraBekraeft: false,
+  // v5.1.0 · boksen
+  boksStatus: null, boksKode: "", boksTaender: false,
 };
 
 // Traenerens eget navn overlever et reload.
@@ -612,6 +726,10 @@ function grupperNavne(){ return (S.grupper || []).map(function(g){ return g.navn
 function gaetAargang(navn){ var m = /\bU(1[0-9]|[89])\b/i.exec(String(navn || "")); return m ? "U" + m[1] : ""; }
 function migrerGrupper(){
   if (Array.isArray(S.grupper)) return;
+  window.__boksStille = true;   // v5.1.0 · en migrering er ikke en ændring, træneren har lavet
+  try { migrerGrupperInd(); } finally { window.__boksStille = false; }
+}
+function migrerGrupperInd(){
   var set = [], seen = {};
   (S.truppen || []).forEach(function(p){
     var g = String(p.gruppe || "").trim();
@@ -772,7 +890,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v5.0.0 \u00b7 7. september 2026";
+const VERSION = "v5.1.0 \u00b7 7. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1218,6 +1336,28 @@ var EN = {
 "Kommet ind med en nøgle": "Came in with a key",
 "Venter på klubben": "Waiting for the club"
 };
+Object.assign(EN, {
+  "\u2601\ufe0f SKYEN": "\u2601\ufe0f THE CLOUD",
+  "Din trup, dine grupper, vurderinger og evalueringer gemmes i skyen \u2014 l\u00e5st med dit kodeord. Mister du telefonen, logger du bare ind p\u00e5 en ny. Heller ikke vi kan l\u00e6se boksen.": "Your squad, groups, ratings and evaluations are saved in the cloud \u2014 locked with your password. Lose the phone and you just log in on a new one. Not even we can read the box.",
+  "Skyen er ikke t\u00e6ndt p\u00e5 denne telefon endnu \u2014 tast dit kodeord \u00e9n gang.": "The cloud is not switched on for this phone yet \u2014 enter your password once.",
+  "T\u00e6nd skyen": "Switch on the cloud", "\u2601\ufe0f Send nu": "\u2601\ufe0f Send now", "\u2b07\ufe0f Hent fra skyen": "\u2b07\ufe0f Fetch from the cloud",
+  "\u23f3 Sender\u2026": "\u23f3 Sending\u2026", "Intet at gemme endnu.": "Nothing to save yet.", "\u00c6ndringer p\u00e5 vej til skyen\u2026": "Changes on their way to the cloud\u2026",
+  "\u2713 Gemt i skyen {x}": "\u2713 Saved in the cloud {x}", "\u2713 Gemt i skyen {x} \u00b7 \u00e6ndringer p\u00e5 vej": "\u2713 Saved in the cloud {x} \u00b7 changes on their way",
+  "\u2713 Hentet fra skyen {x}": "\u2713 Fetched from the cloud {x}",
+  "\u26a0\ufe0f Skyen har en nyere tilstand ({x}) end denne telefon. V\u00e6lg, hvad der skal g\u00e6lde.": "\u26a0\ufe0f The cloud has a newer state ({x}) than this phone. Choose which one should count.",
+  "\u00abHent fra skyen\u00bb erstatter det, der ligger p\u00e5 denne telefon. \u00abSend nu\u00bb erstatter skyen med telefonen.": "\u00abFetch from the cloud\u00bb replaces what is on this phone. \u00abSend now\u00bb replaces the cloud with the phone.",
+  "\u26a0\ufe0f Skriv dit kodeord.": "\u26a0\ufe0f Enter your password.", "\u26a0\ufe0f Kodeordet passer ikke.": "\u26a0\ufe0f The password does not match.",
+  "\u26a0\ufe0f Ingen forbindelse \u2014 pr\u00f8v igen.": "\u26a0\ufe0f No connection \u2014 try again.",
+  "\u26a0\ufe0f Ingen forbindelse \u2014 sendes igen ved n\u00e6ste \u00e6ndring.": "\u26a0\ufe0f No connection \u2014 it will be sent again on the next change.",
+  "\u26a0\ufe0f Der ligger ingen boks i skyen endnu.": "\u26a0\ufe0f There is no box in the cloud yet.", "\u26a0\ufe0f Skyen kunne ikke hentes.": "\u26a0\ufe0f The cloud could not be fetched.",
+  "\u26a0\ufe0f Skyen kender ikke kontoen \u2014 log ud og ind igen.": "\u26a0\ufe0f The cloud does not know the account \u2014 log out and in again.",
+  "\u26a0\ufe0f Boksen i skyen kunne ikke l\u00e5ses op med dit kodeord. Er kodeordet skiftet, s\u00e5 log ud og ind igen.": "\u26a0\ufe0f The box in the cloud could not be unlocked with your password. If the password was changed, log out and in again.",
+  "\u26a0\ufe0f Skyen afviste boksen{x}": "\u26a0\ufe0f The cloud refused the box{x}"
+});
+Object.assign(EN, {
+  "Skyen ovenfor har en l\u00e5st kopi. Sikkerhedskopien her er din egen fil ved siden af \u2014 til dig selv, ikke til os.": "The cloud above holds a locked copy. The backup here is your own file alongside it \u2014 for you, not for us.",
+  "\u2601\ufe0f Din trup og dine vurderinger f\u00f8lger din konto gennem skyen (\u2699\ufe0f FORBINDELSE). Log ind p\u00e5 en ny telefon med dit kodeord, s\u00e5 kommer de med.": "\u2601\ufe0f Your squad and your ratings follow your account through the cloud (\u2699\ufe0f CONNECTION). Log in on a new phone with your password and they come along."
+});
 var _ENr = {}, _ENx = [];
 (function(){
   Object.keys(EN).forEach(function(k){
@@ -1960,10 +2100,36 @@ function traenerIndstillinger(){
       '" placeholder="klubkode" autocapitalize="off" spellcheck="false" autocomplete="off">' + '</div>' +
       '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="ops-gem">Gem</button></div>' +
       '<p class="lille" style="margin:8px 0 0;font-style:italic">Koden gemmes kun på denne enhed og står ingen steder i koden.</p>';
+    // ── ☁️ SKYEN · v5.1.0
+    {
+      var _bn = !!lager.hent("boksnoegle", ""), _bs = S.boksStatus || {}, _st = boksStempler();
+      var _tid = function(iso){ try { var d = new Date(iso); if (isNaN(d)) return ""; return d.getDate() + "/" + (d.getMonth()+1) + " " + String(d.getHours()).padStart(2,"0") + "." + String(d.getMinutes()).padStart(2,"0"); } catch (_e) { return ""; } };
+      h += '<div style="border-top:1px solid var(--kant);margin-top:12px;padding-top:10px">' +
+        '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\u2601\ufe0f SKYEN</div>' +
+        '<p class="lille" style="margin:6px 0 8px">Din trup, dine grupper, vurderinger og evalueringer gemmes i skyen \u2014 l\u00e5st med dit kodeord. Mister du telefonen, logger du bare ind p\u00e5 en ny. Heller ikke vi kan l\u00e6se boksen.</p>';
+      if (!_bn) {
+        h += '<p class="lille" style="margin:0 0 6px;color:var(--guld)">Skyen er ikke t\u00e6ndt p\u00e5 denne telefon endnu \u2014 tast dit kodeord \u00e9n gang.</p>' +
+          (_bs.fejl ? '<p class="lille" style="margin:0 0 6px;color:var(--tabt)">\u26a0\ufe0f ' + esc(_bs.fejl) + '</p>' : '') +
+          '<div style="display:flex;gap:6px"><input class="felt" style="flex:1;min-width:0" type="password" data-felt="boksKode" value="' + esc(S.boksKode || "") + '" placeholder="dit kodeord" autocapitalize="off" spellcheck="false" autocomplete="current-password">' +
+          '<button class="knap" style="flex:none;padding:8px 12px;background:var(--grus)"' + (S.boksTaender ? ' disabled' : '') + ' data-act="boks-taend">' + (S.boksTaender ? '\u23f3' : 'T\u00e6nd skyen') + '</button></div>';
+      } else {
+        var _linje = _bs.sender ? '\u23f3 Sender\u2026'
+          : _bs.konflikt ? '\u26a0\ufe0f Skyen har en nyere tilstand (' + _tid(_bs.skyen) + ') end denne telefon. V\u00e6lg, hvad der skal g\u00e6lde.'
+          : _bs.fejl ? '\u26a0\ufe0f ' + _bs.fejl
+          : _bs.hentet ? '\u2713 Hentet fra skyen ' + _tid(_bs.tid)
+          : (_st.sendt ? '\u2713 Gemt i skyen ' + _tid(_st.sendt) + (boksUsendt() ? ' \u00b7 \u00e6ndringer p\u00e5 vej' : '') : (_st.lokal ? '\u00c6ndringer p\u00e5 vej til skyen\u2026' : 'Intet at gemme endnu.'));
+        h += '<p class="lille" style="margin:0 0 6px;color:' + (_bs.fejl || _bs.konflikt ? 'var(--guld)' : 'var(--vundet)') + '">' + _linje + '</p>' +
+          '<div class="raekke">' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="boks-send">\u2601\ufe0f Send nu</button>' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="boks-hent">\u2b07\ufe0f Hent fra skyen</button></div>' +
+          (_bs.konflikt ? '<p class="lille" style="margin:6px 0 0;font-style:italic">«Hent fra skyen» erstatter det, der ligger p\u00e5 denne telefon. «Send nu» erstatter skyen med telefonen.</p>' : '');
+      }
+      h += '</div>';
+    }
     // ── SIKKERHEDSKOPI
     h += '<div style="border-top:1px solid var(--kant);margin-top:12px;padding-top:10px">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udcbe SIKKERHEDSKOPI</div>' +
-      '<p class="lille" style="margin:6px 0 8px">Dine vurderinger og evalueringer ligger kun i denne browser. Ryddes den, er de væk. Tag en kopi jævnligt.</p>' +
+      '<p class="lille" style="margin:6px 0 8px">Skyen ovenfor har en l\u00e5st kopi. Sikkerhedskopien her er din egen fil ved siden af \u2014 til dig selv, ikke til os.</p>' +
       '<div class="raekke"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-lav">\ud83d\udcbe Lav kopi</button>' +
       '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-gendan-aabn">\u267b\ufe0f Gendan</button></div>';
     if (S.bkTekst) {
@@ -2011,7 +2177,7 @@ function traenerIndstillinger(){
     }
     // ⚠️ Den ærlige linje: truppen og vurderingerne følger IKKE kontoen.
     h += '<p class="lille" style="margin:10px 0 0;padding-top:9px;border-top:1px dashed var(--kant);opacity:.8">' +
-      '\u26a0\ufe0f Din trup og dine vurderinger bor <b>kun p\u00e5 denne enhed</b>. Tag en sikkerhedskopi under \u2699\ufe0f FORBINDELSE, f\u00f8r du skifter telefon.</p>' +
+      '\u2601\ufe0f Din trup og dine vurderinger f\u00f8lger din konto gennem skyen (\u2699\ufe0f FORBINDELSE). Log ind p\u00e5 en ny telefon med dit kodeord, s\u00e5 kommer de med.</p>' +
       '<div class="raekke" style="margin-top:9px"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px;' +
       (S.forfraBekraeft ? 'background:var(--tabt);border-color:var(--tabt);color:#fff' : 'color:var(--tabt);border-color:rgba(210,72,78,.5)') +
       '" data-act="start-forfra">' +
@@ -2136,7 +2302,7 @@ function traenerGrupper(t){
   const egenTrup = !!(S.truppen && S.truppen.length);
   // ⭐⭐ v5.0.0 · GRUPPERNE STYRES HER. Kun når truppen er trænerens egen —
   //   eksempeldataene er eksempler, ikke noget man omdøber.
-  if (egenTrup || (S.grupper && S.grupper.length)) {
+  {   // v5.1.0 · altid — også før den første spiller, ellers kan den første gruppe ikke oprettes
     h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
         '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udc65 GRUPPER</div>' +
@@ -2627,6 +2793,24 @@ document.addEventListener("click", function(e){
   if (act==="sprog-saet"){ SPROG = (v === "en" ? "en" : "da"); lager.gem("sprog", SPROG); try { document.documentElement.lang = SPROG; } catch (_e) {} render(); }
   else if (act==="evalsprog-saet"){ EVALSPROG = (v === "en" ? "en" : "da"); lager.gem("evalsprog", EVALSPROG); render(); }
   else if (act==="ops-aabn"){ S.opsAaben = !S.opsAaben; S.kkUdkast = lager.hent("klubkode",""); render(); }
+  // ══ v5.1.0 · SKYEN ═══════════════════════════════════════════════════
+  else if (act==="boks-taend"){
+    if (S.boksTaender) return;
+    var _bk = String(S.boksKode || ""); var _kt = S.konto || lager.hent("konto", null);
+    if (!_bk || !_kt || !_kt.brugernavn) { S.boksStatus = { fejl: "Skriv dit kodeord." }; render(); return; }
+    S.boksTaender = true; S.boksStatus = null; render();
+    // kodeordet bevises hos serveren (login), FØR nøglen udledes — et forkert
+    // kodeord ville ellers låse en boks, ingen kan åbne
+    kontoKald("login", { navn: _kt.brugernavn, kode: _bk }, "").then(function(r){
+      if (!r || r.fejl) { S.boksTaender = false; S.boksStatus = { fejl: r && r.fejl === "netvaerk" ? "Ingen forbindelse \u2014 pr\u00f8v igen." : "Kodeordet passer ikke." }; render(); return; }
+      return boksNoegleUdled(_kt.brugernavn, _bk).then(function(bn){
+        lager.gem("boksnoegle", bn); S.boksKode = ""; S.boksTaender = false; S.boksStatus = null;
+        if (lager.hent("boks-lokal", "")) boksRoert(); else if (S.truppen && S.truppen.length) boksRoert();
+        render(); return boksHent(false);
+      });
+    }).catch(function(){ S.boksTaender = false; S.boksStatus = { fejl: "Ingen forbindelse \u2014 pr\u00f8v igen." }; render(); }); }
+  else if (act==="boks-send"){ if (!lager.hent("boks-lokal", "")) boksRoert(); else { clearTimeout(_boksUr); S.boksStatus = null; boksSend(); } }
+  else if (act==="boks-hent"){ S.boksStatus = null; render(); boksHent(true); }
   else if (act==="ops-gem"){
     lager.gem("klubkode", (S.kkUdkast||"").trim()); S.opsAaben=false;
     S.syncBesked = { fejl:false, t:"Klubkoden er gemt på denne enhed ✓" }; render(); }
@@ -2738,6 +2922,12 @@ document.addEventListener("click", function(e){
       S.konto = { brugernavn: r.brugernavn, navn: r.navn, klub: r.klub, rolle: r.rolle };
       S.traener = r.navn; if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].navn = r.navn;
       S.minRolle = r.rolle; try { lager.gem("minrolle", r.rolle); KONFIG.klub = r.klub; } catch(_e){}
+      // ⭐ v5.1.0 · boksens nøgle udledes af det kodeord, der lige blev bevist —
+      //   og skyen hentes: en ny telefon får truppen med hjem.
+      var _lk = _k;
+      clearTimeout(_boksUr);
+      if (!(S.truppen && S.truppen.length)) { try { localStorage.removeItem("tp-boks-lokal"); } catch (_e) {} }   // en tom telefon har intet at forsvare
+      boksNoegleUdled(r.brugernavn, _lk).then(function(bn){ lager.gem("boksnoegle", bn); return boksHent(false); }).catch(function(){});
       S.doerLogKode = "";
       // ⚠️ Kunne nøglen ikke låses op (fx efter et kodeordsskifte, hvor
       //   skrinet ikke fulgte med), SIGES det — der lades ikke som om.
@@ -2827,6 +3017,9 @@ document.addEventListener("click", function(e){
       S.konto = { brugernavn: r.brugernavn, navn: r.navn, klub: r.klub, rolle: r.rolle };
       S.traener = r.navn; if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].navn = r.navn;
       S.minRolle = r.rolle; try { lager.gem("minrolle", r.rolle); KONFIG.klub = r.klub; } catch(_e){}
+      // ⭐ v5.1.0 · boksens nøgle udledes af det nye kodeord
+      var _ok = S.doerKode;
+      boksNoegleUdled(r.brugernavn, _ok).then(function(bn){ lager.gem("boksnoegle", bn); if (lager.hent("boks-lokal", "")) boksRoert(); }).catch(function(){});
       S.doerKode = ""; S.doerKode2 = "";
       S.doerFest = { ikon:"🎉", h:"Velkommen, " + String(r.navn||"").split(" ")[0] + "!",
         u:"Din konto er klar. Du kan logge ind på enhver telefon med " + r.brugernavn + ".",
@@ -2975,7 +3168,7 @@ document.addEventListener("click", function(e){
       S.lukBesked = { fejl:true, t:"Ingen forbindelse — prøv igen. Der er ikke sket noget." }; render(); }); }
 
   else if (act==="luk-log-ud"){
-    ["konto","klubkode","traenernavn","klubnavn","minrolle","doer"].forEach(function(n){
+    ["konto","klubkode","traenernavn","klubnavn","minrolle","doer","boksnoegle","boks-sendt"].forEach(function(n){
       try { localStorage.removeItem("tp-" + n); } catch(_e){} });
     try { window.location.reload(); } catch(_e){} }
 
@@ -2983,7 +3176,7 @@ document.addEventListener("click", function(e){
   else if (act==="log-ud"){
     if (!S.logUdSpoerg) { S.logUdSpoerg = true; render(); return; }
     S.logUdSpoerg = false;
-    ["konto","klubkode","traenernavn","klubnavn","minrolle","doer"].forEach(function(n){
+    ["konto","klubkode","traenernavn","klubnavn","minrolle","doer","boksnoegle","boks-sendt"].forEach(function(n){
       try { localStorage.removeItem("tp-" + n); } catch(_e){} });
     try { window.location.reload(); } catch(_e){} }
 
@@ -3286,6 +3479,7 @@ window.__oskarInit = function(){
   //   en spærring sker, mens telefonen ligger i lommen. Svaret er det
   //   eneste, der lukker ned — udebliver det, sker der intet.
   setTimeout(function(){ try { tjekAdgang(); } catch (e) {} }, 900);
+  setTimeout(function(){ try { boksHent(false); } catch (e) {} }, 1500);   // v5.1.0 · skyen
   render();
 };
 window.__oskarInit();

@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.122.0 · 11. september 2026";
+const VERSION = "v4.127.0 · 11. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -1470,8 +1470,9 @@ let S = {
   venneKode: null, venneAaben: false, venneUdkast: "",
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
   flettKamp: null, flettMtb: false, flettBesked: null,   // ⭐ v4.117.0 · slå to kampe sammen
+  flettValgt: [], flettAlle: false,   // ⭐ v4.125.0 · man vælger selv HVILKE kampe
   retKamp: null, retMtb: false, retSaet: 6, retNoAd: false, retFirst: true, retResultat: "", retVandt: true, retBesked: null,   // ⭐ v4.118.0 · ret kampens opsætning
-  flytKamp: null, flytAlle: false, flytTekst: "",   // ⭐ v4.120.0 · flyt kampen til en anden spiller
+  flytKamp: null, flytNavn: "", flytFundet: null, flytSoeger: false, flytSender: false, flytBesked: null,   // ⭐ v4.127.0 · send kampen direkte til et brugernavn
   gaveTilbage: null,   // ⭐ v4.121.0 · håndtaget på den gave, der er ved at blive taget tilbage
   delAppBesked: null,   // ⭐ v4.122.0 · «Del med en ven» svarer, hvor der blev trykket
 };
@@ -2694,6 +2695,14 @@ function analyseFejltekst(kode, status, EN) {
   // ⚠️ MAALT 23/8: en frisk telefon genererer SELV en spillerkode, saa
   // "ingen noegle" findes ikke i praksis — det er en UKENDT noegle, en ny
   // bruger moeder. Beskeden skal derfor sige det samme som doeren paa KAMP.
+  // ⛔⭐⭐ v4.124.0 · TO 403'ER ER IKKE DEN SAMME BESKED. Fanget af
+  //   `proev-analyse-reglen`: en familie, der VENTER på et ja, HAR en
+  //   kode — at bede dem indtaste én er et forkert råd på netop den
+  //   skærm, familierne møder 15/9. `analyse-lov` siger selv forskel
+  //   på de to 403'er; nu gør appen også.
+  if (kode === "afventer-godkendelse") return EN
+    ? "Your access is waiting for a yes. We will say when it is approved \u2014 you do not need to do anything."
+    : "Din adgang venter p\u00e5 et ja. Vi siger til, s\u00e5 snart den er godkendt \u2014 du skal ikke g\u00f8re noget.";
   if (kode === "kraever-invitation" || status === 403) return EN
     ? "StreakTennis needs an invitation. Enter your player code under \u2699 Player code \u2014 or ask whoever invited you."
     : "StreakTennis kr\u00e6ver en invitation. Indtast din spiller-kode under \u2699 SPILLER-KODE \u2014 eller sp\u00f8rg den, der inviterede dig.";
@@ -6805,33 +6814,90 @@ const A = {
   analyseAabn: (i) => { S.redigerA = S.redigerA === +i ? null : +i; S.aTekst = (S.gemte[+i] && S.gemte[+i].analyse) || ""; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   analyseGem: (i) => { if (S.gemte[+i]) { S.gemte[+i].analyse = S.aTekst; gemAlle(); } S.redigerA = null; S.aTekst = ""; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   analyseAnnuller: () => { S.redigerA = null; S.aTekst = ""; render(); },
-  // ═══ v4.120.0 · FLYT KAMPEN TIL DEN RIGTIGE SPILLER ══════════════
-  //   Nicolai 11/9: «Kampene er registreret under mig.» En kamp hører til
-  //   den telefon, den blev tastet på — og i en familie er det ofte den
-  //   forkerte. Flytningen går gennem den fletning, der findes i forvejen
-  //   (`fletInd`), fordi den er målt og allerede dedupliker. Der bygges
-  //   kun DØREN ind til den.
-  //   ⛔ Ingen knap her sletter noget. Kortets egen 🗑 Slet gør det, når
-  //     kampen ER set på den anden telefon (princip: en flytning, der
-  //     sletter først, kan tabe en kamp).
-  _flytKampe: () => {
-    const k = S.gemte[S.flytKamp]; if (!k) return [];
-    if (!S.flytAlle) return [k];
-    const tur = String(k.turnering || "").trim().toLowerCase();
-    if (!tur) return [k];
-    return (S.gemte || []).filter(function (x) { return x && String(x.turnering || "").trim().toLowerCase() === tur; });
-  },
-  _flytTekst: () => {
-    try { S.flytTekst = "TEAMOSKAR-BACKUP-V1\n" + JSON.stringify({ v: 2, tid: new Date().toISOString(), kampe: A._flytKampe() }); }
-    catch (_e) { S.flytTekst = ""; }
-  },
+  // ═══ v4.127.0 · SEND KAMPEN DIREKTE TIL ET BRUGERNAVN ════════════
+  //   Nicolai 11/9: «Vi skal heller ALDRIG sende noget fra en enhed til en
+  //   anden. Dette skal kunne sendes direkte via brugernavn.»
+  //   v4.120.0 lavede en tekstklump, man selv skulle kopiere og indsætte.
+  //   Den er væk. Kampen rejser nu gennem ORMEHULLET: den pakkes i en
+  //   konvolut, der er krypteret til modtagerens egen nøgle — serveren kan
+  //   ikke læse den — og lander i hendes postkasse, hvor hendes app henter,
+  //   åbner, fletter ind og kvitterer.
+  //   ⛔ Ingen knap her sletter noget: kortets egen 🗑 Slet gør det, når
+  //     kampen ER set på den anden telefon (princip 82).
   flytAabn: (i) => {
     if (!S.gemte[+i]) return;
-    S.flytKamp = +i; S.retKamp = null; S.flettKamp = null; S.sletBekraeft = null; S.flytAlle = false; S.kopieret = null;
-    A._flytTekst(); render();
+    S.flytKamp = +i; S.retKamp = null; S.flettKamp = null; S.sletBekraeft = null;
+    S.flytNavn = ""; S.flytFundet = null; S.flytBesked = null; render();
   },
-  flytOmfang: (v) => { S.flytAlle = String(v) === "1"; S.kopieret = null; A._flytTekst(); render(); },
-  flytFortryd: () => { S.flytKamp = null; S.flytTekst = ""; S.kopieret = null; render(); },
+  flytFortryd: () => { S.flytKamp = null; S.flytNavn = ""; S.flytFundet = null; S.flytBesked = null; render(); },
+  flytSoeg: async () => {
+    const EN = S.sprog === "en";
+    const bn = String(S.flytNavn || "").trim().toLowerCase();
+    if (!bn || S.flytSoeger) return;
+    S.flytSoeger = true; S.flytFundet = null; S.flytBesked = null; render();
+    const r = await teamBudKald("post-find", { brugernavn: bn });
+    S.flytSoeger = false;
+    if (r && r.fejl) { S.flytBesked = { fejl: true, t: EN ? "Could not reach the server." : "Kunne ikke nå serveren." }; render(); return; }
+    // ⚠️ princip 75: hvert af de tre udfald har sin EGEN sætning.
+    if (!r || !r.fundet) { S.flytBesked = { fejl: true, t: (EN ? "No player is called " : "Ingen spiller hedder ") + "«" + bn + "»." }; render(); return; }
+    if (!r.har_postkasse || !r.post_pub) {
+      S.flytBesked = { fejl: true, t: (EN
+        ? (r.fornavn || bn) + " has not opened the app since the mailbox was made, so there is nothing to send to yet. Ask them to open StreakTennis once."
+        : (r.fornavn || bn) + " har ikke åbnet appen, siden postkassen blev lavet, så der er ikke noget at sende til endnu. Bed hende åbne StreakTennis én gang.") };
+      render(); return;
+    }
+    S.flytFundet = { navn: r.fornavn || bn, brugernavn: bn, pub: r.post_pub };
+    render();
+  },
+  flytSend: async (i) => {
+    const EN = S.sprog === "en";
+    const k = S.gemte[+i]; const m = S.flytFundet;
+    if (!k || !m || !m.pub || S.flytSender) return;
+    S.flytSender = true; S.flytBesked = null; render();
+    try {
+      const ren = rensKamp(JSON.parse(JSON.stringify(k)));
+      if (!ren) throw new Error("kamp");
+      delete ren.analyse;   // princip 19: analysen hænger på modtagerens egen adgang
+      // ⭐ Afsenderen siger sit eget navn, så modtageren ved, hvem kampen
+      //   kom fra — aldrig en nøgle, aldrig en adresse.
+      const fra = String(SPILLER || (EN ? "a friend" : "en ven")).slice(0, 40);
+      const krypt = await postLaas({ v: 1, kamp: ren, fra: fra, tid: new Date().toISOString() }, m.pub);
+      // ⛔⭐⭐ `post-send`, IKKE `post-laeg`. Målt 11/9: `post-laeg`
+      //   adresserer med KALDERENS EGEN nøgle (`const ejer = "sp:" + sn`)
+      //   og læser kun `krypt` og `fra` fra kroppen. Et `til_pub` dér ville
+      //   være blevet tavst ignoreret, og kampen var landet i MIN EGEN
+      //   postkasse — og skærmen ville have sagt «sendt».
+      const r = await skyKald("post-send", { brugernavn: m.brugernavn, til_pub: m.pub, krypt, fra });
+      if (r && r.fejl) {
+        // ⚠️ Princip 75: hver afvisning har sin EGEN sætning. En vagt,
+        //   der kasserer i stilhed, laver en fejl, ingen kan finde.
+        const t = r.fejl === "noegle-skiftet"
+            ? (EN ? m.navn + " has a new mailbox key — search the username again." : m.navn + " har fået en ny postkasse-nøgle — søg brugernavnet frem igen.")
+          : (r.fejl === "ingen-postkasse" || r.fejl === "ukendt-modtager")
+            ? (EN ? "Could not find " + m.navn + " anymore. Search the username again." : "Kunne ikke finde " + m.navn + " længere. Søg brugernavnet frem igen.")
+          : r.fejl === "dig-selv"
+            ? (EN ? "The match is already here." : "Kampen er her allerede.")
+          : r.fejl === "fuld"
+            ? (EN ? m.navn + "'s inbox is full — it empties when the app is opened there." : m.navn + "s postkasse er fuld — den tømmes, når appen åbnes dér.")
+          : r.fejl === "for-mange"
+            ? (EN ? "You have already sent " + (r.antal || "") + " matches that have not been picked up yet." : "Du har allerede sendt " + (r.antal || "") + " kampe, der ikke er hentet endnu.")
+          : (EN ? "The match could not be sent right now — it stays on this phone." : "Kampen kunne ikke sendes lige nu — den bliver på denne telefon.");
+        S.flytSender = false; S.flytBesked = { fejl: true, t: t }; render(); return;
+      }
+      // ⛔⭐⭐ FANGET AF PRØVEN: kvitteringen bor INDE i panelet, så hvis
+      //   panelet lukkes i samme åndedrag, bliver «Sendt til Oskar» skrevet
+      //   og aldrig vist. Et løfte, der kun gemmes, er ikke givet (princip
+      //   70). Panelet bliver stående; kun søgningen nulstilles.
+      S.flytSender = false; S.flytFundet = null; S.flytNavn = "";
+      S.flytBesked = { fejl: false, t: (EN
+        ? "Sent to " + m.navn + " \u2014 it lands in the app the next time it is opened. Nothing was deleted here: remove it with \ud83d\uddd1 Delete once you have seen it there."
+        : "Sendt til " + m.navn + " \u2014 den lander i appen, n\u00e6ste gang den \u00e5bnes. Der blev ikke slettet noget her: fjern den med \ud83d\uddd1 Slet, n\u00e5r du har set den dér.") };
+    } catch (_e) {
+      S.flytSender = false;
+      S.flytBesked = { fejl: true, t: EN ? "The match could not be sent right now \u2014 it stays on this phone." : "Kampen kunne ikke sendes lige nu \u2014 den bliver p\u00e5 denne telefon." };
+    }
+    render();
+  },
 
   // ═══ v4.118.0 · OPSÆTNINGEN PÅ DEN KØRENDE KAMP ══════════════════
   //   Nicolai 11/9: «Det skal man kunne rette når man finder ud af det.»
@@ -6897,6 +6963,10 @@ const A = {
     // ⭐ nyt indholds-id ⇒ den gamle række i arkivet ville blive stående
     //   som en spøgelseskamp. Den fjernes — og det siges på skærmen.
     if (gammelId && gammelId !== k.id) { try { A.kamparkivSlet(gammelId); } catch (_e) {} }
+    // ⛔⭐ v4.125.0 · SAMME HUL SOM FLETNINGEN HAVDE: et nyt resultat er et
+    //   nyt kampresume. Uden denne linje står det gamle hos træneren og
+    //   kommer tilbage ved næste synk.
+    if (k.resultat !== gammeltRes) kampeneErAendret([k.modstander]);
     S.retBesked = { fejl: false, t: (EN ? "The match was corrected: " : "Kampen er rettet: ") + (k.resultat || "\u2013")
       + " \u00b7 " + (k.mtb ? (EN ? "3rd set = match tie-break" : "3. s\u00e6t = match tie-break") : (EN ? "3rd set = full set" : "3. s\u00e6t = fuldt s\u00e6t"))
       + (k.resultat !== gammeltRes ? (EN ? ". Pictures on the match stay on the old result." : ". Billeder p\u00e5 kampen bliver h\u00e6ngende p\u00e5 det gamle resultat.") : "") };
@@ -6908,30 +6978,56 @@ const A = {
   //   Appen afsluttede kampen efter 10 point i 3. sæt, og resten blev en
   //   ny kamp. Her lægges de to sammen igen — og 3. sættets format vælges
   //   forfra, for det var dét, der var galt.
-  flettSpoerg: (i) => { S.flettKamp = +i; S.flettMtb = false; S.flettBesked = null; S.sletBekraeft = null; render(); },
+  flettSpoerg: (i) => { S.flettKamp = +i; S.flettMtb = false; S.flettBesked = null; S.sletBekraeft = null; S.retKamp = null; S.flytKamp = null;
+    // ⭐ v4.125.0 · den under er FORVALGT, for det var det, der plejede at
+    //   ske — men nu er det et valg, man kan fravælge og bygge videre på.
+    S.flettValgt = (S.gemte[+i + 1] && Array.isArray(S.gemte[+i + 1].point) && S.gemte[+i + 1].point.length) ? [+i + 1] : [];
+    S.flettAlle = false; render(); },
+  flettVaelg: (v) => { const j = +v; const k = S.flettValgt.indexOf(j);
+    if (k >= 0) S.flettValgt.splice(k, 1); else S.flettValgt.push(j);
+    S.flettBesked = null; render(); },
+  flettAlleToggle: () => { S.flettAlle = !S.flettAlle; render(); },
   flettFortryd: () => { S.flettKamp = null; S.flettBesked = null; render(); },
   flettMtbSaet: (v) => { S.flettMtb = String(v) === "1"; render(); },
   flettKoer: (i) => {
     const EN = S.sprog === "en";
-    const b = S.gemte[+i], a = S.gemte[+i + 1];   // listen er nyest først: a ligger UNDER og er ældst
-    if (!a || !b || !Array.isArray(a.point) || !Array.isArray(b.point)) {
-      S.flettBesked = { fejl: true, t: EN ? "The two matches could not be read." : "De to kampe kunne ikke læses." }; render(); return;
+    // ⭐⭐⭐ v4.125.0 · 1..N KAMPE, VALGT I LISTEN. Før var det altid
+    //   «kampen under» — en forsimpling, der holdt til præcis ét tilfælde.
+    //   `S.gemte` er sorteret NYEST FØRST, så en HØJERE plads er en ÆLDRE
+    //   kamp: rækkefølgen er derfor plads-numrene faldende. Det er den
+    //   samme regel som før (a = i+1 var den ældste), bare skrevet, så
+    //   den holder til mere end to.
+    const pladser = [+i].concat((S.flettValgt || []).map(Number))
+      .filter(function (x, k, arr) { return arr.indexOf(x) === k; })
+      .filter(function (x) { const k = S.gemte[x]; return k && Array.isArray(k.point) && k.point.length; })
+      .sort(function (x, y) { return y - x; });   // ældst først
+    if (pladser.length < 2) {
+      S.flettBesked = { fejl: true, t: EN ? "Pick at least one more match." : "Vælg mindst én kamp mere." }; render(); return;
     }
-    const gamleId = [a.id, b.id].filter(Boolean);
+    const valgte = pladser.map(function (x) { return S.gemte[x]; });
+    const foerste = valgte[0];
+    const gamleId = valgte.map(function (k) { return k.id; }).filter(Boolean);
+    const navne = valgte.map(function (k) { return k.modstander; }).filter(Boolean);
     // ⛔⭐⭐ FANGET AF PRØVEN 11/9: en justering er ikke et boldnummer, der kan
     //   forskydes — den NULSTILLER stillingen til et absolut sæt/parti-tal
-    //   (`anvendBasis`). Den anden kamps justeringer blev sat, mens den var
-    //   en selvstændig kamp fra 0-0; flyttet herind ville de slette de sæt,
-    //   der allerede er spillet. Derfor: KUN den førstes overføres — og den
-    //   anden kamps justeringer siges højt i kvitteringen (princip 75).
-    const just = Array.isArray(a.justeringer) ? a.justeringer.slice() : [];
-    const tabteJust = (Array.isArray(b.justeringer) ? b.justeringer : []).filter(function (j) { return j && typeof j.i === "number"; }).length;
-    const ny = { modstander: a.modstander || b.modstander, turnering: a.turnering || b.turnering,
-      dato: (a.dato && b.dato) ? (a.dato <= b.dato ? a.dato : b.dato) : (a.dato || b.dato),
-      oskarFirst: a.oskarFirst !== false, mtb: S.flettMtb === true,
-      saetTil: a.saetTil === 4 ? 4 : 6, noAd: a.noAd === true, afsluttet: true,
-      justeringer: just, point: a.point.concat(b.point),
-      analyse: "", tre: null, navnLaas: (a.navnLaas === true && b.navnLaas === true) };
+    //   (`anvendBasis`). De andres justeringer blev sat, mens de var
+    //   selvstændige kampe fra 0-0; flyttet herind ville de slette de sæt,
+    //   der allerede er spillet. Derfor: KUN den ÆLDSTES overføres — og de
+    //   andres tælles og siges højt i kvitteringen (princip 75).
+    const just = Array.isArray(foerste.justeringer) ? foerste.justeringer.slice() : [];
+    let tabteJust = 0, bolde = [];
+    valgte.forEach(function (k, nr) {
+      bolde = bolde.concat(k.point);
+      if (nr > 0) tabteJust += (Array.isArray(k.justeringer) ? k.justeringer : []).filter(function (j) { return j && typeof j.i === "number"; }).length;
+    });
+    const foersteMed = function (felt) { for (const k of valgte) { if (k[felt]) return k[felt]; } return ""; };
+    const datoer = valgte.map(function (k) { return k.dato; }).filter(Boolean).sort();
+    const ny = { modstander: foersteMed("modstander"), turnering: foersteMed("turnering"),
+      dato: datoer[0] || foerste.dato,
+      oskarFirst: foerste.oskarFirst !== false, mtb: S.flettMtb === true,
+      saetTil: foerste.saetTil === 4 ? 4 : 6, noAd: foerste.noAd === true, afsluttet: true,
+      justeringer: just, point: bolde,
+      analyse: "", tre: null, navnLaas: valgte.every(function (k) { return k.navnLaas === true; }) };
     // ⭐ Resultatet regnes FORFRA — samme formel som «Afslut & gem».
     try {
       const st = beregnStilling(ny.point, ny.oskarFirst, ny.mtb, ny.justeringer, ny.saetTil, ny.noAd);
@@ -6939,15 +7035,21 @@ const A = {
       ny.facitVandt = st.setsO > st.setsM;
     } catch (_e) { ny.resultat = ""; }
     ny.id = udledtKampId(ny);
-    S.gemte.splice(+i, 2, ny);
+    // pladserne er faldende, så der fjernes NEDEFRA og op — ellers flytter
+    // de øvrige numre sig under hånden på os.
+    pladser.forEach(function (x) { S.gemte.splice(x, 1); });
+    S.gemte.push(ny);
     S.gemte = sorterNyestFoerst(S.gemte, "dato");
-    S.flettKamp = null; S.kampAaben = {}; S.analyseAaben = {};
+    S.flettKamp = null; S.flettValgt = []; S.kampAaben = {}; S.analyseAaben = {};
     gemAlle();
-    // ⭐ og de to gamle forsvinder også fra arkivet — ellers kom de hjem igen.
+    // ⭐ de gamle forsvinder også fra arkivet — ellers kom de hjem igen.
     gamleId.forEach(function (id) { try { A.kamparkivSlet(id); } catch (_e) {} });
-    S.flettBesked = { fejl: false, t: (EN ? "Merged into one match: " : "Slået sammen til én kamp: ") + ny.point.length + (EN ? " balls · " : " bolde · ") + (ny.resultat || "–")
-      + (tabteJust ? (EN ? ". " + tabteJust + " score adjustment(s) from the second match were dropped — they pointed at a score that no longer exists." : ". " + tabteJust + " stillings-justering(er) fra den anden kamp blev ikke overført — de pegede på en stilling, der ikke findes mere.") : "")
-      + (EN ? " Get a new analysis when you want one." : " Hent en ny analyse, når du vil have en.") };
+    // ⛔⭐⭐ v4.125.0 · og trænerens visning får besked. Uden denne linje
+    //   stod de gamle kampe hos træneren og kom TILBAGE ved næste synk.
+    kampeneErAendret(navne);
+    S.flettBesked = { fejl: false, t: (EN ? "Merged into one match: " : "Slået sammen til én kamp: ") + valgte.length + (EN ? " matches, " : " kampe, ") + ny.point.length + (EN ? " balls · " : " bolde · ") + (ny.resultat || "\u2013")
+      + (tabteJust ? (EN ? ". " + tabteJust + " score adjustment(s) from the others were dropped \u2014 they pointed at a score that no longer exists." : ". " + tabteJust + " stillings-justering(er) fra de andre blev ikke overf\u00f8rt \u2014 de pegede p\u00e5 en stilling, der ikke findes mere.") : "")
+      + (EN ? " Pictures stay on the old results. Get a new analysis when you want one." : " Billeder bliver h\u00e6ngende p\u00e5 de gamle resultater. Hent en ny analyse, n\u00e5r du vil have en.") };
     render();
   },
   sletSpoerg: (i) => { S.sletBekraeft = +i; render(); },
@@ -8169,6 +8271,48 @@ function _snakListe(liste, p, EN) {
 // I stedet udledes en STABIL noegle af kampens EGET indhold: dato,
 // modstander og resultat. Den er den samme hver gang, uanset hvordan
 // listen sorteres, og uanset hvad der ellers slettes.
+// ⭐⭐⭐ v4.123.0 · TEAM-BUDDET, FLYTTET VÆK FRA FORSIDEN.
+// Ordlyden er ORDRET den fra v4.108.0 — kun adressen er ny. Kroppen
+// bygges ét sted, så invitationen ikke kan komme til at sige noget
+// forskelligt to steder (princip 77).
+// ⛔⭐⭐⭐ v4.125.0 · NÅR KAMPLISTEN ÆNDRER SIG, SKAL DET SIGES VIDERE.
+// Nicolai 11/9: «Ikke alt er opdateret ved flet.» Målt: `slet` satte
+// `S.kampSlettet = true` og synkroniserede — fordi serveren FLETTER
+// resuméer, så en fjernet kamp ellers kommer tilbage og bliver stående
+// hos træneren. Fletningen og «Ret kampen» gjorde det ikke, selv om de
+// begge fjerner eller ændrer kampe. Den dør ligger nu ÉT sted.
+//   `navne`: modstanderne, hvis rival-plan er regnet på det gamle antal
+//   kampe og derfor skal hentes frisk.
+function kampeneErAendret(navne) {
+  S.kampSlettet = true;                    // næste synk sender «erstat»
+  try { (navne || []).forEach(function (nv) { if (nv && S.rivalAnalyser) delete S.rivalAnalyser[nv]; }); } catch (_e) {}
+  try { lager.gem("sai-rival-analyser", JSON.stringify(S.rivalAnalyser || {})); } catch (_e) {}
+  if (S.klubKode && S.spillerNoegle) setTimeout(function () { try { A.synkroniser(); } catch (_e) {} }, 400);
+}
+
+function _budKrop(EN) {
+  if (VISNING === "team") return "";
+  let r = "";
+  (S.budInd || []).forEach(function (b) {
+    r += '<div style="margin:0 0 10px;padding:11px;border:1.5px solid var(--guld);border-radius:12px;background:rgba(240,207,97,.06)">' +
+      '<p class="lille" style="margin:0 0 8px"><b>' + esc(b.fra || "") + '</b> ' + (EN ? "wants you on the team" : "vil have dig med på sit team") + ' ' + (b.spejl ? "🪞" : "🕳️") + '<br>' +
+      (b.spejl ? (EN ? "With the mirror: you see the matches, training and analyses — and what you enter lands with the player." : "Med spejlet: du ser kampe, træning og analyser — og det, du taster, lander hos spilleren.")
+               : (EN ? "Without the mirror: you see the streaks and can enter matches — they are sent home through the wormhole." : "Uden spejl: du ser streaks og kan taste kampe — de sendes hjem gennem ormehullet.")) +
+      ' ' + (EN ? "Never the messages." : "Aldrig beskederne.") + '</p>' +
+      '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--grus)" data-a="budSvar" data-v="' + esc(String(b.id)) + ':ja">' + (S.budSender ? "⏳ …" : (EN ? "Yes, I’m in" : "Ja, jeg er med")) + '</button>' +
+      '<button class="knap valg" style="min-height:44px" data-a="budSvar" data-v="' + esc(String(b.id)) + ':nej">' + (EN ? "No thanks" : "Nej tak") + '</button></div></div>';
+  });
+  if (S.budBesked && S.budBesked.ns) {
+    r += '<div style="margin:0 0 10px;padding:11px;border:1.5px solid var(--vundet);border-radius:12px;background:rgba(80,220,140,.06)">' +
+      '<p class="lille" style="margin:0 0 8px;color:var(--vundet)">' + esc(S.budBesked.t) + '</p>' +
+      '<button class="knap" style="width:100%;min-height:44px;background:var(--grus)" data-a="profilSkift" data-v="' + teamKontakt(S.budBesked.ns) + '">' + (EN ? "Switch to the team" : "Skift til teamet") + '</button></div>';
+  }
+  return r;
+}
+// ⭐ v4.123.0 · hvor mange invitationer venter? Bruges til kortets
+//   undertekst — så den kan ses UDEN at åbne kortet, og uden at røre HJEM.
+function _budVenter() { return VISNING === "team" ? 0 : ((S.budInd || []).length); }
+
 function _kampNoegle(k, i) {
   try {
     const raa = String(k.dato || "") + "|" + String(k.modstander || "") + "|" + String(k.resultat || "");
@@ -8947,66 +9091,22 @@ function _tegn() {
       // Kun for godkendte; kun naar spoergsmaalet aldrig er stillet
       // (permission «default») eller kanalen mangler (Safari paa iPhone);
       // og altid til at lukke — et nej huskes.
-      try {
-        const _pInde = S.portStatus && S.portStatus.kendt && S.portStatus.status === "godkendt";
-        const _pVaek = lager.hent("sai-push-stribe-vaek") === "1";
-        // ⛔ v4.60.0 · pushMulig() er FALSE i netop den Safari, striben
-        // skulle hjaelpe — kravet gjaldt kun Slaa til-varianten.
-        const _safari = erIOS() && !paaHjemmeskaerm();
-        if (_pInde && S.rolle !== "familie" && (pushMulig() || _safari) && !_pVaek) {
-          const _kanSpoerge = !_safari && pushMulig() && (typeof Notification !== "undefined" && Notification.permission === "default");
-          if (_safari || _kanSpoerge) {
-            h += '<div class="kort" style="margin:0 0 10px;padding:10px 12px;display:flex;align-items:center;gap:10px;border-color:' +
-              (forkertBrowser() ? 'var(--guld)' : 'var(--is)') + '">' +
-              '<span style="font-size:20px;flex:none">' + (forkertBrowser() ? '⚠️' : '🔔') + '</span>' +
-              // ⭐⭐⭐ v4.78.0 · TEKSTEN SKIFTER MED BROWSEREN.
-              //   Foer stod der «del \u2192 F\u00f8j til hjemmesk\u00e6rm» ogsaa i Chrome,
-              //   hvor det menupunkt ikke findes. Nu naevnes browseren ved
-              //   navn, og der peges paa den ene knap, der faktisk virker.
-              '<span class="lille" style="flex:1;text-align:left">' + (forkertBrowser()
-                ? (EN ? "You are in <b>" + browserNavn() + "</b>. On iPhone only Safari can add the app to the Home Screen \u2014 tap \u2022\u2022\u2022 and choose <b>Open in Safari</b>."
-                      : "Du er i <b>" + browserNavn() + "</b>. P\u00e5 iPhone er det kun Safari, der kan l\u00e6gge appen p\u00e5 hjemmesk\u00e6rmen \u2014 tryk \u2022\u2022\u2022 og v\u00e6lg <b>\u00c5bn i Safari</b>.")
-                : _safari
-                ? (EN ? "Get notified: put the app on the Home Screen (share \u2192 Add to Home Screen)."
-                      : "F\u00e5 beskeder: l\u00e6g appen p\u00e5 hjemmesk\u00e6rmen (del \u2192 F\u00f8j til hjemmesk\u00e6rm).")
-                : (EN ? "Turn on notifications \u2014 the app tells you when friends answer."
-                      : "Sl\u00e5 notifikationer til \u2014 appen siger til, n\u00e5r vennerne svarer.")) +
-                ' <a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700;white-space:nowrap">' +
-                (EN ? "Guide \u2197" : "Vejledning \u2197") + '</a></span>' +
-              (_kanSpoerge ? '<button class="knap" style="flex:none;width:auto;min-height:40px;padding:6px 14px;font-size:12px;background:var(--grus)" data-a="pushTil">' + (S.pushSender ? "\u23f3" : (EN ? "Turn on" : "Sl\u00e5 til")) + '</button>' : '') +
-              '<button class="knap valg" style="flex:none;width:auto;min-height:40px;padding:6px 10px;font-size:12px" data-a="pushStribeVaek">\u2715</button>' +
-              '</div>';
-            if (S.pushBesked && S.pushBesked.fejl) h += '<p class="lille" style="margin:-4px 0 10px;color:var(--tabt)">' + esc(S.pushBesked.t) + '</p>';
-          }
-        }
-      } catch (_e) {}
-      // ⭐ v4.52.0 · STATUSSTRIBEN (design §2, skaerm 3). Venter man,
-      // eller er der sagt nej, staar det HER — ikke gemt bag en fane.
-      // Er man inde, staar der INGENTING: en godkendt familie skal ikke
-      // mindes om en port, den allerede er gaaet igennem.
-      if (S.portStatus && S.portStatus.kendt && S.portStatus.status !== "godkendt") {
-        const _afv = S.portStatus.status === "afvist";
-        h += '<div class="kort" style="margin:0 0 10px;padding:10px 12px;display:flex;align-items:center;gap:10px;border-color:' + (_afv ? "var(--tabt)" : "var(--guld)") + '">' +
-          '<span style="font-size:20px;flex:none">' + (_afv ? "✋" : "⏳") + '</span>' +
-          '<span class="lille" style="flex:1;text-align:left">' + (_afv
-            ? (EN ? "Access has not been granted." : "Der er ikke givet adgang endnu.")
-            : (EN ? "You are in the queue — everything on the phone works meanwhile." : "I venter på et ja — alt på telefonen virker imens.")) + '</span>' +
-          (_afv ? '' : '<button class="knap valg" style="flex:none;width:auto;min-height:40px;padding:6px 12px;font-size:12px" data-a="doerTjek">' + (S.portHenter ? "⏳" : (EN ? "Check" : "Tjek")) + '</button>') +
-          '</div>';
-      }
-      // ⭐⭐⭐ v4.108.0 · «OSKAR VIL HAVE DIG MED PÅ SIT TEAM» — kortet står
-      //   på HJEM, ikke bag en fane. Ja → et nyt team på telefonen; nej → væk.
-      if (VISNING !== "team" && S.budInd && S.budInd.length) S.budInd.forEach(function (b) {
-        h += '<div class="kort" style="margin:0 0 10px;border-color:var(--guld)">' +
-          '<p class="lille" style="margin:0 0 8px"><b>' + esc(b.fra || "") + '</b> ' + (EN ? "wants you on the team" : "vil have dig med på sit team") + ' ' + (b.spejl ? "🪞" : "🕳️") + '<br>' +
-          (b.spejl ? (EN ? "With the mirror: you see the matches, training and analyses — and what you enter lands with the player." : "Med spejlet: du ser kampe, træning og analyser — og det, du taster, lander hos spilleren.")
-                   : (EN ? "Without the mirror: you see the streaks and can enter matches — they are sent home through the wormhole." : "Uden spejl: du ser streaks og kan taste kampe — de sendes hjem gennem ormehullet.")) +
-          ' ' + (EN ? "Never the messages." : "Aldrig beskederne.") + '</p>' +
-          '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--grus)" data-a="budSvar" data-v="' + esc(String(b.id)) + ':ja">' + (S.budSender ? "⏳ …" : (EN ? "Yes, I’m in" : "Ja, jeg er med")) + '</button>' +
-          '<button class="knap valg" style="min-height:44px" data-a="budSvar" data-v="' + esc(String(b.id)) + ':nej">' + (EN ? "No thanks" : "Nej tak") + '</button></div></div>';
-      });
-      if (VISNING !== "team" && S.budBesked && S.budBesked.ns) h += '<div class="kort" style="margin:0 0 10px;border-color:var(--vundet)"><p class="lille" style="margin:0 0 8px;color:var(--vundet)">' + esc(S.budBesked.t) + '</p>' +
-        '<button class="knap" style="width:100%;min-height:44px;background:var(--grus)" data-a="profilSkift" data-v="' + teamKontakt(S.budBesked.ns) + '">' + (EN ? "Switch to the team" : "Skift til teamet") + '</button></div>';
+      // ⛔⛔ v4.126.0 · PUSH-KORTET ER FLYTTET. Nicolai: «Alt hvad der har
+      //   med indstillinger at gøre skal i indstillinger.» Det stod her og
+      //   i 🔔 NOTIFIKATIONER — en dublet, hvoraf den ene brød jernreglen.
+      // ⛔⛔ v4.126.0 · PORT-STRIBEN ER FLYTTET til 🔑 SPILLER-KODE, hvor
+      //   adgangen bor. ⭐ Målt, at intet går tabt: `S.doerKamp = !inde`, og
+      //   KAMP-fanen tegner DØREN for enhver, der ikke er lukket ind. Den,
+      //   der prøver at registrere en kamp, bliver stoppet med det samme —
+      //   striben her var en gentagelse af en dør, der allerede findes.
+      // ⛔⛔ v4.123.0 · FORSIDEN RØRES IKKE. Nicolai 11/9 med et skærmbillede
+      //   af HJEM: «Forsiden må aldrig røres. Det er en jern-regel. Så den
+      //   skal om i indstillinger den funktionalitet.»
+      //   v4.108.0 lagde team-buddets to kort HER og skrev det som en dyd:
+      //   «kortet står på HJEM, ikke bag en fane». Det var ikke en dyd — det
+      //   var fredningsreglen, brudt med en begrundelse.
+      //   Begge kort bor nu i Indstillinger → 👪 TEAMET (`_budKrop`), og
+      //   byggescriptet måler, at de ikke er her.
       h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"START MATCH":"START KAMP") + '</b><br><small id="hero-sub">' + (EN?"register points live from the court":"registrér point live fra banen") + '</small></span><span class="dev-pil">→</span></button>';
       h += '<div class="dev-grid">' +
         // "Din træner"-flisen UDGIK 22/8 — indholdet er absorberet i TRÆN
@@ -10577,6 +10677,29 @@ function _tegn() {
           _pkrop += '<p class="lille" style="margin:8px 0 0;color:' +
             (S.pushBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.pushBesked.t) + '</p>';
         }
+        // ⭐⭐ v4.126.0 · OPSAMLINGEN, FLYTTET FRA FORSIDEN. Ordlyden er
+        //   ORDRET den fra v4.59.0/v4.78.0 — kun adressen er ny. Den er her
+        //   for dem, der kom igennem, før spørgsmålet fandtes (Louise!), og
+        //   for dem, der trykkede «senere».
+        try {
+          const _pInde2 = S.portStatus && S.portStatus.kendt && S.portStatus.status === "godkendt";
+          const _safari2 = erIOS() && !paaHjemmeskaerm();
+          const _kanSpoerge2 = !_safari2 && pushMulig() && (typeof Notification !== "undefined" && Notification.permission === "default");
+          if (_pInde2 && S.rolle !== "familie" && (_safari2 || forkertBrowser())) {
+            _pkrop += '<div style="margin-top:10px;padding:10px 12px;border:1.5px solid ' + (forkertBrowser() ? 'var(--guld)' : 'var(--is)') + ';border-radius:12px;display:flex;align-items:center;gap:10px">' +
+              '<span style="font-size:20px;flex:none">' + (forkertBrowser() ? '\u26a0\ufe0f' : '\ud83d\udd14') + '</span>' +
+              '<span class="lille" style="flex:1;text-align:left;margin:0">' + (forkertBrowser()
+                ? (EN ? "You are in <b>" + browserNavn() + "</b>. On iPhone only Safari can add the app to the Home Screen \u2014 tap \u2022\u2022\u2022 and choose <b>Open in Safari</b>."
+                      : "Du er i <b>" + browserNavn() + "</b>. P\u00e5 iPhone er det kun Safari, der kan l\u00e6gge appen p\u00e5 hjemmesk\u00e6rmen \u2014 tryk \u2022\u2022\u2022 og v\u00e6lg <b>\u00c5bn i Safari</b>.")
+                : _safari2
+                ? (EN ? "Get notified: put the app on the Home Screen (share \u2192 Add to Home Screen)."
+                      : "F\u00e5 beskeder: l\u00e6g appen p\u00e5 hjemmesk\u00e6rmen (del \u2192 F\u00f8j til hjemmesk\u00e6rm).")
+                : "") +
+                ' <a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700;white-space:nowrap">' +
+                (EN ? "Guide \u2197" : "Vejledning \u2197") + '</a></span>' +
+              '</div>';
+          }
+        } catch (_e) {}
         h += _opsKort("beskeder", "\ud83d\udd14", (EN ? "NOTIFICATIONS" : "NOTIFIKATIONER"),
           _pstatus, _pfarve, _pkrop);
       }
@@ -10712,9 +10835,25 @@ function _tegn() {
           (S.delAppBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.delAppBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.delAppBesked.t) + '</p>' : '') +
           (S.delAppTekst ? '<textarea readonly onfocus="this.select()" style="height:70px;margin-top:8px;color:var(--kridt)">' + esc(S.delAppTekst) + '</textarea>' : ''));
       }
+      // ⭐⭐⭐ v4.126.0 · ADGANGEN STÅR, HVOR NØGLEN BOR. Port-striben tegnede
+      //   «I venter på et ja» på HJEM; den står nu her, og kortets undertekst
+      //   siger det i guld, så det kan ses UDEN at åbne kortet.
+      var _portStribe = "", _portTekst = null, _portFarve = null;
+      if (S.portStatus && S.portStatus.kendt && S.portStatus.status !== "godkendt") {
+        const _afv = S.portStatus.status === "afvist";
+        _portTekst = _afv ? (EN ? "not granted" : "ikke givet adgang") : (EN ? "waiting for a yes" : "venter på et ja");
+        _portFarve = _afv ? "var(--tabt)" : "var(--guld)";
+        _portStribe = '<div style="margin:0 0 10px;padding:10px 12px;border:1.5px solid ' + (_afv ? "var(--tabt)" : "var(--guld)") + ';border-radius:12px;display:flex;align-items:center;gap:10px">' +
+          '<span style="font-size:20px;flex:none">' + (_afv ? "\u270b" : "\u23f3") + '</span>' +
+          '<span class="lille" style="flex:1;text-align:left;margin:0">' + (_afv
+            ? (EN ? "Access has not been granted." : "Der er ikke givet adgang endnu.")
+            : (EN ? "You are in the queue — everything on the phone works meanwhile." : "I venter på et ja — alt på telefonen virker imens.")) + '</span>' +
+          (_afv ? '' : '<button class="knap valg" style="flex:none;width:auto;min-height:40px;padding:6px 12px;font-size:12px" data-a="doerTjek">' + (S.portHenter ? "\u23f3" : (EN ? "Check" : "Tjek")) + '</button>') +
+          '</div>';
+      }
       h += _opsKort("noegle", "🔑", (EN?"PLAYER CODE":"SPILLER-KODE"),
-        (S.spillerNoegle ? (EN?"saved ✓":"gemt ✓") : (EN?"not set":"ikke sat")),
-        (S.spillerNoegle ? "var(--vundet)" : "var(--daempet)"), _kNoegle);
+        (_portTekst ? _portTekst : (S.spillerNoegle ? (EN?"saved ✓":"gemt ✓") : (EN?"not set":"ikke sat"))),
+        (_portFarve ? _portFarve : (S.spillerNoegle ? "var(--vundet)" : "var(--daempet)")), _portStribe + _kNoegle);
 
       // ── KLUBKODE ──────────────────────────────────────────────────
       var _kKlub;
@@ -10777,6 +10916,7 @@ function _tegn() {
       // beskeder. Noeglen vises EN gang; kun hash paa serveren.
       if (S.rolle === "familie") {
         h += _opsKort("familie", "👪", (EN?"THE TEAM":"TEAMET"), (EN?"team key":"team-nøgle"), "var(--is)",
+          _budKrop(EN) +
           '<p class="lille" style="margin:0">' + (EN
             ? "This phone holds a team key: it enters and sees data — never the messages between the player and the friends."
             : "Denne telefon har en team-nøgle: den taster og ser data — aldrig beskederne mellem spilleren og vennerne.") + '</p>' +
@@ -10835,8 +10975,13 @@ function _tegn() {
           famKrop += '<button class="knap valg" style="margin-top:8px;width:100%;min-height:44px;font-size:12px" data-a="spejlFornyNu">🪞 ' + (EN ? "Share the mirror again (after a password change)" : "Del spejlet igen (efter et kodeordsskift)") + '</button>';
         famKrop += (S.famBesked ? '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '');
         const famAntal = S.famKoder ? S.famKoder.filter(function(f){ return f.status === "aktiv"; }).length : 0;
+        // ⭐⭐⭐ v4.123.0 · team-buddet står ØVERST i kortet — det er det,
+        //   man skal svare på, før man gider læse om nøgler.
+        const _bv = _budVenter();
         h += _opsKort("familie", "👪", (EN?"THE TEAM":"TEAMET"),
-          famAntal ? (famAntal === 1 ? (EN?"1 key":"1 nøgle") : famAntal + (EN?" keys":" nøgler")) : (EN?"Set up your team":"S\u00e6t dit team"), "var(--daempet)", famKrop);
+          _bv ? (_bv === 1 ? (EN?"1 invitation waiting":"1 invitation venter") : _bv + (EN?" invitations waiting":" invitationer venter"))
+              : (famAntal ? (famAntal === 1 ? (EN?"1 key":"1 nøgle") : famAntal + (EN?" keys":" nøgler")) : (EN?"Set up your team":"S\u00e6t dit team")),
+          _bv ? "var(--guld)" : "var(--daempet)", _budKrop(EN) + famKrop);
       }
       h += _opsKort("klub", "🏷", (EN?"CLUB CODE":"KLUBKODE"),
         (VISNING === "team" ? (EN?"follows the player":"følger spilleren") : (S.klubKode ? (EN?"connected ✓":"forbundet ✓") : (EN?"no club":"ingen klub"))),
@@ -11954,9 +12099,17 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       : '<p class="lille" style="margin:2px 0 10px;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0">' + (EN
         ? "What you enter here lives only on this phone" + (S.spejlVenter ? " \u2014 the mirror arrives the next time the player opens the app." : " until the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM). Then everything here travels to him \u2014 and his matches come here.")
         : "Det, du taster her, bor kun p\u00e5 denne telefon" + (S.spejlVenter ? " \u2014 spejlet kommer, n\u00e6ste gang spilleren \u00e5bner sin app." : ", indtil spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET). S\u00e5 rejser alt herfra til ham \u2014 og hans kampe kommer hertil.")) + '</p>');
-    else h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 10px">' +
-      '<button class="knap" style="flex:none;padding:6px 10px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="klubKodeAabn">⚙ '+(EN?"Club code":"Klubkode")+' '+(S.klubKode?'✓':'—')+'</button>' +
-      '<span class="lille" style="margin:0">'+(S.klubKode?(EN?"Analyses can be fetched on this device.":"Analyser kan hentes på denne enhed."):(EN?"Needed once to fetch analyses.":"Skal indtastes én gang for at hente analyser."))+'</span></div>';
+    // ⛔⭐⭐ v4.124.0 · CHIPPEN ER VÆK — DEN LØJ. Den sagde «Skal indtastes
+    //   én gang for at hente analyser», men kampanalyser og udviklingsbrevet
+    //   har ikke krævet en klubkode siden v4.7.9 (23/8). `analyse-lov`
+    //   spørger om spillernøglen er kendt og `status === "godkendt"` — og
+    //   den læser ikke engang `plan`. Sætningen fortalte hver familie uden
+    //   klub, at de manglede noget. Betingelses-reglen, brudt indad.
+    //   ⚠️ `S.kodeAaben`-panelet nedenfor BLIVER STÅENDE: modstander-
+    //     analyser kræver stadig klubkoden, og `hentRival` åbner panelet
+    //     selv i det øjeblik, koden faktisk skal bruges. Klubkoden har
+    //     desuden sit eget kort i Indstillinger — chippen var en dublet.
+    else { /* ingen chip: klubkoden har intet med kampanalyser at gøre */ }
     if (S.kodeAaben) {
       h += '<div class="kort" style="border-color:var(--guld)"><p class="lille" style="margin:0 0 6px">'+(EN?"The code is stored only on this device and never leaves it.":"Koden gemmes kun på denne enhed og forlader den aldrig.")+'</p>';
       h += '<input type="password" autocomplete="off" data-felt="kodeUdkast" placeholder="'+(EN?'Club code':'Klubkode')+'" value="'+esc(S.kodeUdkast)+'">';
@@ -12018,16 +12171,18 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         // ⭐⭐ v4.117.0 · «Slå sammen med kampen under». Vises KUN, når der
         //   ER en kamp under, og den deler dato eller modstander med denne
         //   — vagten mod at slå to fremmede kampe sammen ved et uheld.
-        (function(){ const u = S.gemte[i+1]; if (!u || !Array.isArray(u.point) || !u.point.length) return '';
-          const sm = (String(u.modstander||"").trim().toLowerCase() === String(k.modstander||"").trim().toLowerCase()) || (u.dato && u.dato === k.dato);
-          if (!sm) return '';
-          return '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="flettSpoerg" data-v="'+i+'">\ud83d\udd17 '+(EN?"Merge with the one below":"Sl\u00e5 sammen med kampen under")+'</button>'; })() +
+        // ⭐⭐ v4.125.0 · knappen vises, når der overhovedet ER en anden kamp
+        //   at vælge. Hvilke, afgøres i panelet — ikke af, hvad der tilfældigvis
+        //   ligger lige nedenunder.
+        (function(){ const flere = (S.gemte || []).some(function(u, j){ return j !== i && u && Array.isArray(u.point) && u.point.length; });
+          if (!flere) return '';
+          return '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="flettSpoerg" data-v="'+i+'">\ud83d\udd17 '+(EN?"Merge with\u2026":"Sl\u00e5 sammen med\u2026")+'</button>'; })() +
         // ⭐⭐ v4.118.0 · «Ret opsætningen» — samme spørgsmål som på den
         //   kørende kamp, bare opdaget bagefter.
         '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="retAabn" data-v="'+i+'">⚙ '+(EN?"Fix the setup":"Ret opsætningen")+'</button>' +
         // ⭐⭐ v4.120.0 · «Flyt til en anden spiller». En kamp, der er tastet
         //   på den forkerte telefon, hørte til dér for evigt.
-        '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="flytAabn" data-v="'+i+'">📤 '+(EN?"Move to another player":"Flyt til en anden spiller")+'</button>' +
+        '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="flytAabn" data-v="'+i+'">📤 '+(EN?"Send to a player":"Send til en spiller")+'</button>' +
         // ⭐⭐ v4.28.0 · KAMPKORTET. Billedet laves paa telefonen og gaar
         // ingen steder, foer barnet selv vaelger hvorhen.
         '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="kortDel" data-v="'+i+'">' +
@@ -12038,23 +12193,48 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         //   først. 3. sættets format vælges forfra — det var dét, der var
         //   galt. Prisen (analyserne ryddes, kan ikke fortrydes) står her,
         //   hvor den gælder, ikke med småt et andet sted.
-        (S.flettKamp === i ? (function(){ const u = S.gemte[i+1] || { point: [] };
-          const rk = function(t, kk){ return '<p class="lille" style="margin:2px 0">' + t + ' <b>' + esc(kk.dato || "–") + '</b> · ' + esc(kk.resultat || (EN?"no result":"intet resultat")) + ' · <b>' + (kk.point||[]).length + '</b> ' + (EN?"balls":"bolde") + '</p>'; };
+        // ⭐⭐⭐ v4.125.0 · MAN VÆLGER SELV. Nicolai 11/9: «man skal selv
+        //   kunne vælge hvilke kampe man fletter. Ikke bare den neden under.»
+        //   Kampe, der deler dato eller modstander, står klar; «Vis alle»
+        //   åbner resten. Rækkefølgen er ÆLDST FØRST og vises, så man kan se,
+        //   hvad man får, før man trykker.
+        (S.flettKamp === i ? (function(){
+          const valgt = (S.flettValgt || []).map(Number);
+          const kandidat = function(j){ const u = S.gemte[j]; if (j === i || !u || !Array.isArray(u.point) || !u.point.length) return false;
+            if (S.flettAlle) return true;
+            return (String(u.modstander||"").trim().toLowerCase() === String(k.modstander||"").trim().toLowerCase()) || (!!u.dato && u.dato === k.dato); };
+          const liste = (S.gemte || []).map(function(_u, j){ return j; }).filter(kandidat);
+          const pladser = [i].concat(valgt).filter(function(x, m, arr){ return arr.indexOf(x) === m; })
+            .filter(function(x){ const u = S.gemte[x]; return u && Array.isArray(u.point) && u.point.length; })
+            .sort(function(x, y){ return y - x; });
+          const bolde = pladser.reduce(function(sum, x){ return sum + (S.gemte[x].point || []).length; }, 0);
+          const rk = function(t, kk){ return '<span class="lille" style="margin:0">' + t + '<b>' + esc(kk.dato || "–") + '</b> · ' + esc(kk.resultat || (EN?"no result":"intet resultat")) + ' · <b>' + (kk.point||[]).length + '</b> ' + (EN?"balls":"bolde") + '</span>'; };
           return '<div style="margin-top:10px;padding:11px;border:1.5px solid var(--is);border-radius:12px;background:rgba(120,190,255,.06)">' +
-          '<p class="lille" style="margin:0 0 7px;font-weight:800;letter-spacing:.5px;color:var(--is)">\ud83d\udd17 ' + (EN?"MERGE INTO ONE MATCH":"SL\u00c5 SAMMEN TIL \u00c9N KAMP") + '</p>' +
-          rk((EN?"1st \u2014 the one below:":"1. \u2014 kampen under:"), u) + rk((EN?"2nd \u2014 this one:":"2. \u2014 denne kamp:"), k) +
-          '<p class="lille" style="margin:9px 0 5px;font-weight:700">' + (EN?"3rd set is played as:":"3. s\u00e6t spilles som:") + '</p>' +
+          '<p class="lille" style="margin:0 0 7px;font-weight:800;letter-spacing:.5px;color:var(--is)">🔗 ' + (EN?"MERGE INTO ONE MATCH":"SLÅ SAMMEN TIL ÉN KAMP") + '</p>' +
+          '<p class="lille" style="margin:0 0 8px">' + (EN?"Pick the matches that were really one. They are laid end to end, oldest first.":"Vælg de kampe, der i virkeligheden var én. De lægges i forlængelse af hinanden, ældst først.") + '</p>' +
+          '<div style="padding:8px 10px;border-radius:9px;background:rgba(255,255,255,.04);margin-bottom:8px">' + rk((EN?"This one: ":"Denne kamp: "), k) + '</div>' +
+          (liste.length
+            ? liste.map(function(j){ const u = S.gemte[j]; const paa = valgt.indexOf(j) >= 0;
+                return '<button class="knap valg' + (paa ? ' til' : '') + '" style="width:100%;min-height:46px;margin-bottom:6px;text-align:left;justify-content:flex-start;padding:8px 11px;font-size:12px" data-a="flettVaelg" data-v="' + j + '">' +
+                  '<span style="flex:none;margin-right:8px">' + (paa ? '☑' : '☐') + '</span>' +
+                  '<span style="flex:1;min-width:0;text-align:left"><b>' + esc(u.modstander || "") + '</b><br>' + rk("", u) + '</span></button>'; }).join("")
+            : '<p class="lille" style="margin:0 0 6px;opacity:.7">' + (EN?"No matches share the date or the opponent.":"Ingen kampe deler dato eller modstander.") + '</p>') +
+          '<button class="knap valg" style="width:100%;min-height:40px;font-size:11.5px;color:var(--daempet);margin-bottom:9px" data-a="flettAlleToggle">' +
+            (S.flettAlle ? (EN?"Only matches that fit":"Kun kampe, der passer") : (EN?"Show all matches":"Vis alle kampe")) + '</button>' +
+          '<p class="lille" style="margin:9px 0 5px;font-weight:700">' + (EN?"3rd set is played as:":"3. sæt spilles som:") + '</p>' +
           '<div class="raekke" style="gap:6px">' +
-            '<button class="knap valg' + (S.flettMtb ? '' : ' til') + '" style="flex:1;min-height:42px;font-size:12.5px" data-a="flettMtbSaet" data-v="0">' + (EN?"Full set":"Fuldt s\u00e6t") + '</button>' +
+            '<button class="knap valg' + (S.flettMtb ? '' : ' til') + '" style="flex:1;min-height:42px;font-size:12.5px" data-a="flettMtbSaet" data-v="0">' + (EN?"Full set":"Fuldt sæt") + '</button>' +
             '<button class="knap valg' + (S.flettMtb ? ' til' : '') + '" style="flex:1;min-height:42px;font-size:12.5px" data-a="flettMtbSaet" data-v="1">' + (EN?"Match tie-break":"Match tie-break") + '</button>' +
           '</div>' +
           '<p class="lille" style="margin:9px 0 0;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
-            ? "The two become <b>one match of " + ((u.point||[]).length + (k.point||[]).length) + " balls</b>. The result is recalculated and the analyses are cleared \u2014 they were written for half a match. This cannot be undone."
-            : "De to bliver til <b>\u00e9n kamp p\u00e5 " + ((u.point||[]).length + (k.point||[]).length) + " bolde</b>. Resultatet regnes forfra, og analyserne ryddes \u2014 de blev skrevet til en halv kamp. Det kan ikke fortrydes.") + '</p>' +
+            ? "<b>" + pladser.length + " matches</b> become <b>one match of " + bolde + " balls</b>. The result is recalculated, the analyses are cleared, and pictures stay on the old results. This cannot be undone."
+            : "<b>" + pladser.length + " kampe</b> bliver til <b>én kamp på " + bolde + " bolde</b>. Resultatet regnes forfra, analyserne ryddes, og billeder bliver hængende på de gamle resultater. Det kan ikke fortrydes.") + '</p>' +
           '<div class="raekke" style="margin-top:9px;gap:6px">' +
-            '<button class="knap" style="flex:1;min-height:46px;background:var(--is);color:var(--dyb);font-weight:800" data-a="flettKoer" data-v="'+i+'">\ud83d\udd17 ' + (EN?"Merge":"Sl\u00e5 sammen") + '</button>' +
+            '<button class="knap" style="flex:1;min-height:46px;background:var(--is);color:var(--dyb);font-weight:800' + (pladser.length < 2 ? ';opacity:.45' : '') + '" data-a="flettKoer" data-v="'+i+'">🔗 ' + (EN?"Merge":"Slå sammen") + '</button>' +
             '<button class="knap" style="flex:none;padding:0 14px;min-height:46px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="flettFortryd">' + (EN?"Cancel":"Fortryd") + '</button>' +
-          '</div></div>'; })() : '') +
+          '</div>' +
+          (S.flettBesked && S.flettBesked.fejl ? '<p class="lille" style="margin:8px 0 0;color:var(--tabt)">' + esc(S.flettBesked.t) + '</p>' : '') +
+          '</div>'; })() : '') +
 
         // ⭐⭐⭐ v4.118.0 · RET-PANELET PÅ EN GEMT KAMP. Det viser, hvad
         //   motoren læser boldene som med den NYE opsætning — mod det, der
@@ -12082,34 +12262,28 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
             '<button class="knap" style="flex:none;padding:0 14px;min-height:46px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="retFortryd">' + (EN?"Cancel":"Fortryd") + '</button>' +
           '</div></div>'; })() : '') +
 
-        // ⭐⭐⭐ v4.120.0 · FLYTTE-PANELET. Rækkefølgen ER produktet: kopiér
-        //   → indsæt → SE kampen stå der → og først dEREFTER fjern den her.
-        //   Panelet sletter intet selv.
+        // ⭐⭐⭐ v4.127.0 · SEND TIL ET BRUGERNAVN. Ingen tekstklump, ingen
+        //   enhed-til-enhed. Kampen pakkes i en konvolut, kun modtageren
+        //   kan åbne, og lander i hendes postkasse.
         (S.flytKamp === i ? (function(){
-          const tur = String(k.turnering || "").trim();
-          const iTur = tur ? (S.gemte || []).filter(function (x) { return x && String(x.turnering || "").trim().toLowerCase() === tur.toLowerCase(); }).length : 0;
-          const antal = (A._flytKampe() || []).length;
-          const trin = function (nr, t) { return '<p class="lille" style="margin:3px 0;display:flex;gap:7px"><b style="flex:none;color:var(--is)">' + nr + '</b><span>' + t + '</span></p>'; };
+          const m = S.flytFundet;
           return '<div style="margin-top:10px;padding:11px;border:1.5px solid var(--is);border-radius:12px;background:rgba(120,190,255,.06)">' +
-          '<p class="lille" style="margin:0 0 7px;font-weight:800;letter-spacing:.5px;color:var(--is)">📤 ' + (EN?"MOVE TO ANOTHER PLAYER":"FLYT TIL EN ANDEN SPILLER") + '</p>' +
-          '<p class="lille" style="margin:0 0 8px">' + (EN
-            ? "This match was typed on this phone, so it belongs to <b>" + esc(SPILLER) + "</b>. Here is how it moves:"
-            : "Kampen blev tastet på denne telefon, så den hører til <b>" + esc(SPILLER) + "</b>. Sådan flytter den:") + '</p>' +
-          (iTur > 1 ? '<div class="raekke" style="gap:6px;margin-bottom:9px">' +
-            '<button class="knap valg' + (S.flytAlle ? '' : ' til') + '" style="flex:1;min-height:40px;font-size:12px" data-a="flytOmfang" data-v="0">' + (EN?"This match":"Denne kamp") + '</button>' +
-            '<button class="knap valg' + (S.flytAlle ? ' til' : '') + '" style="flex:1;min-height:40px;font-size:12px" data-a="flytOmfang" data-v="1">' + (EN?("All "+iTur+" from "+esc(tur)):("Alle "+iTur+" fra "+esc(tur))) + '</button>' +
-          '</div>' : '') +
-          trin("1.", (EN?"Copy the text below.":"Kopiér teksten herunder.")) +
-          trin("2.", (EN?"Send it to the phone the match belongs to.":"Send den til den telefon, kampen hører til.")) +
-          trin("3.", (EN?"There: Settings → 💾 Backup → 🔀 Merge device → paste → Merge in.":"Dér: Indstillinger → 💾 Backup → 🔀 Flet enhed → indsæt → Flet ind.")) +
-          trin("4.", (EN?"<b>See the match standing there.</b> Only then remove it here with 🗑 Delete.":"<b>Se kampen stå der.</b> Først derefter fjerner du den her med 🗑 Slet.")) +
-          '<textarea readonly onfocus="this.select()" style="height:80px;margin-top:8px;color:var(--kridt)">' + esc(S.flytTekst) + '</textarea>' +
-          eksportKnapper("flytTekst", EN) +
+          '<p class="lille" style="margin:0 0 7px;font-weight:800;letter-spacing:.5px;color:var(--is)">📤 ' + (EN?"SEND TO A PLAYER":"SEND TIL EN SPILLER") + '</p>' +
+          '<p class="lille" style="margin:0 0 9px">' + (EN
+            ? "Type the username from their StreakTennis profile. The match is packed in an envelope only they can open — the server cannot read it — and lands in their app the next time it is opened."
+            : "Skriv brugernavnet fra deres StreakTennis-profil. Kampen pakkes i en konvolut, kun de kan åbne — serveren kan ikke læse den — og lander i deres app, næste gang den åbnes.") + '</p>' +
+          '<div style="display:flex;gap:6px;align-items:stretch">' +
+            '<input style="flex:1;min-width:0" data-felt="flytNavn" maxlength="40" placeholder="' + (EN?"username":"brugernavn") + '" value="' + esc(S.flytNavn || "") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
+            '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 14px;font-size:13px" data-a="flytSoeg">' + (S.flytSoeger ? "⏳" : "🔍") + '</button></div>' +
+          (m ? '<p class="lille" style="margin:9px 0 0;padding:8px 10px;border-left:3px solid var(--vundet);background:rgba(80,220,140,.08);border-radius:0 8px 8px 0">✅ ' + (EN?"Found: ":"Fundet: ") + '<b>' + esc(m.navn) + '</b>' + (EN?" — the mailbox is ready.":" — postkassen er klar.") + '</p>' : '') +
+          (S.flytBesked ? '<p class="lille" style="margin:9px 0 0;color:' + (S.flytBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + ';line-height:1.5">' + esc(S.flytBesked.t) + '</p>' : '') +
           '<p class="lille" style="margin:9px 0 0;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
-            ? "<b>" + antal + " match(es).</b> Everything travels: balls, wings, zones, tournament, opponent and the analysis. <b>Nothing is deleted here</b> — you do that yourself once you have seen it on the other phone."
-            : "<b>" + antal + " kamp(e).</b> Alt følger med: bolde, fløje, zoner, turnering, modstander og analysen. <b>Der slettes intet her</b> — det gør du selv, når du har set den på den anden telefon.") + '</p>' +
-          '<div class="raekke" style="margin-top:9px"><button class="knap" style="width:100%;min-height:44px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="flytFortryd">' + (EN?"Close":"Luk") + '</button></div>' +
-          '</div>'; })() : '') +
+            ? "Everything travels: balls, wings, zones, tournament and opponent. <b>Nothing is deleted here</b> — you do that yourself once you have seen it in their app."
+            : "Alt følger med: bolde, fløje, zoner, turnering og modstander. <b>Der slettes intet her</b> — det gør du selv, når du har set den i deres app.") + '</p>' +
+          '<div class="raekke" style="margin-top:9px;gap:6px">' +
+            '<button class="knap" style="flex:1;min-height:46px;background:var(--is);color:var(--dyb);font-weight:800' + (m ? '' : ';opacity:.45') + '" data-a="flytSend" data-v="'+i+'">' + (S.flytSender ? "⏳ …" : "📤 " + (EN?"Send the match":"Send kampen")) + '</button>' +
+            '<button class="knap" style="flex:none;padding:0 14px;min-height:46px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="flytFortryd">' + (EN?"Close":"Luk") + '</button>' +
+          '</div></div>'; })() : '') +
 
         (S.kortBesked && S.kortLaver === null
           ? '<p class="lille" style="margin:6px 0 0;color:' + (S.kortBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.kortBesked.t) + '</p>' : '') +
@@ -12550,9 +12724,19 @@ function autoSynk(){
   } catch (e) {}
   // ⭐ v4.105.0 · ORMEHULLET: spillerens egen telefon kigger i postkassen
   //   ved opstart — stille; skærmen siger kun noget, hvis der KOM noget.
+  // ⛔⭐⭐⭐ v4.127.0 · ALLE FÅR EN POSTKASSE. Målt 11/9: kun 1 af 12
+  //   spillere havde en `post_pub`, fordi `postPubSend()` kun blev kaldt
+  //   fra `budSend` — altså kun hvis man selv havde inviteret nogen. Uden
+  //   en postkasse kan ingen sende dig en kamp overhovedet.
+  //   Hegnet er det SAMME som før (O2: en familie uden klub og uden venner
+  //   ringer ikke hjem) — kun kravet om den private nøgle er væk, for det
+  //   er netop den, der laves her. `postPubSend` er idempotent.
   try {
-    if (!teamKunStreaks() && S.spillerNoegle && S.rolle !== "familie" && lager.hent("sai-post-privat"))
-      setTimeout(function(){ try { A.postHent(true); } catch (_e) {} }, 1500);
+    if (!teamKunStreaks() && S.spillerNoegle && S.rolle !== "familie")
+      setTimeout(function(){ (async function(){
+        try { await A.postPubSend(); } catch (_e) {}
+        try { await A.postHent(true); } catch (_e) {}
+      })(); }, 1500);
   } catch (e) {}
   // ⭐⭐ v4.108.0 · TEAM-BUD ved opstart: egen visning henter invitationer
   //   (kortet på HJEM) og lægger spejl-konvolutter til dem, der venter;

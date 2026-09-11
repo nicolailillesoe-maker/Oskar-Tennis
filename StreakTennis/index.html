@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.120.0 · 11. september 2026";
+const VERSION = "v4.122.0 · 11. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -1472,6 +1472,8 @@ let S = {
   flettKamp: null, flettMtb: false, flettBesked: null,   // ⭐ v4.117.0 · slå to kampe sammen
   retKamp: null, retMtb: false, retSaet: 6, retNoAd: false, retFirst: true, retResultat: "", retVandt: true, retBesked: null,   // ⭐ v4.118.0 · ret kampens opsætning
   flytKamp: null, flytAlle: false, flytTekst: "",   // ⭐ v4.120.0 · flyt kampen til en anden spiller
+  gaveTilbage: null,   // ⭐ v4.121.0 · håndtaget på den gave, der er ved at blive taget tilbage
+  delAppBesked: null,   // ⭐ v4.122.0 · «Del med en ven» svarer, hvor der blev trykket
 };
 const MEM = {};
 const lager = {
@@ -3046,11 +3048,16 @@ const A = {
     const EN = S.sprog === "en";
     const kode = S.mitNavn || S.mitVenneId;
     if (!kode) {
-      S.vennerBesked = { fejl: true, t: EN
+      // ⛔⭐ v4.122.0 · svaret skrives nu BEGGE steder. Det stod kun i
+      //   `vennerBesked`, som kun tegnes i venne-panelet — så et tryk fra
+      //   Indstillinger gjorde ingenting og sagde ingenting (princip 35+75).
+      const _t = { fejl: true, t: EN
         ? "Your friend ID is not ready yet — open the app once more."
         : "Dit venne-ID er ikke klar endnu — åbn appen én gang til." };
+      S.vennerBesked = _t; S.delAppBesked = _t;
       render(); return;
     }
+    S.delAppBesked = null;
     const url = location.origin + location.pathname + "#ven=" + encodeURIComponent(kode);
     const t = EN
       ? "I log my tennis matches in StreakTennis — it counts my training streak and shows what to work on. Open the link and create yourself; my name is already filled in, so you can find me right away:\n\n"
@@ -3060,8 +3067,12 @@ const A = {
     // navigator.share vejen til sms'en; på en pc findes den ikke, og
     // uden reserven ville knappen bare gøre ingenting.
     if (navigator.share) {
-      try { navigator.share({ text: S.delAppTekst }); render(); return; } catch (e) {}
+      try { navigator.share({ text: S.delAppTekst });
+        // ⭐ v4.122.0 · del-arket åbnede — sig det, hvor der blev trykket.
+        S.delAppBesked = { fejl: false, t: EN ? "The share sheet is open — pick who gets it." : "Delings-arket er åbent — vælg, hvem der skal have det." };
+        render(); return; } catch (e) {}
     }
+    S.delAppBesked = { fejl: false, t: EN ? "Link copied — paste it in a message." : "Linket er kopieret — sæt det ind i en besked." };
     A.kopier("delAppTekst");
   },
   // Invitationen er brugt op — eller den inviterede vil ikke bruge den.
@@ -4457,8 +4468,9 @@ const A = {
   },
   // ⭐ GAVEN. Listen hentes med `alle:true` — uden den kan ejeren kun se
   //   dem, der VENTER, og ikke den spiller, gaven skal gives til.
+  gaveTilbageSpoerg: (v) => { S.gaveTilbage = (S.gaveTilbage === v) ? null : (v || null); S.ejerBesked = null; render(); },   // ⭐ v4.121.0
   gaveAabn: async () => {
-    S.gaveAaben = !S.gaveAaben; S.ejerBesked = null; render();
+    S.gaveAaben = !S.gaveAaben; S.ejerBesked = null; S.gaveTilbage = null; render();
     if (S.gaveAaben) { const r = await A.portKald("liste", { alle: true }); if (r && !r.fejl) S.ejerKoe = r; render(); }
   },
   // v er "haandtag|plan"
@@ -4469,9 +4481,14 @@ const A = {
     S.gaveSender = d[0]; S.ejerBesked = null; render();
     const r = await A.portKald("gave", { h: d[0], plan: d[1] });
     S.gaveSender = null;
+    // ⭐ v4.121.0 · kvitteringen skal sige DET, DER SKETE. «Givet: Signe →
+    //   ingen» var vrøvl. Og planens navn skrives, som skærmen kalder den.
     S.ejerBesked = (r && r.fejl)
-      ? { fejl: true, t: r.t || (EN ? "Could not give it." : "Kunne ikke gives.") }
-      : { fejl: false, t: (EN ? "Given: " : "Givet: ") + (r.fornavn || "") + " \u2192 " + d[1] };
+      ? { fejl: true, t: r.t || (EN ? "Could not be changed." : "Kunne ikke ændres.") }
+      : { fejl: false, t: (r && r.tilbage)
+          ? (EN ? "Taken back: " : "Taget tilbage: ") + (r.fornavn || "") + " \u2192 " + _planNavn("gaest", EN)
+          : (EN ? "Given: " : "Givet: ") + (r.fornavn || "") + " \u2192 " + _planNavn(d[1], EN) };
+    S.gaveTilbage = null;
     const r2 = await A.portKald("liste", { alle: true });
     if (r2 && !r2.fejl) S.ejerKoe = r2;
     render();
@@ -6951,6 +6968,14 @@ const A = {
 
 // ---------- Rendering ----------
 const esc = (t) => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// ⭐ v4.121.0 · planens navn, som skaermen kalder den. Ét sted.
+function _planNavn(p, EN) {
+  return p === "gaest" ? (EN ? "Basic" : "Basis")
+       : p === "fuld"  ? (EN ? "Full" : "Fuld")
+       : p === "fri"   ? (EN ? "Free streaming" : "Fri streaming")
+       : p === "klub"  ? (EN ? "Club" : "Klub")
+       : (p || "—");
+}
 
 // ⭐⭐ v4.21.0 · LOGIN-KORTET. Bruges BAADE paa velkomstskaermen og i
 // Indstillinger — én kilde, saa de to aldrig kan komme til at sige
@@ -9959,8 +9984,8 @@ function _tegn() {
           h += '</div>';
         }
         h += '<div class="dev-grid" style="margin:10px 0 0">' +
-          _vFlise("send", "\ud83d\udce9", (EN ? "SEND THE APP" : "SEND APPEN"),
-                  (EN ? "to someone new" : "til en uden appen")) +
+          _vFlise("send", "\ud83d\udce9", (EN ? "SHARE WITH A FRIEND" : "DEL MED EN VEN"),
+                  (EN ? "to someone without the app" : "til en uden appen")) +
           _vFlise("id", "\ud83c\udd94", (EN ? "YOUR ID" : "DIT ID"),
                   esc(S.mitNavn || S.mitVenneId || (EN ? "not ready yet" : "ikke klar endnu"))) +
           '</div>';
@@ -10041,10 +10066,10 @@ function _tegn() {
         // man i forvejen er i gang med at faa fat i nogen. Fredningsreglen
         // holder — forsiden er urørt, funktionen bor i et rum, der findes.
         if (_vp2 === "send" && (S.mitNavn || S.mitVenneId)) {
-          h += '<button class="knap" style="width:100%;margin-top:11px;min-height:44px" data-a="appDel">📩 ' +
+          h += '<button class="knap" style="width:100%;margin-top:11px;min-height:44px" data-a="appDel">' +
             (S.kopieret === "delAppTekst"
               ? (EN ? "Link copied ✓" : "Link kopieret ✓")
-              : (EN ? "Send StreakTennis to a friend" : "Send StreakTennis til en ven")) + '</button>' +
+              : "\ud83d\udce9 " + (EN ? "Share with a friend" : "Del med en ven")) + '</button>' +
             '<p class="lille" style="margin:6px 2px 0;opacity:.7">' + (EN
               ? "They get a link, create themselves — and you are already filled in as the friend they can ask."
               : "De får et link, opretter sig selv — og du står allerede klar som den ven, de kan spørge.") + '</p>';
@@ -10347,33 +10372,71 @@ function _tegn() {
           //   det er motorens regel, og skærmen siger det samme.
           const _g = ((_k && _k.godkendte) || []).filter(function(x){ return (x.klub || "") === "Uden klub"; });
           const _q = String(S.gaveSoeg || "").trim().toLowerCase();
-          // ⭐ v4.91.0 · Uden søgning: KUN dem, der har fået en gave.
-          //   Med søgning (2+ tegn): alle uden klub, der matcher navnet.
-          const _vis = _q.length >= 2
-            ? _g.filter(function(x){ return String(x.fornavn || "").toLowerCase().indexOf(_q) >= 0; })
-            : _g.filter(function(x){ return !!x.givet; });
+          // ⭐⭐ v4.121.0 · TO GRUPPER I STEDET FOR ÉN LISTE MED ET FILTER.
+          //   FØR: uden søgning viste panelet KUN dem, ejeren allerede havde
+          //   givet noget. Den, man oftest vil handle på — én der LIGE har
+          //   meldt sig til — var usynlig, medmindre man kendte fornavnet.
+          //   ⛔ Og indtil `ejer-port` v7 (11/9) var `givet` falsk for alle
+          //     seks gamle gaver, så listen var TOM og skrev «du har ikke
+          //     givet nogen endnu» om seks familier, der havde fået adgang.
+          const _passer = function(x){ return _q.length < 2 || String(x.fornavn || "").toLowerCase().indexOf(_q) >= 0; };
+          const _givne = _g.filter(function(x){ return !!x.givet && _passer(x); });
+          const _ikke  = _g.filter(function(x){ return !x.givet && _passer(x); });
+          const _vis = _givne.concat(_ikke);
           _ekrop += '<p class="lille" style="margin:0 0 8px;opacity:.75">' + (EN
-            ? "Players <b>without a club</b> you have given free access. Type a first name to find someone else. A club\u2019s plan is paid for by the club and is never touched from here."
-            : "Spillere <b>uden klub</b>, du har givet gratis adgang. Skriv et fornavn for at finde en anden. En klubs plan betales af klubben og r\u00f8res aldrig herfra.") + '</p>' +
+            ? "Everyone <b>without a club</b>: first the ones you have given a plan, then the ones on their own. A club\u2019s plan is paid for by the club and is never touched from here."
+            : "Alle <b>uden klub</b>: f\u00f8rst dem, du har givet en plan, derefter dem, der st\u00e5r p\u00e5 deres egen. En klubs plan betales af klubben og r\u00f8res aldrig herfra.") + '</p>' +
+            // ⭐ v4.121.0 · princip 75: siger motoren, at listen er afkortet,
+            //   siger skærmen det med. Ellers tror ejeren, det var alle.
+            ((_k && _k.afkortet) ? '<p class="lille" style="margin:0 0 8px;color:var(--guld)">\u26a0\ufe0f ' + (EN
+              ? "The list was cut off — there are more players than it can show at once."
+              : "Listen blev afkortet \u2014 der er flere spillere, end den kan vise p\u00e5 \u00e9n gang.") + '</p>' : '') +
             '<input class="felt" data-felt="gaveSoeg" maxlength="40" autocapitalize="off" autocomplete="off" spellcheck="false" value="' + esc(S.gaveSoeg || "") +
               '" placeholder="' + (EN ? "find a player without a club" : "find en spiller uden klub") + '">';
           if (!_vis.length) {
             _ekrop += '<p class="lille" style="margin:8px 0 0">' + (_q.length >= 2
               ? (EN ? "Nobody without a club by that name." : "Ingen uden klub hedder s\u00e5dan.")
-              : (EN ? "You have not given anyone free access yet. Type a first name to find one." : "Du har ikke givet nogen gratis adgang endnu. Skriv et fornavn for at finde en.")) + '</p>';
+              : (EN ? "No players without a club yet." : "Der er ingen spillere uden klub endnu.")) + '</p>';
           } else {
-            _vis.forEach(function(x){
-              _ekrop += '<div style="padding:8px 0;border-top:1px solid var(--kant)">' +
-                '<div style="display:flex;align-items:baseline;gap:8px"><b style="font-size:13.5px">' + esc(x.fornavn || "") + '</b>' +
-                '<span class="lille" style="margin:0;opacity:.7">' + (EN?"now: ":"nu: ") + esc(x.plan || "\u2014") +
-                  (x.givet ? ' \u00b7 ' + (EN ? "given" : "givet") + (x.givet_tid ? " " + esc(String(x.givet_tid).slice(0, 10)) : "") : '') + '</span></div>' +
+            // ⭐⭐⭐ v4.121.0 · ÉN RÆKKE, TO HISTORIER. En gave fra dig og en
+            //   spillers egen plan så ens ud i går. Nu bærer rækken, hvilken
+            //   af de to den er — og gaven kan tages tilbage.
+            const _raekke = function(x){
+              const _erGave = !!x.givet;
+              let r = '<div style="padding:8px 0;border-top:1px solid var(--kant)">' +
+                '<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><b style="font-size:13.5px">' + esc(x.fornavn || "") + '</b>' +
+                '<span class="lille" style="margin:0;opacity:.7">' + (EN?"now: ":"nu: ") + esc(_planNavn(x.plan, EN)) + '</span>' +
+                '<span class="lille" style="margin:0;font-weight:700;color:' + (_erGave ? "var(--guld)" : "var(--daempet)") + '">' +
+                  (_erGave ? '\ud83c\udf81 ' + (EN ? "your gift" : "din gave") + (x.givet_tid ? ' \u00b7 ' + esc(String(x.givet_tid).slice(0, 10)) : '')
+                           : (EN ? "own plan" : "egen plan")) + '</span></div>' +
                 '<div class="raekke" style="margin-top:6px">' +
                 ["gaest", "fuld", "fri"].map(function(pl){
                   return '<button class="knap valg" style="min-height:40px;font-size:12px' + (x.plan === pl ? ";border-color:var(--vundet);color:var(--vundet)" : "") + '"' +
                     (S.gaveSender === x.h ? " disabled" : "") + ' data-a="gaveSaet" data-v="' + esc(x.h + "|" + pl) + '">' +
                     (S.gaveSender === x.h ? "\u23f3" : (pl === "gaest" ? (EN?"Basic":"Basis") : pl === "fuld" ? (EN?"Full":"Fuld") : (EN?"Free streaming":"Fri streaming"))) + '</button>';
-                }).join("") + '</div></div>';
-            });
+                }).join("") + '</div>';
+              // ⭐⭐ TAG GAVEN TILBAGE — to trin som Slet, og teksten siger,
+              //   hvad der IKKE sker. Kun på rækker, der ER en gave.
+              if (_erGave) {
+                r += (S.gaveTilbage === x.h
+                  ? '<div style="margin-top:7px;padding:9px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0">' +
+                    '<p class="lille" style="margin:0 0 7px;line-height:1.5">' + (EN
+                      ? "<b>" + esc(x.fornavn || "") + "</b> goes back to <b>Basic</b>, and your gift mark is removed. <b>Nothing else is taken:</b> the account, the matches, the training and the analyses stay."
+                      : "<b>" + esc(x.fornavn || "") + "</b> g\u00e5r tilbage til <b>Basis</b>, og din gave-markering fjernes. <b>Der tages intet andet:</b> kontoen, kampene, tr\u00e6ningen og analyserne bliver.") + '</p>' +
+                    '<div class="raekke" style="gap:6px">' +
+                      '<button class="knap" style="flex:1;min-height:42px;font-size:12px;background:var(--guld);color:var(--dyb);font-weight:800"' + (S.gaveSender === x.h ? " disabled" : "") + ' data-a="gaveSaet" data-v="' + esc(x.h + "|ingen") + '">' + (S.gaveSender === x.h ? "\u23f3 \u2026" : (EN ? "Yes, take it back" : "Ja, tag den tilbage")) + '</button>' +
+                      '<button class="knap valg" style="flex:none;padding:0 14px;min-height:42px;font-size:12px" data-a="gaveTilbageSpoerg" data-v="' + esc(x.h) + '">' + (EN ? "Cancel" : "Fortryd") + '</button>' +
+                    '</div></div>'
+                  : '<div class="raekke" style="margin-top:6px"><button class="knap valg" style="width:100%;min-height:38px;font-size:11.5px;color:var(--daempet)" data-a="gaveTilbageSpoerg" data-v="' + esc(x.h) + '">\u21a9 ' + (EN ? "Take the gift back" : "Tag gaven tilbage") + '</button></div>');
+              }
+              return r + '</div>';
+            };
+            const _gruppe = function(ikon, navn, liste, tom){
+              if (!liste.length) return '<p class="lille" style="margin:10px 0 0;opacity:.6">' + ikon + ' ' + navn + ' \u2014 ' + tom + '</p>';
+              return '<p class="lille" style="margin:12px 0 2px;font-weight:800;letter-spacing:.5px;color:var(--grus)">' + ikon + ' ' + navn + ' \u00b7 ' + liste.length + '</p>' + liste.map(_raekke).join("");
+            };
+            _ekrop += _gruppe("\ud83c\udf81", (EN ? "GIVEN BY YOU" : "GIVET AF DIG"), _givne, (EN ? "none yet" : "ingen endnu")) +
+                      _gruppe("\ud83c\udd95", (EN ? "ON THEIR OWN PLAN" : "P\u00c5 DERES EGEN PLAN"), _ikke, (EN ? "nobody" : "ingen"));
           }
         }
         _ekrop += '</div>';
@@ -10628,6 +10691,26 @@ function _tegn() {
         h += _opsKort("konto", "\ud83d\udc64", (EN?"YOUR ACCOUNT":"DIN KONTO"),
           S.minKonto ? esc(S.minKonto) : (EN?"this phone only":"kun denne telefon"),
           S.minKonto ? "var(--vundet)" : "var(--daempet)", _kk);
+      }
+      // ⭐⭐⭐ v4.122.0 · «DEL MED EN VEN» FÅR ET FAST HJEM.
+      //   Nicolai 11/9: «vi skal have at man kan sende app'en til andre
+      //   tilbage. Skal hedde Del med en ven.» Målt: den blev aldrig
+      //   fjernet — den boede fire tryk inde i Streak Zone → Venner →
+      //   SEND APPEN, og ingen af de fire tryk hed «del». Et værktøj,
+      //   ingen kan finde, findes ikke for brugeren.
+      //   ⚠️ Knappen står ALTID her — også uden et venne-ID. Uden et ID
+      //   svarer den med hvorfor, i stedet for at være væk (princip 35).
+      //   ⛔ Ikke i team-visningen: dér ville man dele SPILLERENS venne-ID.
+      if (VISNING !== "team") {
+        h += _opsKort("delven", "\ud83d\udce9", (EN ? "SHARE WITH A FRIEND" : "DEL MED EN VEN"),
+          (EN ? "send the app on" : "send appen videre"), "var(--is)",
+          '<p class="lille" style="margin:0 0 9px">' + (EN
+            ? "They get a link, create themselves \u2014 and you are already filled in as the friend they can ask. Nothing is shared until they say yes."
+            : "De f\u00e5r et link, opretter sig selv \u2014 og du st\u00e5r allerede klar som den ven, de kan sp\u00f8rge. Der deles ingenting, f\u00f8r de siger ja.") + '</p>' +
+          '<button class="knap" style="width:100%;min-height:46px;background:var(--is);color:var(--dyb);font-weight:800" data-a="appDel">\ud83d\udce9 ' +
+            (S.kopieret === "delAppTekst" ? (EN ? "Link copied \u2713" : "Link kopieret \u2713") : (EN ? "Share with a friend" : "Del med en ven")) + '</button>' +
+          (S.delAppBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.delAppBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.delAppBesked.t) + '</p>' : '') +
+          (S.delAppTekst ? '<textarea readonly onfocus="this.select()" style="height:70px;margin-top:8px;color:var(--kridt)">' + esc(S.delAppTekst) + '</textarea>' : ''));
       }
       h += _opsKort("noegle", "🔑", (EN?"PLAYER CODE":"SPILLER-KODE"),
         (S.spillerNoegle ? (EN?"saved ✓":"gemt ✓") : (EN?"not set":"ikke sat")),

@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.114.0 · 8. september 2026";
+const VERSION = "v4.120.0 · 11. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -677,6 +677,13 @@ function statTabel(s, EN) {
       Math.abs(_H.ufFH - _H.ufBH) <= 1 ? 2 : Math.abs(_H.ufFH - _H.ufBH) <= 3 ? 1 : 0, "🎾");
     if (_H.vinderFH + _H.vinderBH > 0)
       r += statRk(EN ? "Winners · FH / BH" : "Vinderslag · forhånd / baghånd", _H.vinderFH + " / " + _H.vinderBH, null, null, 2, "🎾");
+    // ⭐⭐ v4.119.0 · den pressede fejl står LIGE UNDER vinderslagene,
+    //   fordi det er den samme historie: point, du selv afsluttede.
+    if ((_H.modTvFH || 0) + (_H.modTvBH || 0) > 0)
+      r += statRk(EN ? "Forced their error · FH / BH" : "Presset dem i fejl · forhånd / baghånd", (_H.modTvFH||0) + " / " + (_H.modTvBH||0), null, null, 2, "🎾");
+    if ((_H.tvFH || 0) + (_H.tvBH || 0) > 0)
+      r += statRk(EN ? "Pressed into error · FH / BH" : "Presset til fejl · forhånd / baghånd", (_H.tvFH||0) + " / " + (_H.tvBH||0), null, null,
+        Math.abs((_H.tvFH||0) - (_H.tvBH||0)) <= 1 ? 2 : 1, "🎾");
     if (_H.returFH + _H.returBH > 0)
       r += statRk(EN ? "Return errors · FH / BH" : "Returfejl · forhånd / baghånd", _H.returFH + " / " + _H.returBH, null, null, 1, "🎾");
     r += statRk(EN ? "Balls logged with a side" : "Bolde logget med side", _H.medSide + "/" + _H.muligIalt, null, null,
@@ -1172,9 +1179,9 @@ function rivalRecord(liste) {
   return [w, t];
 }
 function rivalAgg(liste) {
-  const a = { v:0, t:0, uf:0, vindere:0, serve:[0,0], s1:[0,0], s2:[0,0], retur:[0,0], bpFor:[0,0], bpMod:[0,0], ufFH:0, ufBH:0, vinderFH:0, vinderBH:0, hMed:0, hMulig:0, zN:0, zL:0, zB:0, perSaet:[], s1in:0 };
+  const a = { v:0, t:0, uf:0, vindere:0, skabt:0, modTv:0, serve:[0,0], s1:[0,0], s2:[0,0], retur:[0,0], bpFor:[0,0], bpMod:[0,0], ufFH:0, ufBH:0, vinderFH:0, vinderBH:0, hMed:0, hMulig:0, zN:0, zL:0, zB:0, perSaet:[], s1in:0 };
   liste.forEach(function(k){ const s = statistik(k);
-    a.v+=s.v; a.t+=s.t; a.uf+=s.uf; a.vindere+=s.vindere; a.zN+=s.zN; a.zL+=s.zL; a.zB+=s.zB;
+    a.v+=s.v; a.t+=s.t; a.uf+=s.uf; a.vindere+=s.vindere; a.skabt+=s.skabt; a.modTv+=s.modTv;   // ⭐ v4.116.0 a.zN+=s.zN; a.zL+=s.zL; a.zB+=s.zB;
     a.ufFH+=s.haand.ufFH; a.ufBH+=s.haand.ufBH; a.vinderFH+=s.haand.vinderFH; a.vinderBH+=s.haand.vinderBH;
     a.hMed+=s.haand.medSide; a.hMulig+=s.haand.muligIalt;
     [["serve",s.serve],["s1",s.s1],["s2",s.s2],["retur",s.retur],["bpFor",s.bpFor],["bpMod",s.bpMod]].forEach(function(p){ a[p[0]][0]+=p[1][0]; a[p[0]][1]+=p[1][1]; });
@@ -1261,7 +1268,12 @@ function livAnalyse(EN) {
   const chip = (ok, txt) => chips.push('<span style="display:inline-block;border:1.5px solid var(--'+(ok?"vundet":"tabt")+');color:var(--'+(ok?"vundet":"tabt")+');border-radius:14px;padding:3px 10px;font-size:11.5px;font-weight:700;margin:0 6px 6px 0">'+(ok?"✓ ":"⚠ ")+txt+'</span>');
   const H = s.haand;
   if (H.medSide >= 3) chip(Math.abs(H.ufFH - H.ufBH) <= 1, (EN?"Free errors FH/BH ":"Gratis fejl FH/BH ")+H.ufFH+"/"+H.ufBH);
-  chip(s.uf <= s.vindere + 1, (EN?"Winners/errors ":"Vindere/fejl ")+s.vindere+"/"+s.uf);
+  // ⭐⭐ v4.116.0 · PRESSET TIL FEJL TÆLLER MED. Nicolai 11/9 ved banen:
+  //   «Når Oskar presser til fejl er det lige så godt som vinderslag.»
+  //   `skabt` = vinderslag + es + presset til fejl — nøjagtig det tal,
+  //   kampstatistikkens «Skabt vs. foræret» har brugt hele tiden. Live
+  //   viste kun vinderslagene og gjorde en hel kategori usynlig.
+  chip(s.uf <= s.skabt + 1, (EN?"Created/errors ":"Skabt/fejl ")+s.skabt+"/"+s.uf);
   if (s.serve[1] >= 6 && s.s1pct !== null) chip(s.s1pct >= 55, (EN?"1st serve ":"1. serv ")+s.s1pct+" %");
   if (s.retur[1] >= 6 && rp !== null) chip(rp >= 30, (EN?"Return ":"Retur ")+rp+" %");
   if (s.bpFor[1] >= 1) chip(s.bpFor[0] > 0, (EN?"BP converted ":"BP udnyttet ")+s.bpFor[0]+"/"+s.bpFor[1]);
@@ -1274,7 +1286,10 @@ function livAnalyse(EN) {
       ? (_n + " of " + _i + " free errors are hit on the " + (_bh ? "backhand" : "forehand") + "." + (_net >= 2 ? " " + _net + " of them died in the net — half a metre more air on exactly that side." : " Play that side with margin: depth and cross, no lines."))
       : (_n + " af " + _i + " gratis fejl bliver slået på " + (_bh ? "baghånden" : "forhånden") + "." + (_net >= 2 ? " " + _net + " af dem døde i nettet — en halv meter mere luft på netop den side." : " Spil den side med margin: dybde og cross, ingen linjer.")));
   }
-  if (s.uf > s.vindere + 2) raad.push(EN?("The error count ("+s.uf+") beats the winners ("+s.vindere+"). Rules II+III: depth over lines, cross as standard — let the opponent take the risk."):("Fejlkontoen ("+s.uf+") overstiger vinderne ("+s.vindere+"). Bud II+III: dybde frem for linjer, cross som standard — lad modstanderen tage risikoen."));
+  // ⭐ v4.116.0 · rådet måles på det, du SKABER — og siger opdelingen, så
+  //   tallet kan efterprøves på skærmen (princip 25).
+  if (s.uf > s.skabt + 2) { const _op = s.modTv ? (EN ? " (" + s.vindere + " winners + " + s.modTv + " forced)" : " (" + s.vindere + " vinderslag + " + s.modTv + " pressede)") : "";
+    raad.push(EN?("The error count ("+s.uf+") beats what you create ("+s.skabt+")"+_op+". Rules II+III: depth over lines, cross as standard — let the opponent take the risk."):("Fejlkontoen ("+s.uf+") overstiger det, du skaber ("+s.skabt+")"+_op+". Bud II+III: dybde frem for linjer, cross som standard — lad modstanderen tage risikoen.")); }
   if (s.serve[1] >= 6 && s.s1pct !== null && s.s1pct < 55) raad.push(EN?("First serve at "+s.s1pct+" % — take pace off and spin it in. Placement beats power today."):("1. serven er på "+s.s1pct+" % — træk tempoet af og spin den ind. Placering slår kraft i dag."));
   if (s.zN >= 3 && s.zN > s.zL && s.zN > s.zB) raad.push(EN?("The errors die in the NET ("+s.zN+"). More air over the net — aim for the back third (rule II)."):("Fejlene dør i NETTET ("+s.zN+"). Mere luft over nettet — sigt efter den bageste tredjedel (bud II)."));
   if (s.bpFor[1] >= 2 && s.bpFor[0] / s.bpFor[1] < 0.5) raad.push(EN?("Break points not converted ("+s.bpFor[0]+"/"+s.bpFor[1]+"). Big point = run the weapon pattern: set up the forehand into the open court."):("Breakboldene udnyttes ikke ("+s.bpFor[0]+"/"+s.bpFor[1]+"). Stort point = kør våben-mønsteret: byg op til forehanden i det åbne felt."));
@@ -1347,8 +1362,8 @@ function rivalUdvidet(navn, liste, rec, dummy) {
       '<div style="font-size:11px;color:var(--daempet);margin-top:1px">' + esc(R.klub) + ' · ' + R.aargang + (diff ? ' · ' + diff : '') + '</div></div>';
   }
   ht += emne("📊 " + (EN ? "THE LEDGER" : "REGNSKABET")) + tb(
-    duoRk(EN ? "Errors / winners per match" : "Fejl / vindere pr. kamp", Math.round(ag.uf / antal) + " / " + Math.round(ag.vindere / antal), ag.vindere >= ag.uf ? 2 : 1,
-      EN ? "Free errors vs points ended with a winner. Green when winners outnumber the errors — the aggressive game pays for itself." : "Gratis fejl mod point afsluttet med en vinder — begge pr. kamp i snit. Grønt flueben, når vinderne overstiger fejlene: så betaler det offensive spil sig selv.") +
+    duoRk(EN ? "Errors / created per match" : "Fejl / skabt pr. kamp", Math.round(ag.uf / antal) + " / " + Math.round(ag.skabt / antal), ag.skabt >= ag.uf ? 2 : 1,
+      EN ? "Free errors vs points you ended yourself \u2014 winners, aces and errors you forced. Both per match on average. Green when what you create outnumbers the errors: then the offensive game pays for itself." : "Gratis fejl mod point, du selv afsluttede \u2014 vinderslag, es og fejl, du pressede frem. Begge pr. kamp i snit. Gr\u00f8nt flueben, n\u00e5r det, du skaber, overstiger fejlene: s\u00e5 betaler det offensive spil sig selv.") +
     duoRk(EN ? "1st serve in" : "1. serv i spil", ag.s1pct + " %", niv(ag.s1pct, 60, 45), 
       EN ? "Share of first serves that land in. Goal: 60 %+. Below 45 % all the pressure moves to the second serve." : "Andelen af førsteserver, der går i spil. Mål: 60 %+. Under 45 % flytter alt presset over på 2. serven.", ["60 %","64 %"]) +
     duoRk(EN ? "Won on 1st / 2nd serve" : "Vundet på 1. / 2. serv", pc(ag.s1) + " % / " + pc(ag.s2) + " %", niv(pc(ag.s2), 50, 40),
@@ -1356,8 +1371,8 @@ function rivalUdvidet(navn, liste, rec, dummy) {
     duoRk(EN ? "Break points won / saved" : "Breakbolde vekslet / afværget", ag.bpFor[0] + "/" + ag.bpFor[1] + " · " + ag.bpMod[0] + "/" + ag.bpMod[1], niv(pc(ag.bpFor), 40, 25),
       EN ? "First: own break points converted. Second: opponent's break points saved. The biggest points of the match — tight matches are decided here." : "Første tal: egne breakbolde udnyttet. Andet tal: modstanderens breakbolde afværget. Kampens største point — tætte kampe afgøres præcis her."));
   ht += emne((BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).emoji + " " + (EN ? (BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).navn.toUpperCase()+" RULES" : (BENCHMARKS[S.benchmark]||BENCHMARKS.sinner).navn.toUpperCase()+"-BUDENE I DUELLEN")) + tb(
-    duoRk(EN ? "Winners vs gifts" : "Vindere mod gaver", ag.vindere + " / " + ag.uf, ag.vindere >= ag.uf ? 2 : ag.uf - ag.vindere <= 8 ? 1 : 0,
-      EN ? "Sinner rule I: points should be ENDED with winners, not given away as errors. Totals across these matches — the ratio should favour the winners." : "Sinner-bud I: point skal AFSLUTTES med vindere, ikke foræres væk som fejl. Summen på tværs af kampene — forholdet skal helst være i vinder-favør.") +
+    duoRk(EN ? "Created vs given away" : "Skabt mod foræret", ag.skabt + " / " + ag.uf, ag.skabt >= ag.uf ? 2 : ag.uf - ag.skabt <= 8 ? 1 : 0,
+      EN ? "Rule I: points should be ENDED on your terms \u2014 a winner, an ace or an error you forced \u2014 not given away. Totals across these matches; the ratio should favour what you create." : "Bud I: point skal AFSLUTTES p\u00e5 dine pr\u00e6misser \u2014 et vinderslag, et es eller en fejl, du pressede frem \u2014 ikke for\u00e6res v\u00e6k. Summen p\u00e5 tv\u00e6rs af kampene; forholdet skal helst v\u00e6re i din fav\u00f8r.") +
     duoRk(EN ? "Free errors forehand / backhand" : "Gratis fejl forhånd / baghånd", ag.hMed ? (ag.ufFH + " / " + ag.ufBH) : "—", !ag.hMed ? null : Math.abs(ag.ufFH - ag.ufBH) <= 1 ? 2 : 1,
       (EN ? "WHICH side the free errors were hit from, across these matches (" + ag.hMed + " of " + ag.hMulig + " possible balls logged with a side). A clear skew points to where the margin belongs." : "HVILKEN side de gratis fejl blev slået på, på tværs af kampene (" + ag.hMed + " af " + ag.hMulig + " mulige bolde logget med side). En tydelig skævhed peger på, hvor marginen skal lægges.")) +
     duoRk(EN ? "Where the errors land" : "Hvor fejlene lander", (EN ? "net " : "net ") + ag.zN + (EN ? " · long " : " · lang ") + ag.zL + (EN ? " · wide " : " · bred ") + ag.zB, (ag.zN + ag.zL + ag.zB) === 0 ? null : ag.zN >= ag.zL && ag.zN >= ag.zB ? 0 : 1,
@@ -1454,6 +1469,9 @@ let S = {
   rumUdkast: "", rumHenter: false, rumBesked: null, rumSet: 0,
   venneKode: null, venneAaben: false, venneUdkast: "",
   nyMod: "", nyTur: "", nyFirst: true, nyMtb: true, nyFormat: 6, nyNoAd: false, livAaben: false, resInput: "",
+  flettKamp: null, flettMtb: false, flettBesked: null,   // ⭐ v4.117.0 · slå to kampe sammen
+  retKamp: null, retMtb: false, retSaet: 6, retNoAd: false, retFirst: true, retResultat: "", retVandt: true, retBesked: null,   // ⭐ v4.118.0 · ret kampens opsætning
+  flytKamp: null, flytAlle: false, flytTekst: "",   // ⭐ v4.120.0 · flyt kampen til en anden spiller
 };
 const MEM = {};
 const lager = {
@@ -2774,12 +2792,20 @@ function statistik(k) {
       else { ps.s2 += 1; if (p.r === "V") ps.s2v += 1; }
     }
   });
-  // ⭐ v4.38.0 · FORHÅND/BAGHÅND. Samme tre årsager som motoren tæller
-  // (analyse-kamp prompt v1.6): vinder · uf · returfejl. Es og dobbeltfejl er
-  // serv og har ingen fløj; tvunget dømmes for subjektivt til også at bære
-  // et sidetal. ⚠️ NÆVNEREN (muligIalt) står ALTID ved siden af tælleren —
-  // en halvt logget kamp må aldrig læses som en hel. Samme vagt som zonerne.
-  const _hMulig = k.point.filter(p => (p.r === "V" && p.å === "vinder") || (p.r === "T" && (p.å === "uf" || p.å === "returfejl")));
+  // ⭐ v4.38.0 · FORHÅND/BAGHÅND · ⭐⭐ v4.119.0 UDVIDET MED DE PRESSEDE.
+  // Nicolai 11/9: «Ved presset til fejl skal vi også kunne sige om det er
+  // forhånden eller baghånden.» v4.38.0 dømte `tvunget` for subjektiv til
+  // at bære et sidetal; den dom er omgjort af ham, der taster ved banen —
+  // og den hang alligevel dårligt sammen med v4.116.0, hvor den pressede
+  // fejl blev en ligeværdig del af `skabt`.
+  //   mod_tvunget = Oskar pressede DEM i fejl (vundet point)
+  //   tvunget     = Oskar BLEV presset i fejl (tabt point)
+  // ⚠️ NÆVNEREN (muligIalt) står ALTID ved siden af tælleren — en halvt
+  // logget kamp må aldrig læses som en hel. Samme vagt som zonerne.
+  // ⚠️ Og nævneren VOKSER med denne version: en kamp tastet før i dag har
+  // ingen side på de pressede bolde, så den falder fra f.eks. 58/58 til
+  // 58/72. Tallet er blevet sandere, ikke ringere.
+  const _hMulig = k.point.filter(p => (p.r === "V" && (p.å === "vinder" || p.å === "mod_tvunget")) || (p.r === "T" && (p.å === "uf" || p.å === "tvunget" || p.å === "returfejl")));
   const _hSide = (p) => (p.h === 1 ? 1 : p.h === 2 ? 2 : 0);
   const _hT = (r, aa, side) => _hMulig.filter(p => p.r === r && p.å === aa && _hSide(p) === side).length;
   const _ufZ = (side, z) => k.point.filter(p => p.r === "T" && p.å === "uf" && _hSide(p) === side && p.z === z).length;
@@ -2787,11 +2813,13 @@ function statistik(k) {
     vinderFH: _hT("V","vinder",1), vinderBH: _hT("V","vinder",2),
     ufFH: _hT("T","uf",1), ufBH: _hT("T","uf",2),
     returFH: _hT("T","returfejl",1), returBH: _hT("T","returfejl",2),
+    modTvFH: _hT("V","mod_tvunget",1), modTvBH: _hT("V","mod_tvunget",2),   // ⭐ v4.119.0 · han pressede DEM
+    tvFH: _hT("T","tvunget",1), tvBH: _hT("T","tvunget",2),                 // ⭐ v4.119.0 · han BLEV presset
     ufFHnet: _ufZ(1,1), ufFHlang: _ufZ(1,2), ufFHbred: _ufZ(1,3),
     ufBHnet: _ufZ(2,1), ufBHlang: _ufZ(2,2), ufBHbred: _ufZ(2,3) };
   const oFejl = k.point.filter(p => p.r === "T" && (p.å === "uf" || p.å === "tvunget" || p.å === "returfejl"));
   const zN = oFejl.filter(p => p.z === 1).length, zL = oFejl.filter(p => p.z === 2).length, zB = oFejl.filter(p => p.z === 3).length;
-  return { st, v, t, uf, vindere, perSaet, skabt: vindere + modTv, balance: vindere + modTv - uf, modEs, zN, zL, zB, haand,
+  return { st, v, t, uf, vindere, perSaet, skabt: vindere + modTv, modTv, balance: vindere + modTv - uf, modEs, zN, zL, zB, haand,
     serve: [oServe.filter(p=>p.r==="V").length, oServe.length],
     retur: [retur.filter(p=>p.r==="V").length, retur.length],
     s1pct: oServe.length ? Math.round(oServe1.length / oServe.length * 100) : 0,
@@ -2813,21 +2841,49 @@ function lavEksport(k) {
     "Skabt-balance: " + (s.balance > 0 ? "+" : "") + s.balance + " (skabt " + s.skabt + " · foræret " + s.uf + ")" + (s.modEs ? " · modstander-esser: " + s.modEs : ""),
     "Pr. sæt: " + s.perSaet.map((ps, si) => "S" + (si + 1) + " " + ps.v + "-" + ps.t + " (UE " + ps.uf + ", vindere " + ps.vin + (ps.sp ? ", 1.serv " + Math.round(ps.s1 / ps.sp * 100) + " %" : "") + ")").join(" · "),
     ((s.zN || 0) + (s.zL || 0) + (s.zB || 0) > 0 ? ("Fejl-zoner ("+SPILLER+"s"+" fejl): net ") + s.zN + " · ud lang " + s.zL + " · ud bred " + s.zB : null),
-    (s.haand.medSide > 0 ? ("Forhånd/baghånd (" + s.haand.medSide + " af " + s.haand.muligIalt + " mulige bolde logget med side): gratis fejl " + s.haand.ufFH + " FH / " + s.haand.ufBH + " BH · vinderslag " + s.haand.vinderFH + " FH / " + s.haand.vinderBH + " BH · returfejl " + s.haand.returFH + " FH / " + s.haand.returBH + " BH") : null),
+    (s.haand.medSide > 0 ? ("Forhånd/baghånd (" + s.haand.medSide + " af " + s.haand.muligIalt + " mulige bolde logget med side): gratis fejl " + s.haand.ufFH + " FH / " + s.haand.ufBH + " BH · vinderslag " + s.haand.vinderFH + " FH / " + s.haand.vinderBH + " BH · returfejl " + s.haand.returFH + " FH / " + s.haand.returBH + " BH · presset modstanderen i fejl " + (s.haand.modTvFH||0) + " FH / " + (s.haand.modTvBH||0) + " BH · selv presset i fejl " + (s.haand.tvFH||0) + " FH / " + (s.haand.tvBH||0) + " BH") : null),
     (s.haand.ufFHnet + s.haand.ufFHlang + s.haand.ufFHbred + s.haand.ufBHnet + s.haand.ufBHlang + s.haand.ufBHbred > 0 ? ("Hvor de gratis fejl sad: forhånd → net " + s.haand.ufFHnet + " · ud lang " + s.haand.ufFHlang + " · ud bred " + s.haand.ufFHbred + " · baghånd → net " + s.haand.ufBHnet + " · ud lang " + s.haand.ufBHlang + " · ud bred " + s.haand.ufBHbred) : null),
     "Rå sekvens (V/T:årsag:serv:hånd F/B): " + k.point.map(p => p.r + ":" + p.å + ":" + p.f + ":" + (p.h === 1 ? "F" : p.h === 2 ? "B" : "?")).join(" "),
     ("("+SPILLER+" servede først: ") + (k.oskarFirst ? "ja" : "nej") + " · 3. sæt = MTB: " + (k.mtb ? "ja" : "nej") + ")",
   ].join("\n");
 }
 
+// ⭐⭐ v4.118.0 · SAMME BOLDE, ANDEN OPSÆTNING — HVAD SIGER MOTOREN SÅ?
+// Rører ikke kampen. Bruges både til at vise svaret, før der trykkes gem,
+// og til at regne det endelige resultat, når der gør.
+function _retMotor(k, first, mtb, saetTil, noAd) {
+  try {
+    const st = beregnStilling(k.point || [], first !== false, mtb === true, k.justeringer, saetTil === 4 ? 4 : 6, noAd === true);
+    return { res: st.hist.map(function (h) { return h[2] && h[2].indexOf("MTB") === 0 ? h[2].replace("MTB ", "") : h[0] + "-" + h[1]; }).join(", "),
+             vandt: st.setsO > st.setsM };
+  } catch (_e) { return null; }
+}
+// ⭐ v4.118.0 · ÉN navngiven knap-række. Den kørende kamp og den gemte kamp
+// skal spørge om NØJAGTIG det samme — to skrivemåder ville blive to regler.
+function _opsRaekke(navn, valg, handling) {
+  return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+    '<span style="flex:0 0 84px;font-size:11.5px;color:var(--daempet)">' + navn + '</span>' +
+    valg.map(function (o) {
+      return '<button class="knap valg' + (o[2] ? ' til' : '') + '" style="flex:1;min-height:40px;font-size:12px;padding:6px 4px" data-a="' + handling + '" data-v="' + o[1] + '">' + o[0] + '</button>';
+    }).join("") + '</div>';
+}
+
 // ⭐ v4.38.0 · HVILKEN EFTER-SKÆRM HØRER TIL EN ÅRSAG?
 // Hånden spørges KUN på de tre årsager, motoren tæller (analyse-kamp v1.6):
 // vinder · uf · returfejl. Zonen spørges som før på egne ketsjerfejl.
 // Falder begge sammen, bliver de ÉT gitter — ikke to skærme.
-const _HAAND_AARSAG = { vinder: 1, uf: 1, returfejl: 1 };
+// ⭐⭐ v4.119.0 · HVILKE BOLDE HAR EN FLØJ? Dem, OSKARS ketsjer afgjorde.
+//   vinder · mod_tvunget → han afsluttede point med den fløj
+//   uf · tvunget · returfejl → han tabte point med den fløj
+//   es og dobbeltfejl er serv og har ingen fløj; mod_vinder, mod_es,
+//   mod_uf og mod_dobbelt er modstanderens ketsjer.
+const _HAAND_AARSAG = { vinder: 1, uf: 1, returfejl: 1, mod_tvunget: 1, tvunget: 1 };
 const _ZONE_AARSAG  = { uf: 1, tvunget: 1, returfejl: 1 };
 function _efterSkaerm(id, vundet) {
-  const haand = !!S.side && !!_HAAND_AARSAG[id] && (id === "vinder" ? !!vundet : !vundet);   // ⭐ v4.99.0 · S.side
+  // ⭐ v4.99.0 · S.side · ⭐ v4.119.0 · side-reglen er væk: årsagerne står
+  //   i forvejen på hver sin side af «vundet/tabt», og den ville have
+  //   spærret `mod_tvunget` ude. `vundet` bruges stadig af zone-reglen.
+  const haand = !!S.side && !!_HAAND_AARSAG[id];
   const zone  = !!S.zoner && !vundet && !!_ZONE_AARSAG[id];
   if (haand && zone) return "haandzone";
   if (haand) return "haand";
@@ -6732,6 +6788,151 @@ const A = {
   analyseAabn: (i) => { S.redigerA = S.redigerA === +i ? null : +i; S.aTekst = (S.gemte[+i] && S.gemte[+i].analyse) || ""; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   analyseGem: (i) => { if (S.gemte[+i]) { S.gemte[+i].analyse = S.aTekst; gemAlle(); } S.redigerA = null; S.aTekst = ""; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   analyseAnnuller: () => { S.redigerA = null; S.aTekst = ""; render(); },
+  // ═══ v4.120.0 · FLYT KAMPEN TIL DEN RIGTIGE SPILLER ══════════════
+  //   Nicolai 11/9: «Kampene er registreret under mig.» En kamp hører til
+  //   den telefon, den blev tastet på — og i en familie er det ofte den
+  //   forkerte. Flytningen går gennem den fletning, der findes i forvejen
+  //   (`fletInd`), fordi den er målt og allerede dedupliker. Der bygges
+  //   kun DØREN ind til den.
+  //   ⛔ Ingen knap her sletter noget. Kortets egen 🗑 Slet gør det, når
+  //     kampen ER set på den anden telefon (princip: en flytning, der
+  //     sletter først, kan tabe en kamp).
+  _flytKampe: () => {
+    const k = S.gemte[S.flytKamp]; if (!k) return [];
+    if (!S.flytAlle) return [k];
+    const tur = String(k.turnering || "").trim().toLowerCase();
+    if (!tur) return [k];
+    return (S.gemte || []).filter(function (x) { return x && String(x.turnering || "").trim().toLowerCase() === tur; });
+  },
+  _flytTekst: () => {
+    try { S.flytTekst = "TEAMOSKAR-BACKUP-V1\n" + JSON.stringify({ v: 2, tid: new Date().toISOString(), kampe: A._flytKampe() }); }
+    catch (_e) { S.flytTekst = ""; }
+  },
+  flytAabn: (i) => {
+    if (!S.gemte[+i]) return;
+    S.flytKamp = +i; S.retKamp = null; S.flettKamp = null; S.sletBekraeft = null; S.flytAlle = false; S.kopieret = null;
+    A._flytTekst(); render();
+  },
+  flytOmfang: (v) => { S.flytAlle = String(v) === "1"; S.kopieret = null; A._flytTekst(); render(); },
+  flytFortryd: () => { S.flytKamp = null; S.flytTekst = ""; S.kopieret = null; render(); },
+
+  // ═══ v4.118.0 · OPSÆTNINGEN PÅ DEN KØRENDE KAMP ══════════════════
+  //   Nicolai 11/9: «Det skal man kunne rette når man finder ud af det.»
+  //   Et felt skifter — motoren regner de samme bolde om. En kamp, MTB'en
+  //   havde erklæret slut, er i gang igen i samme sekund (`_doneVist`).
+  aOpsaet: (v) => {
+    if (!S.aktiv) return;
+    const d = String(v).split("|"), f = d[0], ja = d[1] === "1";
+    if (f === "mtb") S.aktiv.mtb = ja;
+    else if (f === "saet") { S.aktiv.saetTil = d[1] === "4" ? 4 : 6; if (S.aktiv.saetTil !== 4) S.aktiv.noAd = false; }
+    else if (f === "noad") S.aktiv.noAd = ja;
+    else if (f === "first") S.aktiv.oskarFirst = ja;
+    else return;
+    S._doneVist = false;   // ⭐ kampen må gerne gå fra «slut» til «i gang»
+    // stillings-tallene i panelet skal følge den nye virkelighed
+    try { const st = beregnStilling(S.aktiv.point, S.aktiv.oskarFirst, S.aktiv.mtb, S.aktiv.justeringer, S.aktiv.saetTil, S.aktiv.noAd);
+      S.j = { sO: st.setsO, sM: st.setsM, gO: st.gO, gM: st.gM, server: st.server !== false }; } catch (_e) {}
+    gemAktiv(); try { liveSend(); } catch (_e) {}
+    render();
+  },
+
+  // ═══ v4.118.0 · OPSÆTNINGEN PÅ EN GEMT KAMP ══════════════════════
+  retAabn: (i) => {
+    const k = S.gemte[+i]; if (!k) return;
+    S.retKamp = +i; S.flettKamp = null; S.sletBekraeft = null; S.retBesked = null;
+    S.retMtb = k.mtb !== false; S.retSaet = k.saetTil === 4 ? 4 : 6; S.retNoAd = k.noAd === true;
+    S.retFirst = k.oskarFirst !== false; S.retResultat = String(k.resultat || "");
+    S.retVandt = typeof k.facitVandt === "boolean" ? k.facitVandt : true;
+    render();
+  },
+  retVaelg: (v) => {
+    const k = S.gemte[S.retKamp]; if (!k) return;
+    const d = String(v).split("|"), f = d[0];
+    if (f === "vandt") { S.retVandt = d[1] === "1"; render(); return; }
+    // ⭐ feltet FØLGER motoren, så længe du ikke selv har skrevet i det.
+    //   Derfor måles der, om det stadig står på motorens gamle svar.
+    const foer = _retMotor(k, S.retFirst, S.retMtb, S.retSaet, S.retNoAd);
+    const fulgte = !S.retResultat || (foer && S.retResultat === foer.res);
+    if (f === "mtb") S.retMtb = d[1] === "1";
+    else if (f === "saet") { S.retSaet = d[1] === "4" ? 4 : 6; if (S.retSaet !== 4) S.retNoAd = false; }
+    else if (f === "noad") S.retNoAd = d[1] === "1";
+    else if (f === "first") S.retFirst = d[1] === "1";
+    else return;
+    const efter = _retMotor(k, S.retFirst, S.retMtb, S.retSaet, S.retNoAd);
+    if (fulgte && efter) { S.retResultat = efter.res; S.retVandt = efter.vandt; }
+    render();
+  },
+  retFortryd: () => { S.retKamp = null; S.retBesked = null; render(); },
+  retGem: (i) => {
+    const EN = S.sprog === "en";
+    const k = S.gemte[+i]; if (!k) return;
+    const gammelId = k.id || null, gammeltRes = String(k.resultat || "");
+    const m = _retMotor(k, S.retFirst, S.retMtb, S.retSaet, S.retNoAd);
+    k.mtb = S.retMtb === true;
+    k.saetTil = S.retSaet === 4 ? 4 : 6;
+    k.noAd = k.saetTil === 4 && S.retNoAd === true;
+    k.oskarFirst = S.retFirst !== false;
+    k.resultat = String(S.retResultat || (m ? m.res : "") || "").slice(0, 40);
+    k.facitVandt = S.retVandt === true;
+    k.id = udledtKampId(k);
+    S.retKamp = null;
+    gemAlle();
+    // ⭐ nyt indholds-id ⇒ den gamle række i arkivet ville blive stående
+    //   som en spøgelseskamp. Den fjernes — og det siges på skærmen.
+    if (gammelId && gammelId !== k.id) { try { A.kamparkivSlet(gammelId); } catch (_e) {} }
+    S.retBesked = { fejl: false, t: (EN ? "The match was corrected: " : "Kampen er rettet: ") + (k.resultat || "\u2013")
+      + " \u00b7 " + (k.mtb ? (EN ? "3rd set = match tie-break" : "3. s\u00e6t = match tie-break") : (EN ? "3rd set = full set" : "3. s\u00e6t = fuldt s\u00e6t"))
+      + (k.resultat !== gammeltRes ? (EN ? ". Pictures on the match stay on the old result." : ". Billeder p\u00e5 kampen bliver h\u00e6ngende p\u00e5 det gamle resultat.") : "") };
+    render();
+  },
+
+  // ═══ v4.117.0 · SLÅ TO KAMPE SAMMEN ══════════════════════════════
+  //   Nicolai 11/9: «Kom til at sætte den til MTB. Men var fuldt 3. set.»
+  //   Appen afsluttede kampen efter 10 point i 3. sæt, og resten blev en
+  //   ny kamp. Her lægges de to sammen igen — og 3. sættets format vælges
+  //   forfra, for det var dét, der var galt.
+  flettSpoerg: (i) => { S.flettKamp = +i; S.flettMtb = false; S.flettBesked = null; S.sletBekraeft = null; render(); },
+  flettFortryd: () => { S.flettKamp = null; S.flettBesked = null; render(); },
+  flettMtbSaet: (v) => { S.flettMtb = String(v) === "1"; render(); },
+  flettKoer: (i) => {
+    const EN = S.sprog === "en";
+    const b = S.gemte[+i], a = S.gemte[+i + 1];   // listen er nyest først: a ligger UNDER og er ældst
+    if (!a || !b || !Array.isArray(a.point) || !Array.isArray(b.point)) {
+      S.flettBesked = { fejl: true, t: EN ? "The two matches could not be read." : "De to kampe kunne ikke læses." }; render(); return;
+    }
+    const gamleId = [a.id, b.id].filter(Boolean);
+    // ⛔⭐⭐ FANGET AF PRØVEN 11/9: en justering er ikke et boldnummer, der kan
+    //   forskydes — den NULSTILLER stillingen til et absolut sæt/parti-tal
+    //   (`anvendBasis`). Den anden kamps justeringer blev sat, mens den var
+    //   en selvstændig kamp fra 0-0; flyttet herind ville de slette de sæt,
+    //   der allerede er spillet. Derfor: KUN den førstes overføres — og den
+    //   anden kamps justeringer siges højt i kvitteringen (princip 75).
+    const just = Array.isArray(a.justeringer) ? a.justeringer.slice() : [];
+    const tabteJust = (Array.isArray(b.justeringer) ? b.justeringer : []).filter(function (j) { return j && typeof j.i === "number"; }).length;
+    const ny = { modstander: a.modstander || b.modstander, turnering: a.turnering || b.turnering,
+      dato: (a.dato && b.dato) ? (a.dato <= b.dato ? a.dato : b.dato) : (a.dato || b.dato),
+      oskarFirst: a.oskarFirst !== false, mtb: S.flettMtb === true,
+      saetTil: a.saetTil === 4 ? 4 : 6, noAd: a.noAd === true, afsluttet: true,
+      justeringer: just, point: a.point.concat(b.point),
+      analyse: "", tre: null, navnLaas: (a.navnLaas === true && b.navnLaas === true) };
+    // ⭐ Resultatet regnes FORFRA — samme formel som «Afslut & gem».
+    try {
+      const st = beregnStilling(ny.point, ny.oskarFirst, ny.mtb, ny.justeringer, ny.saetTil, ny.noAd);
+      ny.resultat = st.hist.map(function (h) { return h[2] && h[2].indexOf("MTB") === 0 ? h[2].replace("MTB ", "") : h[0] + "-" + h[1]; }).join(", ");
+      ny.facitVandt = st.setsO > st.setsM;
+    } catch (_e) { ny.resultat = ""; }
+    ny.id = udledtKampId(ny);
+    S.gemte.splice(+i, 2, ny);
+    S.gemte = sorterNyestFoerst(S.gemte, "dato");
+    S.flettKamp = null; S.kampAaben = {}; S.analyseAaben = {};
+    gemAlle();
+    // ⭐ og de to gamle forsvinder også fra arkivet — ellers kom de hjem igen.
+    gamleId.forEach(function (id) { try { A.kamparkivSlet(id); } catch (_e) {} });
+    S.flettBesked = { fejl: false, t: (EN ? "Merged into one match: " : "Slået sammen til én kamp: ") + ny.point.length + (EN ? " balls · " : " bolde · ") + (ny.resultat || "–")
+      + (tabteJust ? (EN ? ". " + tabteJust + " score adjustment(s) from the second match were dropped — they pointed at a score that no longer exists." : ". " + tabteJust + " stillings-justering(er) fra den anden kamp blev ikke overført — de pegede på en stilling, der ikke findes mere.") : "")
+      + (EN ? " Get a new analysis when you want one." : " Hent en ny analyse, når du vil have en.") };
+    render();
+  },
   sletSpoerg: (i) => { S.sletBekraeft = +i; render(); },
   sletFortryd: () => { S.sletBekraeft = null; render(); },
   slet: (i) => {
@@ -10921,7 +11122,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
 
       if (!st.done) {
         h += '<div class="raekke" style="margin-bottom:6px">' +
-          '<button class="knap valg'+(S.side?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="sideToggle">🎾 '+(S.side?(EN?"FH/BH ON":"FH/BH TIL"):(EN?"FH/BH OFF":"FH/BH FRA"))+'</button>' +
+          '<button class="knap valg'+(S.side?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="sideToggle"title="'+(EN?"Asks which wing on winners, forced errors and your own errors":"Spørger om fløjen på vinderslag, pressede fejl og egne fejl")+'">🎾 '+(S.side?(EN?"FH/BH ON":"FH/BH TIL"):(EN?"FH/BH OFF":"FH/BH FRA"))+'</button>' +
           '<button class="knap valg'+(S.zoner?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="zonerToggle">🗺 '+(S.zoner?(EN?"Zones ON":"Zoner TIL"):(EN?"Zones OFF":"Zoner FRA"))+'</button></div>';
         h += '<div class="raekke"><button class="knap valg '+(S.serv===1?"til":"")+'" data-a="serv" data-v="1">'+(EN?"1st serve":"1. serv")+'</button><button class="knap valg '+(S.serv===2?"gul":"")+'" data-a="serv" data-v="2">'+(EN?"2nd serve (first serve missed)":"2. serv (førsteserv fejlet)")+'</button></div>';
         if (!S.afventer) {
@@ -11020,16 +11221,28 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         (S.liveBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.liveBesked.t) + '</p>';
       h += '</div>';
 
-      h += '<div class="raekke"><button class="knap" data-a="fortryd">'+(EN?"↶ Undo last":"↶ Fortryd seneste")+'</button><button class="knap valg" data-a="justToggle">⚙ '+(EN?"Adjust score":"Justér stillingen")+'</button><button class="knap valg" style="border:1.5px solid var(--guld)" data-a="livToggle"><span class="badge-ai">AI</span> '+(EN?"Analysis":"Analyse")+'</button></div>' +
+      h += '<div class="raekke"><button class="knap" data-a="fortryd">'+(EN?"↶ Undo last":"↶ Fortryd seneste")+'</button><button class="knap valg" data-a="justToggle">⚙ '+(EN?"Fix the match":"Ret kampen")+'</button><button class="knap valg" style="border:1.5px solid var(--guld)" data-a="livToggle"><span class="badge-ai">AI</span> '+(EN?"Analysis":"Analyse")+'</button></div>' +
       (S.livAaben ? livAnalyse(EN) : "") +
       (S.justAaben && S.j ? '<div class="kort" style="border:1.5px solid var(--is)">' +
+        // ⭐⭐⭐ v4.118.0 · OPSÆTNINGEN. Den blev låst ved kampstart, og da
+        //   MTB'en lukkede kampen på 10 point i 3. sæt, var der ingen vej
+        //   tilbage. Nu er der: ét felt skifter, motoren regner de samme
+        //   bolde om, og kampen er i gang igen.
+        '<p class="lille" style="margin:0 0 5px;font-weight:800;letter-spacing:.5px;color:var(--is)">⚙ '+(EN?"MATCH SETUP":"KAMPENS OPSÆTNING")+'</p>' +
+        '<p class="lille" style="margin:0 0 8px">'+(EN?"Set wrong at the start? Change it here — the whole match is recalculated from the balls. A match that was called over can start again.":"Sat forkert ved start? Ret det her — hele kampen regnes om ud af boldene. En kamp, der blev erklæret slut, kan fortsætte.")+'</p>' +
+        _opsRaekke((EN?"3rd set":"3. sæt"), [[(EN?"Full set":"Fuldt sæt"),"mtb|0",!S.aktiv.mtb],["Match tie-break","mtb|1",!!S.aktiv.mtb]], "aOpsaet") +
+        _opsRaekke((EN?"Sets to":"Sæt til"), [[(EN?"6 games":"6 partier"),"saet|6",S.aktiv.saetTil!==4],[(EN?"4 games":"4 partier"),"saet|4",S.aktiv.saetTil===4]], "aOpsaet") +
+        (S.aktiv.saetTil === 4 ? _opsRaekke("No-ad", [[(EN?"No":"Nej"),"noad|0",!S.aktiv.noAd],[(EN?"Yes":"Ja"),"noad|1",!!S.aktiv.noAd]], "aOpsaet") : '') +
+        _opsRaekke((EN?"Served first":"Servede først"), [[SPILLER,"first|1",S.aktiv.oskarFirst!==false],[(EN?"Opponent":"Modstander"),"first|0",S.aktiv.oskarFirst===false]], "aOpsaet") +
+        '<div style="height:1px;background:var(--kant);margin:11px 0 9px"></div>' +
+        '<p class="lille" style="margin:0 0 5px;font-weight:800;letter-spacing:.5px;color:var(--is)">🎾 '+(EN?"THE SCORE":"STILLINGEN")+'</p>' +
         '<p class="lille" style="margin-top:0">'+(EN?"Came in mid-match or missed a game? Set the CURRENT score — tracking continues from here. Points in the game reset to 0-0.":"Kom du ind midt i kampen, eller røg et parti? Sæt den AKTUELLE stilling — registreringen fortsætter herfra. Pointene i partiet nulstilles til 0-0.")+'</p>' +
         [["sO",(EN?("Sets "+SPILLER):("Sæt "+SPILLER))],["sM",(EN?"Sets opp.":"Sæt modst.")],["gO",(EN?("Games "+SPILLER):("Partier "+SPILLER))],["gM",(EN?"Games opp.":"Partier modst.")]].map(function(f){
           return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="flex:1;font-size:12.5px">'+f[1]+'</span><button class="knap" style="flex:none;padding:8px 16px" data-a="jstep" data-v="'+f[0]+'m">−</button><b style="width:26px;text-align:center;font-size:16px">'+S.j[f[0]]+'</b><button class="knap" style="flex:none;padding:8px 16px" data-a="jstep" data-v="'+f[0]+'p">+</button></div>'; }).join("") +
         '<p class="lille" style="margin:8px 0 4px">'+(EN?"Who serves the next ball?":"Hvem server næste bold?")+'</p>' +
         '<div class="raekke"><button class="knap valg '+(S.j.server?"til":"")+('" data-a="jServer" data-v="1">'+SPILLER+'</button><button class="knap valg ')+(!S.j.server?"til":"")+'" data-a="jServer" data-v="0">'+(EN?"Opponent":"Modstander")+'</button></div>' +
         '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="jAnvend">✔ '+(EN?"Apply adjustment":"Anvend justeringen")+'</button></div></div>' : '');
-      h += '<div class="kort statlinje">'+(EN?'Serve points won: ':'Serve vundet: ')+'<b>'+s.serve[0]+'/'+s.serve[1]+'</b> · '+(EN?'1st serve in: ':'1. serv i spil: ')+'<b>'+s.s1pct+' %</b> · '+(EN?'Return: ':'Retur: ')+'<b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>'+(EN?'Winners: ':'Vindere: ')+'<b style="color:var(--vundet)">'+s.vindere+'</b> · '+(EN?'Unforced errors: ':'Gratis fejl: ')+'<b style="color:'+(s.uf>s.vindere?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b> · '+(EN?'Break points: ':'Breakbolde: ')+'<b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b>'+(EN?' converted, ':' udnyttet, ')+'<b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b>'+(EN?' saved':' afværget')+'<br>'+(s.haand.medSide?((EN?'<br>Free errors — forehand: ':'<br>Gratis fejl — forhånd: ')+'<b>'+s.haand.ufFH+'</b>'+(EN?' · backhand: ':' · baghånd: ')+'<b>'+s.haand.ufBH+'</b>'+' <span style="opacity:.65">('+s.haand.medSide+'/'+s.haand.muligIalt+')</span>'):'')+(function(){ const sn = s.st.setsO + s.st.setsM + 1; const ps = s.perSaet[sn-1] || { v: 0, t: 0, uf: 0, vin: 0 }; return '<br>'+(EN?'This set: ':'Dette sæt: ')+'<b>'+ps.v+'-'+ps.t+'</b> · '+(EN?'UE ':'gratis fejl ')+'<b>'+ps.uf+'</b> · '+(EN?'winners ':'vindere ')+'<b>'+ps.vin+'</b>'; })()+((s.haand.ufFH+s.haand.ufBH>=4 && Math.abs(s.haand.ufBH-s.haand.ufFH)>=2)?' <span style="color:var(--tabt)">'+(EN?'· mostly on the ':'· mest på ')+(s.haand.ufBH>s.haand.ufFH?(EN?'backhand':'baghånden'):(EN?'forehand':'forhånden'))+'</span>':'')+'</div>';
+      h += '<div class="kort statlinje">'+(EN?'Serve points won: ':'Serve vundet: ')+'<b>'+s.serve[0]+'/'+s.serve[1]+'</b> · '+(EN?'1st serve in: ':'1. serv i spil: ')+'<b>'+s.s1pct+' %</b> · '+(EN?'Return: ':'Retur: ')+'<b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>'+(EN?'Winners: ':'Vindere: ')+'<b style="color:var(--vundet)">'+s.vindere+'</b>'+(s.modTv?' · '+(EN?'forced: ':'presset: ')+'<b style="color:var(--vundet)">'+s.modTv+'</b>':'')+' · '+(EN?'Unforced errors: ':'Gratis fejl: ')+'<b style="color:'+(s.uf>s.skabt?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b> · '+(EN?'Break points: ':'Breakbolde: ')+'<b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b>'+(EN?' converted, ':' udnyttet, ')+'<b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b>'+(EN?' saved':' afværget')+'<br>'+(s.haand.medSide?((EN?'<br>Free errors — forehand: ':'<br>Gratis fejl — forhånd: ')+'<b>'+s.haand.ufFH+'</b>'+(EN?' · backhand: ':' · baghånd: ')+'<b>'+s.haand.ufBH+'</b>'+' <span style="opacity:.65">('+s.haand.medSide+'/'+s.haand.muligIalt+')</span>'):'')+(((s.haand.modTvFH||0)+(s.haand.modTvBH||0))?((EN?'<br>Forced their error — forehand: ':'<br>Presset dem i fejl — forhånd: ')+'<b style="color:var(--vundet)">'+(s.haand.modTvFH||0)+'</b>'+(EN?' · backhand: ':' · baghånd: ')+'<b style="color:var(--vundet)">'+(s.haand.modTvBH||0)+'</b>'):'')/* ⭐ v4.119.0 */+(function(){ const sn = s.st.setsO + s.st.setsM + 1; const ps = s.perSaet[sn-1] || { v: 0, t: 0, uf: 0, vin: 0 }; return '<br>'+(EN?'This set: ':'Dette sæt: ')+'<b>'+ps.v+'-'+ps.t+'</b> · '+(EN?'UE ':'gratis fejl ')+'<b>'+ps.uf+'</b> · '+(EN?'winners ':'vindere ')+'<b>'+ps.vin+'</b>'; })()+((s.haand.ufFH+s.haand.ufBH>=4 && Math.abs(s.haand.ufBH-s.haand.ufFH)>=2)?' <span style="color:var(--tabt)">'+(EN?'· mostly on the ':'· mest på ')+(s.haand.ufBH>s.haand.ufFH?(EN?'backhand':'baghånden'):(EN?'forehand':'forhånden'))+'</span>':'')+'</div>';
       h += '<input placeholder="'+(EN?'Result (auto-filled if empty)':'Resultat (udfyldes automatisk hvis tomt)')+'" value="'+esc(S.resInput)+'" data-felt="resInput">';
       h += '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="afslut">'+(EN?"✔ Finish &amp; save the match":"✔ Afslut &amp; gem kampen")+'</button></div>';
 
@@ -11510,6 +11723,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     //   Det ydre .kort er væk: kort inde i kort gav dobbelte rammer.
     // ══════════════════════════════════════════════════════════════════
     // ⭐ v4.113.0 · kampe fra arkivet hedder «Modstander», til boksen giver navnet.
+    if (S.flettBesked && S.flettKamp === null) h += '<p class="lille" style="margin:0 0 8px;padding:9px 11px;border-left:3px solid var(' + (S.flettBesked.fejl ? '--tabt' : '--vundet') + ');background:rgba(255,255,255,.04);border-radius:0 8px 8px 0;line-height:1.5;color:var(' + (S.flettBesked.fejl ? '--tabt' : '--vundet') + ')">\ud83d\udd17 ' + esc(S.flettBesked.t) + '</p>';   // ⭐ v4.117.0
+    if (S.retBesked && S.retKamp === null) h += '<p class="lille" style="margin:0 0 8px;padding:9px 11px;border-left:3px solid var(--vundet);background:rgba(255,255,255,.04);border-radius:0 8px 8px 0;line-height:1.5;color:var(--vundet)">⚙ ' + esc(S.retBesked.t) + '</p>';   // ⭐ v4.118.0
     var _navnLaas = (S.gemte || []).filter(function(k){ return k && k.navnLaas; }).length;
     if (_navnLaas) h += '<p class="lille" style="margin:0 0 8px;padding:8px 10px;border-left:3px solid var(--is);background:rgba(120,190,255,.08);border-radius:0 8px 8px 0;line-height:1.5">\ud83d\udd12 ' + (EN
       ? _navnLaas + " match(es) came from the archive without the opponent\u2019s name \u2014 the names are in your locked backup. \u2699\ufe0f \u2192 BACKUP \u2192 <b>Fetch it</b> with your password brings them back."
@@ -11717,11 +11932,102 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         (S.sletBekraeft === i
           ? '<button class="knap" style="flex:none;padding:8px 14px;background:var(--tabt);font-size:12px" data-a="slet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet);font-size:12px" data-a="sletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
           : '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--tabt);color:var(--tabt);font-size:12px" data-a="sletSpoerg" data-v="'+i+'">🗑 '+(EN?"Delete":"Slet")+'</button>') +
+        // ⭐⭐ v4.117.0 · «Slå sammen med kampen under». Vises KUN, når der
+        //   ER en kamp under, og den deler dato eller modstander med denne
+        //   — vagten mod at slå to fremmede kampe sammen ved et uheld.
+        (function(){ const u = S.gemte[i+1]; if (!u || !Array.isArray(u.point) || !u.point.length) return '';
+          const sm = (String(u.modstander||"").trim().toLowerCase() === String(k.modstander||"").trim().toLowerCase()) || (u.dato && u.dato === k.dato);
+          if (!sm) return '';
+          return '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="flettSpoerg" data-v="'+i+'">\ud83d\udd17 '+(EN?"Merge with the one below":"Sl\u00e5 sammen med kampen under")+'</button>'; })() +
+        // ⭐⭐ v4.118.0 · «Ret opsætningen» — samme spørgsmål som på den
+        //   kørende kamp, bare opdaget bagefter.
+        '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="retAabn" data-v="'+i+'">⚙ '+(EN?"Fix the setup":"Ret opsætningen")+'</button>' +
+        // ⭐⭐ v4.120.0 · «Flyt til en anden spiller». En kamp, der er tastet
+        //   på den forkerte telefon, hørte til dér for evigt.
+        '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="flytAabn" data-v="'+i+'">📤 '+(EN?"Move to another player":"Flyt til en anden spiller")+'</button>' +
         // ⭐⭐ v4.28.0 · KAMPKORTET. Billedet laves paa telefonen og gaar
         // ingen steder, foer barnet selv vaelger hvorhen.
         '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="kortDel" data-v="'+i+'">' +
           (S.kortLaver === i ? '\u23f3 \u2026' : '\ud83d\udce4 ' + (EN?"Match card":"Kampkort")) + '</button>' +
         '</div>' +
+        // ⭐⭐⭐ v4.117.0 · SAMMENLÆGNINGS-PANELET. Begge kampe står med
+        //   dato, resultat og antal bolde, og det siges HVILKEN der lægges
+        //   først. 3. sættets format vælges forfra — det var dét, der var
+        //   galt. Prisen (analyserne ryddes, kan ikke fortrydes) står her,
+        //   hvor den gælder, ikke med småt et andet sted.
+        (S.flettKamp === i ? (function(){ const u = S.gemte[i+1] || { point: [] };
+          const rk = function(t, kk){ return '<p class="lille" style="margin:2px 0">' + t + ' <b>' + esc(kk.dato || "–") + '</b> · ' + esc(kk.resultat || (EN?"no result":"intet resultat")) + ' · <b>' + (kk.point||[]).length + '</b> ' + (EN?"balls":"bolde") + '</p>'; };
+          return '<div style="margin-top:10px;padding:11px;border:1.5px solid var(--is);border-radius:12px;background:rgba(120,190,255,.06)">' +
+          '<p class="lille" style="margin:0 0 7px;font-weight:800;letter-spacing:.5px;color:var(--is)">\ud83d\udd17 ' + (EN?"MERGE INTO ONE MATCH":"SL\u00c5 SAMMEN TIL \u00c9N KAMP") + '</p>' +
+          rk((EN?"1st \u2014 the one below:":"1. \u2014 kampen under:"), u) + rk((EN?"2nd \u2014 this one:":"2. \u2014 denne kamp:"), k) +
+          '<p class="lille" style="margin:9px 0 5px;font-weight:700">' + (EN?"3rd set is played as:":"3. s\u00e6t spilles som:") + '</p>' +
+          '<div class="raekke" style="gap:6px">' +
+            '<button class="knap valg' + (S.flettMtb ? '' : ' til') + '" style="flex:1;min-height:42px;font-size:12.5px" data-a="flettMtbSaet" data-v="0">' + (EN?"Full set":"Fuldt s\u00e6t") + '</button>' +
+            '<button class="knap valg' + (S.flettMtb ? ' til' : '') + '" style="flex:1;min-height:42px;font-size:12.5px" data-a="flettMtbSaet" data-v="1">' + (EN?"Match tie-break":"Match tie-break") + '</button>' +
+          '</div>' +
+          '<p class="lille" style="margin:9px 0 0;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
+            ? "The two become <b>one match of " + ((u.point||[]).length + (k.point||[]).length) + " balls</b>. The result is recalculated and the analyses are cleared \u2014 they were written for half a match. This cannot be undone."
+            : "De to bliver til <b>\u00e9n kamp p\u00e5 " + ((u.point||[]).length + (k.point||[]).length) + " bolde</b>. Resultatet regnes forfra, og analyserne ryddes \u2014 de blev skrevet til en halv kamp. Det kan ikke fortrydes.") + '</p>' +
+          '<div class="raekke" style="margin-top:9px;gap:6px">' +
+            '<button class="knap" style="flex:1;min-height:46px;background:var(--is);color:var(--dyb);font-weight:800" data-a="flettKoer" data-v="'+i+'">\ud83d\udd17 ' + (EN?"Merge":"Sl\u00e5 sammen") + '</button>' +
+            '<button class="knap" style="flex:none;padding:0 14px;min-height:46px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="flettFortryd">' + (EN?"Cancel":"Fortryd") + '</button>' +
+          '</div></div>'; })() : '') +
+
+        // ⭐⭐⭐ v4.118.0 · RET-PANELET PÅ EN GEMT KAMP. Det viser, hvad
+        //   motoren læser boldene som med den NYE opsætning — mod det, der
+        //   står på kortet i dag — FØR der trykkes gem. Resultatet kan
+        //   overrules i hånden, for facit er hans, ikke motorens.
+        (S.retKamp === i ? (function(){ const m = _retMotor(k, S.retFirst, S.retMtb, S.retSaet, S.retNoAd);
+          return '<div style="margin-top:10px;padding:11px;border:1.5px solid var(--is);border-radius:12px;background:rgba(120,190,255,.06)">' +
+          '<p class="lille" style="margin:0 0 7px;font-weight:800;letter-spacing:.5px;color:var(--is)">⚙ ' + (EN?"FIX THE MATCH":"RET KAMPEN") + '</p>' +
+          '<p class="lille" style="margin:0 0 8px">' + (EN?"Set up wrong? Change it — the engine reads the same balls a new way.":"Sat forkert op? Ret det — motoren læser de samme bolde på en ny måde.") + '</p>' +
+          _opsRaekke((EN?"3rd set":"3. sæt"), [[(EN?"Full set":"Fuldt sæt"),"mtb|0",!S.retMtb],["Match tie-break","mtb|1",!!S.retMtb]], "retVaelg") +
+          _opsRaekke((EN?"Sets to":"Sæt til"), [[(EN?"6 games":"6 partier"),"saet|6",S.retSaet!==4],[(EN?"4 games":"4 partier"),"saet|4",S.retSaet===4]], "retVaelg") +
+          (S.retSaet === 4 ? _opsRaekke("No-ad", [[(EN?"No":"Nej"),"noad|0",!S.retNoAd],[(EN?"Yes":"Ja"),"noad|1",!!S.retNoAd]], "retVaelg") : '') +
+          _opsRaekke((EN?"Served first":"Servede først"), [[SPILLER,"first|1",S.retFirst!==false],[(EN?"Opponent":"Modstander"),"first|0",S.retFirst===false]], "retVaelg") +
+          '<p class="lille" style="margin:10px 0 4px">' + (EN?"The engine now reads the balls as: ":"Motoren læser nu boldene som: ") +
+            '<b style="color:var(--is)">' + esc(m && m.res ? m.res : (EN?"not finished":"ikke færdigspillet")) + '</b>' +
+            (String(k.resultat||"") && m && m.res !== k.resultat ? ' <span style="opacity:.7">(' + (EN?"the card says ":"kortet siger ") + esc(k.resultat) + ')</span>' : '') + '</p>' +
+          '<p class="lille" style="margin:9px 0 4px;font-weight:700">' + (EN?"Result on the card — yours to overrule:":"Resultatet på kortet — du bestemmer:") + '</p>' +
+          '<input data-felt="retResultat" maxlength="40" placeholder="6-0, 0-6, 6-2" value="' + esc(S.retResultat) + '">' +
+          _opsRaekke((EN?"Match":"Kampen"), [[(EN?"Won":"Vundet"),"vandt|1",S.retVandt===true],[(EN?"Lost":"Tabt"),"vandt|0",S.retVandt===false]], "retVaelg") +
+          '<p class="lille" style="margin:8px 0 0;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
+            ? "A new result gives the match a new id: the old row is removed from the archive and a new one is sent. Pictures you put on the match stay on the old result."
+            : "Et nyt resultat giver kampen et nyt id: den gamle række fjernes fra arkivet, og en ny sendes. Billeder, du har lagt på kampen, bliver hængende på det gamle resultat.") + '</p>' +
+          '<div class="raekke" style="margin-top:9px;gap:6px">' +
+            '<button class="knap" style="flex:1;min-height:46px;background:var(--is);color:var(--dyb);font-weight:800" data-a="retGem" data-v="'+i+'">✔ ' + (EN?"Save the fix":"Gem rettelsen") + '</button>' +
+            '<button class="knap" style="flex:none;padding:0 14px;min-height:46px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="retFortryd">' + (EN?"Cancel":"Fortryd") + '</button>' +
+          '</div></div>'; })() : '') +
+
+        // ⭐⭐⭐ v4.120.0 · FLYTTE-PANELET. Rækkefølgen ER produktet: kopiér
+        //   → indsæt → SE kampen stå der → og først dEREFTER fjern den her.
+        //   Panelet sletter intet selv.
+        (S.flytKamp === i ? (function(){
+          const tur = String(k.turnering || "").trim();
+          const iTur = tur ? (S.gemte || []).filter(function (x) { return x && String(x.turnering || "").trim().toLowerCase() === tur.toLowerCase(); }).length : 0;
+          const antal = (A._flytKampe() || []).length;
+          const trin = function (nr, t) { return '<p class="lille" style="margin:3px 0;display:flex;gap:7px"><b style="flex:none;color:var(--is)">' + nr + '</b><span>' + t + '</span></p>'; };
+          return '<div style="margin-top:10px;padding:11px;border:1.5px solid var(--is);border-radius:12px;background:rgba(120,190,255,.06)">' +
+          '<p class="lille" style="margin:0 0 7px;font-weight:800;letter-spacing:.5px;color:var(--is)">📤 ' + (EN?"MOVE TO ANOTHER PLAYER":"FLYT TIL EN ANDEN SPILLER") + '</p>' +
+          '<p class="lille" style="margin:0 0 8px">' + (EN
+            ? "This match was typed on this phone, so it belongs to <b>" + esc(SPILLER) + "</b>. Here is how it moves:"
+            : "Kampen blev tastet på denne telefon, så den hører til <b>" + esc(SPILLER) + "</b>. Sådan flytter den:") + '</p>' +
+          (iTur > 1 ? '<div class="raekke" style="gap:6px;margin-bottom:9px">' +
+            '<button class="knap valg' + (S.flytAlle ? '' : ' til') + '" style="flex:1;min-height:40px;font-size:12px" data-a="flytOmfang" data-v="0">' + (EN?"This match":"Denne kamp") + '</button>' +
+            '<button class="knap valg' + (S.flytAlle ? ' til' : '') + '" style="flex:1;min-height:40px;font-size:12px" data-a="flytOmfang" data-v="1">' + (EN?("All "+iTur+" from "+esc(tur)):("Alle "+iTur+" fra "+esc(tur))) + '</button>' +
+          '</div>' : '') +
+          trin("1.", (EN?"Copy the text below.":"Kopiér teksten herunder.")) +
+          trin("2.", (EN?"Send it to the phone the match belongs to.":"Send den til den telefon, kampen hører til.")) +
+          trin("3.", (EN?"There: Settings → 💾 Backup → 🔀 Merge device → paste → Merge in.":"Dér: Indstillinger → 💾 Backup → 🔀 Flet enhed → indsæt → Flet ind.")) +
+          trin("4.", (EN?"<b>See the match standing there.</b> Only then remove it here with 🗑 Delete.":"<b>Se kampen stå der.</b> Først derefter fjerner du den her med 🗑 Slet.")) +
+          '<textarea readonly onfocus="this.select()" style="height:80px;margin-top:8px;color:var(--kridt)">' + esc(S.flytTekst) + '</textarea>' +
+          eksportKnapper("flytTekst", EN) +
+          '<p class="lille" style="margin:9px 0 0;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
+            ? "<b>" + antal + " match(es).</b> Everything travels: balls, wings, zones, tournament, opponent and the analysis. <b>Nothing is deleted here</b> — you do that yourself once you have seen it on the other phone."
+            : "<b>" + antal + " kamp(e).</b> Alt følger med: bolde, fløje, zoner, turnering, modstander og analysen. <b>Der slettes intet her</b> — det gør du selv, når du har set den på den anden telefon.") + '</p>' +
+          '<div class="raekke" style="margin-top:9px"><button class="knap" style="width:100%;min-height:44px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="flytFortryd">' + (EN?"Close":"Luk") + '</button></div>' +
+          '</div>'; })() : '') +
+
         (S.kortBesked && S.kortLaver === null
           ? '<p class="lille" style="margin:6px 0 0;color:' + (S.kortBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.kortBesked.t) + '</p>' : '') +
         // ⭐ v4.26.0 · BILLEDER PAA KAMPEN. Knappen findes HER, fordi
@@ -12006,8 +12312,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   //     ikke indad i appen. En pilotfamilie læser den her linje 8/9.
   //   Den nye tekst siger de tre ting, der ER sande, og ikke mere.
   if (S.tab !== "chat" && S.tab !== "rumsnak") h += '<p class="fod">'+(EN
-    ? "Your matches and training live on this device. A backup is locked on your phone before it is sent \u2014 we cannot open it. StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION
-    : "Dine kampe og din tr\u00e6ning bor p\u00e5 denne enhed. Sikkerhedskopien l\u00e5ses p\u00e5 din telefon, f\u00f8r den sendes \u2014 vi kan ikke \u00e5bne den. StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION)+'</p>';
+    ? "We keep tennis \u2014 words disappear. Your matches and analyses come back with your account; names and notes are locked on your phone before they are sent, and we cannot open them. StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION
+    : "Vi gemmer tennis \u2014 ord forsvinder. Dine kampe og analyser kommer tilbage med din konto; navne og noter l\u00e5ses p\u00e5 din telefon, f\u00f8r de sendes, og dem kan vi ikke \u00e5bne. StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION)+'</p>';   // ⭐ v4.115.0 · princip 79
   h += bundNav();
   el.innerHTML = h;
   devFoldning();

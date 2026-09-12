@@ -457,7 +457,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.135.0 · 12. september 2026";
+const VERSION = "v4.136.0 · 12. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -1428,6 +1428,7 @@ const OSKARFOKUS = {};
 
 let S = {
   verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, side: true, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, fletKasseret: 0, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenPanel: null, kampePanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, liveOvertag: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, ejerBesked: null, klubOpretAaben: false, klubNavnUdkast: "", klubNyNoegle: null, klubNyKlub: "", klubOpretSender: false, klubKopieret: false, gaveAaben: false, gaveSender: null, gaveSoeg: "", klubListe: null, klubHenter: false, klubSpaerSpoerg: null, klubSpaerSender: null, ejerKlubBesked: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null, teamLukket: false, teamForladSpoerg: false, teamInvUdkast: "", budInd: null, budUd: null, budSender: false, budBesked: null, spejlVenter: null, qrVis: false,   /* ⭐ v4.132.0 */
+  mitAvatar: undefined, avatarAaben: false, avatarSender: false, gaveInfo: null, gaveMdr: {},   /* ⭐ v4.136.0 */
   // ⭐ v4.79.0 · skyggekopien
   skyStatus: null, skySender: false, skyBesked: null, skySlet: false, skyAaben: false,
   kampeLaast: false, kampeTabt: 0, kampeRaa: null, kampeRaaVis: false, fletEkstra: [], skyGammelKode: "", skyLaasOpAaben: false,
@@ -1580,6 +1581,7 @@ try { const a = lager.hent("sai-kamp-aktiv"); if (a) S.aktiv = rensKamp(JSON.par
 try { const kk = lager.hent("sai-klubkode"); if (kk) S.klubKode = kk; } catch(e) {}
 try { const sn = lager.hent("sai-spillernoegle"); if (sn) S.spillerNoegle = sn; } catch(e) {}
 try { const vid = lager.hent("sai-venne-id"); if (vid) S.mitVenneId = vid; } catch(e) {}
+try { const av = lager.hent("sai-avatar"); if (av !== null && av !== undefined) S.mitAvatar = av || null; } catch(e) {}   /* ⭐ v4.136.0 */
 // ⚠️ FEJL FANGET AF NICOLAI 24/8: brugernavnet blev SKREVET hertil, men
 // aldrig LAEST tilbage. Appen glemte derfor et navn, serveren havde gemt,
 // og bad om et nyt ved hver start. Maalt i databasen: navnet var der hele
@@ -1753,6 +1755,11 @@ async function inviteretTjek() {
       render(); return;
     }
     S.portStatus = r;
+    // ⭐ v4.136.0 · planen og gaven kommer hjem fra serveren (ejer-port v8).
+    if (r.kendt && r.status === "godkendt" && (r.plan === "gaest" || r.plan === "fuld" || r.plan === "fri" || r.plan === "klub")) {
+      S.minPlan = r.plan;
+      S.gaveInfo = r.gave ? { gave: true, plan: r.plan, gave_fra: r.gave_fra || null, gave_til: r.gave_til || null } : null;
+    }
     const inde = !!r.kendt && r.status === "godkendt";
     S.doerKamp = !inde;
     lager.gem("sai-inviteret", inde ? "1" : "0");
@@ -2937,6 +2944,28 @@ function _qrLink() { return location.origin + location.pathname + "#ven=" + enco
 function _hentFraNavn(EN) {
   const navn = String(SPILLER || "").trim() || (EN ? "the player" : "spilleren");
   return EN ? "Get the latest from " + esc(navn) : "Hent det nyeste fra " + esc(navn);
+}
+
+// ⭐ v4.136.0 · AVATAREN (Nicolai 12/9: «Let's go på avatar»). Figur + farve —
+//   aldrig et foto, aldrig ord. Koden 'f<1-12>-k<1-8>' bor i spillerdata.avatar
+//   (venne-bud v11) og rejser med søgetræffet, så to «oskar» kan kendes fra hinanden.
+const AVATAR_FIGUR = ["\ud83c\udfbe", "\ud83c\udfc6", "\ud83d\udd25", "\u26a1", "\ud83e\udd81", "\ud83d\udc2f", "\ud83e\udd88", "\ud83e\udd85", "\ud83d\udc3a", "\ud83d\ude80", "\ud83c\udf1f", "\ud83c\udfaf"];
+const AVATAR_FARVE = ["#1F6FEB", "#0EA5A4", "#16A34A", "#CCA42B", "#EA580C", "#DC2626", "#7C3AED", "#DB2777"];
+function _avatarDel(kode) { const m = /^f(1[0-2]|[1-9])-k([1-8])$/.exec(String(kode || "")); return m ? { f: +m[1], k: +m[2] } : null; }
+function _avatarHtml(kode, px) {
+  const d = _avatarDel(kode); const sz = px || 34;
+  if (!d) return '<span style="display:inline-flex;align-items:center;justify-content:center;width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid var(--kant);font-size:' + Math.round(sz * .5) + 'px;flex:none">\ud83d\udc64</span>';
+  return '<span style="display:inline-flex;align-items:center;justify-content:center;width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;background:' + AVATAR_FARVE[d.k - 1] + ';font-size:' + Math.round(sz * .55) + 'px;flex:none;box-shadow:0 2px 8px rgba(0,0,0,.35)">' + AVATAR_FIGUR[d.f - 1] + '</span>';
+}
+// ⭐ v4.136.0 · GAVEN FREMGÅR (Nicolai 12/9). Serverens min-status bærer nu
+//   plan + gave + gave_til — og det er DEN, der står ved kontoen.
+function _gaveTekst(EN) {
+  const g = S.gaveInfo; if (!g || !g.gave) return "";
+  const til = g.gave_til ? String(g.gave_til).slice(0, 10) : null;
+  return '<div class="lille" style="margin:2px 0 8px;padding:9px 11px;border-left:3px solid var(--guld);background:rgba(240,207,97,.07);border-radius:0 9px 9px 0;line-height:1.55">\ud83c\udf81 <b>' +
+    (EN ? "A gift from StreakTennis: " : "En gave fra StreakTennis: ") + esc(_planNavn(g.plan, EN)) + '</b><br>' +
+    (til ? (EN ? "Valid until " : "Gælder til ") + esc(til) + (EN ? " — then back to Basic." : " — derefter Basis.")
+         : (EN ? "No end date." : "Uden udløb.")) + '</div>';
 }
 
 // ---------- Handlinger ----------
@@ -4516,12 +4545,14 @@ const A = {
     if (S.gaveAaben) { const r = await A.portKald("liste", { alle: true }); if (r && !r.fejl) S.ejerKoe = r; render(); }
   },
   // v er "haandtag|plan"
+  gaveMdr: (v) => { const d = String(v || "").split("|"); if (d.length === 2) { S.gaveMdr[d[0]] = +d[1] || 0; render(); } },   /* ⭐ v4.136.0 */
   gaveSaet: async (v) => {
     const d = String(v || "").split("|");
     if (d.length !== 2) return;
     const EN = S.sprog === "en";
     S.gaveSender = d[0]; S.ejerBesked = null; render();
-    const r = await A.portKald("gave", { h: d[0], plan: d[1] });
+    // ⭐ v4.136.0 · tidsbegrænset gave: 0 = ubegrænset, ellers 1/3/6/12 måneder (ejer-port v8)
+    const r = await A.portKald("gave", { h: d[0], plan: d[1], maaneder: S.gaveMdr[d[0]] || 0 });
     S.gaveSender = null;
     // ⭐ v4.121.0 · kvitteringen skal sige DET, DER SKETE. «Givet: Signe →
     //   ingen» var vrøvl. Og planens navn skrives, som skærmen kalder den.
@@ -4529,7 +4560,7 @@ const A = {
       ? { fejl: true, t: r.t || (EN ? "Could not be changed." : "Kunne ikke ændres.") }
       : { fejl: false, t: (r && r.tilbage)
           ? (EN ? "Taken back: " : "Taget tilbage: ") + (r.fornavn || "") + " \u2192 " + _planNavn("gaest", EN)
-          : (EN ? "Given: " : "Givet: ") + (r.fornavn || "") + " \u2192 " + _planNavn(d[1], EN) };
+          : (EN ? "Given: " : "Givet: ") + (r.fornavn || "") + " \u2192 " + _planNavn(d[1], EN) + (r.gave_til ? (EN ? " · until " : " · til ") + String(r.gave_til).slice(0, 10) : "") };
     S.gaveTilbage = null;
     const r2 = await A.portKald("liste", { alle: true });
     if (r2 && !r2.fejl) S.ejerKoe = r2;
@@ -4696,7 +4727,7 @@ const A = {
       // ⚠️ FEJL 2 (samme fangst): der blev sprunget over, saa snart der
       // laa et venne-ID — men brugernavnet kommer fra SAMME svar. Havde
       // man ét gang faaet sit ID, blev navnet aldrig hentet igen.
-      (S.mitVenneId && S.mitNavn) ? Promise.resolve(null) : A.budKald("mit-id", {}),
+      (S.mitVenneId && S.mitNavn && S.mitAvatar !== undefined) ? Promise.resolve(null) : A.budKald("mit-id", {}),   /* ⭐ v4.136.0 */
       A.budKald("liste", {}),
     ]);
     S.budHenter = false;
@@ -4706,6 +4737,7 @@ const A = {
       S.mitNavn = idSvar.brugernavn || null;
       S.minKlub = idSvar.klub || null;
       if (typeof idSvar.soegbar === "boolean") S.soegbar = idSvar.soegbar;
+      S.mitAvatar = idSvar.avatar || null; try { lager.gem("sai-avatar", S.mitAvatar || ""); } catch (_e) {}   /* ⭐ v4.136.0 */
       if (S.minKlub) lager.gem("sai-min-klub", S.minKlub);
       if (S.mitNavn) lager.gem("sai-brugernavn", S.mitNavn);
       // ⭐ Oensket fra velkomstskaermen indloeses FOERSTE gang serveren
@@ -4947,6 +4979,19 @@ const A = {
     render();
   },
   soegRyd: () => { S.soegUdkast = ""; S.venneUdkast = ""; S.soegTraef = null; render(); },
+  // ⭐ v4.136.0 · AVATAREN. v = "f3-k2" eller "" (ingen). Serveren afgør (422 på en ukendt).
+  avatarAabn: () => { S.avatarAaben = !S.avatarAaben; render(); },
+  avatarSaet: async (v) => {
+    if (S.avatarSender) return;
+    const EN = S.sprog === "en"; const kode = String(v || "");
+    if (kode && !_avatarDel(kode)) return;
+    S.avatarSender = true; render();
+    const r = await A.budKald("saet-avatar", { avatar: kode || null });
+    S.avatarSender = false;
+    if (r && !r.fejl) { S.mitAvatar = r.avatar || null; try { lager.gem("sai-avatar", S.mitAvatar || ""); } catch (_e) {} S.vennerBesked = null; }
+    else S.vennerBesked = { fejl: true, t: (r && r.fejl) || (EN ? "Could not save the avatar." : "Avataren kunne ikke gemmes.") };
+    render();
+  },
   // ⭐ v4.132.0 · QR-KODEN (Nicolai 12/9). Bærer KUN det link, «Del med en
   //   ven» allerede deler — ingen nøgle, ingen hemmelighed. Én fil: biblioteket
   //   ligger inline (#qr-lib); mangler det, siger knappen det (princip 35).
@@ -10110,6 +10155,7 @@ function _tegn() {
           if (S.soegTraef && S.soegTraef.length) {
             S.soegTraef.forEach(function(v){
               h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--linje)">' +
+                _avatarHtml(v.avatar, 34) +   /* ⭐ v4.136.0 */
                 '<div style="flex:1;min-width:0"><b>' + esc(v.fornavn || "") + '</b>' +
                 '<span class="lille" style="display:block;opacity:.7">' + esc(v.brugernavn || "") + '</span></div>' +
                 (v.ven
@@ -10170,8 +10216,27 @@ function _tegn() {
           // ingen vej, når kortet er gemt væk.
           h += '<div class="lille" style="margin:9px 2px 0;display:flex;align-items:center;gap:7px">' +
             '<button style="flex:1;min-width:0;text-align:left;background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:4px 0;min-height:44px" data-a="navnAabn">' +
-            '\ud83c\udd94 ' + (EN?"You are ":"Du hedder ") + '<b style="color:var(--guld);letter-spacing:1px">' + esc(S.mitNavn) + '</b> <span style="opacity:.5">\u270f\ufe0f</span></button>' +
+            _avatarHtml(S.mitAvatar, 30) + ' ' + (EN?"You are ":"Du hedder ") + '<b style="color:var(--guld);letter-spacing:1px">' + esc(S.mitNavn) + '</b> <span style="opacity:.5">\u270f\ufe0f</span></button>' +
             '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="kopier" data-v="mitNavn">' + (S.kopieret === "mitNavn" ? (EN?"Copied \u2713":"Kopieret \u2713") : (EN?"Copy":"Kopi\u00e9r")) + '</button></div>';
+          // ⭐ v4.136.0 · AVATAREN: figur + farve. Ingen fotos — og det siges.
+          h += '<div class="lille" style="margin:6px 2px 0;display:flex;align-items:center;gap:7px">' +
+            '<span style="flex:1;min-width:0">\ud83c\udfa8 ' + (EN ? "Your avatar" : "Din avatar") + '</span>' +
+            '<button class="knap valg' + (S.avatarAaben ? " til" : "") + '" style="flex:none;min-height:40px;padding:0 14px;font-size:12px" data-a="avatarAabn">' + (S.avatarAaben ? (EN?"Close":"Luk") : (EN?"Choose":"Vælg")) + '</button></div>';
+          if (S.avatarAaben) {
+            const _d = _avatarDel(S.mitAvatar) || { f: 1, k: 1 };
+            h += '<div class="kort dev-kant" style="margin-top:9px;padding:12px">' +
+              '<p class="lille" style="margin:0 0 8px">' + (EN ? "A figure and a colour \u2014 never a photo. Your friends see it next to your name." : "En figur og en farve \u2014 aldrig et foto. Dine venner ser den ved dit navn.") + '</p>' +
+              '<div style="display:flex;flex-wrap:wrap;gap:6px">' + AVATAR_FIGUR.map(function(e, i){
+                const v = "f" + (i + 1) + "-k" + _d.k;
+                return '<button class="knap valg" style="min-height:44px;width:44px;padding:0;font-size:20px' + (_d.f === i + 1 && S.mitAvatar ? ";border-color:var(--vundet)" : "") + '"' + (S.avatarSender ? " disabled" : "") + ' data-a="avatarSaet" data-v="' + v + '">' + e + '</button>';
+              }).join("") + '</div>' +
+              '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">' + AVATAR_FARVE.map(function(c, i){
+                const v = "f" + _d.f + "-k" + (i + 1);
+                return '<button style="width:32px;height:32px;border-radius:50%;border:3px solid ' + (_d.k === i + 1 && S.mitAvatar ? "#fff" : "transparent") + ';background:' + c + ';cursor:pointer;padding:0"' + (S.avatarSender ? " disabled" : "") + ' data-a="avatarSaet" data-v="' + v + '" aria-label="farve ' + (i + 1) + '"></button>';
+              }).join("") + '</div>' +
+              (S.mitAvatar ? '<button class="knap valg" style="margin-top:10px;min-height:40px;font-size:12px" data-a="avatarSaet" data-v="">' + (EN ? "Remove avatar" : "Fjern avatar") + '</button>' : '') +
+              '</div>';
+          }
           // ⭐ v4.132.0 · QR-koden: vis den, lad vennen scanne med kameraet.
           h += '<div class="lille" style="margin:6px 2px 0;display:flex;align-items:center;gap:7px">' +
             '<span style="flex:1;min-width:0">\ud83d\udcf1 ' + (EN ? "Show as a QR code" : "Vis som QR-kode") + '</span>' +
@@ -10578,8 +10643,13 @@ function _tegn() {
                 '<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><b style="font-size:13.5px">' + esc(x.fornavn || "") + '</b>' +
                 '<span class="lille" style="margin:0;opacity:.7">' + (EN?"now: ":"nu: ") + esc(_planNavn(x.plan, EN)) + '</span>' +
                 '<span class="lille" style="margin:0;font-weight:700;color:' + (_erGave ? "var(--guld)" : "var(--daempet)") + '">' +
-                  (_erGave ? '\ud83c\udf81 ' + (EN ? "your gift" : "din gave") + (x.givet_tid ? ' \u00b7 ' + esc(String(x.givet_tid).slice(0, 10)) : '')
+                  (_erGave ? '\ud83c\udf81 ' + (EN ? "your gift" : "din gave") + (x.givet_tid ? ' \u00b7 ' + esc(String(x.givet_tid).slice(0, 10)) : '') + (x.gave_til ? ' \u00b7 ' + (EN ? "until " : "til ") + esc(String(x.gave_til).slice(0, 10)) : '')
                            : (EN ? "own plan" : "egen plan")) + '</span></div>' +
+                // ⭐ v4.136.0 · varigheden vælges FØR planen trykkes: ubegrænset · 1 · 3 · 6 · 12 md
+                '<div class="raekke" style="margin-top:6px;gap:4px;flex-wrap:wrap">' + [0, 1, 3, 6, 12].map(function(m){
+                  const valgt = (S.gaveMdr[x.h] || 0) === m;
+                  return '<button class="knap valg" style="min-height:32px;padding:0 9px;font-size:11px' + (valgt ? ";border-color:var(--guld);color:var(--guld)" : "") + '" data-a="gaveMdr" data-v="' + esc(x.h + "|" + m) + '">' + (m === 0 ? (EN ? "no end" : "ubegrænset") : m + (EN ? " mo" : " md")) + '</button>';
+                }).join("") + '</div>' +
                 '<div class="raekke" style="margin-top:6px">' +
                 ["gaest", "fuld", "fri"].map(function(pl){
                   return '<button class="knap valg" style="min-height:40px;font-size:12px' + (x.plan === pl ? ";border-color:var(--vundet);color:var(--vundet)" : "") + '"' +
@@ -10798,6 +10868,8 @@ function _tegn() {
               '⏳ <b>' + (EN ? "Your access is waiting for a yes." : "Din adgang venter på et ja.") + '</b><br>' +
               (EN ? "Everything on this phone already works — streak, training and matches. Your plan is set the moment you are let in."
                   : "Alt på denne telefon virker allerede — streak, træning og kampe. Planen sættes, i samme øjeblik I bliver lukket ind.") + '</div>';
+          } else if (S.gaveInfo && S.gaveInfo.gave) {
+            _kk += _gaveTekst(EN);   /* ⭐ v4.136.0 · gaven fremgår */
           } else if (S.minPlan === "gaest") {
             _kk += '<div class="lille" style="margin:2px 0 8px;display:flex;align-items:center;gap:8px">' +
               '<span style="flex:1;min-width:0">🎟 ' + (EN ? "Basis — matches are not shared live." : "Basis — kampene deles ikke live.") + '</span>' +

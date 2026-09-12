@@ -452,7 +452,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.127.0 · 11. september 2026";
+const VERSION = "v4.128.0 · 12. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -1517,7 +1517,7 @@ const rensKamp = (g) => {
   return { modstander: _trim(g.modstander) || "Ukendt modstander", turnering: _trim(g.turnering) || "",
     dato: g.dato || new Date().toISOString().slice(0,10),
     oskarFirst: typeof g.oskarFirst === "boolean" ? g.oskarFirst : true,
-    mtb: typeof g.mtb === "boolean" ? g.mtb : true, saetTil: g.saetTil === 4 ? 4 : 6, noAd: g.noAd === true, afsluttet: g.afsluttet === true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : vandtIflgResultat(g.resultat), resultat: g.resultat || "", analyse: g.analyse || "", tre: Array.isArray(g.tre) ? g.tre.slice(0, 3) : null, justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
+    mtb: typeof g.mtb === "boolean" ? g.mtb : true, saetTil: g.saetTil === 4 ? 4 : 6, noAd: g.noAd === true, afsluttet: g.afsluttet === true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : vandtIflgResultat(g.resultat), resultat: g.resultat || "", analyse: g.analyse || "", tre: Array.isArray(g.tre) ? g.tre.slice(0, 3) : null, aSprog: (g.aSprog === "en" || g.aSprog === "da") ? g.aSprog : undefined, justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
     id: (typeof g.id === "string" && /^[a-z0-9][a-z0-9-]{3,39}$/.test(g.id)) ? g.id : undefined, navnLaas: g.navnLaas === true,   // ⭐ v4.113.0 · arkivet
     point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1, l: [1,2,3].indexOf(q.l) >= 0 ? q.l : 0, h: [1,2].indexOf(q.h) >= 0 ? q.h : 0, z: [1,2,3].indexOf(q.z) >= 0 ? q.z : 0 })) };
 };
@@ -6787,6 +6787,7 @@ const A = {
       if (sv.ok && sv.d && sv.d.analyse) {
         if (S.gemte[n]) {
           S.gemte[n].analyse = sv.d.analyse;
+          S.gemte[n].aSprog = EN ? "en" : "da";   // ⭐ v4.128.0 · hvilket sprog den kom på
           // ⭐ v4.104.0 · TRE TING som DATA (analyse-kamp v23). Struktur, ikke
           //   tekst — det er det, udviklingsbrevet må læse (princip 19).
           if (Array.isArray(sv.d.tre) && sv.d.tre.length) S.gemte[n].tre = sv.d.tre.slice(0, 3);
@@ -6812,7 +6813,7 @@ const A = {
   eksport: (i) => { S.eksport = lavEksport(S.gemte[+i]); S._sf = S._sf || {}; S._sf["1"] = true; render();
     setTimeout(function(){ var b = document.getElementById("eksport-boks"); if (b) b.scrollIntoView({behavior:"smooth", block:"center"}); }, 60); },
   analyseAabn: (i) => { S.redigerA = S.redigerA === +i ? null : +i; S.aTekst = (S.gemte[+i] && S.gemte[+i].analyse) || ""; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
-  analyseGem: (i) => { if (S.gemte[+i]) { S.gemte[+i].analyse = S.aTekst; gemAlle(); } S.redigerA = null; S.aTekst = ""; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
+  analyseGem: (i) => { if (S.gemte[+i]) { S.gemte[+i].analyse = S.aTekst; if (S.aTekst) S.gemte[+i].aSprog = S.sprog === "en" ? "en" : "da"; else delete S.gemte[+i].aSprog; gemAlle(); } S.redigerA = null; S.aTekst = ""; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   analyseAnnuller: () => { S.redigerA = null; S.aTekst = ""; render(); },
   // ═══ v4.127.0 · SEND KAMPEN DIREKTE TIL ET BRUGERNAVN ════════════
   //   Nicolai 11/9: «Vi skal heller ALDRIG sende noget fra en enhed til en
@@ -6950,6 +6951,8 @@ const A = {
     const EN = S.sprog === "en";
     const k = S.gemte[+i]; if (!k) return;
     const gammelId = k.id || null, gammeltRes = String(k.resultat || "");
+    // ⭐ v4.128.0 · alt, analysen blev regnet på, huskes FØR rettelsen
+    const _foer = JSON.stringify([k.mtb, k.saetTil, k.noAd, k.oskarFirst, String(k.resultat || ""), k.facitVandt]);
     const m = _retMotor(k, S.retFirst, S.retMtb, S.retSaet, S.retNoAd);
     k.mtb = S.retMtb === true;
     k.saetTil = S.retSaet === 4 ? 4 : 6;
@@ -6958,6 +6961,14 @@ const A = {
     k.resultat = String(S.retResultat || (m ? m.res : "") || "").slice(0, 40);
     k.facitVandt = S.retVandt === true;
     k.id = udledtKampId(k);
+    // ⛔⭐⭐ v4.128.0 · ANALYSEN FØLGER KAMPEN. Nicolai 11/9: analysen sagde
+    //   «SEJR 6-4, 4-6» på en kamp, kortet kaldte tabt. Teksten var frossen
+    //   fra dengang kampen stod som vundet — `flettKoer` ryddede den, `retGem`
+    //   gjorde ikke (samme hul, to steder). Er noget i opsætningen eller
+    //   resultatet ændret, passer analysen til en kamp, der ikke findes mere.
+    const _efter = JSON.stringify([k.mtb, k.saetTil, k.noAd, k.oskarFirst, String(k.resultat || ""), k.facitVandt]);
+    const _rydAnalyse = !!(k.analyse && _foer !== _efter);
+    if (_rydAnalyse) { k.analyse = ""; k.tre = null; delete k.aSprog; }
     S.retKamp = null;
     gemAlle();
     // ⭐ nyt indholds-id ⇒ den gamle række i arkivet ville blive stående
@@ -6969,7 +6980,8 @@ const A = {
     if (k.resultat !== gammeltRes) kampeneErAendret([k.modstander]);
     S.retBesked = { fejl: false, t: (EN ? "The match was corrected: " : "Kampen er rettet: ") + (k.resultat || "\u2013")
       + " \u00b7 " + (k.mtb ? (EN ? "3rd set = match tie-break" : "3. s\u00e6t = match tie-break") : (EN ? "3rd set = full set" : "3. s\u00e6t = fuldt s\u00e6t"))
-      + (k.resultat !== gammeltRes ? (EN ? ". Pictures on the match stay on the old result." : ". Billeder p\u00e5 kampen bliver h\u00e6ngende p\u00e5 det gamle resultat.") : "") };
+      + (k.resultat !== gammeltRes ? (EN ? ". Pictures on the match stay on the old result." : ". Billeder p\u00e5 kampen bliver h\u00e6ngende p\u00e5 det gamle resultat.") : "")
+      + (_rydAnalyse ? (EN ? " The analysis was cleared \u2014 it described the old result. Get a new one." : " Analysen er ryddet \u2014 den beskrev det gamle resultat. Hent en ny.") : "") };
     render();
   },
 
@@ -12153,6 +12165,9 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
             (aAaben
               ? '<p class="lille" style="margin:8px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(k.analyse) + '</p>'
               : '<p class="lille" style="margin:6px 0 0;color:var(--daempet)">' + esc(k.analyse.replace(/\s+/g," ").slice(0,90)) + '…</p>') +
+            // ⭐ v4.128.0 · analysen bærer sit sprog — er det ikke skærmens, siges det
+            ((k.aSprog === "en" || k.aSprog === "da") && k.aSprog !== (EN ? "en" : "da")
+              ? '<p class="lille" style="margin:6px 0 0;color:var(--guld)">🌐 ' + (EN ? "Fetched in Danish \u2014 clear it with \u270f\ufe0f and fetch again for English." : "Hentet p\u00e5 engelsk \u2014 ryd den med \u270f\ufe0f og hent igen for dansk.") + '</p>' : '') +
             // ⭐ v4.96.0 · sandheden om, hvem der kan se den — begge steder.
             (teamKunStreaks()
               ? '<p class="lille" style="margin:6px 0 0;opacity:.7">' + (EN ? "Shared by the player through the team key." : "Delt af spilleren gennem team-nøglen.") + '</p>'
@@ -12256,7 +12271,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           _opsRaekke((EN?"Match":"Kampen"), [[(EN?"Won":"Vundet"),"vandt|1",S.retVandt===true],[(EN?"Lost":"Tabt"),"vandt|0",S.retVandt===false]], "retVaelg") +
           '<p class="lille" style="margin:8px 0 0;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
             ? "A new result gives the match a new id: the old row is removed from the archive and a new one is sent. Pictures you put on the match stay on the old result."
-            : "Et nyt resultat giver kampen et nyt id: den gamle række fjernes fra arkivet, og en ny sendes. Billeder, du har lagt på kampen, bliver hængende på det gamle resultat.") + '</p>' +
+            : "Et nyt resultat giver kampen et nyt id: den gamle række fjernes fra arkivet, og en ny sendes. Billeder, du har lagt på kampen, bliver hængende på det gamle resultat.")
+            + (k.analyse ? (EN ? " <b>The analysis is cleared</b> if the setup or the result changes \u2014 it described the match as it was." : " <b>Analysen ryddes</b>, hvis opsætningen eller resultatet ændres \u2014 den beskrev kampen, som den var.") : '') + '</p>' +
           '<div class="raekke" style="margin-top:9px;gap:6px">' +
             '<button class="knap" style="flex:1;min-height:46px;background:var(--is);color:var(--dyb);font-weight:800" data-a="retGem" data-v="'+i+'">✔ ' + (EN?"Save the fix":"Gem rettelsen") + '</button>' +
             '<button class="knap" style="flex:none;padding:0 14px;min-height:46px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="retFortryd">' + (EN?"Cancel":"Fortryd") + '</button>' +

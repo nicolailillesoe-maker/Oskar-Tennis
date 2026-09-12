@@ -142,7 +142,7 @@ textarea{width:100%;height:140px;background:var(--dyb);color:var(--is);border:1p
 .statlinje{font-size:12px;line-height:1.7}
 .avat{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;color:var(--dyb);flex:none;vertical-align:middle;letter-spacing:.02em}
 .pil-tilbage{width:44px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--kort);border:1px solid var(--kant);border-radius:12px;color:var(--is);font-size:15px;cursor:pointer;padding:0;flex:none;backdrop-filter:blur(8px)}
-.bundnav{position:fixed;left:50%;transform:translate3d(-50%,0,0);will-change:transform;bottom:14px;width:min(492px,calc(100% - 28px));display:flex;justify-content:space-around;gap:2px;background:rgba(13,20,38,.85);border:1px solid var(--kant);border-radius:999px;padding:8px 10px calc(8px + env(safe-area-inset-bottom)/2);backdrop-filter:blur(14px);z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.bundnav{position:fixed;left:0;right:0;margin:0 auto;bottom:14px;width:min(492px,calc(100% - 28px));display:flex;justify-content:space-around;gap:2px;background:rgba(13,20,38,.85);border:1px solid var(--kant);border-radius:999px;padding:8px 10px calc(8px + env(safe-area-inset-bottom)/2);backdrop-filter:blur(14px);z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .bundnav button{background:none;border:none;color:var(--daempet);font-size:8.5px;letter-spacing:.08em;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:2px 10px;font-family:inherit}
 .bundnav button span{font-size:18px;line-height:1}
 .bundnav button.aktiv{color:var(--is)}
@@ -457,7 +457,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.132.0 · 12. september 2026";
+const VERSION = "v4.135.0 · 12. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -2932,6 +2932,13 @@ function _qrSvg(tekst) {
 }
 function _qrLink() { return location.origin + location.pathname + "#ven=" + encodeURIComponent(S.mitNavn || S.mitVenneId || ""); }
 
+// ⭐ v4.133.0 · «Hent spejl» var internt sprog (Nicolai 12/9). Knappen siger
+//   nu, hvad der hentes og fra hvem: spillerens kampe, træning og analyser.
+function _hentFraNavn(EN) {
+  const navn = String(SPILLER || "").trim() || (EN ? "the player" : "spilleren");
+  return EN ? "Get the latest from " + esc(navn) : "Hent det nyeste fra " + esc(navn);
+}
+
 // ---------- Handlinger ----------
 const A = {
   tab: (id) => {
@@ -4892,7 +4899,7 @@ const A = {
   },
   navnGem: async (oenske) => {
     const EN = S.sprog === "en";
-    const n = String(oenske || S.navnUdkast2 || "").trim().toLowerCase();
+    const n = String(oenske || S.navnUdkast2 || "").trim();   /* ⭐ v4.134.0 · som skrevet — motoren (venne-bud v10) gemmer store/små */
     if (!n) return;
     if (S.navnGemmer) return;
     S.navnGemmer = true; S.navnBesked = null; render();
@@ -4917,7 +4924,7 @@ const A = {
         : r.fejl === "afventer-godkendelse" ? (EN
             ? "You are on the list — this opens when someone says yes."
             : "Du står på listen — det åbner, når nogen siger ja.")
-        : (EN ? "Use lowercase letters, numbers, - and _ \u2014 start with a letter." : "Brug små bogstaver, tal, - og _ \u2014 start med et bogstav.")) };
+        : (EN ? "Use letters, numbers, - and _ \u2014 start with a letter." : "Brug bogstaver, tal, - og _ \u2014 start med et bogstav.")) };
       // Et oenske, serveren sagde nej til, maa ikke blive ved med at
       // proeve sig selv ved hver opstart.
       lager.slet("sai-navn-oenske");
@@ -6559,7 +6566,7 @@ const A = {
     // os ikke endnu. Oensket gemmes, og appen indloeser det, foerste gang
     // den taler med serveren (se budHent). Er det taget, spoerger kortet
     // i VENNER-panelet om et nyt.
-    const bn = (S.navnUdkast2 || "").trim().toLowerCase().slice(0, 20);
+    const bn = (S.navnUdkast2 || "").trim().slice(0, 20);   /* ⭐ v4.134.0 */
     if (bn) lager.gem("sai-navn-oenske", bn);
     S.navnUdkast = ""; S.klubUdkast = ""; S.navnUdkast2 = ""; render();
   },
@@ -6575,9 +6582,9 @@ const A = {
     if (S.indSender) return;
     const fejl = (t) => { S.indBesked = { fejl: true, t: t }; render(); };
     const navn = (S.navnUdkast || (S.indAaben ? (SPILLER || "") : "")).trim().slice(0, 40);
-    const bn = (S.navnUdkast2 || "").trim().toLowerCase().slice(0, 20);
+    const bn = (S.navnUdkast2 || "").trim().slice(0, 20);   /* ⭐ v4.134.0 · som skrevet; reglen prøves på den lille form */
     if (navn.length < 2) return fejl(EN ? "Write the player's first name." : "Skriv spillerens fornavn.");
-    if (!/^[a-zæøå][a-zæøå0-9_-]{2,19}$/.test(bn)) return fejl(EN ? "Username: small letters, digits, - and _ — start with a letter." : "Brugernavn: små bogstaver, tal, - og _ — start med et bogstav.");
+    if (!/^[a-zæøå][a-zæøå0-9_-]{2,19}$/.test(bn.toLowerCase())) return fejl(EN ? "Username: letters, digits, - and _ — start with a letter." : "Brugernavn: bogstaver, tal, - og _ — start med et bogstav.");
     const dom = tjekNyKode(S.indKode, EN);
     if (dom) return fejl(dom);
     if (String(S.indKode) !== String(S.indKode2 || ""))
@@ -7184,7 +7191,7 @@ function _fordoerDomme() {
   let dNavn2;
   if (!bn) dNavn2 = { tom: true };
   else if (!/^[a-zæøå][a-zæøå0-9_-]{2,19}$/.test(bn))
-    dNavn2 = { ok: false, t: EN ? "small letters, digits, - and _" : "små bogstaver, tal, - og _" };
+    dNavn2 = { ok: false, t: EN ? "letters, digits, - and _" : "bogstaver, tal, - og _" };
   else if (S.navnTjekker) dNavn2 = { venter: true };
   else if (S.navnLedig && S.navnLedig.navn === bn)
     dNavn2 = S.navnLedig.ledig
@@ -7710,6 +7717,7 @@ function render() {
     if (r) { _rPos = r.scrollTop; _rNed = (r.scrollHeight - r.scrollTop - r.clientHeight) < 48; }
   }
   _tegn();
+  _bundNavTegn();   /* ⭐ v4.135.0 */
   _fladeMaal();
   {
     const r = document.getElementById("snak-rul");
@@ -9019,7 +9027,7 @@ function _tegn() {
           '<input data-felt="navnUdkast" maxlength="24" placeholder="' + (S.sprog === "en" ? "e.g. Oskar" : "fx Oskar") + '" value="' + esc(S.navnUdkast || "") + '">' +
 
           '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (S.sprog === "en" ? "USERNAME" : "BRUGERNAVN") + '<span id="ok-navnUdkast2" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
-          '<input data-felt="navnUdkast2" maxlength="20" style="text-transform:lowercase;letter-spacing:1px;font-weight:700" placeholder="' + (S.sprog === "en" ? "e.g. oskar_b93" : "fx oskar_b93") + '" value="' + esc(S.navnUdkast2 || "") + '" autocapitalize="off" spellcheck="false">' +
+          '<input data-felt="navnUdkast2" maxlength="20" style="letter-spacing:1px;font-weight:700" placeholder="' + (S.sprog === "en" ? "e.g. oskar_b93" : "fx oskar_b93") + '" value="' + esc(S.navnUdkast2 || "") + '" autocapitalize="off" spellcheck="false">' +
 
 
           '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (S.sprog === "en" ? "PASSWORD" : "KODEORD") + '<span id="ok-indKode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
@@ -10193,7 +10201,7 @@ function _tegn() {
             '<p class="lille" style="margin:0 0 8px">' + (EN
               ? "It is what friends use to find you. Pick something you are happy for others to see \u2014 not your surname."
               : "Det er dét, venner finder dig p\u00e5. V\u00e6lg noget, du er glad for andre ser \u2014 ikke dit efternavn.") + '</p>' +
-            '<input placeholder="' + (EN?"e.g. oskar_b93":"fx oskar_b93") + '" value="' + esc(S.navnUdkast2) + '" data-felt="navnUdkast2" maxlength="20" style="text-transform:lowercase;letter-spacing:1px;font-weight:700">' +
+            '<input placeholder="' + (EN?"e.g. oskar_b93":"fx oskar_b93") + '" value="' + esc(S.navnUdkast2) + '" data-felt="navnUdkast2" maxlength="20" style="letter-spacing:1px;font-weight:700">' +
             (S.navnTjekker
               ? '<p class="lille" style="margin:6px 0 0;opacity:.7">\u23f3 ' + (EN?"checking\u2026":"tjekker\u2026") + '</p>'
               : (S.navnLedig
@@ -10324,7 +10332,7 @@ function _tegn() {
             _andre.map(_knap).join("") +
             // ⭐ v4.96.0 · spejlet kan hentes herfra også
             '<button class="knap valg" style="width:100%;min-height:44px;margin-top:7px" data-a="skyHentNu"' + (S.skySender ? ' disabled' : '') + '>' +
-            (S.skySender ? '\u23f3 \u2026' : '\ud83e\ude9e ' + (EN ? "Fetch the mirror" : "Hent spejl")) + '</button>' +
+            (S.skySender ? '\u23f3 \u2026' : '\ud83d\udd04 ' + _hentFraNavn(EN)) + '</button>' +   /* ⭐ v4.133.0 · siger hvad og fra hvem */
             (S.skyBesked ? '<p class="lille" style="margin:7px 0 0;color:' + (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>' : ''));
         } else if (_teams.length) {
           h += _opsKort("profil", "🔁", (EN?"SWITCH VIEW":"SKIFT VISNING"),
@@ -11991,7 +11999,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       //   det, fik aldrig at vide, at der ikke blev gemt mere.
       // ⭐ v4.96.0 · hos teamet er flisen SPEJLET — samme boks, set fra den anden side.
       + (teamKunStreaks()
-        ? _stflise("backup", "\ud83e\ude9e", (EN?"MIRROR":"SPEJLET"),
+        ? _stflise("backup", "\ud83d\udd04", (EN ? "FROM " : "FRA ") + String(SPILLER || (EN ? "the player" : "spilleren")).toUpperCase(),   /* ⭐ v4.133.0 */
             (S.skyLaast ? (EN?"\u26a0\ufe0f key no longer fits":"\u26a0\ufe0f nøglen passer ikke")
               : !lager.hent("sai-sky-noegle") ? (EN?"waiting for the player":"venter på spilleren")
               : (S.skyStatus && S.skyStatus.har) ? (EN?"\u2713 fetched":"\u2713 hentet") : (EN?"tap to fetch":"tryk for at hente")),
@@ -12399,7 +12407,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       const _harB = !!lager.hent("sai-sky-noegle");
       const _sk = S.skyStatus;
       h += '<div class="kort" style="border-left:3px solid ' + (S.skyLaast ? 'var(--tabt)' : _harB ? 'var(--is)' : 'var(--guld)') + '">' +
-        '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83e\ude9e ' + (EN ? "THE PLAYER’S MIRROR" : "SPILLERENS SPEJL") + '</div>' +
+        '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83d\udd04 ' + (EN ? "FROM " : "FRA ") + esc(String(SPILLER || (EN ? "the player" : "spilleren")).toUpperCase()) + (EN ? " \u00b7 MATCHES, TRAINING & ANALYSES" : " \u00b7 KAMPE, TR\u00c6NING OG ANALYSER") + '</div>' +   /* ⭐ v4.133.0 */
         '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
           ? "Matches, every ball, the training log and the analyses come from the player’s own encrypted backup. <b>The key came locked from the player</b> — the server still cannot open the box. What you enter here is put back into the same box, so the player sees it too."
           : "Kampe, hver bold, træningsloggen og analyserne kommer fra spillerens egen krypterede sikkerhedskopi. <b>Nøglen kom låst fra spilleren</b> — serveren kan stadig ikke åbne boksen. Det, du taster her, lægges tilbage i samme boks, så spilleren også ser det.") + '</p>' +
@@ -12412,7 +12420,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         (_sk && _sk.har && _sk.opdateret ? '<p class="lille" style="margin:7px 0 0;opacity:.6">' + (EN ? "Player’s box from " : "Spillerens boks fra ") + esc(new Date(_sk.opdateret).toLocaleString("da-DK")) + (_sk.bytes ? ' \u00b7 ' + Math.max(1, Math.round(_sk.bytes / 1024)) + ' KB' : '') + '</p>' : '') +
         '<div class="raekke" style="margin-top:9px;gap:6px">' +
           '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' + (S.skySender || !_harB ? ' disabled' : '') + ' data-a="skyHentNu">' +
-          (S.skySender ? '\u23f3 \u2026' : (EN ? "\ud83e\ude9e Fetch the mirror" : "\ud83e\ude9e Hent spejl")) + '</button></div>' +
+          (S.skySender ? '\u23f3 \u2026' : '\ud83d\udd04 ' + _hentFraNavn(EN)) + '</button></div>' +   /* ⭐ v4.133.0 */
         (S.skyBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>' : '') +
         '</div>';
     } else if (_sp === "backup") {
@@ -12640,10 +12648,30 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   if (S.tab !== "chat" && S.tab !== "rumsnak") h += '<p class="fod">'+(EN
     ? "We keep tennis \u2014 words disappear. Your matches and analyses come back with your account; names and notes are locked on your phone before they are sent, and we cannot open them. StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION
     : "Vi gemmer tennis \u2014 ord forsvinder. Dine kampe og analyser kommer tilbage med din konto; navne og noter l\u00e5ses p\u00e5 din telefon, f\u00f8r de sendes, og dem kan vi ikke \u00e5bne. StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION)+'</p>';   // ⭐ v4.115.0 · princip 79
-  h += bundNav();
+  h += '<i hidden data-bundnav="1"></i>';   /* ⭐ v4.135.0 · markør: denne skærm bærer bjælken */
   el.innerHTML = h;
   devFoldning();
   devKalender();
+}
+// ⭐ v4.135.0 · BJÆLKEN BLIVER I BUNDEN (Nicolai 12/9). Den bor uden for #app i
+//   én fast knude, der aldrig slettes — kun indholdet skiftes, og kun når det
+//   har ændret sig. Ses kun, når skærmen i #app bærer markøren.
+function _bundNavTegn() {
+  var knude = document.getElementById("bundnav");
+  if (!knude) {
+    knude = document.createElement("div"); knude.id = "bundnav";
+    document.body.appendChild(knude);
+    knude.addEventListener("click", function(e){ var kn = e.target.closest("[data-a]"); if (kn && A[kn.dataset.a]) A[kn.dataset.a](kn.dataset.v); });
+  }
+  var vis = !!document.querySelector('#app [data-bundnav]');
+  if (!vis) { if (knude.innerHTML !== "") knude.innerHTML = ""; return; }
+  // Selve <nav> skabes ÉN gang pr. sprog; derefter skiftes kun .aktiv på knapperne.
+  var nav = knude.querySelector("nav.bundnav");
+  var sprog = S.sprog === "en" ? "en" : "da";
+  if (!nav || nav.getAttribute("data-sprog") !== sprog) { knude.innerHTML = bundNav(); nav = knude.querySelector("nav.bundnav"); nav.setAttribute("data-sprog", sprog); }
+  var akt = S.verden === "udv" ? ({ hjem: "udv:hjem", "hb-hjem": "udv:hjem", kamp: "udv:kamp", fysisk: "udv:fysisk", historik: "udv:historik" })[S.tab] || null : null;
+  var kn = nav.querySelectorAll("button[data-a]");
+  for (var i = 0; i < kn.length; i++) kn[i].classList.toggle("aktiv", kn[i].getAttribute("data-v") === akt);
 }
 function devKalender(){
   var plan = (S.verden !== "udv" && S.tab === "plan");

@@ -359,7 +359,7 @@ const GUIDE = [
   ["3 · Registrér bolden — tre tryk","OSKAR VANDT eller TABT → hvordan endte bolden → duellens længde (kort 1-4 / mellem 5-8 / lang 9+). Scoreboardet regner selv stillingen — og duel-tallene afslører, om bud IV holder."],
   ["4 · Fortryd og alarmer","FORTRYD ruller seneste registrering tilbage. Appen advarer ved store point og efter tre gratis fejl i træk."],
   ["5 · Afslut og analysér","'Afslut & gem' → kampen lander i Historik. Tryk derefter 'Hent analyse' på kampkortet — analysen skrives og lander direkte i appen."],
-  ["📲 Føj til hjemmeskærm","iPhone: Åbn filen i Safari → del-knappen → 'Føj til hjemmeskærm' — så ligger appen som ikon. Data gemmes lokalt på DENNE enhed; eksport-teksten er jeres sikkerhedsnet."],
+  ["📲 Føj til hjemmeskærm","iPhone: Åbn filen i Safari → del-knappen → 'Føj til hjemmeskærm' — så ligger appen som ikon."],
   ["⚙ Midt i kampen?","Kom du for sent i gang, eller røg et parti under en pause? Tryk '⚙ Justér stillingen' i kampbilledet, sæt sæt/partier og hvem der server næste bold — registreringen fortsætter derfra. Pointene i det igangværende parti nulstilles til 0-0."],
   ["🟠🧊 Hvorfor 'Grus & Is'?","Appens tema er hele filosofien i tre ord: GRUS er underlaget — sommergruset på klubbens baner og ved mesterskaberne, Nadal-mønstrenes hjemmebane, og kridtstregen i kampbilledet, hvor pointene sætter fodspor. IS er det kolde hoved — Sinners 'samme ansigt ved 40-0 og 0-40', rutinerne og 🧊-nulstillingen. Underlaget, der spilles på, og temperamentet, der vindes med."],
 ];
@@ -457,7 +457,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.138.0 · 12. september 2026";
+const VERSION = "v4.141.0 · 12. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -2468,8 +2468,8 @@ function klubKort(EN) {
         (S.klubAaben?'✕':'⚙️') + '</span></div>';
     if (S.klubAaben) {
       h += '<p class="lille" style="margin:8px 0 6px">' + (EN
-        ? "The club name and logo appear at the top of the app. Stored only on this device."
-        : "Klubbens navn og logo vises øverst i appen. Gemmes kun på denne enhed.") + '</p>' +
+        ? "The club name and logo appear at the top of the app."
+        : "Klubbens navn og logo vises øverst i appen.") + '</p>' +
         '<input class="felt" data-felt="klubUdkast" maxlength="40" placeholder="'+(EN?'Club name':'Klubbens navn')+'" value="'+esc(S.klubUdkast !== "" ? S.klubUdkast : KLUB)+'">' +
         '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="klubNavnGem">'+(EN?"Save":"Gem")+'</button></div>' +
         '<div style="display:flex;align-items:center;gap:9px;margin-top:9px">' +
@@ -3849,8 +3849,8 @@ const A = {
         ? { fejl: false, t: EN ? "The match was sent home to the player through the wormhole 🕳️" : "Kampen er sendt hjem til spilleren gennem ormehullet 🕳️" }
         : { fejl: true, t: r && r.fejl === "fuld"
             ? (EN ? "The player’s mailbox is full — it empties when the app is opened there." : "Spillerens postkasse er fuld — den tømmes, når appen åbnes dér.")
-            : (EN ? "The match could not be sent right now — it stays on this phone." : "Kampen kunne ikke sendes lige nu — den bliver på denne telefon.") };
-    } catch (_e) { S.postBesked = { fejl: true, t: EN ? "The match could not be sent right now — it stays on this phone." : "Kampen kunne ikke sendes lige nu — den bliver på denne telefon." }; }
+            : (EN ? "The match could not be sent right now — try again." : "Kampen kunne ikke sendes lige nu — prøv igen.") };
+    } catch (_e) { S.postBesked = { fejl: true, t: EN ? "The match could not be sent right now — try again." : "Kampen kunne ikke sendes lige nu — prøv igen." }; }
     render();
   },
   // Spillerens egen telefon: hent, åbn, flet, kvittér — i den rækkefølge.
@@ -7008,7 +7008,7 @@ const A = {
             ? (EN ? m.navn + "'s inbox is full — it empties when the app is opened there." : m.navn + "s postkasse er fuld — den tømmes, når appen åbnes dér.")
           : r.fejl === "for-mange"
             ? (EN ? "You have already sent " + (r.antal || "") + " matches that have not been picked up yet." : "Du har allerede sendt " + (r.antal || "") + " kampe, der ikke er hentet endnu.")
-          : (EN ? "The match could not be sent right now — it stays on this phone." : "Kampen kunne ikke sendes lige nu — den bliver på denne telefon.");
+          : (EN ? "The match could not be sent right now — try again." : "Kampen kunne ikke sendes lige nu — prøv igen.");
         S.flytSender = false; S.flytBesked = { fejl: true, t: t }; render(); return;
       }
       // ⛔⭐⭐ FANGET AF PRØVEN: kvitteringen bor INDE i panelet, så hvis
@@ -7021,7 +7021,7 @@ const A = {
         : "Sendt til " + m.navn + " \u2014 den lander i appen, n\u00e6ste gang den \u00e5bnes. Der blev ikke slettet noget her: fjern den med \ud83d\uddd1 Slet, n\u00e5r du har set den dér.") };
     } catch (_e) {
       S.flytSender = false;
-      S.flytBesked = { fejl: true, t: EN ? "The match could not be sent right now \u2014 it stays on this phone." : "Kampen kunne ikke sendes lige nu \u2014 den bliver p\u00e5 denne telefon." };
+      S.flytBesked = { fejl: true, t: EN ? "The match could not be sent right now \u2014 try again." : "Kampen kunne ikke sendes lige nu \u2014 pr\u00f8v igen." };
     }
     render();
   },
@@ -7730,8 +7730,13 @@ function _fladeMaal() {
     // Math.max klippede til 320 px. Fladen ville stå som en stump midt paa
     // skærmen. Der måles derfor paa, om bjælken FYLDER noget — ikke paa,
     // om den findes. Polstringen nedenunder (safe-area) staar i CSS.
+    // ⭐ v4.141.0 · DET SYNLIGE VINDUE (Nicolai 12/9: «når man skal starte
+    //   med at skrive»). På iOS krymper innerHeight IKKE for tastaturet —
+    //   kun visualViewport.height gør. Fladen skal fylde det, man kan SE.
+    const _vv = window.visualViewport;
+    const H = (_vv && _vv.height > 0) ? _vv.height : window.innerHeight;
     const bund = (nr && nr.height > 0)
-      ? (window.innerHeight - nr.top + LUFT)
+      ? (H - nr.top + LUFT)
       : LUFT;
     // ⚠️ v4.39.0 · GULVET VAR FOR HØJT. 320 px var taenkt som en nødbremse
     // mod et meningsloest regnestykke — men i et LAVT vindue (tastaturet
@@ -7741,7 +7746,17 @@ function _fladeMaal() {
     // stoppe. Maalt i et vindue paa 400 px: fladen tog 320, pladsen var 288.
     // Gulvet skal kun fange det negative, ikke bestemme hoejden.
     const top = f.getBoundingClientRect().top + (window.pageYOffset || 0);
-    f.style.height = Math.max(120, Math.round(window.innerHeight - bund - top)) + "px";
+    // listen skal blive nederst, når fladen skifter højde
+    const _rul = document.getElementById("snak-rul");
+    const _nederst = _rul ? (_rul.scrollHeight - _rul.scrollTop - _rul.clientHeight) < 48 : false;
+    const _ny = Math.max(120, Math.round(H - bund - top)) + "px";
+    if (f.style.height !== _ny) {
+      f.style.height = _ny;
+      if (_rul && _nederst) _rul.scrollTop = _rul.scrollHeight;
+    }
+    // ⭐ v4.141.0 · Har iOS allerede rullet siden for at vise feltet, rulles
+    //   der tilbage — feltet er nu INDE i det synlige vindue.
+    try { if (_skriver() && (window.pageYOffset || 0) > 0) window.scrollTo(0, 0); } catch (_e) {}
     // ⭐⭐ v4.43.0 · NÅR DER IKKE ER PLADS TIL BEGGE, VINDER SKRIVEFELTET.
     // Kun venne-chatten har et spillerkort som fast barn; rummet lagde
     // sit hoved ind i rullekassen og kan derfor ikke havne her.
@@ -7752,7 +7767,7 @@ function _fladeMaal() {
       const felt = f.querySelector('[data-felt$="Udkast"]');
       if (kort && felt) {
         kort.style.display = "";
-        if (felt.getBoundingClientRect().bottom > window.innerHeight + 2) {
+        if (felt.getBoundingClientRect().bottom > H + 2) {
           kort.style.display = "none";
         }
       }
@@ -8084,8 +8099,8 @@ function _skadetKort(EN) {
         ? "<b>Strength counts in your streak \u2014 exactly like tennis.</b> Three sessions a week; they do not have to be on court. Your streak keeps running while you get well."
         : "<b>Styrke t\u00e6ller i din streak \u2014 pr\u00e6cis som tennis.</b> Tre pas om ugen, og de beh\u00f8ver ikke at v\u00e6re p\u00e5 banen. Din streak l\u00f8ber videre, mens du bliver rask.") + '</p>' +
       '<p class="lille" style="margin:0 0 10px;opacity:.7;line-height:1.5">' + (EN
-        ? "Ask your coach or physio what you may train. And: we do not store what is wrong \u2014 only that you turned the streak reminders off."
-        : "Sp\u00f8rg din tr\u00e6ner eller fysioterapeut, hvad du m\u00e5 tr\u00e6ne. Og: vi gemmer ikke, hvad du fejler \u2014 kun at du har slukket streak-p\u00e5mindelserne.") + '</p>' +
+        ? "Ask your coach or physio what you may train."
+        : "Sp\u00f8rg din tr\u00e6ner eller fysioterapeut, hvad du m\u00e5 tr\u00e6ne.") + '</p>' +
       '<button class="knap valg" style="min-height:44px" data-a="skadetFra">' +
       (S.skadetSender ? "\u23f3 \u2026" : (EN ? "I am well again" : "Jeg er rask igen")) + '</button></div>';
   }
@@ -8155,8 +8170,8 @@ function _billedLoefte(EN) {
       (b.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(b.t) + '</p>' : '') +
     (S.bilVisBesked ? '<p class="lille" style="margin:6px 2px 0;color:var(--tabt)">' + esc(S.bilVisBesked.t) + '</p>' : '') +
     '<p class="lille" style="margin:6px 2px 0;opacity:.6;font-size:10.5px;line-height:1.45">\ud83d\udcf7 ' + (EN
-      ? "A picture can be seen once and is deleted then. We do not keep it \u2014 but we cannot stop a screenshot."
-      : "Et billede kan ses \u00e9n gang og slettes s\u00e5. Vi gemmer det ikke \u2014 men vi kan ikke forhindre et sk\u00e6rmbillede.") + '</p>';
+      ? "A picture can be seen once and is deleted then \u2014 but we cannot stop a screenshot."
+      : "Et billede kan ses \u00e9n gang og slettes s\u00e5 \u2014 men vi kan ikke forhindre et sk\u00e6rmbillede.") + '</p>';
 }
 
 // ⭐⭐ v4.43.0 · TO NYE VALG, SÅ RUMMET KAN VÆRE EN FLADE:
@@ -8515,8 +8530,8 @@ function _bilVis(EN) {
     '<img id="bil-vis-billede" src="' + esc(S.bilVisUrl) + '" alt="" style="max-width:100%;max-height:76vh;' +
     'border-radius:14px;border:1px solid var(--kant);object-fit:contain">' +
     '<p class="lille" style="margin:10px 6px 0;text-align:center;max-width:420px;line-height:1.5">' + (EN
-      ? "Seen once — it is deleted now. We do not keep it. We cannot stop a screenshot."
-      : "Set én gang — det er slettet nu. Vi gemmer det ikke. Vi kan ikke forhindre et skærmbillede.") + '</p>' +
+      ? "Seen once — it is deleted now. We cannot stop a screenshot."
+      : "Set én gang — det er slettet nu. Vi kan ikke forhindre et skærmbillede.") + '</p>' +
     // ⭐⭐ v4.46.0 · `flex:none` ER HELE RETTELSEN. Uden den arver knappen
     // `.knap{flex:1}` og vokser LODRET i denne kolonne-flexboks — 60 px
     // bred, en halv skærm høj (målt paa Nicolais telefon 28/8).
@@ -8596,7 +8611,7 @@ function _tegn() {
       '<h2 style="color:var(--guld);font-size:16px;margin:0 0 10px">\ud83d\udd12 ' + (EN ? "The key is closed" : "N\u00f8glen er lukket") + '</h2>' +
       '<p class="lille" style="margin:0 0 12px">' + (EN
         ? esc(_navn) + " has closed the team key this phone uses. What you entered here stays on the phone \u2014 but you cannot see anything new or send anything until you get a new key."
-        : esc(_navn) + " har lukket den team-n\u00f8gle, denne telefon bruger. Det, du har tastet her, bliver p\u00e5 telefonen \u2014 men du kan ikke se nyt eller sende noget, f\u00f8r du f\u00e5r en ny n\u00f8gle.") + '</p>' +
+        : esc(_navn) + " har lukket den team-n\u00f8gle, denne telefon bruger. Du kan ikke se nyt eller sende noget, f\u00f8r du f\u00e5r en ny n\u00f8gle.") + '</p>' +
       '<p class="lille" style="margin:0 0 6px"><b>' + (EN ? "Want back in? Ask the player to invite you again from ⚙️ → THE TEAM in the app." : "Vil du med igen? Bed spilleren invitere dig igen fra \u2699\ufe0f \u2192 TEAMET i appen.") + '</b></p>' +
       (_egetNavn ? '<button class="knap valg" style="margin-top:14px;width:100%;min-height:44px" data-a="profilSkift" data-v="egen">' + (EN ? "Switch to my own player" : "Skift til min egen spiller") + " (" + esc(_egetNavn) + ")" + '</button>' : '') +
       (S.teamForladSpoerg
@@ -8660,7 +8675,7 @@ function _tegn() {
         '<h2 style="color:var(--guld);font-size:16px;margin:0 0 10px">' + (S.sprog === "en" ? "Welcome home" : "Velkommen hjem") + '</h2>' +
         '<p class="lille" style="margin:0 0 12px">' + (S.sprog === "en"
           ? "<b>" + _gnavn + "</b> already lives on this phone. One tap moves everything in — matches, sessions and codes. The old app is not touched, and it keeps working."
-          : "<b>" + _gnavn + "</b> bor allerede på denne telefon. Ét tryk flytter det hele ind — kampe, træninger og koder. Den gamle app røres ikke og virker som før.") + '</p>' +
+          : "<b>" + _gnavn + "</b> findes allerede her. Ét tryk flytter det hele ind — kampe, træninger og koder. Den gamle app røres ikke og virker som før.") + '</p>' +
         '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="flytInd">' + (S.sprog === "en" ? "Move " + _gnavn + " in" : "Flyt " + _gnavn + " ind") + '</button>' +
         '<button class="knap valg" data-a="flytNej">' + (S.sprog === "en" ? "Start fresh" : "Start forfra") + '</button></div></div>';
       return;
@@ -9036,8 +9051,8 @@ function _tegn() {
             return '<p class="lille sai-op" style="animation-delay:.09s;margin:0 0 12px;padding:10px 12px;' +
               'border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 9px 9px 0;' +
               'text-align:left;line-height:1.5">' + (S.sprog === "en"
-                ? "<b>Your access no longer exists on the server.</b> Log in, or create the player again \u2014 your matches on this phone are untouched."
-                : "<b>Din adgang findes ikke l\u00e6ngere p\u00e5 serveren.</b> Log ind, eller opret spilleren forfra \u2014 kampene p\u00e5 denne telefon er ur\u00f8rte.") + '</p>';
+                ? "<b>Your access no longer exists on the server.</b> Log in, or create the player again \u2014 your matches are untouched."
+                : "<b>Din adgang findes ikke l\u00e6ngere p\u00e5 serveren.</b> Log ind, eller opret spilleren forfra \u2014 dine kampe er ur\u00f8rte.") + '</p>';
           })() +
           // ① LOG IND — det foerste, som han bad om.
           '<div class="sai-op" style="animation-delay:.12s;text-align:left">' + _loginKort(S.sprog === "en", true) + '</div>' +
@@ -9664,7 +9679,7 @@ function _tegn() {
           '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus);margin-bottom:6px">' + "🔥 STREAK" + '</div>' +
           '<p class="lille" style="margin:0 0 8px">' + (EN
             ? "The streak shows how many sessions in a row each player on your team has kept going \u2014 first names and numbers, nothing else. It is OFF until you choose it under Settings."
-            : "Holdets stige viser, hvor mange tr\u00e6ninger i tr\u00e6k hver spiller p\u00e5 holdet har \u2014 fornavne og tal, intet andet. Dit EGET tal ovenfor er altid t\u00e6ndt og forlader ikke telefonen. Stigen er sl\u00e5et FRA, indtil du selv v\u00e6lger den til under Indstillinger.") + '</p>' +
+            : "Holdets stige viser, hvor mange tr\u00e6ninger i tr\u00e6k hver spiller p\u00e5 holdet har \u2014 fornavne og tal, intet andet. Dit EGET tal ovenfor er altid t\u00e6ndt. Stigen er sl\u00e5et FRA, indtil du selv v\u00e6lger den til under Indstillinger.") + '</p>' +
           '<button class="knap" style="background:var(--grus)" data-a="tab" data-v="opsaet">' + (EN?"Go to Settings":"G\u00e5 til Indstillinger") + '</button></div>';
       } else {
         const sd = S.stigeData;
@@ -10452,13 +10467,13 @@ function _tegn() {
       var _kNoegle;
       if (S.spillerNoegle && !S.nyNoegleAaben) {
         _kNoegle = '<p class="lille" style="margin:0 0 8px">' + (EN
-            ? "The code is saved on this phone. Change it only if the club gives you a new one."
-            : "Koden er gemt på denne telefon. Skift den kun, hvis klubben giver dig en ny.") + '</p>' +
+            ? "Change it only if the club gives you a new one."
+            : "Skift den kun, hvis klubben giver dig en ny.") + '</p>' +
           '<button class="knap valg" style="min-height:44px;padding:8px 15px" data-a="nyNoegleAabn">' + (EN?"Change code":"Skift kode") + '</button>';
       } else {
         _kNoegle = '<p class="lille" style="margin:0 0 8px">' + (EN
-            ? "You got this from the club. Enter it once on this phone."
-            : "Den har du fået af klubben. Indtast den én gang på denne telefon.") + '</p>' +
+            ? "You got this from the club. Enter it once."
+            : "Den har du fået af klubben. Indtast den én gang.") + '</p>' +
           '<div style="display:flex;gap:6px;align-items:stretch">' +
           '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:' + (S.visNoegle?"none":"disc") + '" data-felt="noegleUdkast" value="' + esc(S.noegleUdkast||"") +
           '" placeholder="' + (EN?"enter player code":"indtast spiller-kode") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
@@ -10902,8 +10917,8 @@ function _tegn() {
           if (S.portStatus && S.portStatus.kendt && S.portStatus.status !== "godkendt") {
             _kk += '<div class="lille" style="margin:2px 0 8px;padding:9px 11px;border-left:3px solid var(--guld);background:rgba(240,207,97,.07);border-radius:0 9px 9px 0;line-height:1.55">' +
               '⏳ <b>' + (EN ? "Your access is waiting for a yes." : "Din adgang venter på et ja.") + '</b><br>' +
-              (EN ? "Everything on this phone already works — streak, training and matches. Your plan is set the moment you are let in."
-                  : "Alt på denne telefon virker allerede — streak, træning og kampe. Planen sættes, i samme øjeblik I bliver lukket ind.") + '</div>';
+              (EN ? "Streak, training and matches already work. Your plan is set the moment you are let in."
+                  : "Streak, træning og kampe virker allerede. Planen sættes, i samme øjeblik I bliver lukket ind.") + '</div>';
           } else if (S.gaveInfo && S.gaveInfo.gave) {
             _kk += _gaveTekst(EN);   /* ⭐ v4.136.0 · gaven fremgår */
           } else if (S.minPlan === "gaest") {
@@ -11301,8 +11316,8 @@ function _tegn() {
       if (S.rolle !== "familie") {
       h += _opsKort("navn", "✏️", (EN?"NAME":"NAVNET"), esc(SPILLER || "—"), "var(--kridt)",
         '<p class="lille" style="margin:0 0 8px">' + (EN
-          ? "The app&rsquo;s name — and what your friends see. Stored only on this device; the next sync carries it along."
-          : "Appens navn — og det, dine venner ser. Gemmes kun på denne enhed; næste synk tager det med.") + '</p>' +
+          ? "The app&rsquo;s name — and what your friends see."
+          : "Appens navn — og det, dine venner ser.") + '</p>' +
         '<input data-felt="navnNyt" maxlength="24" placeholder="' + (EN?"New first name":"Nyt fornavn") + '" value="' + esc(S.navnNyt || "") + '">' +
         '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="navnSkift">' + (EN?"Save name":"Gem navnet") + '</button>' +
         // ⭐ v4.57.0 · fravalget af soegningen — vises naar tilstanden er
@@ -11365,6 +11380,27 @@ function _tegn() {
           : "Dine kampe, hver bold, din tr\u00e6ningslog og dine analyser kopieres automatisk. <b>Boldene, resultaterne og analyserne gemmes l\u00e6sbart i arkivet</b>, s\u00e5 de kommer tilbage med din konto alene \u2014 ogs\u00e5 hvis du glemmer dit kodeord. <b>Modstandernes navne og dine noter l\u00e5ses p\u00e5 denne telefon, f\u00f8r de sendes</b>: serveren opbevarer en boks, den ikke kan \u00e5bne, og de kommer tilbage med dit kodeord. Log ind p\u00e5 en ny telefon, og det hele kommer tilbage.") + '</p>' +
         '<button class="knap" style="width:100%;min-height:48px;background:var(--grus)" data-a="gaaKopi">' +
         (EN?"Open backup \u2192":"\u00c5bn sikkerhedskopien \u2192") + '</button>');
+
+      // ── SÅDAN VIRKER STREAKTENNIS (v4.140.0) ─────────────────────
+      //   Nicolai 12/9: «Meget high level, så folk ved, hvad den gør og
+      //   strukturerne i det.» Seks afsnit, hvad den GØR — intet om hvor.
+      h += _opsKort("saadan", "\ud83d\udcd6", (EN ? "HOW STREAKTENNIS WORKS" : "S\u00c5DAN VIRKER STREAKTENNIS"), (EN ? "the short version" : "den korte version"), "var(--is)",
+        (function(){
+          const _a = function(ikon, titel, tekst){ return '<div style="display:flex;gap:10px;margin:0 0 10px"><span style="flex:none;font-size:18px;line-height:1.3">' + ikon + '</span><div style="flex:1;min-width:0"><b style="font-size:13px">' + titel + '</b><p class="lille" style="margin:2px 0 0;line-height:1.5">' + tekst + '</p></div></div>'; };
+          return (EN
+            ? _a("\ud83c\udfbe", "The four tabs", "<b>HOME</b> is your day. <b>MATCH</b> is the court. <b>TRAIN</b> is your log. <b>STATS</b> is everything you have played.")
+              + _a("\ud83c\udfaf", "A match, ball by ball", "Two taps per point: won or lost, and why. That gives sets, games and the whole footprint of the match \u2014 and the AI analysis afterwards: what worked, what to work on. After a few matches you get a development letter across them.")
+              + _a("\ud83d\udd25", "The streak", "Every training session counts \u2014 tennis or fitness. Days without a session break it. It is yours; nobody else scores it.")
+              + _a("\ud83e\udd1d", "Friends and the room", "Find a friend by username; both say yes. Friends see each other\u2019s streaks and can follow a match live. A room is a bunch of friends in one place.")
+              + _a("\ud83d\udc6a", "Your team", "The people you invite in \u2014 a parent, a coach. They see your matches, training and analyses. Never your messages.")
+              + _a("\ud83c\udfdb", "Club and plans", "A club code connects you to your coach in StreakCoach. <b>Basic</b> is free (streak, matches, analyses, friends). <b>Full</b> adds live sharing. What we keep and how is written on the terms page \u2014 not here.")
+            : _a("\ud83c\udfbe", "De fire faner", "<b>HJEM</b> er din dag. <b>KAMP</b> er banen. <b>TR\u00c6N</b> er din log. <b>STATS</b> er alt, du har spillet.")
+              + _a("\ud83c\udfaf", "En kamp, bold for bold", "To tryk pr. point: vundet eller tabt, og hvorfor. Det giver s\u00e6t, partier og hele kampens fodspor \u2014 og AI-analysen bagefter: hvad der virkede, hvad der skal arbejdes med. Efter nogle kampe f\u00e5r du et udviklingsbrev p\u00e5 tv\u00e6rs af dem.")
+              + _a("\ud83d\udd25", "Streaken", "Hver tr\u00e6ning t\u00e6ller \u2014 tennis eller fysisk. Dage uden et pas bryder den. Den er din; ingen andre t\u00e6ller den.")
+              + _a("\ud83e\udd1d", "Venner og rummet", "Find en ven p\u00e5 brugernavn; begge siger ja. Venner ser hinandens streaks og kan f\u00f8lge en kamp live. Et rum er en flok venner samme sted.")
+              + _a("\ud83d\udc6a", "Dit team", "De mennesker, du selv inviterer ind \u2014 en for\u00e6lder, en tr\u00e6ner. De ser dine kampe, din tr\u00e6ning og dine analyser. Aldrig dine beskeder.")
+              + _a("\ud83c\udfdb", "Klub og planer", "En klubkode kobler dig til din tr\u00e6ner i StreakCoach. <b>Basis</b> er gratis (streak, kampe, analyser, venner). <b>Fuld</b> giver live-deling. Hvad vi gemmer, og hvordan, st\u00e5r p\u00e5 betingelses-siden \u2014 ikke her."));
+        })());
 
       // ── SPROG ─────────────────────────────────────────────────────
       h += _opsKort("sprog", "🌐", (EN?"LANGUAGE":"SPROG"), (EN?"English":"Dansk"), "var(--is)",
@@ -11432,8 +11468,8 @@ function _tegn() {
         ? (EN?"You are on the list":"Du står på listen")
         : (EN?"Matches are invite-only":"Kampe er med invitation")) + '</h2>' +
       '<p class="lille" style="margin:0 auto 14px;max-width:300px">' + (_venter
-        ? (EN?"Someone needs to say yes before matches and analyses open. Your trainings and your streak already count — they live on this phone and are waiting for you."
-             :"Der skal siges ja, før kampe og analyser åbner. Dine træninger og din streak tæller allerede — de bor på denne telefon og venter på dig.")
+        ? (EN?"Someone needs to say yes before matches and analyses open. Your trainings and your streak already count — they are waiting for you."
+             :"Der skal siges ja, før kampe og analyser åbner. Dine træninger og din streak tæller allerede — de venter på dig.")
         : (EN?"StreakTennis requires an invitation — everyone in here is someone you know. Got the app from a friend? Ask them to put in a word. Then you are in — and your first match is waiting.":"StreakTennis kræver en invitation — alle herinde er nogen, man kender. Har du fået appen af en ven, så bed dem sige til. Så bliver du lukket ind — og din første kamp venter.")) + '</p>' +
       // ⭐ DOERKLOKKEN. En lukket dør uden den er bare en mur.
       (!_venter && S.rolle !== "familie" ? '<div style="max-width:290px;margin:0 auto 12px">' +
@@ -11454,7 +11490,7 @@ function _tegn() {
       (S.meldBesked ? '<p class="lille" style="margin:0 auto 10px;max-width:290px;color:' + (S.meldBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.meldBesked.t) + '</p>' : '') +
       '<button class="knap" style="width:auto;padding:9px 18px" data-a="doerTjek">' + (S.portHenter ? "\u23f3 \u2026" : (EN?"Check again":"Tjek igen")) + '</button>' +
       '<div style="margin-top:10px"><a class="knap" style="width:auto;padding:9px 18px;display:inline-block;text-decoration:none;background:transparent;border:1px solid var(--kant);color:var(--is)" href="' + DOER_MAIL + '">' + (EN?"\u2709 Write to us":"\u2709 Skriv til os") + '</a></div>' +
-      '<p class="lille" style="margin:10px auto 0;max-width:290px">' + (EN?"We store nothing until you are in.":"Vi gemmer intet, f\u00f8r I er inde.") + '</p></div>';
+      '</div>';   /* v4.139.0: løftet «vi gemmer intet, før I er inde» bor på betingelses-siden */
   } else if (S.tab === "kamp") {
     if (!S.aktiv) {
       if (S.wiz === undefined) S.wiz = 1;
@@ -12096,8 +12132,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       ? "No mirror on this key — matches you finish here go home to the player through the wormhole 🕳️."
       : "Intet spejl på denne nøgle — kampe, du afslutter her, går hjem til spilleren gennem ormehullet 🕳️.") + '</p>';
     else if (teamKunStreaks() && !lager.hent("sai-sky-noegle")) h += '<p class="lille" style="margin:8px 0 2px;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0">' + (EN
-      ? "What you enter here lives only on this phone" + (S.spejlVenter ? " \u2014 the mirror arrives the next time the player opens the app." : " until the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM). Then everything travels to him \u2014 and his matches come here.")
-      : "Det, du taster her, bor kun p\u00e5 denne telefon" + (S.spejlVenter ? " \u2014 spejlet kommer, n\u00e6ste gang spilleren \u00e5bner sin app." : ", indtil spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET). S\u00e5 rejser alt herfra til ham \u2014 og hans kampe kommer hertil.")) + '</p>';
+      ? "What you enter here reaches the player" + (S.spejlVenter ? " the next time the player opens the app." : " once the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM) \u2014 and his matches come here.")
+      : "Det, du taster her, n\u00e5r spilleren" + (S.spejlVenter ? ", n\u00e6ste gang spilleren \u00e5bner sin app." : ", n\u00e5r spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET) \u2014 og hans kampe kommer hertil.")) + '</p>';
     h += '<div class="dev-grid" style="margin:12px 0">'
       // ⭐ v4.84.0 · er kamplisten låst, må fliserne ikke sige «ingen kampe
       //   endnu» ved siden af et kort, der siger, at de ikke kunne læses.
@@ -12287,8 +12323,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         ? "No mirror on this key: you cannot see the player’s matches. Every match you finish here is sent home to the player through the wormhole 🕳️ — and stays here too."
         : "Intet spejl på denne nøgle: du kan ikke se spillerens kampe. Hver kamp, du afslutter her, sendes hjem til spilleren gennem ormehullet 🕳️ — og bliver også stående her.") + '</p>'
       : '<p class="lille" style="margin:2px 0 10px;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0">' + (EN
-        ? "What you enter here lives only on this phone" + (S.spejlVenter ? " \u2014 the mirror arrives the next time the player opens the app." : " until the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM). Then everything here travels to him \u2014 and his matches come here.")
-        : "Det, du taster her, bor kun p\u00e5 denne telefon" + (S.spejlVenter ? " \u2014 spejlet kommer, n\u00e6ste gang spilleren \u00e5bner sin app." : ", indtil spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET). S\u00e5 rejser alt herfra til ham \u2014 og hans kampe kommer hertil.")) + '</p>');
+        ? "What you enter here reaches the player" + (S.spejlVenter ? " the next time the player opens the app." : " once the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM) \u2014 and his matches come here.")
+        : "Det, du taster her, n\u00e5r spilleren" + (S.spejlVenter ? ", n\u00e6ste gang spilleren \u00e5bner sin app." : ", n\u00e5r spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET) \u2014 og hans kampe kommer hertil.")) + '</p>');
     // ⛔⭐⭐ v4.124.0 · CHIPPEN ER VÆK — DEN LØJ. Den sagde «Skal indtastes
     //   én gang for at hente analyser», men kampanalyser og udviklingsbrevet
     //   har ikke krævet en klubkode siden v4.7.9 (23/8). `analyse-lov`
@@ -12301,7 +12337,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     //     desuden sit eget kort i Indstillinger — chippen var en dublet.
     else { /* ingen chip: klubkoden har intet med kampanalyser at gøre */ }
     if (S.kodeAaben) {
-      h += '<div class="kort" style="border-color:var(--guld)"><p class="lille" style="margin:0 0 6px">'+(EN?"The code is stored only on this device and never leaves it.":"Koden gemmes kun på denne enhed og forlader den aldrig.")+'</p>';
+      h += '<div class="kort" style="border-color:var(--guld)"><p class="lille" style="margin:0 0 6px">'+(EN?"Your password opens the backup.":"Dit kodeord åbner sikkerhedskopien.")+'</p>';
       h += '<input type="password" autocomplete="off" data-felt="kodeUdkast" placeholder="'+(EN?'Club code':'Klubkode')+'" value="'+esc(S.kodeUdkast)+'">';
       h += '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="klubKodeGem">💾 '+(EN?"Save":"Gem")+'</button>'+(S.klubKode?'<button class="knap" data-a="klubKodeRyd">'+(EN?"Remove":"Fjern")+'</button>':'')+'</div>';
       h += '</div>';
@@ -12576,8 +12612,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       if (!S.minKonto) {
         // ⛔ Uden konto er der ingen at gemme for — og ingen vej tilbage.
         h += '<p class="lille" style="margin:8px 0 0">' + (EN
-          ? "You need an account for this. Without one, everything stays on this phone only."
-          : "Det kr\u00e6ver en konto. Uden en bliver alt kun p\u00e5 denne telefon.") + '</p>';
+          ? "You need an account for this."
+          : "Det kr\u00e6ver en konto.") + '</p>';
       } else {
         h += '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
           ? "Your matches, every ball, your training log and your analyses are copied automatically. <b>The balls, results and analyses are kept readable in the archive</b>, so they come back with your account alone \u2014 even if you forget your password. <b>Opponents\u2019 names and your notes are locked on this phone before they are sent</b>: the server keeps a box it cannot open, and they come back with your password. Log in on a new phone, and it all comes back."
@@ -12763,8 +12799,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   //     ikke indad i appen. En pilotfamilie læser den her linje 8/9.
   //   Den nye tekst siger de tre ting, der ER sande, og ikke mere.
   if (S.tab !== "chat" && S.tab !== "rumsnak") h += '<p class="fod">'+(EN
-    ? "We keep tennis \u2014 words disappear. Your matches and analyses come back with your account; names and notes are locked on your phone before they are sent, and we cannot open them. StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION
-    : "Vi gemmer tennis \u2014 ord forsvinder. Dine kampe og analyser kommer tilbage med din konto; navne og noter l\u00e5ses p\u00e5 din telefon, f\u00f8r de sendes, og dem kan vi ikke \u00e5bne. StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION)+'</p>';   // ⭐ v4.115.0 · princip 79
+    ? "StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION
+    : "StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION)+'</p>';   /* v4.139.0: hvor det gemmes står på betingelses-siden, ikke i foden */   // ⭐ v4.115.0 · princip 79
   h += '<i hidden data-bundnav="1"></i>';   /* ⭐ v4.135.0 · markør: denne skærm bærer bjælken */
   el.innerHTML = h;
   devFoldning();
@@ -13118,6 +13154,13 @@ window.__oskarInit = function(){
   rod.addEventListener("focusout", function(e){
     if (e.target && e.target.dataset && e.target.dataset.felt) {
       setTimeout(_fladeMaal, 300); setTimeout(_fladeMaal, 700);
+    }
+  });
+  // ⭐ v4.141.0 · og når feltet FÅR fokus: tastaturet er på vej op, og
+  //   visualViewport.resize kommer ikke altid. To målinger, ingen gentegning.
+  rod.addEventListener("focusin", function(e){
+    if (e.target && e.target.dataset && e.target.dataset.felt && document.getElementById("snak-flade")) {
+      setTimeout(_fladeMaal, 100); setTimeout(_fladeMaal, 450);
     }
   });
   rod.addEventListener("focusout", function(){

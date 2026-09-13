@@ -457,7 +457,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.152.0 · 13. september 2026";
+const VERSION = "v4.153.0 · 13. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -2747,8 +2747,8 @@ function analyseFejltekst(kode, status, EN) {
     ? "Your access is waiting for a yes. We will say when it is approved \u2014 you do not need to do anything."
     : "Din adgang venter p\u00e5 et ja. Vi siger til, s\u00e5 snart den er godkendt \u2014 du skal ikke g\u00f8re noget.";
   if (kode === "kraever-invitation" || status === 403) return EN
-    ? "StreakTennis needs an invitation. Enter your player code under \u2699 Player code \u2014 or ask whoever invited you."
-    : "StreakTennis kr\u00e6ver en invitation. Indtast din spiller-kode under \u2699 SPILLER-KODE \u2014 eller sp\u00f8rg den, der inviterede dig.";
+    ? "StreakTennis needs an invitation: a club code from your club under \u2699 Club code \u2014 or ask whoever invited you."
+    : "StreakTennis kr\u00e6ver en invitation: en klubkode fra din klub under \u2699 KLUBKODE \u2014 eller sp\u00f8rg den, der inviterede dig.";
   if (kode === "adgang" || status === 401) return EN ? "The club code was not accepted. Check it under \u2699 Club code." : "Klubkoden blev ikke godkendt. Tjek den under \u2699 Klubkode.";
   if (kode === "loft" || status === 429) return EN ? "Too many analyses in a short time. Try again in a little while." : "For mange analyser p\u00e5 kort tid. Pr\u00f8v igen om lidt.";
   if (kode === "validering" || status === 422) return EN ? "The match data was rejected by the safety check." : "Kampdata blev afvist af sikkerhedsvagten.";
@@ -10801,27 +10801,7 @@ function _tegn() {
         }
       } catch(_e) {}
 
-      // ── SPILLER-KODE ──────────────────────────────────────────────
-      // 21/8, Nicolai: "Taenker bare vi skriver indtast spiller-kode."
-      // "Noegle" er vores ord. "Kode" er familiens — og den staar ved
-      // siden af KLUBKODE, saa de to skal hedde det samme slags.
-      var _kNoegle;
-      if (S.spillerNoegle && !S.nyNoegleAaben) {
-        _kNoegle = '<p class="lille" style="margin:0 0 8px">' + (EN
-            ? "Change it only if the club gives you a new one."
-            : "Skift den kun, hvis klubben giver dig en ny.") + '</p>' +
-          '<button class="knap valg" style="min-height:44px;padding:8px 15px" data-a="nyNoegleAabn">' + (EN?"Change code":"Skift kode") + '</button>';
-      } else {
-        _kNoegle = '<p class="lille" style="margin:0 0 8px">' + (EN
-            ? "You got this from the club. Enter it once."
-            : "Den har du fået af klubben. Indtast den én gang.") + '</p>' +
-          '<div style="display:flex;gap:6px;align-items:stretch">' +
-          '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:' + (S.visNoegle?"none":"disc") + '" data-felt="noegleUdkast" value="' + esc(S.noegleUdkast||"") +
-          '" placeholder="' + (EN?"enter player code":"indtast spiller-kode") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
-          '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;font-size:13px" data-a="visSkift" data-v="visNoegle">' + (S.visNoegle ? "🙈" : "👁") + '</button></div>' +
-          '<div class="raekke" style="margin-top:7px"><button class="knap" style="min-height:44px;background:var(--grus)" data-a="noegleGem">' + (EN?"Save":"Gem") + '</button>' +
-          (S.spillerNoegle ? '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;font-size:12px" data-a="nyNoegleAabn">' + (EN?"Cancel":"Annullér") + '</button>' : '') + '</div>';
-      }
+      /* v4.153.0 · SPILLER-KODE-kortet er væk: identiteten laver telefonen selv (22/8), og «Skift kode» kunne overskrive den. Klubbens nøgle er KLUBKODE. */
       // ⭐⭐ v4.19.0 · EJER-PANELET (Nicolai 25/8, valgte "i appen, på din
       // egen nøgle"). SERVEREN afgør, om du er ejer — appen spørger bare.
       // Ingen nøgle, intet flag og ingen kode i appen kan gøre nogen til
@@ -11388,10 +11368,6 @@ function _tegn() {
           (_afv ? '' : '<button class="knap valg" style="flex:none;width:auto;min-height:40px;padding:6px 12px;font-size:12px" data-a="doerTjek">' + (S.portHenter ? "\u23f3" : (EN ? "Check" : "Tjek")) + '</button>') +
           '</div>';
       }
-      h += _opsKort("noegle", "🔑", (EN?"PLAYER CODE":"SPILLER-KODE"),
-        (_portTekst ? _portTekst : (S.spillerNoegle ? (EN?"saved ✓":"gemt ✓") : (EN?"not set":"ikke sat"))),
-        (_portFarve ? _portFarve : (S.spillerNoegle ? "var(--vundet)" : "var(--daempet)")), _portStribe + _kNoegle);
-
       // ── KLUBKODE ──────────────────────────────────────────────────
       var _kKlub;
       if (VISNING === "team") {
@@ -11407,8 +11383,8 @@ function _tegn() {
             : "Endnu ikke i team-visningen: modstander-analyser — de kræver stadig klubbens nøgle.") + '</p>';
       } else if (S.klubKode && !S.nyKodeAaben) {
         _kKlub = '<p class="lille" style="margin:0 0 8px">' + (EN
-            ? "Connected. Analyses and the coach layer are on — see “Your data” below for exactly what is shared."
-            : "Forbundet. Analyser og trænerlaget er slået til — se “Dine data” nedenfor for præcis hvad der deles.") + '</p>' +
+            ? "Connected. Analyses and the coach layer are on — the terms at the bottom say exactly what the club sees."
+            : "Forbundet. Analyser og trænerlaget er slået til — betingelserne nederst siger præcis, hvad klubben ser.") + '</p>' +
           '<div class="raekke"><button class="knap valg" style="min-height:44px;padding:8px 15px" data-a="nyKodeAabn">' + (EN?"Change":"Skift") + '</button>' +
           '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 13px;font-size:12px;color:var(--daempet)" data-a="klubKodeRyd">' + (EN?"Disconnect":"Fjern klub") + '</button></div>';
       } else {
@@ -11527,9 +11503,10 @@ function _tegn() {
           _bv ? "var(--guld)" : "var(--daempet)", _budKrop(EN) + famKrop);
       }
       // ⭐ v4.146.0 · i team-visningen var kortets eneste budskab «du skal ikke gøre noget» — det tegnes ikke
+      /* v4.153.0 · «I venter på et ja» står ved den nøgle, det handler om */
       if (VISNING !== "team") h += _opsKort("klub", "🏷", (EN?"CLUB CODE":"KLUBKODE"),
-        (S.klubKode ? (EN?"connected ✓":"forbundet ✓") : (EN?"no club":"ingen klub")),
-        (S.klubKode ? "var(--vundet)" : "var(--daempet)"), _kKlub);
+        (_portTekst ? _portTekst : (S.klubKode ? (EN?"connected ✓":"forbundet ✓") : (EN?"no club":"ingen klub"))),
+        (_portFarve ? _portFarve : (S.klubKode ? "var(--vundet)" : "var(--daempet)")), _portStribe + _kKlub);
 
       /* v4.151.0 · DINE DATA-kortet er væk — det, appen deler, står i betingelserne, og de har nu en knap nederst i Indstillinger */
       // 🏛 JERES KLUB udgik i v4.146.0 (Nicolai 12/9: «Enig») — klubbens navn

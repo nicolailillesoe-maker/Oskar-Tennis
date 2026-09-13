@@ -457,7 +457,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.143.0 · 12. september 2026";
+const VERSION = "v4.146.0 · 12. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -1431,6 +1431,8 @@ let S = {
   mitAvatar: undefined, avatarAaben: false, avatarSender: false, gaveInfo: null, gaveMdr: {},   /* ⭐ v4.136.0 */
   gammelAnnul: false,   /* ⭐ v4.138.0 */
   mitBio: null, bioAaben: false, bioUdkast: "", bioSender: false, bioBesked: null, venneProfil: {},   /* ⭐ v4.143.0 */
+  analyseBasis: null,   /* ⭐ v4.144.0 */
+  indRolle: null,   /* ⭐ v4.146.0 */
   // ⭐ v4.79.0 · skyggekopien
   skyStatus: null, skySender: false, skyBesked: null, skySlet: false, skyAaben: false,
   kampeLaast: false, kampeTabt: 0, kampeRaa: null, kampeRaaVis: false, fletEkstra: [], skyGammelKode: "", skyLaasOpAaben: false,
@@ -2620,6 +2622,20 @@ async function kampAftryk(nyttelast) {
   return Array.from(new Uint8Array(h)).map(function(b){ return b.toString(16).padStart(2, "0"); }).join("");
 }
 
+// ⭐ v4.145.0 · FRIGIV (analyse-lov v6). Én analyse pr. kamp — men er den VÆK
+//   (fejlet hentning efter tokenet, slettet analyse, slettet kamp), gives
+//   pladsen tilbage. Ild-og-glem: et tabt frigiv koster højst én hentning.
+function _analyseFrigiv(k) {
+  try {
+    if (!k || S.klubKode || !S.spillerNoegle) return;
+    kampAftryk(byggAnalysePayload(k)).then(function(aftryk){
+      return fetch(LOV_URL, { method: "POST",
+        headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+        body: JSON.stringify({ handling: "frigiv", aftryk: aftryk }) });
+    }).catch(function(){});
+  } catch (_e) {}
+}
+
 // Har man en klubkode, sker PRAECIS det samme som foer — ingen ekstra
 // netvaerkstur, ingen aendring. Ellers hentes en tilladelse foerst.
 async function analyseAdgang(nyttelast, signal) {
@@ -2632,6 +2648,7 @@ async function analyseAdgang(nyttelast, signal) {
       body: JSON.stringify({ aftryk: aftryk }) });
     const d = await r.json().catch(function(){ return {}; });
     if (!r.ok || !d.token) return { fejl: d.kode || "netvaerk", status: r.status };
+    S.analyseBasis = (d.basis && typeof d.basis.brugt === "number") ? { brugt: d.basis.brugt, loft: d.basis.loft || 3 } : null;   /* ⭐ v4.144.0 */
     return { hoveder: { "x-analyse-token": d.token } };
   } catch (e) { return { fejl: "netvaerk" }; }
 }
@@ -2701,11 +2718,15 @@ function udviklingAuto() {
 function analyseFejltekst(kode, status, EN) {
   // ⭐ v4.7.9 · doerens egne svar, i menneskesprog
   if (kode === "brugt") return EN
-    ? "This match has already been analysed. Correct a point and you can run it again."
-    : "Denne kamp er allerede analyseret. Retter du en bold, kan du k\u00f8re den igen.";
+    ? "This match has already been analysed \u2014 one analysis per match. Delete the analysis on the match and you can fetch it again."
+    : "Denne kamp er allerede analyseret \u2014 \u00e9n analyse pr. kamp. Slet analysen p\u00e5 kampen, s\u00e5 kan du hente den igen.";
   if (kode === "loft-maaned") return EN
     ? "You have used this month\u2019s analyses. They reset in 30 days."
     : "M\u00e5nedens analyser er brugt op. De fornyes om 30 dage.";
+  // ⭐ v4.144.0 · BASIS: tre analyser i alt (analyse-lov v5). Vejen videre står i sætningen.
+  if (kode === "basis-brugt" || status === 402) return EN
+    ? "Your 3 free analyses are used. Full access gives 40 a month \u2014 choose it under \u2699 Your account."
+    : "Dine 3 gratis analyser er brugt. Fuld adgang giver 40 om m\u00e5neden \u2014 v\u00e6lg den under \u2699 DIN KONTO.";
   if (kode === "mangler-adgang") return EN
     ? "You need a player code before you can fetch an analysis."
     : "Du skal have en spiller-kode, f\u00f8r du kan hente en analyse.";
@@ -4288,9 +4309,15 @@ const A = {
       if (n === null) return 0;
       S.skyStatus = { har: true, bytes: foer.bytes, opdateret: foer.opdateret };
       if (n > 0 || !stille) {
-        S.skyBesked = { fejl: false, t: EN
-          ? (n + " match" + (n === 1 ? "" : "es") + " came back from your backup.")
-          : (n + " kamp" + (n === 1 ? "" : "e") + " kom tilbage fra din sikkerhedskopi.") };
+        // ⭐ v4.146.0 · hos teamet er det SPILLERENS kopi — og «0» hedder «intet nyt»
+        const _sp = String(SPILLER || "").trim() || (EN ? "the player" : "spilleren");
+        S.skyBesked = { fejl: false, t: teamKunStreaks()
+          ? (n > 0
+              ? (EN ? (n + " match" + (n === 1 ? "" : "es") + " came home from " + _sp + ".") : (n + " kamp" + (n === 1 ? "" : "e") + " kom hjem fra " + _sp + "."))
+              : (EN ? ("Nothing new from " + _sp + " \u2014 you have it all.") : ("Intet nyt hos " + _sp + " \u2014 du har det hele.")))
+          : (EN
+              ? (n + " match" + (n === 1 ? "" : "es") + " came back from your backup.")
+              : (n + " kamp" + (n === 1 ? "" : "e") + " kom tilbage fra din sikkerhedskopi.")) };
       }
       return n;
     } catch (_e) { return 0; }
@@ -6922,7 +6949,9 @@ const A = {
   // ⭐ v4.67.0 · VEJEN TILBAGE (princip 32). Rejsen havde seks Videre og
   //   nul tilbage — og paa VALGET er knappraekken tom, saa skaermen havde
   //   ingen knapper overhovedet ud over planerne.
-  indTilbage: () => { S.indBesked = null; S.indTrin = Math.max(1, (S.indTrin || 1) - 1); render(); },
+  // ⭐ v4.146.0 · rollen vælges FØR planen; Tilbage fra planen går til rollen
+  indRolle: (v) => { S.indRolle = (v === "team") ? "team" : "spiller"; S.indBesked = null; render(); },
+  indTilbage: () => { S.indBesked = null; if ((S.indTrin || 1) === 2 && S.indRolle) { S.indRolle = null; render(); return; } S.indTrin = Math.max(1, (S.indTrin || 1) - 1); render(); },
   // Opgraderingen fra DIN KONTO-kortet — samme kald, andet sted.
   liveDemo: () => { S.liveDemo = !S.liveDemo; render(); try { window.scrollTo(0, 0); } catch (_e) {} },
   planOpgrader: async () => {
@@ -7065,8 +7094,10 @@ const A = {
     const nyttelast = byggAnalysePayload(k);
     const styring = new AbortController();
     const ur = setTimeout(function(){ styring.abort(); }, 120000);
+    let _medToken = false;   /* ⭐ v4.145.0 */
     analyseAdgang(nyttelast, styring.signal).then(function(ad) {
       if (ad.fejl) return { s: ad.status || 0, ok: false, d: { kode: ad.fejl } };
+      _medToken = !!(ad.hoveder && ad.hoveder["x-analyse-token"]);
       return fetch(ANALYSE_URL, {
         method: "POST",
         headers: Object.assign({ "content-type": "application/json" }, ad.hoveder),
@@ -7076,6 +7107,8 @@ const A = {
         return r.json().catch(function(){ return {}; }).then(function(d) { return { s: r.status, ok: r.ok, d: d }; });
       });
     }).then(function(sv) {
+      // ⭐ v4.145.0 · tokenet blev brugt, men analysen kom ikke: pladsen gives tilbage
+      if (_medToken && !(sv.ok && sv.d && sv.d.analyse)) _analyseFrigiv(k);
       clearTimeout(ur);
       if (sv.ok && sv.d && sv.d.analyse) {
         if (S.gemte[n]) {
@@ -7087,7 +7120,8 @@ const A = {
           gemAlle();
         }
         S.henter = null; analysePulsStop(); S._sf = S._sf || {}; S._sf["1"] = true;
-        S.hentBesked = { i: n, fejl: false, t: EN ? "Analysis fetched and saved to the match." : "Analysen er hentet og gemt p\u00e5 kampen." };
+        S.hentBesked = { i: n, fejl: false, t: (EN ? "Analysis fetched and saved to the match." : "Analysen er hentet og gemt p\u00e5 kampen.") +
+          (S.analyseBasis ? (EN ? " " + S.analyseBasis.brugt + " of " + S.analyseBasis.loft + " free analyses used." : " " + S.analyseBasis.brugt + " af " + S.analyseBasis.loft + " gratis analyser brugt.") : "") };   /* ⭐ v4.144.0 */
       } else {
         S.henter = null; analysePulsStop(); S._sf = S._sf || {}; S._sf["1"] = true;
         S.hentBesked = { i: n, fejl: true, t: analyseFejltekst(sv.d && sv.d.kode, sv.s, EN) };
@@ -7095,6 +7129,7 @@ const A = {
       render();
     }).catch(function() {
       clearTimeout(ur);
+      if (_medToken) _analyseFrigiv(k);   /* ⭐ v4.145.0 */
       S.henter = null; analysePulsStop(); S._sf = S._sf || {}; S._sf["1"] = true;
       S.hentBesked = { i: n, fejl: true, t: analyseFejltekst(null, 0, EN) };
       render();
@@ -7106,7 +7141,8 @@ const A = {
   eksport: (i) => { S.eksport = lavEksport(S.gemte[+i]); S._sf = S._sf || {}; S._sf["1"] = true; render();
     setTimeout(function(){ var b = document.getElementById("eksport-boks"); if (b) b.scrollIntoView({behavior:"smooth", block:"center"}); }, 60); },
   analyseAabn: (i) => { S.redigerA = S.redigerA === +i ? null : +i; S.aTekst = (S.gemte[+i] && S.gemte[+i].analyse) || ""; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
-  analyseGem: (i) => { if (S.gemte[+i]) { S.gemte[+i].analyse = S.aTekst; if (S.aTekst) S.gemte[+i].aSprog = S.sprog === "en" ? "en" : "da"; else delete S.gemte[+i].aSprog; gemAlle(); } S.redigerA = null; S.aTekst = ""; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
+  analyseGem: (i) => { if (S.gemte[+i]) { if (!S.aTekst && S.gemte[+i].analyse) _analyseFrigiv(S.gemte[+i]);   /* ⭐ v4.145.0 · slettet analyse = plads til én igen */
+    S.gemte[+i].analyse = S.aTekst; if (S.aTekst) S.gemte[+i].aSprog = S.sprog === "en" ? "en" : "da"; else delete S.gemte[+i].aSprog; gemAlle(); } S.redigerA = null; S.aTekst = ""; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   analyseAnnuller: () => { S.redigerA = null; S.aTekst = ""; render(); },
   // ═══ v4.127.0 · SEND KAMPEN DIREKTE TIL ET BRUGERNAVN ════════════
   //   Nicolai 11/9: «Vi skal heller ALDRIG sende noget fra en enhed til en
@@ -7361,6 +7397,7 @@ const A = {
   sletFortryd: () => { S.sletBekraeft = null; render(); },
   slet: (i) => {
     var _sletId = S.gemte[+i] && S.gemte[+i].id;   // ⭐ v4.113.0 · sletningen er et eget ord i arkivet
+    if (S.gemte[+i] && S.gemte[+i].analyse) _analyseFrigiv(S.gemte[+i]);   /* ⭐ v4.145.0 */
     S.gemte.splice(+i, 1); S.sletBekraeft = null; S.eksport = null; gemAlle();
     if (_sletId) { try { A.kamparkivSlet(_sletId); } catch (_e) {} }
     // F7 (20/8): serveren FLETTER kampe (synk v2.7), så en slettet kamp kommer
@@ -8909,7 +8946,7 @@ function _tegn() {
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
               _b("Search", "Approved players can find you by searching your username — the result shows first name and username only. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
               _b("Messages", "A message disappears a day after your friend has read it — never before. At most 200 per conversation, and after 30 days at the latest. Delete removes it for both of you. Notifications show a name and a place — never content.") +
-              _b("Price", "With a club code the club pays. Full access is 49 kr/month incl. 3 live-streamed matches per month; beyond that +49 kr/month for unlimited, or 15 kr per live match. Watching is always free. We contact you about payment; nothing is charged automatically.") +
+              _b("Price", "With a club code the club pays. Basic is free and includes 3 AI analyses in total. Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month; beyond that +49 kr/month for unlimited, or 15 kr per live match. Watching is always free. We contact you about payment; nothing is charged automatically.") +
               _b("Leaving", "Log out wipes the phone. Ask us and the account and everything with it is deleted — for good.")
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
               _b("Sikkerhedskopien", "Jeres kampe (hver bold, resultatet, analysen) og udviklingsbrevet gemmes læsbart hos os — uden modstandernes navne og uden jeres noter — så de kommer tilbage med kontoen alene. Navne og noter gemmes kun i en boks, der er låst med jeres kodeord; den kan vi ikke åbne.") +
@@ -8917,7 +8954,7 @@ function _tegn() {
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
               _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises kun fornavn og brugernavn. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
               _b("Beskeder", "En besked forsvinder et døgn efter, din ven har læst den — aldrig før. Højst 200 pr. samtale, og senest efter 30 dage. Slet fjerner for jer begge. Notifikationer viser navn og sted — aldrig indhold.") +
-              _b("Prisen", "Med klubkode betaler klubben. Fuld adgang koster 49 kr/md inkl. 3 live-delte kampe pr. måned — derefter +49 kr/md for uendelig streaming, eller 15 kr pr. live-kamp. At se med er altid gratis. Vi kontakter jer om betalingen; intet trækkes automatisk.") +
+              _b("Prisen", "Med klubkode betaler klubben. Basis er gratis og rummer 3 AI-analyser i alt. Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — derefter +49 kr/md for uendelig streaming, eller 15 kr pr. live-kamp. At se med er altid gratis. Vi kontakter jer om betalingen; intet trækkes automatisk.") +
               _b("Vejen ud", "Log ud rydder telefonen. Skriv til os, og kontoen med alt i slettes — helt.")) +
           '<p class="lille" style="margin:4px 0 0;opacity:.6">StreakTennis · SportsAInalytics · CVR 40524002</p>' +
           '</div>' +
@@ -9024,6 +9061,38 @@ function _tegn() {
               ? "You have full access — everything in the app, including live streaming of matches."
               : "I har fuld adgang — alt i appen, inklusive live-streaming af kampe.") + '</p>';
           _knap = '<button class="knap stor sai-op" style="animation-delay:.18s;background:var(--grus)" data-a="indNaeste">' + (S.sprog === "en" ? "Next" : "Videre") + ' →</button>';
+        } else if (!S.indRolle) {
+          // ⭐ v4.146.0 · HVEM ER DU? (Nicolai 12/9: «måske de skal klikke sig igennem»)
+          //   En forælder oprettede en SPILLER i stedet for sig selv — rejsen
+          //   spurgte aldrig. Nu er det første valg, ikke prisen.
+          const _rk = function(v, ik, titel, tekst){
+            return '<button class="sai-op" data-a="indRolle" data-v="' + v + '" style="animation-delay:.1s;width:100%;text-align:left;padding:14px 16px;border-radius:16px;cursor:pointer;font-family:inherit;color:var(--kridt);background:rgba(255,255,255,.05);border:1.5px solid var(--kant2)">' +
+              '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px"><span style="font-size:24px">' + ik + '</span><b style="font-size:15.5px;letter-spacing:.4px">' + titel + '</b></div>' +
+              '<span class="lille" style="line-height:1.5;display:block">' + tekst + '</span></button>';
+          };
+          _kro = '<b class="sai-op" style="animation-delay:.04s;font-size:21px;display:block;margin-bottom:12px">' + (S.sprog === "en" ? "Who are you?" : "Hvem er du?") + '</b>' +
+            '<div style="display:flex;flex-direction:column;gap:10px;max-width:23em;margin:0 auto">' +
+            _rk("spiller", "\ud83c\udfbe", (S.sprog === "en" ? "I play" : "Jeg spiller"),
+              (S.sprog === "en" ? "I record my own matches and training \u2014 and get the analyses." : "Jeg registrerer mine egne kampe og tr\u00e6ning \u2014 og f\u00e5r analyserne.")) +
+            _rk("team", "\ud83d\udc6a", (S.sprog === "en" ? "I am a parent or coach" : "Jeg er for\u00e6lder eller tr\u00e6ner"),
+              (S.sprog === "en" ? "I follow a player. The player invites me into their team from their own phone." : "Jeg f\u00f8lger en spiller. Spilleren inviterer mig ind i sit team fra sin egen telefon.")) +
+            '</div>' +
+            '<p class="lille sai-op" style="animation-delay:.16s;margin:12px auto 0;max-width:22em;opacity:.65">' + (S.sprog === "en"
+              ? "Either way this profile is yours \u2014 never the player\u2019s."
+              : "Uanset hvad er den her profil DIN \u2014 aldrig spillerens.") + '</p>';
+          _knap = '';
+        } else if (S.indRolle === "team") {
+          // ⭐ v4.146.0 · FORÆLDER/TRÆNER: Basis — og sagt højt, hvad det giver og hvad næste skridt er
+          _kro = '<div class="sai-op" style="font-size:54px;line-height:1;margin-bottom:10px">\ud83d\udc6a</div>' +
+            '<b class="sai-op" style="animation-delay:.06s;font-size:21px;display:block;margin-bottom:8px">' + (S.sprog === "en" ? "You follow along for free" : "Du f\u00f8lger med gratis") + '</b>' +
+            '<p class="lille sai-op" style="animation-delay:.12s;margin:0 auto;max-width:22em;line-height:1.6">' + (S.sprog === "en"
+              ? "You get <b>Basic</b> \u2014 all you need to follow a player. <b>Next step:</b> the player opens <b>\u2699 \u2192 The team</b> on their own phone and invites you; you say yes, and you see their matches, training and analyses. Never their messages."
+              : "Du f\u00e5r <b>Basis</b> \u2014 det er alt, du beh\u00f8ver for at f\u00f8lge en spiller. <b>N\u00e6ste skridt:</b> spilleren \u00e5bner <b>\u2699 \u2192 Teamet</b> p\u00e5 sin egen telefon og inviterer dig; du siger ja, og s\u00e5 ser du kampe, tr\u00e6ning og analyser. Aldrig beskederne.") + '</p>' +
+            '<p class="lille sai-op" style="animation-delay:.16s;margin:12px auto 0;max-width:22em;opacity:.7;line-height:1.55">' + (S.sprog === "en"
+              ? "Do you play yourself and want your own analyses? Change the plan any time under \u2699 Your account."
+              : "Spiller du selv og vil have dine egne analyser? Skift plan n\u00e5r som helst under \u2699 DIN KONTO.") + '</p>' +
+            (S.indBesked ? '<p class="lille" style="margin:8px auto 0;font-weight:700;color:var(--tabt)">' + esc(S.indBesked.t) + '</p>' : '');
+          _knap = '<button class="knap stor sai-op" style="animation-delay:.2s;background:var(--grus)" data-a="indPlan" data-v="gaest">' + (S.indPlanSender ? "\u23f3 \u2026" : (S.sprog === "en" ? "Next" : "Videre") + ' \u2192') + '</button>';
         } else {
           const _pkort = function(v, ik, titel, pris, tekst, primaer){
             return '<button class="sai-op" data-a="indPlan" data-v="' + v + '" style="animation-delay:.1s;width:100%;text-align:left;padding:14px 16px;border-radius:16px;cursor:pointer;font-family:inherit;color:var(--kridt);background:' + (primaer ? "rgba(46,86,214,.16)" : "rgba(255,255,255,.04)") + ';border:1.5px solid ' + (primaer ? "var(--grus)" : "var(--kant)") + '">' +
@@ -9032,12 +9101,16 @@ function _tegn() {
               '<span style="margin-left:auto;flex:none;white-space:nowrap;font-weight:800;color:' + (primaer ? "var(--guld)" : "var(--daempet)") + '">' + pris + '</span></div>' +
               '<span class="lille" style="line-height:1.5;display:block">' + tekst + '</span></button>';
           };
-          _kro = '<b class="sai-op" style="animation-delay:.04s;font-size:21px;display:block;margin-bottom:12px">' + (S.sprog === "en" ? "What do you want?" : "Hvad skal I have?") + '</b>' +
+          _kro = '<b class="sai-op" style="animation-delay:.04s;font-size:21px;display:block;margin-bottom:6px">' + (S.sprog === "en" ? "What do you want?" : "Hvad skal I have?") + '</b>' +
+            // ⭐ v4.146.0 · «sole-klart hvad der vælges og hvad man kan»: det fælles først, så forskellen står tydeligt
+            '<p class="lille sai-op" style="animation-delay:.06s;margin:0 auto 12px;max-width:22em;opacity:.75;line-height:1.5">' + (S.sprog === "en"
+              ? "All plans: streak, training, matches and friends. The difference is <b>analyses</b> and <b>live</b>."
+              : "Alle planer: streak, tr\u00e6ning, kampe og venner. Forskellen er <b>analyser</b> og <b>live</b>.") + '</p>' +
             '<div style="display:flex;flex-direction:column;gap:10px;max-width:23em;margin:0 auto">' +
             _pkort("fuld", "⭐", (S.sprog === "en" ? "FULL ACCESS" : "FULD ADGANG"), (S.sprog === "en" ? "49 kr/mo" : "49 kr/md"),
               (S.sprog === "en"
-                ? "Everything in the app — and <b>live streaming</b>: friends and family watch from the stands, ball by ball. <b>3 live matches every month included.</b>"
-                : "Alt i appen — og <b>live-streaming</b>: venner og familie ser med fra tribunen, bold for bold. <b>3 live-kampe hver måned er med i prisen.</b>"), true) +
+                ? "Everything in the app — <b>40 AI analyses a month</b> — and <b>live streaming</b>: friends and family watch from the stands, ball by ball. <b>3 live matches every month included.</b>"
+                : "Alt i appen — <b>40 AI-analyser om måneden</b> — og <b>live-streaming</b>: venner og familie ser med fra tribunen, bold for bold. <b>3 live-kampe hver måned er med i prisen.</b>"), true) +
             // ⭐⭐ v4.65.0 · FRI STREAMING — «+49 kr/md for uendelig»
             // fra prisbeslutningen 29/8, vist som TOTALEN (49+49), fordi
             // ingen skal regne ved fordoeren.
@@ -9047,8 +9120,8 @@ function _tegn() {
                 : "Alt i Fuld adgang — og <b>live uden loft</b>. Stream hver eneste kamp, hele sæsonen."), false) +
             _pkort("gaest", "🎟", "BASIS", (S.sprog === "en" ? "free" : "gratis"),
               (S.sprog === "en"
-                ? "Streak, training, matches, analyses and friends. Matches are not shared live."
-                : "Streak, træning, kampe, analyser og venner. Kampene deles ikke live."), false) +
+                ? "Streak, training, matches and friends — and <b>3 AI analyses in total</b>, so you can see what they can do. Matches are not shared live."
+                : "Streak, træning, kampe og venner — og <b>3 AI-analyser i alt</b>, så du kan se, hvad de kan. Kampene deles ikke live."), false) +
             '</div>' +
             // ⭐ v4.62.0 · wow'et FOER valget: eksemplet er ét tryk vaek.
             '<div class="raekke sai-op" style="animation-delay:.14s;margin-top:10px"><button class="knap valg" style="min-height:46px;border-color:var(--guld);color:var(--guld)" data-a="liveDemo">▶ ' +
@@ -10534,11 +10607,7 @@ function _tegn() {
               : "Du ser teamet lige nu. Din egen spiller bor stadig på telefonen — intet blandes.") + '</p>' +
             '<button class="knap" style="width:100%;min-height:44px;background:var(--grus)" data-a="profilSkift" data-v="egen">' +
             (EN ? "Switch to my own player" : "Skift til min egen spiller") + (_egetNavn ? " (" + esc(_egetNavn) + ")" : "") + '</button>' +
-            _andre.map(_knap).join("") +
-            // ⭐ v4.96.0 · spejlet kan hentes herfra også
-            '<button class="knap valg" style="width:100%;min-height:44px;margin-top:7px" data-a="skyHentNu"' + (S.skySender ? ' disabled' : '') + '>' +
-            (S.skySender ? '\u23f3 \u2026' : '\ud83d\udd04 ' + _hentFraNavn(EN)) + '</button>' +   /* ⭐ v4.133.0 · siger hvad og fra hvem */
-            (S.skyBesked ? '<p class="lille" style="margin:7px 0 0;color:' + (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>' : ''));
+            _andre.map(_knap).join(""));   /* ⭐ v4.146.0 · «Hent det nyeste fra …» bor nu under TEAMET, hvor spillerens data hører til */
         } else if (_teams.length) {
           h += _opsKort("profil", "🔁", (EN?"SWITCH VIEW":"SKIFT VISNING"),
             (_teams.length === 1 ? "Team " + esc(_teams[0].navn || "") : _teams.length + (EN ? " teams" : " teams")), "var(--is)",
@@ -11012,7 +11081,7 @@ function _tegn() {
             _kk += _gaveTekst(EN);   /* ⭐ v4.136.0 · gaven fremgår */
           } else if (S.minPlan === "gaest") {
             _kk += '<div class="lille" style="margin:2px 0 8px;display:flex;align-items:center;gap:8px">' +
-              '<span style="flex:1;min-width:0">🎟 ' + (EN ? "Basis — matches are not shared live." : "Basis — kampene deles ikke live.") + '</span>' +
+              '<span style="flex:1;min-width:0">🎟 ' + (EN ? "Basis — 3 AI analyses in total, matches are not shared live." : "Basis — 3 AI-analyser i alt, kampene deles ikke live.") + '</span>' +
               '<button class="knap" style="flex:none;width:auto;min-height:40px;padding:6px 12px;font-size:12px;background:var(--grus)" data-a="planOpgrader">' +
               (S.indPlanSender ? "\u23f3" : (EN ? "Full access" : "Få fuld adgang")) + '</button></div>';
           } else if (S.minPlan === "fri") {
@@ -11206,6 +11275,12 @@ function _tegn() {
             ? "This phone holds a team key: it enters and sees data — never the messages between the player and the friends."
             : "Denne telefon har en team-nøgle: den taster og ser data — aldrig beskederne mellem spilleren og vennerne.") + '</p>' +
           (S.spejlVenter ? '<p class="lille" style="margin:6px 0 0;color:var(--guld)">🪞 ' + esc(S.spejlVenter.t) + '</p>' : '') +
+          // ⭐ v4.146.0 · hent spillerens nyeste HER — det er teamets kort (flyttet fra SKIFT VISNING)
+          (VISNING === "team"
+            ? '<button class="knap valg" style="width:100%;min-height:44px;margin-top:9px" data-a="skyHentNu"' + (S.skySender ? ' disabled' : '') + '>' +
+              (S.skySender ? '\u23f3 \u2026' : '\ud83d\udd04 ' + _hentFraNavn(EN)) + '</button>' +
+              (S.skyBesked ? '<p class="lille" style="margin:7px 0 0;color:' + (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>' : '')
+            : '') +
           // v4.108.0 · vejen ud står her — ikke kun bag en lukket nøgle
           (VISNING === "team" ? (S.teamForladSpoerg
             ? '<div class="kort" style="margin:10px 0 0;border-color:var(--tabt)"><p class="lille" style="margin:0 0 8px">' + (EN
@@ -11268,9 +11343,10 @@ function _tegn() {
               : (famAntal ? (famAntal === 1 ? (EN?"1 key":"1 nøgle") : famAntal + (EN?" keys":" nøgler")) : (EN?"Set up your team":"S\u00e6t dit team")),
           _bv ? "var(--guld)" : "var(--daempet)", _budKrop(EN) + famKrop);
       }
-      h += _opsKort("klub", "🏷", (EN?"CLUB CODE":"KLUBKODE"),
-        (VISNING === "team" ? (EN?"follows the player":"følger spilleren") : (S.klubKode ? (EN?"connected ✓":"forbundet ✓") : (EN?"no club":"ingen klub"))),
-        (VISNING === "team" ? "var(--is)" : (S.klubKode ? "var(--vundet)" : "var(--daempet)")), _kKlub);
+      // ⭐ v4.146.0 · i team-visningen var kortets eneste budskab «du skal ikke gøre noget» — det tegnes ikke
+      if (VISNING !== "team") h += _opsKort("klub", "🏷", (EN?"CLUB CODE":"KLUBKODE"),
+        (S.klubKode ? (EN?"connected ✓":"forbundet ✓") : (EN?"no club":"ingen klub")),
+        (S.klubKode ? "var(--vundet)" : "var(--daempet)"), _kKlub);
 
       // ══════════════════════════════════════════════════════════════
       // ⭐ DINE DATA · 21/8. Nicolai: "Og alt bliver vel ikke paa
@@ -11393,11 +11469,9 @@ function _tegn() {
         '<p class="lille" style="margin:6px 0 0;opacity:.7;line-height:1.55">' + (EN
           ? "Tap a message to edit it. Swipe left to delete or report — swipe a friend&rsquo;s message right to mark it unread."
           : "Tryk på en besked for at rette den. Træk den til venstre for at slette eller rapportere — og en besked fra din ven til højre for at markere den ulæst.") + '</p>';
-      // 🏛 JERES KLUB (v4.4.6): kortet bor nu HER — efter klubkoden, som
-      // det hoerer sammen med, og ikke oeverst paa skaermen (Nicolai:
-      // "den ligger for hoejt under indstillinger"). Vises altid — ogsaa
-      // foer klubben er sat op.
-      h += '<div style="grid-column:1/-1">' + klubKort(EN) + '</div>';
+      // 🏛 JERES KLUB udgik i v4.146.0 (Nicolai 12/9: «Enig») — klubbens navn
+      //   kommer fra klubkoden, ikke fra et felt på telefonen. `klubKort` står
+      //   tilbage som funktion, men tegnes ingen steder.
       // ⭐ NAVNET (v4.4.1): det, vennerne ser. Kunne foer kun saettes paa
       // velkomstskaermen — nu kan en tastefejl (eller en far, der doebte
       // sig "Oskar" i et eksperiment) rettes med ét tryk.
@@ -11492,13 +11566,13 @@ function _tegn() {
               + _a("\ud83d\udd25", "The streak", "Every training session counts \u2014 tennis or fitness. Days without a session break it. It is yours; nobody else scores it.")
               + _a("\ud83e\udd1d", "Friends and the room", "Find a friend by username; both say yes. Friends see each other\u2019s streaks and can follow a match live. A room is a bunch of friends in one place.")
               + _a("\ud83d\udc6a", "Your team", "The people you invite in \u2014 a parent, a coach. They see your matches, training and analyses. Never your messages.")
-              + _a("\ud83c\udfdb", "Club and plans", "A club code connects you to your coach in StreakCoach. <b>Basic</b> is free (streak, matches, analyses, friends). <b>Full</b> adds live sharing. What we keep and how is written on the terms page \u2014 not here.")
+              + _a("\ud83c\udfdb", "Club and plans", "A club code connects you to your coach in StreakCoach. <b>Basic</b> is free (streak, matches, friends \u2014 and 3 AI analyses to try). <b>Full</b> gives 40 analyses a month and live sharing. What we keep and how is written on the terms page \u2014 not here.")
             : _a("\ud83c\udfbe", "De fire faner", "<b>HJEM</b> er din dag. <b>KAMP</b> er banen. <b>TR\u00c6N</b> er din log. <b>STATS</b> er alt, du har spillet.")
               + _a("\ud83c\udfaf", "En kamp, bold for bold", "To tryk pr. point: vundet eller tabt, og hvorfor. Det giver s\u00e6t, partier og hele kampens fodspor \u2014 og AI-analysen bagefter: hvad der virkede, hvad der skal arbejdes med. Efter nogle kampe f\u00e5r du et udviklingsbrev p\u00e5 tv\u00e6rs af dem.")
               + _a("\ud83d\udd25", "Streaken", "Hver tr\u00e6ning t\u00e6ller \u2014 tennis eller fysisk. Dage uden et pas bryder den. Den er din; ingen andre t\u00e6ller den.")
               + _a("\ud83e\udd1d", "Venner og rummet", "Find en ven p\u00e5 brugernavn; begge siger ja. Venner ser hinandens streaks og kan f\u00f8lge en kamp live. Et rum er en flok venner samme sted.")
               + _a("\ud83d\udc6a", "Dit team", "De mennesker, du selv inviterer ind \u2014 en for\u00e6lder, en tr\u00e6ner. De ser dine kampe, din tr\u00e6ning og dine analyser. Aldrig dine beskeder.")
-              + _a("\ud83c\udfdb", "Klub og planer", "En klubkode kobler dig til din tr\u00e6ner i StreakCoach. <b>Basis</b> er gratis (streak, kampe, analyser, venner). <b>Fuld</b> giver live-deling. Hvad vi gemmer, og hvordan, st\u00e5r p\u00e5 betingelses-siden \u2014 ikke her."));
+              + _a("\ud83c\udfdb", "Klub og planer", "En klubkode kobler dig til din tr\u00e6ner i StreakCoach. <b>Basis</b> er gratis (streak, kampe, venner \u2014 og 3 AI-analyser at pr\u00f8ve). <b>Fuld</b> giver 40 analyser om m\u00e5neden og live-deling. Hvad vi gemmer, og hvordan, st\u00e5r p\u00e5 betingelses-siden \u2014 ikke her."));
         })());
 
       // ── SPROG ─────────────────────────────────────────────────────

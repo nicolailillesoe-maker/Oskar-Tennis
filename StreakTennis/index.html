@@ -457,7 +457,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.147.0 · 13. september 2026";
+const VERSION = "v4.152.0 · 13. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -1813,6 +1813,10 @@ async function inviteretTjek() {
 // former (maalt i venneIndloes): et venne-ID FORNAVN-1234, en gammel
 // 6-tegns kode, og et brugernavn. Linket skal kunne baere alle tre —
 // ellers kan man dele appen paa en maade, appen ikke kan tage imod.
+// ⭐ v4.149.0 · den parkerede invitation (#ven=-linket), hvis der er én, og den er gyldig
+function _invitVed() {
+  try { const v = lager.hent("sai-invit-fra") || ""; return (v && _invitGyldig(v)) ? String(v).trim() : ""; } catch (_e) { return ""; }
+}
 function _invitGyldig(v) {
   const t = String(v || "").trim();
   if (/^[A-Za-zÆØÅæøå0-9]{1,12}-\d{4}$/.test(t)) return true;   // venne-ID
@@ -2974,11 +2978,159 @@ function _hentFraNavn(EN) {
 // ⭐ v4.136.0 · AVATAREN (Nicolai 12/9: «Let's go på avatar»). Figur + farve —
 //   aldrig et foto, aldrig ord. Koden 'f<1-12>-k<1-8>' bor i spillerdata.avatar
 //   (venne-bud v11) og rejser med søgetræffet, så to «oskar» kan kendes fra hinanden.
+// ⭐ v4.152.0 · DEN TEGNEDE AVATAR (13/9-2026). Ren SVG ud fra ni tal — ingen billeder,
+//   ingen fonte, ingen rigtige spillere. Koden 'a<hud>.<hår>.<hårfarve>.<trøje>.<pandebånd>.<ramme>.<hånd>.<ansigt>.<pose>'
+//   bor i spillerdata.avatar (venne-bud v14, CHECK i basen — samme regel tre steder).
+//   Figurerne er tegnet af designeren; her er de porteret ordret, kun navnene har fået præfiks.
+const FIG_HUD = ["#f6d7b9", "#e9b98d", "#c98b5e", "#8d5a3a", "#4f3323"];
+const FIG_HAARFARVE = ["#1c1410", "#5b3521", "#b5651d", "#e3b55c", "#8a8a8a", "#c9442a"];
+const FIG_HAAR = ["kort", "kroller", "knold", "langt", "page", "kasket", "hestehale", "afro", "skaldet"];
+const FIG_TROEJE = ["#1e5eff", "#e6b045", "#16a34a", "#eb4452", "#7c3aed", "#f0f2f5", "#f28c28", "#0e9c9c"];
+const FIG_RAMME = ["#e6b045", "#1e5eff", "#16a34a", "#eb4452", "#7c3aed", "#1c1c1c", "#f0f2f5"];
+const FIG_ANSIGT = ["set", "grin", "smirk", "pant", "wink", "think", "shout", "grit", "cool", "smile"];
+const FIG_POSE = ["shoulder", "ready", "across", "low"];
+const FIG_FELTER = ["skin", "hair", "hairColor", "shirt", "headband", "frame", "hand", "face", "pose"];
+const FIG_MAKS = [FIG_HUD.length, FIG_HAAR.length, FIG_HAARFARVE.length, FIG_TROEJE.length, 2, FIG_RAMME.length, 2, FIG_ANSIGT.length, FIG_POSE.length];
+const FIG_ARKETYPER = [
+  { id: "baselineren", navn: "Baselineren", u: "tung forhånd", p: { skin: 1, hair: 0, hairColor: 0, shirt: 0, headband: 1, frame: 0, hand: 0, face: 0, pose: 1 } },
+  { id: "serve-volley", navn: "Serve-volley", u: "frem til nettet", p: { skin: 0, hair: 1, hairColor: 3, shirt: 1, headband: 0, frame: 5, hand: 0, face: 1, pose: 0 } },
+  { id: "venstrehaanden", navn: "Venstrehånden", u: "kick ud af banen", p: { skin: 2, hair: 0, hairColor: 0, shirt: 2, headband: 1, frame: 3, hand: 1, face: 2, pose: 1 } },
+  { id: "loeberen", navn: "Løberen", u: "henter alt", p: { skin: 3, hair: 6, hairColor: 0, shirt: 3, headband: 1, frame: 1, hand: 0, face: 3, pose: 2 } },
+  { id: "haandledskunstneren", navn: "Håndledskunstneren", u: "drop-shot & lob", p: { skin: 0, hair: 4, hairColor: 5, shirt: 4, headband: 0, frame: 6, hand: 0, face: 4, pose: 3 } },
+  { id: "taktikeren", navn: "Taktikeren", u: "spiller den lange bold", p: { skin: 1, hair: 5, hairColor: 4, shirt: 7, headband: 0, frame: 5, hand: 0, face: 5, pose: 0 } },
+  { id: "kraftserven", navn: "Kraftserven", u: "es på es", p: { skin: 2, hair: 8, hairColor: 0, shirt: 5, headband: 1, frame: 3, hand: 0, face: 6, pose: 1 } },
+  { id: "kamphunden", navn: "Kamphunden", u: "kæmper for hver bold", p: { skin: 4, hair: 7, hairColor: 0, shirt: 6, headband: 1, frame: 0, hand: 0, face: 7, pose: 2 } },
+  { id: "slice-spilleren", navn: "Slice-spilleren", u: "flad og tung", p: { skin: 1, hair: 2, hairColor: 1, shirt: 0, headband: 0, frame: 2, hand: 0, face: 8, pose: 3 } },
+  { id: "allrounderen", navn: "Allrounderen", u: "kan det hele", p: { skin: 0, hair: 3, hairColor: 3, shirt: 2, headband: 1, frame: 1, hand: 0, face: 9, pose: 0 } }
+];
+const FIG_FORM = /^a[0-4]\.[0-8]\.[0-5]\.[0-7]\.[01]\.[0-6]\.[01]\.[0-9]\.[0-3]$/;
+function _figurDel(kode) {
+  const k = String(kode || ""); if (!FIG_FORM.test(k)) return null;
+  const t = k.slice(1).split(".").map(Number); const p = {};
+  FIG_FELTER.forEach(function(f, i){ p[f] = t[i]; }); return p;
+}
+function _figurKode(p) { return "a" + FIG_FELTER.map(function(f){ return String(p[f] | 0); }).join("."); }
+function _figSkygge(hex, k) {
+  const n = parseInt(hex.slice(1), 16);
+  const f = function(v){ return Math.max(0, Math.min(255, Math.round(v * k))).toString(16).padStart(2, "0"); };
+  return "#" + f((n >> 16) & 255) + f((n >> 8) & 255) + f(n & 255);
+}
+let _figId = 0;
+const FIG_BLAEK = "#1c1410", FIG_MUND = "#5a2a1e";
+function _figKetcher(id, frame, pose, left) {
+  const P = {
+    shoulder: { x: 84, y: 22, a: 24, L: 56, front: false },
+    ready: { x: 84, y: 36, a: 12, L: 44, front: false },
+    across: { x: 18, y: 76, a: -82, L: 54, front: true },
+    low: { x: 80, y: 84, a: 150, L: 22, front: true }
+  }[pose];
+  let x = P.x, y = P.y, a = P.a; const L = P.L, front = P.front;
+  if (left) { x = 100 - x; a = -a; }
+  const rad = a * Math.PI / 180;
+  const hx = x - Math.sin(rad) * L, hy = y + Math.cos(rad) * L;
+  const dark = _figSkygge(frame, .72);
+  let lines = "";
+  for (let i = -12; i <= 12; i += 3.2) lines += '<line x1="' + i.toFixed(1) + '" y1="-17" x2="' + i.toFixed(1) + '" y2="17"/>';
+  for (let i = -15; i <= 15; i += 3.2) lines += '<line x1="-14" y1="' + i.toFixed(1) + '" x2="14" y2="' + i.toFixed(1) + '"/>';
+  let wraps = "";
+  for (let i = 0; i < 5; i++) wraps += '<line x1="-2.4" y1="' + (L - 13 + i * 2.6).toFixed(1) + '" x2="2.4" y2="' + (L - 14.4 + i * 2.6).toFixed(1) + '"/>';
+  const g = '<g transform="translate(' + x + ' ' + y + ') rotate(' + a + ')">' +
+    '<ellipse rx="13" ry="16.5" fill="#000" fill-opacity=".18"/>' +
+    '<g clip-path="url(#' + id + 'c)" stroke="#e7edf5" stroke-opacity=".55" stroke-width=".8">' + lines + '</g>' +
+    '<ellipse rx="13" ry="16.5" fill="none" stroke="' + dark + '" stroke-width="3.4"/>' +
+    '<ellipse rx="13" ry="16.5" fill="none" stroke="' + frame + '" stroke-width="2"/>' +
+    '<path d="M-8 13 C-8 21 -2 24 0 28 M8 13 C8 21 2 24 0 28" fill="none" stroke="' + dark + '" stroke-width="3.4" stroke-linecap="round"/>' +
+    '<path d="M-8 13 C-8 21 -2 24 0 28 M8 13 C8 21 2 24 0 28" fill="none" stroke="' + frame + '" stroke-width="2" stroke-linecap="round"/>' +
+    '<line x1="0" y1="27" x2="0" y2="' + (L - 14) + '" stroke="' + frame + '" stroke-width="2.8"/>' +
+    '<line x1="0" y1="' + (L - 14) + '" x2="0" y2="' + L + '" stroke="#23232a" stroke-width="4.6" stroke-linecap="round"/>' +
+    '<g stroke="#4a4a54" stroke-width=".9">' + wraps + '</g>' +
+    '<circle cy="' + L + '" r="2.6" fill="#0d1522" stroke="#4a4a54" stroke-width=".8"/>' +
+    '</g>';
+  return { g: g, hx: hx, hy: hy, front: front };
+}
+function _figHaand(hx, hy, skin) {
+  return '<circle cx="' + hx.toFixed(1) + '" cy="' + hy.toFixed(1) + '" r="5.2" fill="' + skin + '"/>' +
+    '<path d="M' + (hx - 4).toFixed(1) + ' ' + (hy - 1).toFixed(1) + ' h8" stroke="' + _figSkygge(skin, .78) + '" stroke-width="1" stroke-linecap="round" opacity=".7"/>' +
+    '<circle cx="' + (hx + 3).toFixed(1) + '" cy="' + (hy - 3).toFixed(1) + '" r="2.2" fill="' + _figSkygge(skin, .92) + '"/>';
+}
+function _figArm(hx, hy, shirt, skin, left) {
+  const sx = left ? 16 : 84, sy = 92;
+  return '<line x1="' + sx + '" y1="' + sy + '" x2="' + hx.toFixed(1) + '" y2="' + hy.toFixed(1) + '" stroke="' + _figSkygge(shirt, .9) + '" stroke-width="10" stroke-linecap="round"/>' +
+    '<line x1="' + ((sx + hx) / 2).toFixed(1) + '" y1="' + ((sy + hy) / 2).toFixed(1) + '" x2="' + hx.toFixed(1) + '" y2="' + hy.toFixed(1) + '" stroke="' + skin + '" stroke-width="8" stroke-linecap="round"/>';
+}
+function _figHaar(kind, hc) {
+  const cap = '<path d="M33 42 C33 22 40 21 50 21 C60 21 67 22 67 42 C67 34 62 30 50 30 C38 30 33 34 33 42Z" fill="' + hc + '"/>';
+  switch (kind) {
+    case "kort": return { back: "", front: cap };
+    case "kroller": {
+      const c = [[36, 32], [42, 25], [50, 22], [58, 25], [64, 32]].map(function(q){ return '<circle cx="' + q[0] + '" cy="' + q[1] + '" r="6.5" fill="' + hc + '"/>'; }).join("");
+      return { back: "", front: '<path d="M33 40 Q50 18 67 40 Q50 30 33 40Z" fill="' + hc + '"/>' + c };
+    }
+    case "knold": return { back: '<circle cx="50" cy="17" r="5.5" fill="' + hc + '"/>', front: cap };
+    case "langt": return { back: '<path d="M30 44 C30 20 70 20 70 44 L72 74 C60 70 40 70 28 74Z" fill="' + hc + '"/>', front: cap };
+    case "page": return {
+      back: '<path d="M31 40 C31 20 69 20 69 40 L70 60 C64 64 36 64 30 60Z" fill="' + hc + '"/>',
+      front: '<path d="M33 42 C33 22 40 21 50 21 C60 21 67 22 67 42 L67 34 C60 33 54 34 50 33 C44 32 38 33 33 34Z" fill="' + hc + '"/>'
+    };
+    case "kasket": return { back: "", front: '<path d="M33 40 C33 20 67 20 67 40Z" fill="' + hc + '"/><path d="M50 38 L78 36.5 L78 40.5 L50 42Z" fill="' + _figSkygge(hc, .8) + '"/><path d="M33 40 L67 40 L67 42 L33 42Z" fill="' + _figSkygge(hc, .8) + '"/>' };
+    case "hestehale": return { back: '<ellipse cx="70" cy="54" rx="4.5" ry="11" transform="rotate(-12 70 54)" fill="' + hc + '"/>', front: cap };
+    case "afro": return { back: '<circle cx="50" cy="38" r="23" fill="' + hc + '"/>', front: "" };
+    default: return { back: "", front: "" };
+  }
+}
+function _figAnsigt(kind, ink, mouth) {
+  const eye = function(x, r, hl){ return '<circle cx="' + x + '" cy="44" r="' + r + '" fill="' + ink + '"/>' + (hl !== false ? '<circle cx="' + (x + .9) + '" cy="43" r=".9" fill="#fff"/>' : ""); };
+  const eyes = function(r){ r = r || 2.8; return eye(43, r) + eye(57, r); };   /* som i originalen: altid med glimt */
+  const brows = function(d){ return '<path d="' + d + '" fill="none" stroke="' + ink + '" stroke-width="2.2" stroke-linecap="round" opacity=".85"/>'; };
+  const stroke = function(d, w){ return '<path d="' + d + '" fill="none" stroke="' + mouth + '" stroke-width="' + (w || 2) + '" stroke-linecap="round"/>'; };
+  const DOWN = "M38.5 37.5 L47 40 M61.5 37.5 L53 40", RAISE = "M39 39 L47 38.5 M53 36.5 L61 34", UP = "M39 40 L47 37 M61 40 L53 37", FLAT = "M39 38.5 L47 38.5 M53 38.5 L61 38.5";
+  switch (kind) {
+    case "set": return eyes(2.6) + brows(DOWN) + stroke("M45 52.5 L55 52.5", 2.2);
+    case "grin": return eyes() + brows(UP) + '<path d="M42 50 Q50 61 58 50Z" fill="' + mouth + '"/><path d="M44 50.5 H56 V53 H44Z" fill="#fff"/>';
+    case "smirk": return eyes() + brows(RAISE) + stroke("M43.5 52 Q51 57 58 49.5", 2.2);
+    case "pant": return eyes(2.4) + brows(UP) + '<ellipse cx="50" cy="53.5" rx="4.2" ry="3.6" fill="' + mouth + '"/><ellipse cx="50" cy="55.5" rx="2.6" ry="1.8" fill="#eb4452"/><path d="M70 28 q2.2 4 0 5.6 q-2.2 -1.6 0 -5.6" fill="#8ec5ff"/>';
+    case "wink": return eye(43, 2.8) + '<path d="M53 44.5 Q57 41.5 61 44.5" fill="none" stroke="' + ink + '" stroke-width="2.2" stroke-linecap="round"/>' + brows("M39 38.5 L47 38.5 M53 36 L61 35") + stroke("M44 51 Q50 57 56 50.5", 2.2);
+    case "think": return eye(43, 2.4) + eye(57, 2.4) + brows("M39 39.5 L47 39 M53 35.5 L61 33.5") + stroke("M46.5 52.5 L53.5 53", 2.2) + '<circle cx="61" cy="52" r="1.2" fill="' + mouth + '" opacity=".5"/>';
+    case "shout": return '<path d="M39.5 42.5 L46.5 45 M60.5 42.5 L53.5 45" stroke="' + ink + '" stroke-width="2.4" stroke-linecap="round"/>' + brows(DOWN) + '<ellipse cx="50" cy="54" rx="4.6" ry="5.2" fill="' + mouth + '"/><path d="M46.5 51 H53.5 V52.6 H46.5Z" fill="#fff"/>';
+    case "grit": return eyes(2.6, false) + eyes(2.6) + brows(DOWN) + '<path d="M43 50 H57 V55 H43Z" fill="' + mouth + '"/><path d="M44 51 H56 V54 H44Z" fill="#fff"/><path d="M47 51 V54 M50 51 V54 M53 51 V54" stroke="' + mouth + '" stroke-width=".9"/>';
+    case "cool": return '<path d="M36 41 H64 V43 H36Z" fill="' + ink + '"/><rect x="36.5" y="41" width="12" height="7" rx="2.5" fill="#0d1522"/><rect x="51.5" y="41" width="12" height="7" rx="2.5" fill="#0d1522"/><path d="M39 43 L45 43" stroke="#fff" stroke-width="1.2" opacity=".55" stroke-linecap="round"/><path d="M54 43 L60 43" stroke="#fff" stroke-width="1.2" opacity=".55" stroke-linecap="round"/>' + stroke("M45 53 Q50 56 55 52.5", 2.2);
+    default: return eyes() + brows(FLAT) + stroke("M43.5 51 Q50 58 56.5 51", 2.2);
+  }
+}
+function _figurSvg(p, px) {
+  const skin = FIG_HUD[p.skin] || FIG_HUD[1], hair = FIG_HAAR[p.hair] || "kort", hc = FIG_HAARFARVE[p.hairColor] || FIG_HAARFARVE[0];
+  const shirt = FIG_TROEJE[p.shirt] || FIG_TROEJE[0], frame = FIG_RAMME[p.frame] || FIG_RAMME[0];
+  const face = FIG_ANSIGT[p.face] || "smile", pose = FIG_POSE[p.pose] || "ready", left = p.hand === 1;
+  const band = p.headband !== 0 && hair !== "kasket";
+  const size = px || 100, bg = "#243147";
+  const id = "av" + (_figId++);
+  const r = _figKetcher(id, frame, pose, left), h = _figHaar(hair, hc);
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="' + size + '" height="' + size + '" style="display:block">' +
+    '<defs><clipPath id="' + id + 'c"><ellipse rx="8" ry="10.5"/></clipPath><clipPath id="' + id + 'b"><circle cx="50" cy="50" r="48"/></clipPath></defs>' +
+    '<circle cx="50" cy="50" r="48" fill="' + bg + '"/>' +
+    '<g clip-path="url(#' + id + 'b)">' +
+    h.back +
+    '<path d="M12 100 C12 76 28 66 42 66 Q50 74 58 66 C72 66 88 76 88 100Z" fill="' + shirt + '"/>' +
+    '<path d="M50 71 L58 66 C72 66 88 76 88 100 L50 100Z" fill="#000" opacity=".16"/>' +
+    (r.front ? "" : r.g) +
+    '<rect x="45" y="52" width="10" height="18" rx="3" fill="' + _figSkygge(skin, .82) + '"/>' +
+    '<circle cx="33" cy="45" r="3.4" fill="' + _figSkygge(skin, .9) + '"/><circle cx="67" cy="45" r="3.4" fill="' + _figSkygge(skin, .9) + '"/>' +
+    '<ellipse cx="50" cy="42" rx="17" ry="19" fill="' + skin + '"/>' +
+    '<path d="M58 25.2 A17 19 0 0 1 58 58.8 A11 19 0 0 0 58 25.2Z" fill="#000" opacity=".09"/>' +
+    '<circle cx="39.5" cy="50" r="2.4" fill="#eb4452" opacity=".26"/><circle cx="60.5" cy="50" r="2.4" fill="#eb4452" opacity=".26"/>' +
+    _figAnsigt(face, FIG_BLAEK, FIG_MUND) + h.front +
+    (band ? '<path d="M33 34 C40 27 60 27 67 34 L67 38.5 C60 31.5 40 31.5 33 38.5Z" fill="' + frame + '"/>' : "") +
+    (r.front ? _figArm(r.hx, r.hy, shirt, skin, left) + r.g : "") +
+    _figHaand(r.hx, r.hy, skin) +
+    '</g></svg>';
+}
 const AVATAR_FIGUR = ["\ud83c\udfbe", "\ud83c\udfc6", "\ud83d\udd25", "\u26a1", "\ud83e\udd81", "\ud83d\udc2f", "\ud83e\udd88", "\ud83e\udd85", "\ud83d\udc3a", "\ud83d\ude80", "\ud83c\udf1f", "\ud83c\udfaf"];
 const AVATAR_FARVE = ["#1F6FEB", "#0EA5A4", "#16A34A", "#CCA42B", "#EA580C", "#DC2626", "#7C3AED", "#DB2777"];
 function _avatarDel(kode) { const m = /^f(1[0-2]|[1-9])-k([1-8])$/.exec(String(kode || "")); return m ? { f: +m[1], k: +m[2] } : null; }
 function _avatarHtml(kode, px) {
   const d = _avatarDel(kode); const sz = px || 34;
+  const fp = _figurDel(kode);   /* v4.152.0 · den tegnede figur */
+  if (fp) return '<span style="display:inline-flex;width:' + sz + 'px;height:' + sz + 'px;flex:none;border-radius:50%;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.35)">' + _figurSvg(fp, sz) + '</span>';
   if (!d) return '<span style="display:inline-flex;align-items:center;justify-content:center;width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid var(--kant);font-size:' + Math.round(sz * .5) + 'px;flex:none">\ud83d\udc64</span>';
   return '<span style="display:inline-flex;align-items:center;justify-content:center;width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;background:' + AVATAR_FARVE[d.k - 1] + ';font-size:' + Math.round(sz * .55) + 'px;flex:none;box-shadow:0 2px 8px rgba(0,0,0,.35)">' + AVATAR_FIGUR[d.f - 1] + '</span>';
 }
@@ -3036,8 +3188,8 @@ function _profilHtml(EN) {
     if (S.fuldtAaben) {
       h += '<div class="kort dev-kant" style="margin-top:9px;padding:12px">' +
         '<p class="lille" style="margin:0 0 8px">' + (EN
-          ? "Only your club\u2019s coach sees it \u2014 never friends, never search. Letters, spaces and hyphens."
-          : "Kun klubbens tr\u00e6ner ser det \u2014 aldrig venner, aldrig s\u00f8gning. Bogstaver, mellemrum og bindestreg.") + '</p>' +
+          ? "The name your club\u2019s coach sees. Letters, spaces and hyphens."
+          : "Det navn, din tr\u00e6ner ser. Bogstaver, mellemrum og bindestreg.") + '</p>' +
         '<input data-felt="fuldtUdkast" maxlength="60" placeholder="' + (EN ? "e.g. Oskar Lillesen" : "fx Oskar Lillesen") + '" value="' + esc(S.fuldtUdkast || "") + '" style="font-weight:600">' +
         '<div class="raekke" style="margin-top:7px">' +
           '<button class="knap" style="min-height:44px" data-a="fuldtGem">' + (S.fuldtSender ? "\u23f3 \u2026" : (EN?"Save":"Gem")) + '</button>' +
@@ -3070,24 +3222,33 @@ function _profilHtml(EN) {
             '<span style="flex:1;min-width:0;padding:4px 0">' +
             _avatarHtml(S.mitAvatar, 30) + ' ' + (EN?"Username: ":"Brugernavn: ") + '<b style="color:var(--guld);letter-spacing:1px">' + esc(S.mitNavn) + '</b> <span style="opacity:.5">\ud83d\udd12</span></span>' +
             '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="kopier" data-v="mitNavn">' + (S.kopieret === "mitNavn" ? (EN?"Copied \u2713":"Kopieret \u2713") : (EN?"Copy":"Kopi\u00e9r")) + '</button></div>' +
-            '<p class="lille" style="margin:3px 2px 0;opacity:.6">' + (EN ? "Your fixed address \u2014 friends find you on it. It cannot be changed." : "Din faste adresse \u2014 venner finder dig p\u00e5 det. Det kan ikke \u00e6ndres.") + '</p>';
+            '<p class="lille" style="margin:3px 2px 0;opacity:.6">' + (EN ? "Your fixed address \u2014 the one friends find you on." : "Din faste adresse \u2014 den, venner finder dig p\u00e5.") + '</p>';
           // ⭐ v4.136.0 · AVATAREN: figur + farve. Ingen fotos — og det siges.
           h += '<div class="lille" style="margin:6px 2px 0;display:flex;align-items:center;gap:7px">' +
             '<span style="flex:1;min-width:0">\ud83c\udfa8 ' + (EN ? "Your avatar" : "Din avatar") + '</span>' +
             '<button class="knap valg' + (S.avatarAaben ? " til" : "") + '" style="flex:none;min-height:40px;padding:0 14px;font-size:12px" data-a="avatarAabn">' + (S.avatarAaben ? (EN?"Close":"Luk") : (EN?"Choose":"Vælg")) + '</button></div>';
+          /* v4.152.0 · kvitteringen står UDEN FOR panelet (princip 70) */
+          if (S.avatarBesked) h += '<p class="lille" style="margin:4px 2px 0;color:' + (S.avatarBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.avatarBesked.t) + '</p>';
           if (S.avatarAaben) {
-            const _d = _avatarDel(S.mitAvatar) || { f: 1, k: 1 };
+            const _u = S.figUdkast || _figurDel(S.mitAvatar) || Object.assign({}, FIG_ARKETYPER[0].p);
+            const _uk = _figurKode(_u);
+            const _ua = FIG_ARKETYPER.filter(function(a){ return _figurKode(a.p) === _uk; })[0];
+            const ETIK = EN ? ["Skin", "Hair", "Hair colour", "Shirt", "Headband", "Racket", "Hand", "Face", "Pose"] : ["Hud", "Hår", "Hårfarve", "Trøje", "Pandebånd", "Ketcher", "Hånd", "Ansigt", "Pose"];
             h += '<div class="kort dev-kant" style="margin-top:9px;padding:12px">' +
-              '<p class="lille" style="margin:0 0 8px">' + (EN ? "A figure and a colour \u2014 never a photo. Your friends see it next to your name." : "En figur og en farve \u2014 aldrig et foto. Dine venner ser den ved dit navn.") + '</p>' +
-              '<div style="display:flex;flex-wrap:wrap;gap:6px">' + AVATAR_FIGUR.map(function(e, i){
-                const v = "f" + (i + 1) + "-k" + _d.k;
-                return '<button class="knap valg" style="min-height:44px;width:44px;padding:0;font-size:20px' + (_d.f === i + 1 && S.mitAvatar ? ";border-color:var(--vundet)" : "") + '"' + (S.avatarSender ? " disabled" : "") + ' data-a="avatarSaet" data-v="' + v + '">' + e + '</button>';
+              '<p class="lille" style="margin:0 0 8px">' + (EN ? "Pick a type and tweak it — your friends see it next to your name." : "Vælg en type og skru på den — dine venner ser den ved dit navn.") + '</p>' +
+              '<div style="display:flex;justify-content:center;margin:2px 0 8px">' + _figurSvg(_u, 120) + '</div>' +
+              '<p class="lille" style="margin:0 0 8px;text-align:center;color:var(--kridt)"><b>' + (_ua ? esc(_ua.navn) + '</b> · ' + esc(_ua.u) : (EN ? "Your own" : "Din egen") + '</b>') + '</p>' +
+              '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">' + FIG_ARKETYPER.map(function(a, i){
+                return '<button class="knap valg" style="min-height:48px;width:48px;padding:2px;border-radius:50%' + (_ua && _ua.id === a.id ? ";border-color:var(--vundet)" : "") + '" data-a="figType" data-v="' + i + '" aria-label="' + esc(a.navn) + '">' + _figurSvg(a.p, 40) + '</button>';
               }).join("") + '</div>' +
-              '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">' + AVATAR_FARVE.map(function(c, i){
-                const v = "f" + _d.f + "-k" + (i + 1);
-                return '<button style="width:32px;height:32px;border-radius:50%;border:3px solid ' + (_d.k === i + 1 && S.mitAvatar ? "#fff" : "transparent") + ';background:' + c + ';cursor:pointer;padding:0"' + (S.avatarSender ? " disabled" : "") + ' data-a="avatarSaet" data-v="' + v + '" aria-label="farve ' + (i + 1) + '"></button>';
+              '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">' + FIG_FELTER.map(function(f, i){
+                return '<div style="display:flex;align-items:center;gap:2px;background:rgba(255,255,255,.05);border-radius:10px;padding:2px">' +
+                  '<button class="knap valg" style="min-height:40px;width:36px;padding:0;flex:none;font-size:18px" data-a="figSkru" data-v="' + f + ':-1" aria-label="' + ETIK[i] + ' -">‹</button>' +
+                  '<span class="lille" style="flex:1;text-align:center;margin:0;font-size:11px">' + ETIK[i] + '</span>' +
+                  '<button class="knap valg" style="min-height:40px;width:36px;padding:0;flex:none;font-size:18px" data-a="figSkru" data-v="' + f + ':1" aria-label="' + ETIK[i] + ' +">›</button></div>';
               }).join("") + '</div>' +
-              (S.mitAvatar ? '<button class="knap valg" style="margin-top:10px;min-height:40px;font-size:12px" data-a="avatarSaet" data-v="">' + (EN ? "Remove avatar" : "Fjern avatar") + '</button>' : '') +
+              '<div class="raekke" style="margin-top:10px"><button class="knap" style="min-height:44px"' + (S.avatarSender || _uk === S.mitAvatar ? " disabled" : "") + ' data-a="avatarSaet" data-v="' + _uk + '">' + (S.avatarSender ? "…" : (_uk === S.mitAvatar ? (EN ? "Saved ✓" : "Gemt ✓") : (EN ? "Save" : "Gem"))) + '</button>' +
+              (S.mitAvatar ? '<button class="knap valg" style="min-height:44px" data-a="avatarSaet" data-v="">' + (EN ? "Remove avatar" : "Fjern avatar") + '</button>' : '') + '</div>' +
               '</div>';
           }
           // ⭐ v4.143.0 · BIOEN (Nicolai 12/9: «Jeg VIL have man skal kunne lave en
@@ -3100,8 +3261,8 @@ function _profilHtml(EN) {
             const _bu = String(S.bioUdkast || "");
             h += '<div class="kort dev-kant" style="margin-top:9px;padding:12px">' +
               '<p class="lille" style="margin:0 0 8px">' + (EN
-                ? "A few words about your tennis \u2014 only your friends see it. No links, no phone numbers, no surnames."
-                : "Et par ord om din tennis \u2014 kun dine venner ser det. Ingen links, ingen telefonnumre, intet efternavn.") + '</p>' +
+                ? "A few words about your tennis \u2014 the ones your friends see."
+                : "Et par ord om din tennis \u2014 dem, dine venner ser.") + '</p>' +
               '<input data-felt="bioUdkast" maxlength="120" placeholder="' + (EN ? "e.g. U12 \u00b7 loves the backhand down the line" : "fx U12 \u00b7 elsker bagh\u00e5nd langs linjen") + '" value="' + esc(_bu) + '" style="font-weight:600">' +
               '<p id="bio-taeller" class="lille" style="margin:5px 0 0;text-align:right;opacity:.6">' + _bu.length + ' / 120</p>' +
               '<div class="raekke" style="margin-top:7px">' +
@@ -3349,8 +3510,8 @@ const A = {
     S.delAppBesked = null;
     const url = location.origin + location.pathname + "#ven=" + encodeURIComponent(kode);
     const t = EN
-      ? "I log my tennis matches in StreakTennis — it counts my training streak and shows what to work on. Open the link and create yourself; my name is already filled in, so you can find me right away:\n\n"
-      : "Jeg registrerer mine tenniskampe i StreakTennis — den tæller min træningsstreak og viser, hvad jeg skal arbejde med. Åbn linket og opret dig; mit navn står allerede klar, så du kan finde mig med det samme:\n\n";
+      ? "I log my tennis matches in StreakTennis — it counts my training streak and shows what to work on. Open the link and create yourself with your own name — I am already waiting as the friend you can ask:\n\n"
+      : "Jeg registrerer mine tenniskampe i StreakTennis — den tæller min træningsstreak og viser, hvad jeg skal arbejde med. Åbn linket og opret dig med dit eget navn — jeg står allerede klar som den ven, du kan spørge:\n\n";
     S.delAppTekst = t + url;
     // ⭐ DEL-ARKET FØRST, UDKLIPSHOLDEREN SOM RESERVE. På en telefon er
     // navigator.share vejen til sms'en; på en pc findes den ikke, og
@@ -5160,9 +5321,9 @@ const A = {
   //   og formularens ← foerer til indfoeringen i stedet for helt ud.
   velkomstFrem: () => {
     S.velkomstTrin = Math.min(2, (S.velkomstTrin || 0) + 1);
-    // ⭐ v4.52.0 · en parkeret invitation (#ven=-linket) lander i
-    // kodefeltet af sig selv — linket og fordoeren er samme rejse.
-    try { if (!S.indKlubkode) S.indKlubkode = lager.hent("sai-invit-fra") || ""; } catch (_e) {}
+    // ⭐ v4.149.0 · en parkeret invitation (#ven=-linket) lander IKKE i
+    //   kodefeltet mere — Rikke laeste «oskar» i feltet som et navn, hun skulle
+    //   hedde. Den staar som en chip over felterne, og indGaa tager den op selv.
     try { window.scrollTo(0, 0); } catch (_e) {}
     render();
   },
@@ -5227,7 +5388,14 @@ const A = {
   },
   soegRyd: () => { S.soegUdkast = ""; S.venneUdkast = ""; S.soegTraef = null; render(); },
   // ⭐ v4.136.0 · AVATAREN. v = "f3-k2" eller "" (ingen). Serveren afgør (422 på en ukendt).
-  avatarAabn: () => { S.avatarAaben = !S.avatarAaben; render(); },
+  avatarAabn: () => { S.avatarAaben = !S.avatarAaben; S.avatarBesked = null; S.figUdkast = S.avatarAaben ? (_figurDel(S.mitAvatar) || Object.assign({}, FIG_ARKETYPER[0].p)) : null; render(); },
+  /* v4.152.0 · vælg en type / skru på ét felt — lokalt, indtil Gem */
+  figType: (v) => { const a = FIG_ARKETYPER[+v]; if (!a) return; S.figUdkast = Object.assign({}, a.p); S.avatarBesked = null; render(); },
+  figSkru: (v) => {
+    const d = String(v || "").split(":"); const f = d[0], r = +d[1] || 0; const i = FIG_FELTER.indexOf(f); if (i < 0) return;
+    const u = Object.assign({}, S.figUdkast || _figurDel(S.mitAvatar) || FIG_ARKETYPER[0].p); const m = FIG_MAKS[i];
+    u[f] = (((u[f] | 0) + r) % m + m) % m; S.figUdkast = u; S.avatarBesked = null; render();
+  },
   // ⭐ v4.143.0 · BIOEN. Tom = fjern. Serveren afgoer (422 med kode: lang · link · mail · handle · telefon · grovt).
   bioAabn: () => { S.bioAaben = !S.bioAaben; S.bioUdkast = S.bioAaben ? (S.mitBio || "") : ""; S.bioBesked = null; render(); },
   bioGem: async (v) => {
@@ -5251,12 +5419,13 @@ const A = {
   avatarSaet: async (v) => {
     if (S.avatarSender) return;
     const EN = S.sprog === "en"; const kode = String(v || "");
-    if (kode && !_avatarDel(kode)) return;
+    if (kode && !_avatarDel(kode) && !_figurDel(kode)) return;   /* v4.152.0 · begge former */
     S.avatarSender = true; render();
     const r = await A.budKald("saet-avatar", { avatar: kode || null });
     S.avatarSender = false;
-    if (r && !r.fejl) { S.mitAvatar = r.avatar || null; try { lager.gem("sai-avatar", S.mitAvatar || ""); } catch (_e) {} S.vennerBesked = null; }
-    else S.vennerBesked = { fejl: true, t: (r && r.fejl) || (EN ? "Could not save the avatar." : "Avataren kunne ikke gemmes.") };
+    if (r && !r.fejl) { S.mitAvatar = r.avatar || null; try { lager.gem("sai-avatar", S.mitAvatar || ""); } catch (_e) {} S.vennerBesked = null;
+      S.avatarBesked = { t: S.mitAvatar ? (EN ? "Saved \u2713 \u2014 your friends see it next to your name." : "Gemt \u2713 \u2014 dine venner ser den ved dit navn.") : (EN ? "Avatar removed." : "Avataren er fjernet.") }; }
+    else S.avatarBesked = { fejl: true, t: (r && r.kode === "format") ? (EN ? "The server did not recognise that figure." : "Serveren kendte ikke den figur.") : (r && r.fejl) || (EN ? "Could not save the avatar." : "Avataren kunne ikke gemmes.") };
     render();
   },
   // ⭐ v4.132.0 · QR-KODEN (Nicolai 12/9). Bærer KUN det link, «Del med en
@@ -6974,6 +7143,8 @@ const A = {
     } else if (kode && _invitGyldig(kode)) {
       try { lager.gem("sai-invit-fra", kode); } catch (_e) {}
       S.indVen = kode;
+    } else if (_invitVed()) {
+      S.indVen = _invitVed();   /* ⭐ v4.149.0 · chippen: invitationen stod ikke i feltet, men den gælder */
     }
     S.indKlubkode = "";
     S.portStatus = null;
@@ -8742,7 +8913,7 @@ function _budKrop(EN) {
       '<p class="lille" style="margin:0 0 8px"><b>' + esc(b.fra || "") + '</b> ' + (EN ? "wants you on the team" : "vil have dig med på sit team") + ' ' + (b.spejl ? "🪞" : "🕳️") + '<br>' +
       (b.spejl ? (EN ? "With the mirror: you see the matches, training and analyses — and what you enter lands with the player." : "Med spejlet: du ser kampe, træning og analyser — og det, du taster, lander hos spilleren.")
                : (EN ? "Without the mirror: you see the streaks and can enter matches — they are sent home through the wormhole." : "Uden spejl: du ser streaks og kan taste kampe — de sendes hjem gennem ormehullet.")) +
-      ' ' + (EN ? "Never the messages." : "Aldrig beskederne.") + '</p>' +
+      '</p>' +
       '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--grus)" data-a="budSvar" data-v="' + esc(String(b.id)) + ':ja">' + (S.budSender ? "⏳ …" : (EN ? "Yes, I’m in" : "Ja, jeg er med")) + '</button>' +
       '<button class="knap valg" style="min-height:44px" data-a="budSvar" data-v="' + esc(String(b.id)) + ':nej">' + (EN ? "No thanks" : "Nej tak") + '</button></div></div>';
   });
@@ -8944,14 +9115,14 @@ function _tegn() {
         '<h2 style="color:var(--guld);font-size:16px;margin:0 0 10px">' + (S.sprog === "en" ? "You are invited" : "Du er inviteret") + '</h2>' +
         '<p class="lille" style="margin:0 0 12px">' + (SPILLER && S.rolle !== "familie"
           ? (S.sprog === "en"
-            ? "You are invited to join a team. <b>Your own player stays on this phone</b> — you get an extra view you can switch to and from under ⚙️ Settings. As a team member you enter and see the team's data — never the messages between the player and the friends."
-            : "Du er inviteret med på et team. <b>Din egen spiller bliver stående på telefonen</b> — du får en ekstra visning, du kan skifte til og fra under ⚙️ Indstillinger. Som team-medlem taster og ser du teamets data — aldrig beskederne mellem spilleren og vennerne.")
+            ? "You are invited to join a team. <b>Your own player stays on this phone</b> \u2014 you get an extra view you can switch to and from under \u2699\ufe0f Settings. As a team member you enter and see the team's data."
+            : "Du er inviteret med p\u00e5 et team. <b>Din egen spiller bliver st\u00e5ende p\u00e5 telefonen</b> \u2014 du f\u00e5r en ekstra visning, du kan skifte til og fra under \u2699\ufe0f Indstillinger. Som team-medlem taster og ser du teamets data.")
           : (S.sprog === "en"
-            ? "This phone becomes part of the team: you enter and see data — never the messages between the player and the friends."
-            : "Denne telefon bliver en del af teamet: du taster og ser data — aldrig beskederne mellem spilleren og vennerne.")) + '</p>' +
+            ? "This phone becomes part of the team: you enter and see data."
+            : "Denne telefon bliver en del af teamet: du taster og ser data.")) + '</p>' +
         // ⭐ v4.96.0 · spejlet: siger på forhånd, om linket bærer boksens nøgle.
         '<p class="lille" style="margin:0 0 12px;color:' + (S.famSkyBits ? 'var(--is)' : 'var(--guld)') + '">' + (S.famSkyBits
-          ? (S.sprog === "en" ? "The link also carries the key to the player’s backup: matches, training and analyses are mirrored here. Messages never." : "Linket bærer også nøglen til spillerens sikkerhedskopi: kampe, træning og analyser spejles herover. Beskeder aldrig.")
+          ? (S.sprog === "en" ? "The link also carries the key to the player\u2019s backup: matches, training and analyses are mirrored here." : "Linket b\u00e6rer ogs\u00e5 n\u00f8glen til spillerens sikkerhedskopi: kampe, tr\u00e6ning og analyser spejles herover.")
           : (S.sprog === "en" ? "The player has not turned the backup on yet — the mirror of matches and training waits for that. Streaks work already." : "Spilleren har ikke slået sikkerhedskopien til endnu — spejlet af kampe og træning venter på det. Streaks virker allerede.")) + '</p>' +
         '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="famBliv">' + (S.famHenter ? "⏳ …" : (S.sprog === "en" ? "Join the team" : "Bliv en del af teamet")) + '</button>' +
         '<button class="knap valg" data-a="famAfvis">' + (S.sprog === "en" ? "Not now" : "Ikke nu") + '</button></div>' +
@@ -9156,16 +9327,16 @@ function _tegn() {
               (S.sprog === "en" ? "I follow a player. The player invites me into their team from their own phone." : "Jeg f\u00f8lger en spiller. Spilleren inviterer mig ind i sit team fra sin egen telefon.")) +
             '</div>' +
             '<p class="lille sai-op" style="animation-delay:.16s;margin:12px auto 0;max-width:22em;opacity:.65">' + (S.sprog === "en"
-              ? "Either way this profile is yours \u2014 never the player\u2019s."
-              : "Uanset hvad er den her profil DIN \u2014 aldrig spillerens.") + '</p>';
+              ? "Either way this profile is yours."
+              : "Uanset hvad er den her profil DIN.") + '</p>';
           _knap = '';
         } else if (S.indRolle === "team") {
           // ⭐ v4.146.0 · FORÆLDER/TRÆNER: Basis — og sagt højt, hvad det giver og hvad næste skridt er
           _kro = '<div class="sai-op" style="font-size:54px;line-height:1;margin-bottom:10px">\ud83d\udc6a</div>' +
             '<b class="sai-op" style="animation-delay:.06s;font-size:21px;display:block;margin-bottom:8px">' + (S.sprog === "en" ? "You follow along for free" : "Du f\u00f8lger med gratis") + '</b>' +
             '<p class="lille sai-op" style="animation-delay:.12s;margin:0 auto;max-width:22em;line-height:1.6">' + (S.sprog === "en"
-              ? "You get <b>Basic</b> \u2014 all you need to follow a player. <b>Next step:</b> the player opens <b>\u2699 \u2192 The team</b> on their own phone and invites you; you say yes, and you see their matches, training and analyses. Never their messages."
-              : "Du f\u00e5r <b>Basis</b> \u2014 det er alt, du beh\u00f8ver for at f\u00f8lge en spiller. <b>N\u00e6ste skridt:</b> spilleren \u00e5bner <b>\u2699 \u2192 Teamet</b> p\u00e5 sin egen telefon og inviterer dig; du siger ja, og s\u00e5 ser du kampe, tr\u00e6ning og analyser. Aldrig beskederne.") + '</p>' +
+              ? "You get <b>Basic</b> \u2014 all you need to follow a player. <b>Next step:</b> the player opens <b>\u2699 \u2192 The team</b> on their own phone and invites you; you say yes, and you see their matches, training and analyses."
+              : "Du f\u00e5r <b>Basis</b> \u2014 det er alt, du beh\u00f8ver for at f\u00f8lge en spiller. <b>N\u00e6ste skridt:</b> spilleren \u00e5bner <b>\u2699 \u2192 Teamet</b> p\u00e5 sin egen telefon og inviterer dig; du siger ja, og s\u00e5 ser du kampe, tr\u00e6ning og analyser.") + '</p>' +
             '<p class="lille sai-op" style="animation-delay:.16s;margin:12px auto 0;max-width:22em;opacity:.7;line-height:1.55">' + (S.sprog === "en"
               ? "Do you play yourself and want your own analyses? Change the plan any time under \u2699 Your account."
               : "Spiller du selv og vil have dine egne analyser? Skift plan n\u00e5r som helst under \u2699 DIN KONTO.") + '</p>' +
@@ -9293,8 +9464,8 @@ function _tegn() {
             '<b class="sai-op" style="animation-delay:.06s;font-size:20px;display:block;margin-bottom:6px">' +
               (S.sprog === "en" ? "Put StreakTennis on the Home Screen" : "Læg StreakTennis på hjemmeskærmen") + '</b>' +
             '<p class="lille sai-op" style="animation-delay:.1s;margin:0 auto 14px;max-width:21em;line-height:1.55">' + (S.sprog === "en"
-              ? "It takes ten seconds — and it is what makes notifications work on iPhone. A Safari tab never gets one."
-              : "Det tager ti sekunder — og det er dét, der får notifikationer til at virke på iPhone. En fane i Safari får aldrig en.") + '</p>' +
+              ? "It takes ten seconds \u2014 and it is what makes notifications work on iPhone."
+              : "Det tager ti sekunder \u2014 og det er d\u00e9t, der f\u00e5r notifikationer til at virke p\u00e5 iPhone.") + '</p>' +
             '<div class="kort sai-op" style="animation-delay:.14s;padding:13px;max-width:21em;margin:0 auto">' +
               _skridt("1", _ikDel, (S.sprog === "en" ? "Tap the <b>share button</b> at the bottom of Safari." : "Tryk på <b>del-knappen</b> nederst i Safari.")) +
               _skridt("2", _ikPlus, (S.sprog === "en" ? "Scroll down and choose <b>Add to Home Screen</b>." : "Rul ned og vælg <b>Føj til hjemmeskærm</b>.")) +
@@ -9470,14 +9641,23 @@ function _tegn() {
           '<input data-felt="indMail" maxlength="80" placeholder="' + (S.sprog === "en" ? "to recover the password" : "til at gendanne kodeordet") + '" value="' + esc(S.indMail) + '" autocapitalize="off" spellcheck="false" style="text-transform:lowercase">' +
 
 
-          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (S.sprog === "en" ? "CODE FROM CLUB OR FRIEND · OPTIONAL" : "KODE FRA KLUB ELLER VEN · VALGFRIT") + '<span id="ok-indKlubkode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
-          '<input data-felt="indKlubkode" maxlength="40" style="letter-spacing:1px;font-weight:700" placeholder="' + (S.sprog === "en" ? "club code or friend ID" : "klubkode eller venne-ID") + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">' +
+          // ⭐ v4.149.0 · INVITATIONEN ER EN CHIP, IKKE EN KODE (Rikke 12/9).
+          (_invitVed() ? '<div class="lille" style="margin:12px 0 2px;padding:9px 11px;border-radius:12px;border:1px solid var(--guld);background:rgba(230,176,69,.08)">' +
+            '\ud83e\udd1d <b style="color:var(--guld)">' + esc(_invitFornavn(_invitVed()) || _invitVed()) + '</b> ' + (S.sprog === "en"
+              ? "invited you. Create yourself with <b>your own</b> name \u2014 " + esc(_invitFornavn(_invitVed()) || _invitVed()) + " is already waiting as the friend you can ask once you are in."
+              : "har inviteret dig. Opret dig med <b>dit eget</b> navn \u2014 " + esc(_invitFornavn(_invitVed()) || _invitVed()) + " st\u00e5r allerede klar som den ven, du kan sp\u00f8rge, n\u00e5r du er inde.") + '</div>' : '') +
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (_invitVed()
+            ? (S.sprog === "en" ? "CLUB CODE · OPTIONAL" : "KLUBKODE · VALGFRIT")
+            : (S.sprog === "en" ? "CODE FROM CLUB OR FRIEND · OPTIONAL" : "KODE FRA KLUB ELLER VEN · VALGFRIT")) + '<span id="ok-indKlubkode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
+          '<input data-felt="indKlubkode" maxlength="40" style="letter-spacing:1px;font-weight:700" placeholder="' + (_invitVed()
+            ? (S.sprog === "en" ? "only from your club" : "kun fra din klub")
+            : (S.sprog === "en" ? "club code or friend ID" : "klubkode eller venne-ID")) + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">' +
           // ⭐ v4.72.0 · Tre saetninger blev til én. Etiketten siger selv
           //   «VALGFRIT», saa «ingen kode? gaa bare videre» var det samme
           //   sagt to gange paa 20 pixels afstand.
-          '<p class="lille" style="margin:4px 0 0;opacity:.72">' + (S.sprog === "en"
-            ? "From your club or a friend — or just continue."
-            : "Fra klubben eller en ven — ellers gå bare videre.") + '</p>' +
+          '<p class="lille" style="margin:4px 0 0;opacity:.72">' + (_invitVed()
+            ? (S.sprog === "en" ? "Your friend is already set \u2014 this field is for a club only." : "Din ven er allerede p\u00e5 plads \u2014 feltet her er kun til en klub.")
+            : (S.sprog === "en" ? "From your club or a friend — or just continue." : "Fra klubben eller en ven — ellers gå bare videre.")) + '</p>' +
 
           // ⭐⭐ v4.72.0 · PRISKASSEN (98px) ER UDE — den var en GENTAGELSE.
           //   Ordret det samme staar paa VALGET, TO skaerme senere i samme
@@ -10358,6 +10538,12 @@ function _tegn() {
         h += '<div class="kort">';
         h += _zoneTitel("\ud83e\udd1d", (EN ? "YOUR FRIENDS" : "DINE VENNER"),
               S.venner.length ? S.venner.length : "");
+        // ⭐ v4.148.0 · TRIBUNEN BOR HOS VENNERNE — det er dem, der hepper. Kun når der ER en.
+        if (S.foelgekode) {
+          h += '<button class="knap" style="width:100%;min-height:44px;margin:0 0 10px;background:var(--grus)" data-a="rumAabn" data-v="' + esc(S.foelgekode + "|" + (EN?"your match":"din kamp")) + '">' +
+            (S.liveAktiv ? '🏟 ' + (EN?"Your stand — who is cheering?":"Din tribune — hvem hepper?")
+                         : '🔒 ' + (EN?"Your last match & stand":"Din seneste kamp & tribune")) + '</button>';
+        }
         if (!S.venner.length) {
           h += '<p class="lille" style="margin:0 0 10px">' + (EN
             ? "A friend from any club: their streak, and their match while it runs."
@@ -10427,81 +10613,10 @@ function _tegn() {
         }
         h += '</div>';   // ⭐ v4.42.0 · KORT 1 SLUTTER HER. Før løb det videre.
 
-        // ⭐⭐ v4.42.0 · KORT 2 AF 3: DINE EGNE KAMPE.
-        // ⚠️ Backlog #61 siger, at din egen tribune bor bag flisen VENNER
-        // og derfor er svær at finde. Den FLYTTES ikke her — det er et
-        // valg, Nicolai skal tage — men den holder op med at ligne en
-        // del af vennelisten. En overskrift er billigere end en flytning.
-        h += '<div class="kort" style="margin-top:10px">';
-        h += _zoneTitel("\ud83c\udfbe", (EN ? "YOUR OWN MATCHES" : "DINE EGNE KAMPE"),
-              (S.arkiv && S.arkiv.length) ? S.arkiv.length : "");
-
-        // Egen tribune: under kampen for at se hvem der hepper — og EFTER
-        // kampen for at laese den og kunne SLETTE den. Foelgekoden bliver
-        // i lageret, saa doeren ikke forsvinder med sidste bold.
-        if (S.foelgekode) {
-          h += '<button class="knap" style="width:100%;min-height:44px;background:var(--grus)" data-a="rumAabn" data-v="' + esc(S.foelgekode + "|" + (EN?"your match":"din kamp")) + '">' +
-            (S.liveAktiv ? '🏟 ' + (EN?"Your stand — who is cheering?":"Din tribune — hvem hepper?")
-                         : '🔒 ' + (EN?"Your last match & stand":"Din seneste kamp & tribune")) + '</button>';
-        }
-
-        // ⭐ KAMP-ARKIVET (v4.2, "vil gerne have B") — fortiden, kamp for
-        // kamp. Hentes DOVENT: foerste aabning af folden kalder arkiv-hent.
-        h += '<div style="margin-top:8px;border-top:1px solid var(--kant)">' +
-          '<button data-a="arkivFoldSkift" style="width:100%;min-height:52px;display:flex;align-items:center;gap:10px;background:none;border:0;padding:11px 0;text-align:left;cursor:pointer;color:inherit;font-family:inherit">' +
-            '<span style="flex:none;font-size:15px">🗄</span>' +
-            '<span style="flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--kridt)">' + (EN?"Match archive":"Kamp-arkivet") + '</span>' +
-            '<span class="lille" style="flex:none">' + (S.arkiv === null ? "" : S.arkiv.length) + '</span>' +
-            '<span style="flex:none;color:var(--daempet);font-size:11px;transition:transform .15s;transform:rotate(' + (S.arkivFold?'90':'0') + 'deg)">▶</span>' +
-          '</button>';
-        if (S.arkivFold) {
-          h += '<div style="padding:0 0 10px">';
-          if (S.arkivHenter && S.arkiv === null) h += '<p class="lille" style="margin:0">⏳ …</p>';
-          else if (!S.arkiv || !S.arkiv.length) h += '<p class="lille" style="margin:0">' + (EN
-            ? "Finished matches land here by themselves — with the result, the board and what the stand said."
-            : "Færdige kampe lander her af sig selv — med resultat, tavle og det, tribunen sagde.") + '</p>';
-          else S.arkiv.forEach(function(k){
-            const aaben = S.arkivAaben === k.id;
-            h += '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--kant)">' +
-              '<div style="flex:1;min-width:0" class="lille">🔒 ' + esc(String(k.sluttet || "").slice(0, 10)) +
-              (k.resultat ? ' · <b style="color:var(--kridt)">' + esc(k.resultat) + '</b>' : '') +
-              (k.modstander ? ' · ' + esc(k.modstander) : '') +
-              (k.beskeder ? ' · 💬 ' + k.beskeder : '') + '</div>' +
-              '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="' + (aaben ? 'arkivLuk' : 'arkivAabn') + '"' + (aaben ? '' : ' data-v="' + esc(k.id) + '"') + '>' + (aaben ? (EN?"Close":"Luk") : (EN?"Open":"Se")) + '</button></div>';
-            if (aaben) {
-              if (!S.arkivRum) h += '<p class="lille" style="margin:4px 0 8px">⏳ …</p>';
-              else {
-                const ak = S.arkivRum.kamp || {}; const ab = S.arkivRum.beskeder;
-                h += '<div class="kort dev-kant dev-kant-staal" style="padding:10px 12px;margin:2px 0 8px">' +
-                  '<p class="lille" style="margin:0 0 6px"><b>' + esc(ak.turnering || (EN?"Match":"Kamp")) + '</b>' + (ak.modstander ? ' · vs ' + esc(ak.modstander) : '') + '</p>';
-                if (ab === null) h += '<p class="lille" style="margin:0">' + (EN
-                  ? "The conversation belongs to the player and the friends — the team key sees the match, not the messages."
-                  : "Samtalen er spillerens og vennernes — team-nøglen ser kampen, ikke beskederne.") + '</p>';
-                else if (!ab || !ab.length) h += '<p class="lille" style="margin:0">' + (EN ? "Nothing was said in this one." : "Der blev ikke sagt noget i denne.") + '</p>';
-                else ab.slice(-40).forEach(function(b){
-                  h += (b.art === "r")
-                    ? '<div style="display:flex;align-items:center;gap:8px;padding:3px 0"><span style="font-size:17px;flex:none">' + esc(b.tekst) + '</span><span class="lille" style="margin:0">' + esc(b.fornavn) + '</span></div>'
-                    : '<div style="padding:5px 0;border-top:1px solid var(--kant)"><b style="font-size:12px;color:' + (b.mig ? 'var(--guld)' : 'var(--is)') + '">' + esc(b.fornavn) + '</b><div style="font-size:13px;margin-top:1px;word-break:break-word">' + esc(b.tekst) + '</div></div>';
-                });
-                if (S.arkivSletId === k.id) {
-                  h += '<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--kant)">' +
-                    '<p class="lille" style="margin:0 0 8px">' + (EN
-                      ? "Delete this match from the archive? The messages go with it. Cannot be undone."
-                      : "Slet denne kamp fra arkivet? Beskederne ryger med. Kan ikke fortrydes.") + '</p>' +
-                    '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="arkivSletJa">' + (EN?"Delete":"Slet") + '</button>' +
-                    '<button class="knap valg" style="min-height:44px" data-a="arkivSletNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
-                } else {
-                  h += '<button class="knap valg" style="margin-top:8px;min-height:44px;font-size:12px;color:var(--daempet)" data-a="arkivSletSpoerg" data-v="' + esc(k.id) + '">' + (EN?"Delete from archive":"Slet fra arkivet") + '</button>';
-                }
-                h += '</div>';
-              }
-            }
-          });
-          h += (S.arkivBesked ? '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(S.arkivBesked.t) + '</p>' : '');
-          h += '</div>';
-        }
-        h += '</div>';
-        h += '</div>';   // ⭐ v4.42.0 · KORT 2 SLUTTER HER.
+        // ⭐ v4.148.0 · KORT 2 (DINE EGNE KAMPE + 🗄 Kamp-arkivet) er UDGÅET. Målt
+        //   12/9: kamp_arkiv har 0 rækker for alle — vejen ind i skabet findes
+        //   ikke (spiller-sync arkiverer kun ved genbrug af en følgekode, og
+        //   appen laver en ny kode til hver kamp). Tribunen bor nu i DINE VENNER.
 
         // ⭐⭐ v4.42.0 · KORT 3 AF 3: SÅDAN FÅR DU FLERE.
         // Alt det, der handler om at FÅ en ven, samlet ét sted: dit navn,
@@ -10526,14 +10641,7 @@ function _tegn() {
         // andre fliser. En, der ikke har valgt navn endnu, skal stadig kunne
         // sende appen til en ven. Reglen er derfor et UDGANGSPUNKT, ikke et
         // hegn: ID-panelet staar aabent af sig selv, men et tryk vinder.
-        const _vp2 = S.vennePanel || (S.mitNavn ? null : "id");
-        const _vFlise = function (v, ik, titel, under, bred) {
-          return '<button class="dev-flise dev-kant' + (_vp2 === v ? ' dev-kant-is' : '') +
-            '" data-a="vennePanel" data-v="' + v + '" style="min-height:88px' + (bred ? ';width:100%' : '') + '">' +
-            '<span class="dev-ikon" style="font-size:20px">' + ik + '</span>' +
-            '<b style="font-size:11px;letter-spacing:1.2px">' + titel + '</b>' +
-            '<small style="opacity:.7">' + under + '</small></button>';
-        };
+        // ⭐ v4.148.0 · fliserne og deres hjælpere udgik — se nedenfor.
         // ⭐⭐⭐ v4.58.0 · ÉT FELT — Nicolai: «super besvaerligt at adde
         // venner». Feltet staar OEVERST, altid, og goer alt: soeger live
         // paa brugernavne, og genkender selv et venne-ID eller en kode
@@ -10542,7 +10650,7 @@ function _tegn() {
           const _raa = String(S.venneUdkast || "").trim();
           const _erKode = /^[A-Za-zÆØÅæøå0-9]{1,12}-\d{4}$/.test(_raa) || (/^[A-Za-z0-9]{6}$/.test(_raa) && !/^[a-zæøå][a-zæøå0-9_-]{5}$/.test(_raa.toLowerCase()));
           h += '<div style="margin-top:10px">' +
-            '<input placeholder="\ud83d\udd0d ' + (EN ? "search username — or paste a friend ID" : "søg på brugernavn — eller sæt et venne-ID ind") + '" value="' + esc(S.venneUdkast) + '" data-felt="venneUdkast" maxlength="20" autocapitalize="off" spellcheck="false" style="letter-spacing:.5px;font-weight:700">';
+            '<input placeholder="\ud83d\udd0d ' + (EN ? "find a friend by username" : "find en ven på brugernavn") + '" value="' + esc(S.venneUdkast) + '" data-felt="venneUdkast" maxlength="20" autocapitalize="off" spellcheck="false" style="letter-spacing:.5px;font-weight:700">';
           if (S.soegHenter) h += '<p class="lille" style="margin:6px 0 0;opacity:.6">\u23f3 \u2026</p>';
           if (S.soegTraef && S.soegTraef.length) {
             S.soegTraef.forEach(function(v){
@@ -10579,31 +10687,24 @@ function _tegn() {
           }
           h += '</div>';
         }
-        h += '<div class="dev-grid" style="margin:10px 0 0">' +
-          _vFlise("send", "\ud83d\udce9", (EN ? "SHARE WITH A FRIEND" : "DEL MED EN VEN"),
-                  (EN ? "to someone without the app" : "til en uden appen")) +
-          _vFlise("id", "\ud83c\udd94", (EN ? "YOUR ID" : "DIT ID"),
-                  esc(S.mitNavn || S.mitVenneId || (EN ? "not ready yet" : "ikke klar endnu"))) +
-          '</div>';
-        // ⚠️ `venneNyKode` findes stadig og saetter baade flisen og feltet
-        // — den kaldes ogsaa fra invitationen (v4.45.0) og fra hilsenen.
-
-        if (_vp2 === "id") {
-        h += _profilHtml(EN);   /* ⭐ v4.143.0 · samme panel bor nu ogsaa i Indstillinger */
-        }   // ⭐ v4.49.0 · ID-panelet slutter her.
-
-        // ⭐ v4.45.0 · SEND STREAKTENNIS TIL EN VEN.
-        // Den staar HER og ikke i indstillinger: det er den skaerm, hvor
-        // man i forvejen er i gang med at faa fat i nogen. Fredningsreglen
-        // holder — forsiden er urørt, funktionen bor i et rum, der findes.
-        if (_vp2 === "send" && (S.mitNavn || S.mitVenneId)) {
-          h += '<button class="knap" style="width:100%;margin-top:11px;min-height:44px" data-a="appDel">' +
-            (S.kopieret === "delAppTekst"
-              ? (EN ? "Link copied ✓" : "Link kopieret ✓")
-              : "\ud83d\udce9 " + (EN ? "Share with a friend" : "Del med en ven")) + '</button>' +
-            '<p class="lille" style="margin:6px 2px 0;opacity:.7">' + (EN
-              ? "They get a link, create themselves — and you are already filled in as the friend they can ask."
-              : "De får et link, opretter sig selv — og du står allerede klar som den ven, de kan spørge.") + '</p>';
+        // ⭐ v4.148.0 · FLISERNE ER VÆK (Nicolai: «alt andet er noget rod»). Dit
+        //   brugernavn står som ÉN linje her, hvor man giver det til en ven —
+        //   resten (avatar, bio, QR, søgbar) bor i ⚙ → 🪪 DIN PROFIL (v4.143).
+        //   Delingen er ÉN linje med ét tryk — samme appDel som før.
+        if (S.mitNavn) {
+          h += '<div class="lille" style="margin:10px 2px 0;display:flex;align-items:center;gap:7px">' +
+            '<span style="flex:1;min-width:0">' + (EN ? "Your username: " : "Dit brugernavn: ") + '<b style="color:var(--guld);letter-spacing:1px">' + esc(S.mitNavn) + '</b></span>' +
+            '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="kopier" data-v="mitNavn">' + (S.kopieret === "mitNavn" ? (EN?"Copied \u2713":"Kopieret \u2713") : (EN?"Copy":"Kopi\u00e9r")) + '</button></div>';
+        } else {
+          h += '<p class="lille" style="margin:10px 2px 0">' + (EN
+            ? "Choose your username under \u2699 \u2192 \ud83e\udeaa Your profile \u2014 that is how friends find you."
+            : "V\u00e6lg dit brugernavn under \u2699 \u2192 \ud83e\udeaa DIN PROFIL \u2014 det er det, venner finder dig p\u00e5.") + '</p>';
+        }
+        if (S.mitNavn || S.mitVenneId) {
+          h += '<div class="lille" style="margin:8px 2px 0;display:flex;align-items:center;gap:7px">' +
+            '<span style="flex:1;min-width:0">' + (EN ? "No app yet?" : "Ingen app endnu?") + '</span>' +
+            '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="appDel">' +
+            (S.kopieret === "delAppTekst" ? (EN ? "Link copied \u2713" : "Link kopieret \u2713") : "\ud83d\udce9 " + (EN ? "Share StreakTennis" : "Del StreakTennis")) + '</button></div>';
         }
 
 // (v4.58.0 · to-felts-kortet UDGIK — ét felt oeverst goer arbejdet)
@@ -10787,8 +10888,8 @@ function _tegn() {
             '<button class="knap valg" style="min-height:44px" data-a="klubHent">' + (EN?"Refresh":"Hent igen") + '</button>';
         } else {
           _kkrop += '<p class="lille" style="margin:0 0 4px;opacity:.7">' + (EN
-            ? "Every club you have issued a key to. The numbers are keys \u2014 never the keys themselves."
-            : "Hver klub, du har udstedt en n\u00f8gle til. Tallene er n\u00f8gler \u2014 aldrig n\u00f8glerne selv.") + '</p>';
+            ? "Every club you have issued a key to, with the number of keys."
+            : "Hver klub, du har udstedt en n\u00f8gle til, med antal n\u00f8gler.") + '</p>';
           _kl.forEach(function(k){
             const _sp = S.klubSpaerSpoerg === k.klub, _sender = S.klubSpaerSender === k.klub;
             _kkrop += '<div style="padding:9px 0;border-top:1px solid var(--linje)' + (k.aktiv ? '' : ';opacity:.55') + '">' +
@@ -10863,8 +10964,8 @@ function _tegn() {
             '<button class="knap valg" style="width:100%;margin-top:6px;min-height:44px" data-a="klubNyLuk">' +
               (EN ? "Done \u2014 I have saved it" : "F\u00e6rdig \u2014 jeg har gemt den") + '</button>' +
             '<p class="lille" style="margin:8px 0 0;text-align:left">' + (EN
-              ? "Give it to the club\u2019s head coach. With it, <b>the head coach</b> issues keys to trainers and families \u2014 we never do."
-              : "Giv den til klubbens <b>chef</b>tr\u00e6ner. Med den udsteder <b>han</b> n\u00f8gler til tr\u00e6nere og familier \u2014 det g\u00f8r vi aldrig.") + '</p></div>';
+              ? "Give it to the club\u2019s head coach. With it, <b>the head coach</b> issues keys to trainers and families."
+              : "Giv den til klubbens <b>chef</b>tr\u00e6ner. Med den udsteder <b>han</b> n\u00f8gler til tr\u00e6nere og familier.") + '</p></div>';
         } else if (!S.klubOpretAaben) {
           _kkrop += '<button class="knap valg" style="width:100%;min-height:44px" data-a="klubOpretAabn">\ud83c\udfdb ' +
             (EN ? "Create a club" : "Opret en klub") + '</button>';
@@ -10876,8 +10977,8 @@ function _tegn() {
               (S.klubOpretSender ? "\u23f3 \u2026" : (EN ? "Create" : "Opret")) + '</button>' +
             '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;font-size:12px" data-a="klubOpretAabn">' + (EN?"Cancel":"Annull\u00e9r") + '</button></div>' +
             '<p class="lille" style="margin:6px 0 0">' + (EN
-              ? "The key is shown once, here on your screen. We store only a fingerprint of it and can never read it back."
-              : "N\u00f8glen vises \u00e9n gang, her p\u00e5 din sk\u00e6rm. Vi gemmer kun et aftryk af den og kan aldrig l\u00e6se den igen.") + '</p>';
+              ? "The key is shown once, here on your screen."
+              : "N\u00f8glen vises \u00e9n gang, her p\u00e5 din sk\u00e6rm.") + '</p>';
         }
         _kkrop += '</div>';
 
@@ -10911,8 +11012,8 @@ function _tegn() {
           const _ikke  = _g.filter(function(x){ return !x.givet && _passer(x); });
           const _vis = _givne.concat(_ikke);
           _ekrop += '<p class="lille" style="margin:0 0 8px;opacity:.75">' + (EN
-            ? "Everyone <b>without a club</b>: first the ones you have given a plan, then the ones on their own. A club\u2019s plan is paid for by the club and is never touched from here."
-            : "Alle <b>uden klub</b>: f\u00f8rst dem, du har givet en plan, derefter dem, der st\u00e5r p\u00e5 deres egen. En klubs plan betales af klubben og r\u00f8res aldrig herfra.") + '</p>' +
+            ? "Everyone <b>without a club</b>: first the ones you have given a plan, then the ones on their own. A club\u2019s plan is paid for by the club."
+            : "Alle <b>uden klub</b>: f\u00f8rst dem, du har givet en plan, derefter dem, der st\u00e5r p\u00e5 deres egen. En klubs plan betales af klubben.") + '</p>' +
             // ⭐ v4.121.0 · princip 75: siger motoren, at listen er afkortet,
             //   siger skærmen det med. Ellers tror ejeren, det var alle.
             ((_k && _k.afkortet) ? '<p class="lille" style="margin:0 0 8px;color:var(--guld)">\u26a0\ufe0f ' + (EN
@@ -11019,8 +11120,8 @@ function _tegn() {
           _pstatus = EN ? "wrong browser" : "forkert browser";
           _pfarve = "var(--guld)";
           _pkrop = '<p class="lille" style="margin:0 0 8px">' + (EN
-            ? "You are in <b>" + browserNavn() + "</b>. On iPhone, only <b>Safari</b> can put the app on the Home Screen \u2014 and without that, notifications never arrive."
-            : "Du er i <b>" + browserNavn() + "</b>. P\u00e5 iPhone er det kun <b>Safari</b>, der kan l\u00e6gge appen p\u00e5 hjemmesk\u00e6rmen \u2014 og uden den kommer der aldrig beskeder.") + '</p>' +
+            ? "You are in <b>" + browserNavn() + "</b>. On iPhone, <b>Safari</b> puts the app on the Home Screen \u2014 that is what makes notifications arrive."
+            : "Du er i <b>" + browserNavn() + "</b>. P\u00e5 iPhone er det <b>Safari</b>, der l\u00e6gger appen p\u00e5 hjemmesk\u00e6rmen \u2014 det er d\u00e9t, der f\u00e5r beskederne frem.") + '</p>' +
             '<div class="lille" style="line-height:1.9;opacity:.85">' +
             '1. ' + (EN ? "Tap <b>\u2022\u2022\u2022</b> in " + browserNavn() : "Tryk p\u00e5 <b>\u2022\u2022\u2022</b> i " + browserNavn()) + '<br>' +
             '2. ' + (EN ? "Choose <b>Open in Safari</b>" : "V\u00e6lg <b>\u00c5bn i Safari</b>") + '<br>' +
@@ -11041,8 +11142,8 @@ function _tegn() {
           _pstatus = EN ? "needs Home Screen" : "kræver hjemmeskærm";
           _pfarve = "var(--guld)";
           _pkrop = '<p class="lille" style="margin:0 0 8px">' + (EN
-            ? "On iPhone, notifications only work when the app sits on the Home Screen. A Safari tab never gets one."
-            : "På iPhone virker notifikationer kun, når appen ligger på hjemmeskærmen. En fane i Safari får aldrig en.") + '</p>' +
+            ? "On iPhone, notifications work when the app sits on the Home Screen."
+            : "P\u00e5 iPhone virker notifikationer, n\u00e5r appen ligger p\u00e5 hjemmesk\u00e6rmen.") + '</p>' +
             '<div class="lille" style="line-height:1.9;opacity:.85">' +
             '1. ' + (EN ? "Tap the Share button" : "Tryk på Del-knappen") + ' <b>\u2934\ufe0f</b><br>' +
             '2. ' + (EN ? "Choose \u00abAdd to Home Screen\u00bb" : "Vælg \u00abFøj til hjemmeskærm\u00bb") + '<br>' +
@@ -11093,17 +11194,17 @@ function _tegn() {
               (_til ? "\u2705" : "\u2b1c") + ' ' + v[1] + ' ' + v[2] + '</button>';
           });
           _pkrop += '<p class="lille" style="margin:8px 0 9px;opacity:.7">' + (EN
-            ? "One notification per message, with the sender name \u2014 never the message itself. Nothing between 21 and 07."
-            : "Én notifikation pr. begivenhed, med navnet på den, der skrev \u2014 aldrig selve teksten. Intet mellem 21 og 07." +
+            ? "One notification per event, with the sender name. Nothing between 21 and 07."
+            : "\u00c9n notifikation pr. begivenhed, med navnet p\u00e5 den, der skrev. Intet mellem 21 og 07." +
               // ⭐ Porten er den ene undtagelse fra navne-reglen, og det skal
               // staa der: en, der endnu ikke er lukket ind, faar intet navn.
-              ((S.push && S.push.ejer) ? " Ved porten st\u00e5r der kun et tal \u2014 aldrig et navn." : "")) + '</p>' +
+              ((S.push && S.push.ejer) ? " Ved porten st\u00e5r der et tal." : "")) + '</p>' +
             '<button class="knap valg" style="min-height:44px" data-a="pushFra">' +
             (S.pushSender ? "\u23f3 \u2026" : (EN ? "Turn notifications off" : "Slå notifikationer fra")) + '</button>';
         } else {
           _pkrop = '<p class="lille" style="margin:0 0 9px">' + (EN
-            ? "A short message when someone writes to you, the coach has news, or your streak is about to break. You choose which \u2014 and the message itself is never shown."
-            : "En kort notifikation når nogen skriver til dig, træneren har noget nyt, eller din streak er ved at falde. Du vælger selv hvilke \u2014 og selve teksten vises aldrig.") + '</p>' +
+            ? "A short message when someone writes to you, the coach has news, or your streak is about to break. You choose which."
+            : "En kort notifikation n\u00e5r nogen skriver til dig, tr\u00e6neren har noget nyt, eller din streak er ved at falde. Du v\u00e6lger selv hvilke.") + '</p>' +
             '<button class="knap" style="min-height:46px;background:var(--grus)" data-a="pushTil">' +
             (S.pushSender ? "\u23f3 \u2026" : (EN ? "Turn notifications on" : "Slå notifikationer til")) + '</button>';
         }
@@ -11354,8 +11455,8 @@ function _tegn() {
         h += _opsKort("familie", "👪", (EN?"THE TEAM":"TEAMET"), (EN?"team key":"team-nøgle"), "var(--is)",
           _budKrop(EN) +
           '<p class="lille" style="margin:0">' + (EN
-            ? "This phone holds a team key: it enters and sees data — never the messages between the player and the friends."
-            : "Denne telefon har en team-nøgle: den taster og ser data — aldrig beskederne mellem spilleren og vennerne.") + '</p>' +
+            ? "This phone holds a team key: it enters and sees data."
+            : "Denne telefon har en team-n\u00f8gle: den taster og ser data.") + '</p>' +
           (S.spejlVenter ? '<p class="lille" style="margin:6px 0 0;color:var(--guld)">🪞 ' + esc(S.spejlVenter.t) + '</p>' : '') +
           // ⭐ v4.146.0 · hent spillerens nyeste HER — det er teamets kort (flyttet fra SKIFT VISNING)
           (VISNING === "team"
@@ -11430,127 +11531,7 @@ function _tegn() {
         (S.klubKode ? (EN?"connected ✓":"forbundet ✓") : (EN?"no club":"ingen klub")),
         (S.klubKode ? "var(--vundet)" : "var(--daempet)"), _kKlub);
 
-      // ══════════════════════════════════════════════════════════════
-      // ⭐ DINE DATA · 21/8. Nicolai: "Og alt bliver vel ikke paa
-      // telefonen? Der bliver sendt data til klubben? Og andre i teamet?"
-      //
-      // Han havde ret i at spoerge. Den gamle saetning stod under
-      // KLUBKODE og sagde "Alt bliver paa denne telefon. Intet sendes
-      // nogen steder." Teknisk sand UDEN en klubkode — men den stod lige
-      // over feltet, hvor man taster koden ind, og laeses derfor som et
-      // loefte om, at koden ikke aendrer noget.
-      //
-      // Listen herunder er MAALT paa synk-kroppen 21/8, ikke skrevet
-      // efter hukommelsen. Aendres hvad appen sender, SKAL den her med.
-      // ══════════════════════════════════════════════════════════════
-      const _pkt = function(ja, t){
-        return '<div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0">' +
-          '<span style="flex:none;color:' + (ja?'var(--is)':'var(--vundet)') + ';font-weight:800">' + (ja?'→':'✕') + '</span>' +
-          '<span class="lille" style="margin:0">' + t + '</span></div>';
-      };
-      var _kData = '';
-      // ══════════════════════════════════════════════════════════════
-      // TRE TILSTANDE, IKKE TO. Fra v3.0.23 kan venne-laget køre UDEN
-      // klub — og så forlader der faktisk noget telefonen. Kortet skal
-      // sige det. Det var præcis dén slags tavshed, sætningen "Alt
-      // bliver på denne telefon" var, og som blev fanget 21/8.
-      // ══════════════════════════════════════════════════════════════
-    // ⛔⭐ v4.81.0 · KORTET LØJ (målt 30/8 på Oskars telefon).
-    //   Det sagde «appen har ikke lavet ét eneste netværkskald», mens
-    //   ulæst-tælleren i samme øjeblik viste 1 fra serveren. Kortet
-    //   brugte det gamle hegn og kendte ikke den femte gren (kontoen).
-    //   ⚠️ BETINGELSES-REGLEN: det er PÅ dette kort, hele
-    //     privatlivsløftet bor. Så det må aldrig være dét, der tager
-    //     fejl — hverken til den ene eller den anden side.
-      if (!iDetDelteLag()) {
-        _kData = '<p class="lille" style="margin:0 0 4px;color:var(--vundet)">' + (EN
-          ? "<b>Right now nothing leaves this phone.</b> No club, no friends — the app has not made a single network call. Your streak is counted here."
-          : "<b>Lige nu forlader intet denne telefon.</b> Ingen klub, ingen venner — appen har ikke lavet ét eneste netværkskald. Din streak regnes her.") + '</p>' +
-          '<p class="lille" style="margin:8px 0 0;padding-top:8px;border-top:1px dashed var(--kant)">' + (EN
-          ? "If you add a club later, this is what would be shared:" : "Tilføjer du en klub senere, er det dette, der ville blive delt:") + '</p>';
-      } else if (!S.klubKode) {
-        // Uden klub, men MED venner: den lille krop, og kun den.
-        _kData = '<p class="lille" style="margin:0 0 6px;color:var(--is)"><b>' + (EN
-          ? "You have friends, so this goes to the shared layer:"
-          : "Du har venner, så dette går til det delte lag:") + '</b></p>' +
-          _pkt(true, (EN?"your first name":"dit fornavn")) +
-          _pkt(true, (EN?"your sessions: date, type, minutes and your own 1–10 — this is what your streak is counted from":"dine træninger: dato, type, minutter og din egen 1–10 — det er dét, din streak regnes ud af")) +
-          _pkt(true, (EN?"your season totals: number of matches and wins — never a single match":"dine sæsontal: antal kampe og sejre — aldrig den enkelte kamp")) +
-          '<p class="lille" style="margin:10px 0 4px;padding-top:8px;border-top:1px dashed var(--kant)"><b>' + (EN
-          ? "And nothing else. Not this:" : "Og intet andet. Ikke dette:") + '</b></p>' +
-          _pkt(false, (EN?"your matches, one by one":"dine kampe, én for én")) +
-          _pkt(false, (EN?"your notes":"dine noter")) +
-        // ⭐ v4.81.0 · den manglede her. «Dine kampe, én for én» dækker
-        //   den implicit, men bold-for-bold-registreringen er dét, en
-        //   familie faktisk bekymrer sig om, og den skal nævnes ved navn.
-        _pkt(false, (EN?"the ball-by-ball recording":"bold-for-bold-registreringen")) +
-          _pkt(false, (EN?"your opponents’ names":"dine modstanderes navne")) +
-          _pkt(false, (EN?"your own assessments":"dine egne vurderinger")) +
-          '<p class="lille" style="margin:10px 0 0;padding-top:8px;border-top:1px dashed var(--kant)">' + (EN
-          ? "A friend sees your first name and your streak — and your match while it is being played, if you turn that on yourself."
-          : "En ven ser dit fornavn, din streak og dine sæsontal — og din kamp mens den spilles, hvis du selv slår det til.") + '</p>' +
-          '<p class="lille" style="margin:8px 0 0;opacity:.75">' + (EN
-      // ⭐ v4.81.0 · ORDLYDEN FULGTE IKKE MED DEN FEMTE GREN.
-      //   Her stod «Det begyndte, da du tilføjede eller accepterede en
-      //   ven» — usandt for den, der bare har oprettet en konto. Nu
-      //   nævnes begge veje ind, så sætningen passer på begge.
-          ? "This started when you created an account or added a friend. Nothing was sent before that."
-          : "Det begyndte, da du oprettede en konto eller fik en ven. Før det blev der ikke sendt noget.") + '</p>' +
-        // ⛔⭐⭐ v4.81.0 · SKYGGEKOPI-LØFTET MANGLEDE HELT I DENNE GREN.
-        //   Fundet af prøven, da hegnet blev rettet 30/8: en spiller med
-        //   konto men UDEN klub så aldrig løftet om boksen — han faldt
-        //   i den forkerte gren og fik klubbens tekst ved et tilfælde.
-        //   Nu han falder rigtigt, ville løftet være forsvundet helt.
-        //   ⚠️ BETINGELSES-REGLEN: skyggekopien gælder ALLE godkendte
-        //     spillere, ikke kun dem med klub. Så løftet skal stå her
-        //     med de SAMME ord — ét løfte, ikke to.
-        '<p class="lille" style="margin:8px 0 0;padding:8px 10px;border-left:3px solid var(--is);background:rgba(159,216,232,.07);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
-          ? "\u2601\ufe0f <b>This is never READ by anyone.</b> Matches, notes and the ball-by-ball recording are copied for safekeeping \u2014 but they are <b>locked on this phone</b> before they are sent, with a key made from your password. The server keeps a box it cannot open. Not us, not a database dump, not anyone. Lose the phone, and it all comes back when you log in."
-          : "\u2601\ufe0f <b>Dette bliver ALDRIG l\u00e6st af nogen.</b> Kampe, noter og bold-for-bold-registrering kopieres for en sikkerheds skyld \u2014 men de <b>l\u00e5ses p\u00e5 denne telefon</b>, f\u00f8r de sendes, med en n\u00f8gle lavet ud af dit kodeord. Serveren opbevarer en boks, den ikke kan \u00e5bne. Ikke os, ikke en databasekopi, ikke nogen. Mister du telefonen, kommer det hele tilbage, n\u00e5r du logger ind.") + '</p>';
-      } else {
-        _kData = '<p class="lille" style="margin:0 0 6px"><b>' + (EN
-          ? "This goes to your club:" : "Dette går til din klub:") + '</b></p>';
-      }
-    // ⭐ v4.81.0 · samme dør (se ovenfor): klubbens fulde liste vises
-    //   til den, der HAR en klub, og til den, der endnu ikke deler noget.
-      if (S.klubKode || !iDetDelteLag()) _kData +=
-        _pkt(true, (EN?"your first name":"dit fornavn")) +
-        _pkt(true, (EN?"your matches: date, tournament, result, won/lost and number of balls":"dine kampe: dato, turnering, resultat, vundet/tabt og antal bolde")) +
-        _pkt(true, (EN?"your sessions: date, type, minutes and your own 1–10":"dine træninger: dato, type, minutter og din egen 1–10")) +
-        _pkt(true, (EN?"your streak — only if you switched it on":"din streak — kun hvis du har slået den til")) +
-        '<p class="lille" style="margin:10px 0 4px;padding-top:8px;border-top:1px dashed var(--kant)"><b>' + (EN
-          ? "This is never READ by anyone:" : "Dette bliver ALDRIG læst af nogen:") + '</b></p>' +
-        _pkt(false, (EN?"your notes — on sessions and on matches":"dine noter — på træninger og på kampe")) +
-        _pkt(false, (EN?"your opponents’ names":"dine modstanderes navne")) +
-        _pkt(false, (EN?"the ball-by-ball recording":"bold-for-bold-registreringen")) +
-        // ⭐⭐⭐ v4.79.0 · BETINGELSES-REGLEN: siden må aldrig love mere
-        //   end målt. Før stod der «forlader ALDRIG telefonen». Med
-        //   skyggekopien FORLADER det telefonen — låst. Løftet er ikke
-        //   blevet mindre, men det er blevet et ANDET løfte, og så skal
-        //   sætningen skiftes samme dag.
-        '<p class="lille" style="margin:8px 0 0;padding:8px 10px;border-left:3px solid var(--is);background:rgba(159,216,232,.07);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
-          ? "\u2601\ufe0f <b>The three above are copied for safekeeping</b> \u2014 but they are <b>locked on this phone</b> before they are sent, with a key made from your password. The server keeps a box it cannot open. Not us, not a database dump, not anyone. Lose the phone, and it all comes back when you log in."
-          : "\u2601\ufe0f <b>De tre ovenfor kopieres for en sikkerheds skyld</b> \u2014 men de <b>l\u00e5ses p\u00e5 denne telefon</b>, f\u00f8r de sendes, med en n\u00f8gle lavet ud af dit kodeord. Serveren opbevarer en boks, den ikke kan \u00e5bne. Ikke os, ikke en databasekopi, ikke nogen. Mister du telefonen, kommer det hele tilbage, n\u00e5r du logger ind.") + '</p>' +
-        '<p class="lille" style="margin:10px 0 0;padding-top:8px;border-top:1px dashed var(--kant)">' + (EN
-          ? "<b>While a match is live</b> and only then: the score, the tournament and your opponent — that is what a follower sees. Friends see the opponent shortened. Turn the match off and the sharing stops."
-          : "<b>Mens en kamp er live</b> og kun da: stillingen, turneringen og din modstander — det er dét, en følger ser. Venner ser modstanderen forkortet. Slår du kampen fra, stopper delingen.") + '</p>' +
-        '<p class="lille" style="margin:8px 0 0;opacity:.75">' + (EN
-          ? "Friends see only your first name, your streak and your live match — nothing else."
-          : "Venner ser kun dit fornavn, din streak og din live-kamp — intet andet.") + '</p>';
-      // ⭐⭐ v4.34.0 · BESKEDERNES REGLER BOR HER NU.
-      // De stod som fodnote under skrivefeltet i chatten OG i rummet og
-      // skubbede feltet rundt, hver gang skaermen skiftede hoejde.
-      // UX vandt i HVORDAN, ikke i OM: loeftet er ikke vaek — det har
-      // faaet én adresse i stedet for to.
-      if (S.venneAktiv) _kData +=
-        '<p class="lille" style="margin:10px 0 4px;padding-top:8px;border-top:1px dashed var(--kant)"><b>💬 ' + (EN
-          ? "Messages" : "Beskeder") + '</b></p>' +
-        '<p class="lille" style="margin:0;line-height:1.55">' + (EN
-          ? "A message disappears a day after your friend has read it — never before (at most 200, and after 30 days at the latest). The friendship stays. Delete, ⚑ and Remove friend all delete for both of you. In the room, messages live for a day and everyone reads along."
-          : "En besked forsvinder et døgn efter, din ven har læst den — aldrig før (højst 200, og senest efter 30 dage). Venskabet består. Slet, ⚑ og Fjern ven sletter for jer begge. I rummet lever beskeder et døgn, og alle læser med.") + '</p>' +
-        '<p class="lille" style="margin:6px 0 0;opacity:.7;line-height:1.55">' + (EN
-          ? "Tap a message to edit it. Swipe left to delete or report — swipe a friend&rsquo;s message right to mark it unread."
-          : "Tryk på en besked for at rette den. Træk den til venstre for at slette eller rapportere — og en besked fra din ven til højre for at markere den ulæst.") + '</p>';
+      /* v4.151.0 · DINE DATA-kortet er væk — det, appen deler, står i betingelserne, og de har nu en knap nederst i Indstillinger */
       // 🏛 JERES KLUB udgik i v4.146.0 (Nicolai 12/9: «Enig») — klubbens navn
       //   kommer fra klubkoden, ikke fra et felt på telefonen. `klubKort` står
       //   tilbage som funktion, men tegnes ingen steder.
@@ -11572,11 +11553,6 @@ function _tegn() {
           ? "An idea? Something that bugs you? Write it — it is read every time we build. A clear improvement is just built; a grey area is discussed first."
           : "En idé? Noget der driller? Skriv det — det bliver læst, hver gang der bygges. En klar forbedring bliver bare bygget; en gråzone bliver vendt først.") + '</p>' +
         '<a class="knap" href="./forbedringer.html" style="display:block;text-align:center;text-decoration:none;min-height:44px;line-height:44px;background:var(--grus)">💡 ' + (EN?"Open the mailbox":"Åbn postkassen") + '</a>');
-      h += _opsKort("data", "📱", (EN?"YOUR DATA":"DINE DATA"),
-        (S.klubKode ? (EN?"club connected":"klub tilsluttet")
-          : S.venneAktiv ? (EN?"friends only":"kun venner")
-          : (EN?"stays here":"bliver her")),
-        (S.klubKode ? "var(--is)" : S.venneAktiv ? "var(--is)" : "var(--vundet)"), _kData);
 
       // ── STREAK ────────────────────────────────────────────────────
       if (S.klubKode && S.rolle !== "familie") {
@@ -11584,8 +11560,8 @@ function _tegn() {
           (S.stigeTilvalgt ? (EN?"on":"til") : (EN?"off":"fra")),
           (S.stigeTilvalgt ? "var(--guld)" : "var(--daempet)"),
           '<p class="lille" style="margin:0 0 8px">' + (EN
-            ? "Shares your training streak with your team — first name and one number, nothing else. OFF by default: without the opt-in the number never leaves this phone. Opting out again deletes it at the club."
-            : "Deler din træningsstreak med holdet — fornavn og ét tal, intet andet. FRA som standard: uden tilvalg forlader tallet aldrig denne telefon. Vælger du fra igen, slettes det hos klubben.") + '</p>' +
+            ? "Shares your training streak with your team \u2014 first name and one number. OFF by default. Opting out again deletes it at the club."
+            : "Deler din tr\u00e6ningsstreak med holdet \u2014 fornavn og \u00e9t tal. FRA som standard. V\u00e6lger du fra igen, slettes det hos klubben.") + '</p>' +
           '<div class="raekke"><button class="knap valg' + (S.stigeTilvalgt?' til':'') + '" style="min-height:44px" data-a="stigeSkift" data-v="til">' + (EN?"On":"Til") + '</button>' +
           '<button class="knap valg' + (S.stigeTilvalgt?'':' til') + '" style="min-height:44px" data-a="stigeSkift" data-v="fra">' + (EN?"Off":"Fra") + '</button></div>');
       }
@@ -11626,14 +11602,14 @@ function _tegn() {
             ? _a("\ud83c\udfbe", "The four tabs", "<b>HOME</b> is your day. <b>MATCH</b> is the court. <b>TRAIN</b> is your log. <b>STATS</b> is everything you have played.")
               + _a("\ud83c\udfaf", "A match, ball by ball", "Two taps per point: won or lost, and why. That gives sets, games and the whole footprint of the match \u2014 and the AI analysis afterwards: what worked, what to work on. After a few matches you get a development letter across them.")
               + _a("\ud83d\udd25", "The streak", "Every training session counts \u2014 tennis or fitness. Days without a session break it. It is yours; nobody else scores it.")
-              + _a("\ud83e\udd1d", "Friends and the room", "Find a friend by username; both say yes. Friends see each other\u2019s streaks and can follow a match live. A room is a bunch of friends in one place.")
-              + _a("\ud83d\udc6a", "Your team", "The people you invite in \u2014 a parent, a coach. They see your matches, training and analyses. Never your messages.")
+              + _a("\ud83e\udd1d", "Friends and the room", "Find a friend by username; both say yes. Friends see each other\u2019s streaks and can follow a match live. A room is a bunch of friends in one place. Tap a message to edit it; swipe it left to delete.")
+              + _a("\ud83d\udc6a", "Your team", "The people you invite in \u2014 a parent, a coach. They see your matches, training and analyses.")
               + _a("\ud83c\udfdb", "Club and plans", "A club code connects you to your coach in StreakCoach. <b>Basic</b> is free (streak, matches, friends \u2014 and 3 AI analyses to try). <b>Full</b> gives 40 analyses a month and live sharing. What we keep and how is written on the terms page \u2014 not here.")
             : _a("\ud83c\udfbe", "De fire faner", "<b>HJEM</b> er din dag. <b>KAMP</b> er banen. <b>TR\u00c6N</b> er din log. <b>STATS</b> er alt, du har spillet.")
               + _a("\ud83c\udfaf", "En kamp, bold for bold", "To tryk pr. point: vundet eller tabt, og hvorfor. Det giver s\u00e6t, partier og hele kampens fodspor \u2014 og AI-analysen bagefter: hvad der virkede, hvad der skal arbejdes med. Efter nogle kampe f\u00e5r du et udviklingsbrev p\u00e5 tv\u00e6rs af dem.")
               + _a("\ud83d\udd25", "Streaken", "Hver tr\u00e6ning t\u00e6ller \u2014 tennis eller fysisk. Dage uden et pas bryder den. Den er din; ingen andre t\u00e6ller den.")
-              + _a("\ud83e\udd1d", "Venner og rummet", "Find en ven p\u00e5 brugernavn; begge siger ja. Venner ser hinandens streaks og kan f\u00f8lge en kamp live. Et rum er en flok venner samme sted.")
-              + _a("\ud83d\udc6a", "Dit team", "De mennesker, du selv inviterer ind \u2014 en for\u00e6lder, en tr\u00e6ner. De ser dine kampe, din tr\u00e6ning og dine analyser. Aldrig dine beskeder.")
+              + _a("\ud83e\udd1d", "Venner og rummet", "Find en ven p\u00e5 brugernavn; begge siger ja. Venner ser hinandens streaks og kan f\u00f8lge en kamp live. Et rum er en flok venner samme sted. Tryk p\u00e5 en besked for at rette den; tr\u00e6k den til venstre for at slette.")
+              + _a("\ud83d\udc6a", "Dit team", "De mennesker, du selv inviterer ind \u2014 en for\u00e6lder, en tr\u00e6ner. De ser dine kampe, din tr\u00e6ning og dine analyser.")
               + _a("\ud83c\udfdb", "Klub og planer", "En klubkode kobler dig til din tr\u00e6ner i StreakCoach. <b>Basis</b> er gratis (streak, kampe, venner \u2014 og 3 AI-analyser at pr\u00f8ve). <b>Fuld</b> giver 40 analyser om m\u00e5neden og live-deling. Hvad vi gemmer, og hvordan, st\u00e5r p\u00e5 betingelses-siden \u2014 ikke her."));
         })());
 
@@ -11643,6 +11619,8 @@ function _tegn() {
         '<button class="knap valg' + (EN?' til':'') + '" style="min-height:44px" data-a="sprog" data-v="en">English</button></div>');
 
       h += '</div>';   // ⭐ v4.83.0 · indstillings-gitteret lukkes
+      /* v4.151.0 · betingelserne kunne før kun åbnes fra døren — nu også herfra, logget ind */
+      h += '<button class="knap" data-a="betingelser" style="display:block;width:100%;min-height:48px;margin:12px 0 4px;background:var(--grus)">\ud83d\udcc4 ' + (EN ? "Terms & privacy" : "Betingelser & privatliv") + '</button>';
       if (S.syncBesked) h += '<p class="lille" style="margin:6px 2px;color:' +
         (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
           } else if (S.tab === "hb-hjem") {
@@ -12275,8 +12253,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         if (!uger.length) return;
         h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus);margin-bottom:2px">📅 ' + (EN?"TRAINING · RECENT WEEKS":"TRÆNING · SENESTE UGER") + '</div>' +
           '<p class="lille" style="margin:0 0 4px">' + (EN
-            ? "Exactly what your coach sees — count and time, never content."
-            : "Præcis det, din træner ser — antal og tid, aldrig indhold.") + '</p>';
+            ? "Exactly what your coach sees \u2014 count and time."
+            : "Pr\u00e6cis det, din tr\u00e6ner ser \u2014 antal og tid.") + '</p>';
         uger.forEach(function(w){
           var timer = (Math.round((w.m || 0) / 6) / 10).toFixed(1).replace(".", ",");
           var ialt = (w.t || 0) + (w.f || 0);
@@ -12800,8 +12778,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           ? "Matches, every ball, the training log and the analyses come from the player’s own encrypted backup. <b>The key came locked from the player</b> — the server still cannot open the box. What you enter here is put back into the same box, so the player sees it too."
           : "Kampe, hver bold, træningsloggen og analyserne kommer fra spillerens egen krypterede sikkerhedskopi. <b>Nøglen kom låst fra spilleren</b> — serveren kan stadig ikke åbne boksen. Det, du taster her, lægges tilbage i samme boks, så spilleren også ser det.") + '</p>' +
         '<p class="lille" style="margin:8px 0 0;line-height:1.5;opacity:.85">' + (EN
-          ? "Honest limits: new matches and sessions travel both ways; an edit of a match already on the other phone can appear as a second copy, and a deletion does not travel. Messages are never part of it."
-          : "Ærlige grænser: nye kampe og pas rejser begge veje; retter man en kamp, den anden telefon allerede har, kan den dukke op som en kopi — og en sletning rejser ikke. Beskeder er aldrig med.") + '</p>' +
+          ? "Honest limits: new matches and sessions travel both ways; an edit of a match already on the other phone can appear as a second copy, and a deletion does not travel."
+          : "\u00c6rlige gr\u00e6nser: nye kampe og pas rejser begge veje; retter man en kamp, den anden telefon allerede har, kan den dukke op som en kopi \u2014 og en sletning rejser ikke.") + '</p>' +
         (!_harB ? '<p class="lille" style="margin:8px 0 0;color:var(--guld)">' + (EN
           ? "This phone has no key to the backup yet" + (S.spejlVenter ? " \u2014 the mirror arrives the next time the player opens the app." : " \u2014 the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM).")
           : "Telefonen har ingen n\u00f8gle til sikkerhedskopien endnu" + (S.spejlVenter ? " \u2014 spejlet kommer, n\u00e6ste gang spilleren \u00e5bner sin app." : " \u2014 spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET).")) + '</p>' : '') +

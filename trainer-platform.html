@@ -295,6 +295,7 @@ function boksLaegInd(t, stempel){
   S.truppen = lager.hent("truppen", []); S.grupper = lager.hent("grupper", null); S.vurderinger = lager.hent("vurderinger", []);
   S.fokuspunkter = lager.hent("fokuspunkter", {}); S.evalueringer = lager.hent("evalueringer", {}); S.ugefokus = lager.hent("ugefokus", {});
   S.stigeHold = lager.hent("stigehold", []); S.noegler = lager.hent("noegler", {}); S.srvNavne = lager.hent("srvnavne", {});
+  S.fuldeNavne = lager.hent("fuldenavne", {});   /* ⭐ v5.2.0 · hentes fra serveren hver gang truppen hentes */
   var tn = lager.hent("traenernavn", ""); if (tn) { S.traener = tn; if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].navn = tn; }
   try { migrerGrupper(); } catch (_e) {}
   if (S.truppen && S.truppen.length) byggTrup(); else genskabDemo();
@@ -629,6 +630,16 @@ function hentTilmeldinger(){
         if (srv.opdateret) d3.sidsteTraening = String(srv.opdateret).slice(0, 10);
       });
       lager.gem("srvnavne", S.srvNavne || {});
+      // ⭐ v5.2.0 · DET FULDE NAVN (Nicolai 12/9: «Navnet det går til træneren er
+      //   det fulde navn»). Spilleren skriver det selv i StreakTennis; motoren
+      //   udleverer det KUN til klubbens egen nøgle. Fejler kaldet, står de
+      //   navne, vi havde — og træneren ser aldrig en tom skærm for det.
+      kontoKald("trup-navne", {}).then(function(r2){
+        if (!r2 || r2.fejl || !Array.isArray(r2.navne)) return;
+        var fn = {};
+        r2.navne.forEach(function(x){ if (x && x.haandtag && x.fuldt_navn) fn[x.haandtag] = String(x.fuldt_navn); });
+        S.fuldeNavne = fn; lager.gem("fuldenavne", fn); render();
+      }).catch(function(){});
       S.tilmHentet = new Date().toISOString();
       // ⭐ v4.7.0 · tælles begge grupper. Før talte den kun 'afventer' og
       //   sagde «Ingen nye tilmeldinger ✓», mens en ny spiller stod i
@@ -665,6 +676,7 @@ let S = {
   noegler: lager.hent("noegler", {}),
   // Serverens egne fornavne pr. nøgle (19/8): familiens valgte navn, rundtur.
   srvNavne: lager.hent("srvnavne", {}),
+  fuldeNavne: lager.hent("fuldenavne", {}),   /* ⭐ v5.2.0 */
   syncBesked: null, syncHenter: false,
   opsAaben: false, kkUdkast: "", noegleFor: null, noegleUdkast: "", visKode: false, visTrupN: false, trupRet: null, retGruppe: undefined, retNoegle: undefined,
   // Godkendte evalueringer. Fritekst, som FØR kun levede i hukommelsen og
@@ -890,7 +902,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v5.1.0 \u00b7 7. september 2026";
+const VERSION = "v5.2.0 \u00b7 13. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2344,6 +2356,7 @@ function traenerGrupper(t){
       h += '<div class="spiller-rk" data-act="spiller-detalje" data-v="'+esc(s.navn)+'">' +
         '<div class="avatar" style="width:32px;height:32px;font-size:13px;'+(s.erBruger?'background:var(--is);color:var(--nat)':'')+'">'+init(s.navn)+'</div>' +
         '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">'+esc(s.navn)+(s.erBruger?' ⭐':'')+'</div>' +
+        (fuldtNavnFor(s.navn) ? '<div class="lille" style="color:var(--is)">'+esc(fuldtNavnFor(s.navn))+'</div>' : '') +   /* ⭐ v5.2.0 */
         '<div class="lille">'+(s.rang?'DTF #'+s.rang+' · ':'')+s.kampe+(s.kampe===1?' kamp':' kampe')+' · sidst: '+s.sidsteTraening+'</div></div>' +
         '<div style="display:flex;align-items:center;gap:6px"><span style="width:11px;height:11px;border-radius:50%;background:'+b.farve+';display:inline-block"></span><b style="font-size:13px">'+sn.toFixed(1)+'</b></div>' +
         (kanFlyttes ? '<button class="knap valg" style="flex:none;padding:5px 9px;font-size:11px;margin-left:2px" data-act="flyt-aabn" data-v="'+esc(s.navn)+'" aria-label="Flyt">\u21c4</button>' : '') +
@@ -2358,12 +2371,19 @@ function traenerGrupper(t){
   return h;
 }
 
+// ⭐ v5.2.0 · trænerens eget navn på spilleren → håndtaget (S.noegler) → det
+//   fulde navn, spilleren selv har skrevet. Ingen af delene er en spillernøgle.
+function fuldtNavnFor(navn){
+  try { var hn = (S.noegler || {})[navn]; return (hn && (S.fuldeNavne || {})[hn]) || ""; } catch (_e) { return ""; }
+}
 function spillerDetalje(navn){
   const s = DATA.spillere[navn];
   let h = '<button class="knap valg" style="margin-bottom:12px;flex:none;padding:8px 14px" data-act="luk-spiller">‹ Tilbage</button>';
   h += '<div class="kort"><div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">' +
     '<div class="avatar" style="width:48px;height:48px;font-size:19px">'+init(navn)+'</div>' +
-    '<div><h1 style="margin:0;font-size:19px">'+esc(navn)+'</h1><p class="lille">'+esc(s.gruppe)+(s.rang?' · DTF #'+s.rang:'')+(s.wtn?' · WTN '+s.wtn:'')+'</p></div></div>';
+    '<div><h1 style="margin:0;font-size:19px">'+esc(navn)+'</h1>' +
+    (fuldtNavnFor(navn) ? '<p class="lille" style="margin:0;color:var(--is)">'+esc(fuldtNavnFor(navn))+'</p>' : '') +   /* ⭐ v5.2.0 */
+    '<p class="lille">'+esc(s.gruppe)+(s.rang?' · DTF #'+s.rang:'')+(s.wtn?' · WTN '+s.wtn:'')+'</p></div></div>';
   h += '<div class="grid2" style="margin-top:8px">' +
     miniIkon("Kampe", s.kampe, IKON.ketcher) +
     miniRing("Sejrsrate", (s.kampe?Math.round(s.sejre/s.kampe*100):0)) +

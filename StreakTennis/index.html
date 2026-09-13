@@ -3913,10 +3913,9 @@ const A = {
           : r.fejl === "adgang" ? (EN?"The key was rejected.":"Nøglen blev afvist.")
           // ⭐ v4.109.0 · gæstens ærlige svar (motoren: 403 kraever-fuld-adgang)
           : r.fejl === "kraever-fuld-adgang" ? (EN?"Live sharing needs full access — see Your account under ⚙️.":"Live-deling kræver fuld adgang — se Din konto under ⚙️.")
-          : r.fejl === "basis-live-brugt" ? (EN?"Your 3 free live matches are used — Full access gives 3 a month. See Your account under ⚙️.":"Dine 3 gratis live-kampe er brugt — Fuld adgang giver 3 om måneden. Se Din konto under ⚙️.")   /* ⭐ v4.156.0 */
           : r.fejl === "netvaerk" || !r.fejl ? (EN?"No connection — try again.":"Ingen forbindelse — prøv igen.")
           : (EN?"Sharing was refused: ":"Delingen blev afvist: ") + String(r.fejl) }
-      : { fejl: false, t: (EN ? "The match is live ✓" : "Kampen er live ✓") + (r.basis_live && r.basis_live.af ? " · " + (EN ? r.basis_live.brugt + " of " + r.basis_live.af + " free live matches" : r.basis_live.brugt + " af " + r.basis_live.af + " gratis live-kampe") : "") };   /* ⭐ v4.156.0 · tælleren fra spiller-sync v47 */
+      : { fejl: false, t: EN ? "The match is live ✓" : "Kampen er live ✓" };
     if (r.fejl) { S.liveAktiv = false; lager.gem("sai-liveaktiv", "0"); }
     render();
   },
@@ -9225,7 +9224,7 @@ function _tegn() {
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
               _b("Search", "Approved players can find you by searching your username — the result shows first name, username, club and birth year. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
               _b("Messages", "A message disappears a day after your friend has read it — never before. At most 200 per conversation, and after 30 days at the latest. Delete removes it for both of you. Notifications show a name and a place — never content.") +
-              _b("Price", "With a club key the club pays. Basic is free and includes 3 AI analyses and 3 live-streamed matches in total. Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month; beyond that +49 kr/month for unlimited, or 15 kr per live match. Watching is always free. We contact you about payment; nothing is charged automatically.") +
+              _b("Price", "With a club key the club pays. Basic is free and includes 3 AI analyses in total. Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month; beyond that +49 kr/month for unlimited, or 15 kr per live match. Watching is always free. We contact you about payment; nothing is charged automatically.") +
               _b("Leaving", "Log out wipes the phone. Ask us and the account and everything with it is deleted — for good.")
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
               _b("Sikkerhedskopien", "Jeres kampe (hver bold, resultatet, analysen) og udviklingsbrevet gemmes læsbart hos os — uden modstandernes navne og uden jeres noter — så de kommer tilbage med kontoen alene. Navne og noter gemmes kun i en boks, der er låst med jeres kodeord; den kan vi ikke åbne.") +
@@ -9234,7 +9233,7 @@ function _tegn() {
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
               _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises fornavn, brugernavn, klub og årgang. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
               _b("Beskeder", "En besked forsvinder et døgn efter, din ven har læst den — aldrig før. Højst 200 pr. samtale, og senest efter 30 dage. Slet fjerner for jer begge. Notifikationer viser navn og sted — aldrig indhold.") +
-              _b("Prisen", "Med klubnøgle betaler klubben. Basis er gratis og rummer 3 AI-analyser og 3 live-delte kampe i alt. Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — derefter +49 kr/md for uendelig streaming, eller 15 kr pr. live-kamp. At se med er altid gratis. Vi kontakter jer om betalingen; intet trækkes automatisk.") +
+              _b("Prisen", "Med klubnøgle betaler klubben. Basis er gratis og rummer 3 AI-analyser i alt. Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — derefter +49 kr/md for uendelig streaming, eller 15 kr pr. live-kamp. At se med er altid gratis. Vi kontakter jer om betalingen; intet trækkes automatisk.") +
               _b("Vejen ud", "Log ud rydder telefonen. Skriv til os, og kontoen med alt i slettes — helt.")) +
           '<p class="lille" style="margin:4px 0 0;opacity:.6">StreakTennis · SportsAInalytics · CVR 40524002</p>' +
           '</div>' +
@@ -9400,8 +9399,8 @@ function _tegn() {
                 : "Alt i Fuld adgang — og <b>live uden loft</b>. Stream hver eneste kamp, hele sæsonen."), false) +
             _pkort("gaest", "🎟", "BASIS", (S.sprog === "en" ? "free" : "gratis"),
               (S.sprog === "en"
-                ? "Streak, training, matches and friends — and <b>3 AI analyses and 3 live matches in total</b>, so you can see what they can do."
-                : "Streak, træning, kampe og venner — og <b>3 AI-analyser og 3 live-kampe i alt</b>, så du kan se, hvad de kan."), false) +
+                ? "Streak, training, matches and friends — and <b>3 AI analyses in total</b>, so you can see what they can do. Matches are not shared live."
+                : "Streak, træning, kampe og venner — og <b>3 AI-analyser i alt</b>, så du kan se, hvad de kan. Kampene deles ikke live."), false) +
             '</div>' +
             // ⭐ v4.62.0 · wow'et FOER valget: eksemplet er ét tryk vaek.
             '<div class="raekke sai-op" style="animation-delay:.14s;margin-top:10px"><button class="knap valg" style="min-height:46px;border-color:var(--guld);color:var(--guld)" data-a="liveDemo">▶ ' +
@@ -11275,7 +11274,7 @@ function _tegn() {
             _kk += _gaveTekst(EN);   /* ⭐ v4.136.0 · gaven fremgår */
           } else if (S.minPlan === "gaest") {
             _kk += '<div class="lille" style="margin:2px 0 8px;display:flex;align-items:center;gap:8px">' +
-              '<span style="flex:1;min-width:0">🎟 ' + (EN ? "Basis — 3 AI analyses and 3 live matches in total." : "Basis — 3 AI-analyser og 3 live-kampe i alt.") + '</span>' +
+              '<span style="flex:1;min-width:0">🎟 ' + (EN ? "Basis — 3 AI analyses in total, matches are not shared live." : "Basis — 3 AI-analyser i alt, kampene deles ikke live.") + '</span>' +
               '<button class="knap" style="flex:none;width:auto;min-height:40px;padding:6px 12px;font-size:12px;background:var(--grus)" data-a="planOpgrader">' +
               (S.indPlanSender ? "\u23f3" : (EN ? "Full access" : "Få fuld adgang")) + '</button></div>';
           } else if (S.minPlan === "fri") {
@@ -11612,13 +11611,13 @@ function _tegn() {
               + _a("\ud83d\udd25", "The streak", "Every training session counts \u2014 tennis or fitness. Days without a session break it. It is yours; nobody else scores it.")
               + _a("\ud83e\udd1d", "Friends and the room", "Find a friend by username; both say yes. Friends see each other\u2019s streaks and can follow a match live. A room is a bunch of friends in one place. Tap a message to edit it; swipe it left to delete.")
               + _a("\ud83d\udc6a", "Your team", "The people you invite in \u2014 a parent, a coach. They see your matches, training and analyses.")
-              + _a("\ud83c\udfdb", "Club and plans", "A club key connects you to your coach in StreakCoach. <b>Basic</b> is free (streak, matches, friends \u2014 and 3 AI analyses and 3 live matches to try). <b>Full</b> gives 40 analyses a month and live sharing. What we keep and how is written on the terms page \u2014 not here.")
+              + _a("\ud83c\udfdb", "Club and plans", "A club key connects you to your coach in StreakCoach. <b>Basic</b> is free (streak, matches, friends \u2014 and 3 AI analyses to try). <b>Full</b> gives 40 analyses a month and live sharing. What we keep and how is written on the terms page \u2014 not here.")
             : _a("\ud83c\udfbe", "De fire faner", "<b>HJEM</b> er din dag. <b>KAMP</b> er banen. <b>TR\u00c6N</b> er din log. <b>STATS</b> er alt, du har spillet.")
               + _a("\ud83c\udfaf", "En kamp, bold for bold", "To tryk pr. point: vundet eller tabt, og hvorfor. Det giver s\u00e6t, partier og hele kampens fodspor \u2014 og AI-analysen bagefter: hvad der virkede, hvad der skal arbejdes med. Efter nogle kampe f\u00e5r du et udviklingsbrev p\u00e5 tv\u00e6rs af dem.")
               + _a("\ud83d\udd25", "Streaken", "Hver tr\u00e6ning t\u00e6ller \u2014 tennis eller fysisk. Dage uden et pas bryder den. Den er din; ingen andre t\u00e6ller den.")
               + _a("\ud83e\udd1d", "Venner og rummet", "Find en ven p\u00e5 brugernavn; begge siger ja. Venner ser hinandens streaks og kan f\u00f8lge en kamp live. Et rum er en flok venner samme sted. Tryk p\u00e5 en besked for at rette den; tr\u00e6k den til venstre for at slette.")
               + _a("\ud83d\udc6a", "Dit team", "De mennesker, du selv inviterer ind \u2014 en for\u00e6lder, en tr\u00e6ner. De ser dine kampe, din tr\u00e6ning og dine analyser.")
-              + _a("\ud83c\udfdb", "Klub og planer", "En klubnøgle kobler dig til din tr\u00e6ner i StreakCoach. <b>Basis</b> er gratis (streak, kampe, venner \u2014 og 3 AI-analyser og 3 live-kampe at pr\u00f8ve). <b>Fuld</b> giver 40 analyser om m\u00e5neden og live-deling. Hvad vi gemmer, og hvordan, st\u00e5r p\u00e5 betingelses-siden \u2014 ikke her."));
+              + _a("\ud83c\udfdb", "Klub og planer", "En klubnøgle kobler dig til din tr\u00e6ner i StreakCoach. <b>Basis</b> er gratis (streak, kampe, venner \u2014 og 3 AI-analyser at pr\u00f8ve). <b>Fuld</b> giver 40 analyser om m\u00e5neden og live-deling. Hvad vi gemmer, og hvordan, st\u00e5r p\u00e5 betingelses-siden \u2014 ikke her."));
         })());
 
       // ── SPROG ─────────────────────────────────────────────────────
@@ -11851,10 +11850,11 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       // slettes kampen hos os, og koden virker ikke længere.
       // ══════════════════════════════════════════════════════════════
       h += '<div class="kort" style="border-left:3px solid ' + (S.liveAktiv ? 'var(--vundet)' : 'var(--kant)') + '">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-          '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">' +
-            (S.liveAktiv ? '🔴 ' + (EN?"LIVE — SHARED":"LIVE — DELES") : '📡 ' + (EN?"FOLLOW FROM THE SOFA":"FØLG FRA SOFAEN")) + '</div>' +
-          '<span data-a="delAabn" style="cursor:pointer;font-size:13px;opacity:.6">' + (S.delAaben?'✕':'▾') + '</span></div>';
+        /* v4.156.0 · hele linjen er knappen (Nicolai 13/9: «super svært at ramme») — 44 px, ikke et 13-px-tegn */
+        '<button data-a="delAabn" aria-expanded="' + (S.delAaben ? 'true' : 'false') + '" style="width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;margin:-6px 0;padding:0;background:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer">' +
+          '<span style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">' +
+            (S.liveAktiv ? '🔴 ' + (EN?"LIVE — SHARED":"LIVE — DELES") : '📡 ' + (EN?"FOLLOW FROM THE SOFA":"FØLG FRA SOFAEN")) + '</span>' +
+          '<span style="flex:none;font-size:20px;line-height:1;padding:8px 4px 8px 16px;opacity:.85">' + (S.delAaben?'✕':'▾') + '</span></button>';
       if (S.liveAktiv && !S.delAaben) {
         // Sammenfoldet: koden bliver stående, så den kan læses op uden at folde ud.
         // Delingen kører videre — folden styrer kun, hvor meget plads panelet tager.

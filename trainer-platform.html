@@ -902,7 +902,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v5.2.0 \u00b7 13. september 2026";
+const VERSION = "v5.3.0 \u00b7 13. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -950,8 +950,8 @@ var EN = {
 "Har du ingen nøgle endnu, så spørg din cheftræner. Er klubben ikke i gang, så skriv til": "No key yet? Ask your head coach. If the club hasn't started, write to",
 "Cheftræner i {x}": "Head coach at {x}",
 "Træner i {x}": "Coach at {x}",
-"Nøglen passer. Du kan udstede både træner- og spillernøgler.": "The key fits. You can issue both coach and player keys.",
-"Nøglen passer. Du kan udstede spillernøgler til familierne.": "The key fits. You can issue player keys to the families.",
+"Nøglen passer. Du kan udstede både træner- og klubnøgler.": "The key fits. You can issue both coach keys and club keys.",
+"Nøglen passer. Du kan udstede klubnøgler til familierne.": "The key fits. You can issue club keys to the families.",
 "Din konto": "Your account",
 "Så kan du logge ind på enhver telefon — og din nøgle følger med. Den er låst med dit kodeord; heller ikke vi kan læse den.": "Then you can log in on any phone — and your key comes along. It is locked with your password; not even we can read it.",
 "✓ {x} · cheftræner": "✓ {x} · head coach",
@@ -1061,7 +1061,7 @@ var EN = {
 "Ingen trænernøgler udstedt endnu.": "No coach keys issued yet.",
 "Ingen nøgler udstedt endnu.": "No keys issued yet.",
 "🧑‍🏫 TRÆNERNØGLE": "🧑‍🏫 COACH KEY",
-"🎾 FAMILIENØGLE": "🎾 FAMILY KEY",
+"🎾 KLUBNØGLE": "🎾 CLUB KEY",
 "📋 Kopiér besked til træneren": "📋 Copy message to the coach",
 "📋 Kopiér besked til familien": "📋 Copy message to the family",
 "Færdig": "Done",
@@ -1245,8 +1245,8 @@ var EN = {
 "Nøglen kunne ikke tjekkes.": "The key could not be checked.",
 "Den nøgle kender vi ikke. Tjek den — eller spørg din cheftræner.": "We don't know that key. Check it — or ask your head coach.",
 "Den nøgle kender vi ikke. Tjek den — eller spørg din nye cheftræner.": "We don't know that key. Check it — or ask your new head coach.",
-"Det er en spillernøgle — den hører hjemme i StreakTennis-appen. Her skal klubbens træner- eller cheftrænernøgle bruges.": "That is a player key — it belongs in the StreakTennis app. Use the club's coach or head-coach key here.",
-"Det er en spillernøgle — den hører hjemme i StreakTennis-appen. Her skal en træner- eller cheftrænernøgle bruges.": "That is a player key — it belongs in the StreakTennis app. A coach or head-coach key is needed here.",
+"Det er en klubnøgle til en familie — den hører hjemme i StreakTennis-appen. Her skal klubbens træner- eller cheftrænernøgle bruges.": "That is a family's club key — it belongs in the StreakTennis app. Use the club's coach or head-coach key here.",
+"Det er en klubnøgle til en familie — den hører hjemme i StreakTennis-appen. Her skal en træner- eller cheftrænernøgle bruges.": "That is a family's club key — it belongs in the StreakTennis app. A coach or head-coach key is needed here.",
 "Der er allerede en konto på den nøgle ({x}). Gå tilbage og log ind.": "There is already an account on that key ({x}). Go back and log in.",
 "Der er allerede en konto på den nøgle ({x}). Bed klubbens cheftræner om din egen nøgle — to trænere må ikke dele én.": "There is already an account on that key ({x}). Ask the club's head coach for your own key — two coaches must not share one.",
 "Se de røde felter — der mangler noget.": "Look at the red fields — something is missing.",
@@ -1911,7 +1911,7 @@ function noegleKvittering(afsnit){
   var farve = erT ? 'var(--guld)' : 'var(--is)';
   return '<div style="border:1.5px solid ' + farve + ';border-radius:10px;padding:12px;margin-top:9px;text-align:center">' +
     '<div class="lille" style="font-weight:800;letter-spacing:1.2px;color:' + farve + ';margin-bottom:4px">' +
-      (erT ? '🧑‍🏫 TRÆNERNØGLE' : '🎾 FAMILIENØGLE') + '</div>' +
+      (erT ? '🧑‍🏫 TRÆNERNØGLE' : '🎾 KLUBNØGLE') + '</div>' +
     '<div class="lille" style="margin-bottom:5px">Ny nøgle' +
       (S.famNyEtiket ? ' til <b>' + esc(S.famNyEtiket) + '</b>' : ' <b>uden navn</b>') +
       ' — <b>vises kun nu</b>:</div>' +
@@ -2988,7 +2988,7 @@ document.addEventListener("click", function(e){
       }
       // ⛔ En SPILLERnøgle hører hjemme i StreakTennis. Sig HVOR.
       if (r.rolle === "spiller") {
-        S.doerBesked = { fejl:true, t:"Det er en spillernøgle — den hører hjemme i StreakTennis-appen. Her skal klubbens træner- eller cheftrænernøgle bruges." };
+        S.doerBesked = { fejl:true, t:"Det er en klubnøgle til en familie — den hører hjemme i StreakTennis-appen. Her skal klubbens træner- eller cheftrænernøgle bruges." };
         render(); return;
       }
       // ⭐ Er der allerede en konto på nøglen, skal han LOGGE IND, ikke
@@ -3002,8 +3002,8 @@ document.addEventListener("click", function(e){
       S.doerKlub = r.klub; S.doerRolle = r.rolle;
       S.doerFest = { ikon:"🔗", h: r.rolle === "admin" ? "Cheftræner i " + r.klub : "Træner i " + r.klub,
         u: r.rolle === "admin"
-          ? "Nøglen passer. Du kan udstede både træner- og spillernøgler."
-          : "Nøglen passer. Du kan udstede spillernøgler til familierne.",
+          ? "Nøglen passer. Du kan udstede både træner- og klubnøgler."
+          : "Nøglen passer. Du kan udstede klubnøgler til familierne.",
         sidste:false };
       render();
     }).catch(function(){
@@ -3081,7 +3081,7 @@ document.addEventListener("click", function(e){
       }
       // ⛔ De tre nej'er, sagt med en grund hver.
       if (r.rolle === "spiller") {
-        S.skiftBesked = { fejl:true, t:"Det er en spillernøgle — den hører hjemme i StreakTennis-appen. Her skal en træner- eller cheftrænernøgle bruges." };
+        S.skiftBesked = { fejl:true, t:"Det er en klubnøgle til en familie — den hører hjemme i StreakTennis-appen. Her skal en træner- eller cheftrænernøgle bruges." };
         render(); return;
       }
       // ⭐⭐ ÉN NØGLE, ÉN TRÆNER. Hele pointen med rollerne 30/8 var, at
@@ -3246,8 +3246,8 @@ document.addEventListener("click", function(e){
       ? ("\ud83c\udfbe " + _kn + " \u00b7 StreakCoach\n\nDin tr\u00e6nern\u00f8gle: " + S.famNyNoegle +
          "\n\n\u00c5bn platformen og tast n\u00f8glen p\u00e5 skridt 2:\nhttps://tennis.sportsainalytics.com/trainer-platform.html" +
          "\n\nN\u00f8glen er din alene \u2014 del den ikke.")
-      : ("\ud83c\udfbe " + _kn + " inviterer jer ind i StreakTennis!\n\nJeres families n\u00f8gle: " + S.famNyNoegle +
-         "\n\n\u00c5bn appen og tast n\u00f8glen, n\u00e5r I opretter jer:\nhttps://tennis.sportsainalytics.com/StreakTennis/");
+      : ("\ud83c\udfbe " + _kn + " inviterer jer ind i StreakTennis!\n\nJeres klubn\u00f8gle: " + S.famNyNoegle +
+         "\n\n\u00c5bn appen og tast den i feltet KLUBN\u00d8GLE, n\u00e5r I opretter jer:\nhttps://tennis.sportsainalytics.com/StreakTennis/");
     try {
       navigator.clipboard.writeText(_tekst).then(function(){ S.famKopieret = true; render(); },
         function(){ S.famBesked={fejl:true,t:"Kunne ikke kopiere \u2014 mark\u00e9r n\u00f8glen selv."}; render(); });

@@ -457,7 +457,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.153.0 · 13. september 2026";
+const VERSION = "v4.155.0 · 13. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -2747,9 +2747,9 @@ function analyseFejltekst(kode, status, EN) {
     ? "Your access is waiting for a yes. We will say when it is approved \u2014 you do not need to do anything."
     : "Din adgang venter p\u00e5 et ja. Vi siger til, s\u00e5 snart den er godkendt \u2014 du skal ikke g\u00f8re noget.";
   if (kode === "kraever-invitation" || status === 403) return EN
-    ? "StreakTennis needs an invitation: a club code from your club under \u2699 Club code \u2014 or ask whoever invited you."
-    : "StreakTennis kr\u00e6ver en invitation: en klubkode fra din klub under \u2699 KLUBKODE \u2014 eller sp\u00f8rg den, der inviterede dig.";
-  if (kode === "adgang" || status === 401) return EN ? "The club code was not accepted. Check it under \u2699 Club code." : "Klubkoden blev ikke godkendt. Tjek den under \u2699 Klubkode.";
+    ? "StreakTennis needs an invitation: a club key from your club under \u2699 Club key \u2014 or ask whoever invited you."
+    : "StreakTennis kr\u00e6ver en invitation: en klubnøgle fra din klub under \u2699 KLUBNØGLE \u2014 eller sp\u00f8rg den, der inviterede dig.";
+  if (kode === "adgang" || status === 401) return EN ? "The club key was not accepted. Check it under \u2699 Club key." : "Klubnøglen blev ikke godkendt. Tjek den under \u2699 Klubnøgle.";
   if (kode === "loft" || status === 429) return EN ? "Too many analyses in a short time. Try again in a little while." : "For mange analyser p\u00e5 kort tid. Pr\u00f8v igen om lidt.";
   if (kode === "validering" || status === 422) return EN ? "The match data was rejected by the safety check." : "Kampdata blev afvist af sikkerhedsvagten.";
   if (status === 502 || kode === "opstroem" || kode === "tom") return EN ? "The analysis could not be fetched right now. Try again." : "Analysen kunne ikke hentes lige nu. Pr\u00f8v igen.";
@@ -3199,6 +3199,20 @@ function _profilHtml(EN) {
     }
     // princip 70 (11/9): kvitteringen bor UDEN FOR panelet — ellers forsvinder den, når panelet lukker
     if (S.fuldtBesked) h += '<p class="lille" style="margin:5px 2px 0;color:' + (S.fuldtBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.fuldtBesked.t) + '</p>';
+  }
+  /* ⭐ v4.155.0 · ÅRGANG (Nicolai 12/9: «vigtigt man ved hvem man tilføjer») — vises ved dit navn i søgningen, sammen med klubben */
+  if (S.rolle !== "familie") {
+    h += '<div class="lille" style="margin:6px 2px 0;display:flex;align-items:center;gap:7px">' +
+      '<span style="flex:1;min-width:0">\ud83c\udf82 ' + (EN ? "Birth year" : "\u00c5rgang") + (S.mitAargang ? ': <b style="color:var(--kridt)">' + esc(S.mitAargang) + '</b>' : ' <span style="opacity:.55">\u2014 ' + (EN ? "not set yet" : "ikke sat endnu") + '</span>') + '</span>' +
+      '<button class="knap valg' + (S.aargangAaben ? " til" : "") + '" style="flex:none;min-height:40px;padding:0 14px;font-size:12px" data-a="aargangAabn">' + (S.aargangAaben ? (EN?"Close":"Luk") : (EN?"Edit":"Ret")) + '</button></div>';
+    if (S.aargangAaben) {
+      h += '<div class="kort dev-kant" style="margin-top:9px;padding:12px">' +
+        '<p class="lille" style="margin:0 0 8px">' + (EN ? "Your birth year \u2014 shown with your club when friends search for you." : "Dit f\u00f8dsels\u00e5r \u2014 st\u00e5r sammen med din klub, n\u00e5r venner s\u00f8ger dig.") + '</p>' +
+        '<input data-felt="aargangUdkast" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="' + (EN ? "e.g. 2013" : "fx 2013") + '" value="' + esc(S.aargangUdkast || "") + '" style="font-weight:600;letter-spacing:2px">' +
+        '<div class="raekke" style="margin-top:7px"><button class="knap" style="min-height:44px" data-a="aargangGem">' + (S.aargangSender ? "\u23f3 \u2026" : (EN?"Save":"Gem")) + '</button></div>' +
+        '</div>';
+    }
+    if (S.aargangBesked) h += '<p class="lille" style="margin:5px 2px 0;color:' + (S.aargangBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.aargangBesked.t) + '</p>';
   }
 
         // ⭐ v4.10.0 · DIT VENNE-ID — det, du deler nu. Koderne bestaar
@@ -5146,6 +5160,7 @@ const A = {
       S.mitAvatar = idSvar.avatar || null; try { lager.gem("sai-avatar", S.mitAvatar || ""); } catch (_e) {}   /* ⭐ v4.136.0 */
       S.mitBio = idSvar.bio || null;   /* ⭐ v4.143.0 */
       S.mitFuldtNavn = idSvar.fuldt_navn || null;   /* ⭐ v4.147.0 */
+      S.mitAargang = idSvar.aargang || null;   /* ⭐ v4.155.0 */
       if (S.minKlub) lager.gem("sai-min-klub", S.minKlub);
       if (S.mitNavn) lager.gem("sai-brugernavn", S.mitNavn);
       // ⭐ Oensket fra velkomstskaermen indloeses FOERSTE gang serveren
@@ -6156,6 +6171,21 @@ const A = {
   kaldeAabn: () => { S.kaldeAaben = !S.kaldeAaben; S.navnNyt = S.kaldeAaben ? (SPILLER || "") : ""; S.kaldeBesked = null; render(); },
   // ⭐ v4.147.0 · DET FULDE NAVN — kun til traeneren (venne-bud v13 `saet-fuldt-navn`)
   fuldtAabn: () => { S.fuldtAaben = !S.fuldtAaben; S.fuldtUdkast = S.fuldtAaben ? (S.mitFuldtNavn || "") : ""; S.fuldtBesked = null; render(); },
+  /* ⭐ v4.155.0 · ÅRGANG. Fire cifre, 1990-2020 — sagt på skærmen, før serveren spørges. Rejser gennem spiller-sync `gem`
+     SAMMEN MED fornavnet: v45 døber en række «Spiller», når fornavnet mangler (målt 13/9) — v47 retter det, appen sender det alligevel. */
+  aargangAabn: () => { S.aargangAaben = !S.aargangAaben; S.aargangUdkast = S.aargangAaben ? (S.mitAargang || "") : ""; S.aargangBesked = null; render(); },
+  aargangGem: async () => {
+    if (S.aargangSender) return;
+    const EN = S.sprog === "en"; const aar = String(S.aargangUdkast || "").trim();
+    if (!/^(199\d|20[0-2]\d)$/.test(aar)) { S.aargangBesked = { fejl: true, t: EN ? "Four digits, e.g. 2013." : "Fire cifre, fx 2013." }; render(); return; }
+    if (!S.spillerNoegle) { S.aargangBesked = { fejl: true, t: EN ? "Log in first." : "Log ind f\u00f8rst." }; render(); return; }
+    S.aargangSender = true; S.aargangBesked = null; render();
+    const r = await sync("gem", { fornavn: (SPILLER), aargang: aar });
+    S.aargangSender = false;
+    if (r && !r.fejl) { S.mitAargang = aar; S.aargangAaben = false; S.aargangBesked = { fejl: false, t: EN ? "Saved \u2713 \u2014 shown when friends search for you" : "Gemt \u2713 \u2014 st\u00e5r ved dit navn, n\u00e5r venner s\u00f8ger dig" }; }
+    else S.aargangBesked = { fejl: true, t: r && r.fejl === "netvaerk" ? (EN ? "No connection \u2014 try again." : "Ingen forbindelse \u2014 pr\u00f8v igen.") : (EN ? "Could not save \u2014 try again." : "Kunne ikke gemme \u2014 pr\u00f8v igen.") };
+    render();
+  },
   fuldtGem: async (v) => {
     if (S.fuldtSender) return;
     const EN = S.sprog === "en";
@@ -6899,7 +6929,7 @@ const A = {
         r.fejl === "hold-fra"      ? (EN?"Your team hasn't turned the streak on yet.":"Dit hold har ikke sl\u00e5et streaken til endnu.") :
         r.fejl === "ikke-godkendt" ? (EN?"Awaiting the club's approval.":"Afventer klubbens godkendelse.") :
         r.fejl === "mangler-klubkode" || r.fejl === "mangler-spillernoegle"
-          ? (EN?"Enter club code and player key under \u2699 Settings first.":"Indtast klubkode og spillern\u00f8gle under \u2699 Indstillinger f\u00f8rst.")
+          ? (EN?"Enter the club key under \u2699 Settings first.":"Indtast klubn\u00f8glen under \u2699 Indstillinger f\u00f8rst.")
           : (EN?"No connection \u2014 try again.":"Ingen forbindelse \u2014 pr\u00f8v igen.") };
     } else {
       S.stigeData = { hold: r.hold, spillere: r.spillere || [], hentet: new Date().toISOString() };
@@ -7005,7 +7035,7 @@ const A = {
     S.syncHenter = false;
     if (ned.fejl) {
       S.syncBesked = { fejl: true, t:
-        ned.fejl === "mangler-klubkode" ? (EN?"Enter the club code first.":"Indtast klubkoden f\u00f8rst.") :
+        ned.fejl === "mangler-klubkode" ? (EN?"Enter the club key first.":"Indtast klubnøglen f\u00f8rst.") :
         ned.fejl === "adgang" ? (EN?"The key was rejected.":"N\u00f8glen blev afvist.") :
         ned.fejl === "validering" ? (EN?"Rejected by the guard.":"Afvist af sikkerhedsvagten.") :
         (EN?"No connection \u2014 try again.":"Ingen forbindelse \u2014 pr\u00f8v igen.") };
@@ -7029,7 +7059,7 @@ const A = {
     const EN = S.sprog === "en";
     const navne = String(arg).split("~~").filter(Boolean);
     if (!navne.length || S.rivalHenter) return;
-    if (!S.klubKode) { S.kodeAaben = true; S.rivalBesked = { fejl: true, t: EN ? "Enter the club code first." : "Indtast klubkoden først." }; render(); return; }
+    if (!S.klubKode) { S.kodeAaben = true; S.rivalBesked = { fejl: true, t: EN ? "Enter the club key first." : "Indtast klubnøglen først." }; render(); return; }
     const grupper = {};
     S.gemte.forEach(function(k){ (grupper[k.modstander] = grupper[k.modstander] || []).push(k); });
     const rivaler = navne.map(function(n){
@@ -7335,7 +7365,7 @@ const A = {
     if (!k) return;
     // ⭐ v4.7.9: klubkoden er ikke laengere den eneste vej ind. Har man
     // hverken klubkode ELLER spillerkode, er der stadig ingen adgang.
-    if (!S.klubKode && !S.spillerNoegle) { S.kodeAaben = true; S.kodeUdkast = ""; S.hentBesked = { i: n, fejl: true, t: EN ? "Enter the club code first \u2014 you only do this once on this device." : "Indtast klubkoden f\u00f8rst \u2014 det g\u00f8res kun \u00e9n gang p\u00e5 denne enhed." }; render(); return; }
+    if (!S.klubKode && !S.spillerNoegle) { S.kodeAaben = true; S.kodeUdkast = ""; S.hentBesked = { i: n, fejl: true, t: EN ? "Enter the club key first \u2014 you only do this once on this device." : "Indtast klubnøglen f\u00f8rst \u2014 det g\u00f8res kun \u00e9n gang p\u00e5 denne enhed." }; render(); return; }
     if (S.henter !== null) return;
     S.henter = n; S.hentBesked = null; render(); analysePulsStart();
     const nyttelast = byggAnalysePayload(k);
@@ -7383,7 +7413,7 @@ const A = {
     });
   },
   klubKodeAabn: () => { S.kodeAaben = !S.kodeAaben; S.kodeUdkast = ""; S.hentBesked = null; render(); },
-  klubKodeGem: () => { const v = (S.kodeUdkast || "").trim(); if (!v) return; S.klubKode = v; lager.gem("sai-klubkode", v); S.kodeAaben = false; S.nyKodeAaben = false; S.kodeUdkast = ""; S.hentBesked = { i: -1, fejl: false, t: S.sprog === "en" ? "Club code saved on this device." : "Klubkoden er gemt p\u00e5 denne enhed." }; render(); },
+  klubKodeGem: () => { const v = (S.kodeUdkast || "").trim(); if (!v) return; S.klubKode = v; lager.gem("sai-klubkode", v); S.kodeAaben = false; S.nyKodeAaben = false; S.kodeUdkast = ""; S.hentBesked = { i: -1, fejl: false, t: S.sprog === "en" ? "Club key saved on this device." : "Klubnøglen er gemt p\u00e5 denne enhed." }; render(); },
   klubKodeRyd: () => { S.klubKode = ""; lager.gem("sai-klubkode", ""); S.kodeAaben = false; S.nyKodeAaben = false; S.kodeUdkast = ""; render(); },
   eksport: (i) => { S.eksport = lavEksport(S.gemte[+i]); S._sf = S._sf || {}; S._sf["1"] = true; render();
     setTimeout(function(){ var b = document.getElementById("eksport-boks"); if (b) b.scrollIntoView({behavior:"smooth", block:"center"}); }, 60); },
@@ -9189,21 +9219,21 @@ function _tegn() {
           (S.sprog === "en"
             ? _b("What lives on the phone", "Your notes and all free text stay on the phone. Analyses are computed from numbers — never from what you write.") +
               _b("The backup", "Your matches (every ball, the result, the analysis) and your development letter are kept readable with us — without opponents’ names and without your notes — so they come back with your account alone. Names and notes are kept only in a box locked with your password; we cannot open it.") +
-              _b("What the club sees", "With a club code, your club\u2019s coach sees the full name you write under Your profile \u2014 and your matches, training and assessments. Without a club, nobody sees the full name. Friends never do.") +
+              _b("What the club sees", "With a club key, your club\u2019s coach sees the full name you write under Your profile \u2014 and your matches, training and assessments. Without a club, nobody sees the full name. Friends never do.") +
               _b("What friends see", "Your nickname, your username, your avatar, the few words you may write about yourself (never shown to anyone but friends), your streak and — while a match is live — the score. Never your messages. If you share a match (live or from the archive), the score, tournament and opponent travel with it; friends see the opponent shortened.") +
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
-              _b("Search", "Approved players can find you by searching your username — the result shows first name and username only. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
+              _b("Search", "Approved players can find you by searching your username — the result shows first name, username, club and birth year. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
               _b("Messages", "A message disappears a day after your friend has read it — never before. At most 200 per conversation, and after 30 days at the latest. Delete removes it for both of you. Notifications show a name and a place — never content.") +
-              _b("Price", "With a club code the club pays. Basic is free and includes 3 AI analyses in total. Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month; beyond that +49 kr/month for unlimited, or 15 kr per live match. Watching is always free. We contact you about payment; nothing is charged automatically.") +
+              _b("Price", "With a club key the club pays. Basic is free and includes 3 AI analyses in total. Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month; beyond that +49 kr/month for unlimited, or 15 kr per live match. Watching is always free. We contact you about payment; nothing is charged automatically.") +
               _b("Leaving", "Log out wipes the phone. Ask us and the account and everything with it is deleted — for good.")
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
               _b("Sikkerhedskopien", "Jeres kampe (hver bold, resultatet, analysen) og udviklingsbrevet gemmes læsbart hos os — uden modstandernes navne og uden jeres noter — så de kommer tilbage med kontoen alene. Navne og noter gemmes kun i en boks, der er låst med jeres kodeord; den kan vi ikke åbne.") +
-              _b("Hvad klubben ser", "Med en klubkode ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig.") +
+              _b("Hvad klubben ser", "Med en klubnøgle ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig.") +
               _b("Hvad venner ser", "Kaldenavn, brugernavn, avatar, de få ord I selv skriver om jer (vises kun for venner — aldrig i søgning), streaken og — mens en kamp er live — stillingen. Aldrig jeres beskeder. Deler I en kamp (live eller fra arkivet), rejser stillingen, turneringen og modstanderens navn med — venner ser modstanderen forkortet.") +
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
-              _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises kun fornavn og brugernavn. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
+              _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises fornavn, brugernavn, klub og årgang. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
               _b("Beskeder", "En besked forsvinder et døgn efter, din ven har læst den — aldrig før. Højst 200 pr. samtale, og senest efter 30 dage. Slet fjerner for jer begge. Notifikationer viser navn og sted — aldrig indhold.") +
-              _b("Prisen", "Med klubkode betaler klubben. Basis er gratis og rummer 3 AI-analyser i alt. Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — derefter +49 kr/md for uendelig streaming, eller 15 kr pr. live-kamp. At se med er altid gratis. Vi kontakter jer om betalingen; intet trækkes automatisk.") +
+              _b("Prisen", "Med klubnøgle betaler klubben. Basis er gratis og rummer 3 AI-analyser i alt. Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — derefter +49 kr/md for uendelig streaming, eller 15 kr pr. live-kamp. At se med er altid gratis. Vi kontakter jer om betalingen; intet trækkes automatisk.") +
               _b("Vejen ud", "Log ud rydder telefonen. Skriv til os, og kontoen med alt i slettes — helt.")) +
           '<p class="lille" style="margin:4px 0 0;opacity:.6">StreakTennis · SportsAInalytics · CVR 40524002</p>' +
           '</div>' +
@@ -9647,11 +9677,11 @@ function _tegn() {
               ? "invited you. Create yourself with <b>your own</b> name \u2014 " + esc(_invitFornavn(_invitVed()) || _invitVed()) + " is already waiting as the friend you can ask once you are in."
               : "har inviteret dig. Opret dig med <b>dit eget</b> navn \u2014 " + esc(_invitFornavn(_invitVed()) || _invitVed()) + " st\u00e5r allerede klar som den ven, du kan sp\u00f8rge, n\u00e5r du er inde.") + '</div>' : '') +
           '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (_invitVed()
-            ? (S.sprog === "en" ? "CLUB CODE · OPTIONAL" : "KLUBKODE · VALGFRIT")
-            : (S.sprog === "en" ? "CODE FROM CLUB OR FRIEND · OPTIONAL" : "KODE FRA KLUB ELLER VEN · VALGFRIT")) + '<span id="ok-indKlubkode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
+            ? (S.sprog === "en" ? "CLUB KEY · OPTIONAL" : "KLUBNØGLE · VALGFRIT")
+            : (S.sprog === "en" ? "CLUB KEY OR FRIEND · OPTIONAL" : "KLUBNØGLE ELLER VEN · VALGFRIT")) + '<span id="ok-indKlubkode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
           '<input data-felt="indKlubkode" maxlength="40" style="letter-spacing:1px;font-weight:700" placeholder="' + (_invitVed()
             ? (S.sprog === "en" ? "only from your club" : "kun fra din klub")
-            : (S.sprog === "en" ? "club code or friend ID" : "klubkode eller venne-ID")) + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">' +
+            : (S.sprog === "en" ? "club key or friend ID" : "klubnøgle eller venne-ID")) + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">' +
           // ⭐ v4.72.0 · Tre saetninger blev til én. Etiketten siger selv
           //   «VALGFRIT», saa «ingen kode? gaa bare videre» var det samme
           //   sagt to gange paa 20 pixels afstand.
@@ -10657,7 +10687,7 @@ function _tegn() {
               h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--linje)">' +
                 _avatarHtml(v.avatar, 34) +   /* ⭐ v4.136.0 */
                 '<div style="flex:1;min-width:0"><b>' + esc(v.fornavn || "") + '</b>' +
-                '<span class="lille" style="display:block;opacity:.7">' + esc(v.brugernavn || "") + '</span></div>' +
+                '<span class="lille" style="display:block;opacity:.7">' + esc(v.brugernavn || "") + ((v.klub || v.aargang) ? ' \u00b7 ' + esc([v.klub, v.aargang].filter(Boolean).join(" \u00b7 ")) : '') + '</span></div>' +   /* ⭐ v4.155.0 · klub · årgang */
                 (v.ven
                   ? '<span class="lille" style="flex:none;color:var(--vundet)">\u2713 ' + (EN?"friend":"ven") + '</span>'
                   : v.sendt
@@ -11389,7 +11419,7 @@ function _tegn() {
           '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 13px;font-size:12px;color:var(--daempet)" data-a="klubKodeRyd">' + (EN?"Disconnect":"Fjern klub") + '</button></div>';
       } else {
         _kKlub = '<p class="lille" style="margin:0 0 8px">' + (S.klubKode
-            ? (EN?"Enter the new club code.":"Indtast den nye klubkode.")
+            ? (EN?"Enter the new club key.":"Indtast den nye klubnøgle.")
             : (EN
                // ⛔⛔ v4.89.0 · TO FEJL I ÉN SÆTNING.
                //   Den gamle tekst: «Uden klubkode kører appen for sig selv
@@ -11406,20 +11436,20 @@ function _tegn() {
                //     ikke adgang til en anden spillers data. Tastes en vens
                //     eller et barns kode ind, sendes ens EGNE kampe til
                //     DERES klubs trænerlag. Det stod ingen steder.
-               ? "Optional. <b>A club code signs YOU into that club</b> — your own matches and training are then shared with the club’s coaches. It does <b>not</b> give you access to another player’s data. Without one the app still works, and only your first name and training streak leave the phone (for friends)."
-               : "Frivillig. <b>En klubkode melder DIG ind i klubben</b> — dine egne kampe og din træning deles så med klubbens trænere. Den giver <b>ikke</b> adgang til en anden spillers data. Uden klubkode virker appen stadig, og kun dit fornavn og din træningsstreak forlader telefonen (til vennerne).")) + '</p>' +
+               ? "Optional. <b>A club key signs YOU into that club</b> — your own matches and training are then shared with the club’s coaches. It does <b>not</b> give you access to another player’s data. Without one the app still works, and only your first name and training streak leave the phone (for friends)."
+               : "Frivillig. <b>En klubnøgle melder DIG ind i klubben</b> — dine egne kampe og din træning deles så med klubbens trænere. Den giver <b>ikke</b> adgang til en anden spillers data. Uden klubnøgle virker appen stadig, og kun dit fornavn og din træningsstreak forlader telefonen (til vennerne).")) + '</p>' +
           (S.rolle === "familie"
             // v4.90.0: i TEAM-visningen er det PRAECIS spillerens klubkode,
             // der skal ind her — advarslen ville forbyde det rigtige.
             ? '<p class="lille" style="margin:-4px 0 8px;padding:8px 10px;background:rgba(230,176,69,.10);border-radius:8px">' + (EN
-              ? "Here you enter <b>the player's own club code</b>, so the team phone can share with the player's club."
-              : "Her sættes <b>spillerens egen klubkode</b> ind, så team-telefonen kan dele med spillerens klub.") + '</p>'
+              ? "Here you enter <b>the player's own club key</b>, so the team phone can share with the player's club."
+              : "Her sættes <b>spillerens egen klubnøgle</b> ind, så team-telefonen kan dele med spillerens klub.") + '</p>'
             : '<p class="lille" style="margin:-4px 0 8px;padding:8px 10px;background:rgba(230,176,69,.10);border-radius:8px">' + (EN
               ? "⚠️ Got a code from a friend or your child? <b>Do not enter it here.</b> That would move you into their club. Use ❤️ friends instead."
               : "⚠️ Har du fået en kode af en ven eller dit barn? <b>Tast den ikke her.</b> Så flytter du dig selv over i deres klub. Brug ❤️ venner i stedet.") + '</p>') +
           '<div style="display:flex;gap:6px;align-items:stretch">' +
           '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:' + (S.visKode?"none":"disc") + '" data-felt="kodeUdkast" value="' + esc(S.kodeUdkast||"") +
-          '" placeholder="' + (EN?"club code":"klubkode") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
+          '" placeholder="' + (EN?"club key":"klubnøgle") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
           '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;font-size:13px" data-a="visSkift" data-v="visKode">' + (S.visKode ? "🙈" : "👁") + '</button></div>' +
           '<div class="raekke" style="margin-top:7px">' +
           '<button class="knap" style="min-height:44px;background:var(--grus)" data-a="klubKodeGem">' + (EN?"Save":"Gem") + '</button>' +
@@ -11504,7 +11534,7 @@ function _tegn() {
       }
       // ⭐ v4.146.0 · i team-visningen var kortets eneste budskab «du skal ikke gøre noget» — det tegnes ikke
       /* v4.153.0 · «I venter på et ja» står ved den nøgle, det handler om */
-      if (VISNING !== "team") h += _opsKort("klub", "🏷", (EN?"CLUB CODE":"KLUBKODE"),
+      if (VISNING !== "team") h += _opsKort("klub", "🏷", (EN?"CLUB KEY":"KLUBNØGLE"),
         (_portTekst ? _portTekst : (S.klubKode ? (EN?"connected ✓":"forbundet ✓") : (EN?"no club":"ingen klub"))),
         (_portFarve ? _portFarve : (S.klubKode ? "var(--vundet)" : "var(--daempet)")), _portStribe + _kKlub);
 
@@ -11581,13 +11611,13 @@ function _tegn() {
               + _a("\ud83d\udd25", "The streak", "Every training session counts \u2014 tennis or fitness. Days without a session break it. It is yours; nobody else scores it.")
               + _a("\ud83e\udd1d", "Friends and the room", "Find a friend by username; both say yes. Friends see each other\u2019s streaks and can follow a match live. A room is a bunch of friends in one place. Tap a message to edit it; swipe it left to delete.")
               + _a("\ud83d\udc6a", "Your team", "The people you invite in \u2014 a parent, a coach. They see your matches, training and analyses.")
-              + _a("\ud83c\udfdb", "Club and plans", "A club code connects you to your coach in StreakCoach. <b>Basic</b> is free (streak, matches, friends \u2014 and 3 AI analyses to try). <b>Full</b> gives 40 analyses a month and live sharing. What we keep and how is written on the terms page \u2014 not here.")
+              + _a("\ud83c\udfdb", "Club and plans", "A club key connects you to your coach in StreakCoach. <b>Basic</b> is free (streak, matches, friends \u2014 and 3 AI analyses to try). <b>Full</b> gives 40 analyses a month and live sharing. What we keep and how is written on the terms page \u2014 not here.")
             : _a("\ud83c\udfbe", "De fire faner", "<b>HJEM</b> er din dag. <b>KAMP</b> er banen. <b>TR\u00c6N</b> er din log. <b>STATS</b> er alt, du har spillet.")
               + _a("\ud83c\udfaf", "En kamp, bold for bold", "To tryk pr. point: vundet eller tabt, og hvorfor. Det giver s\u00e6t, partier og hele kampens fodspor \u2014 og AI-analysen bagefter: hvad der virkede, hvad der skal arbejdes med. Efter nogle kampe f\u00e5r du et udviklingsbrev p\u00e5 tv\u00e6rs af dem.")
               + _a("\ud83d\udd25", "Streaken", "Hver tr\u00e6ning t\u00e6ller \u2014 tennis eller fysisk. Dage uden et pas bryder den. Den er din; ingen andre t\u00e6ller den.")
               + _a("\ud83e\udd1d", "Venner og rummet", "Find en ven p\u00e5 brugernavn; begge siger ja. Venner ser hinandens streaks og kan f\u00f8lge en kamp live. Et rum er en flok venner samme sted. Tryk p\u00e5 en besked for at rette den; tr\u00e6k den til venstre for at slette.")
               + _a("\ud83d\udc6a", "Dit team", "De mennesker, du selv inviterer ind \u2014 en for\u00e6lder, en tr\u00e6ner. De ser dine kampe, din tr\u00e6ning og dine analyser.")
-              + _a("\ud83c\udfdb", "Klub og planer", "En klubkode kobler dig til din tr\u00e6ner i StreakCoach. <b>Basis</b> er gratis (streak, kampe, venner \u2014 og 3 AI-analyser at pr\u00f8ve). <b>Fuld</b> giver 40 analyser om m\u00e5neden og live-deling. Hvad vi gemmer, og hvordan, st\u00e5r p\u00e5 betingelses-siden \u2014 ikke her."));
+              + _a("\ud83c\udfdb", "Klub og planer", "En klubnøgle kobler dig til din tr\u00e6ner i StreakCoach. <b>Basis</b> er gratis (streak, kampe, venner \u2014 og 3 AI-analyser at pr\u00f8ve). <b>Fuld</b> giver 40 analyser om m\u00e5neden og live-deling. Hvad vi gemmer, og hvordan, st\u00e5r p\u00e5 betingelses-siden \u2014 ikke her."));
         })());
 
       // ── SPROG ─────────────────────────────────────────────────────
@@ -12528,7 +12558,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     else { /* ingen chip: klubkoden har intet med kampanalyser at gøre */ }
     if (S.kodeAaben) {
       h += '<div class="kort" style="border-color:var(--guld)"><p class="lille" style="margin:0 0 6px">'+(EN?"Your password opens the backup.":"Dit kodeord åbner sikkerhedskopien.")+'</p>';
-      h += '<input type="password" autocomplete="off" data-felt="kodeUdkast" placeholder="'+(EN?'Club code':'Klubkode')+'" value="'+esc(S.kodeUdkast)+'">';
+      h += '<input type="password" autocomplete="off" data-felt="kodeUdkast" placeholder="'+(EN?'Password':'Kodeord')+'" value="'+esc(S.kodeUdkast)+'">';
       h += '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="klubKodeGem">💾 '+(EN?"Save":"Gem")+'</button>'+(S.klubKode?'<button class="knap" data-a="klubKodeRyd">'+(EN?"Remove":"Fjern")+'</button>':'')+'</div>';
       h += '</div>';
     }

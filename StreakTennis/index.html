@@ -468,7 +468,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v4.158.0 · 13. september 2026";
+const VERSION = "v5.0.0 · 14. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -3349,19 +3349,7 @@ function _profilHtml(EN) {
             (S.navnBesked ? '<p class="lille" style="margin:7px 0 0;color:' + (S.navnBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.navnBesked.t) + '</p>' : '') +
             '</div>';
         }
-        if (S.mitVenneId) {
-          // ⚠️ FANGET AF proev-vennebud: uden brugernavn er ID'et det ENESTE,
-          // man kan give en ven — saa skal det kunne kopieres. Har man et
-          // navn, er ID'et reserve og staar bare som en linje.
-          h += S.mitNavn
-            ? '<div class="lille" style="margin:5px 2px 0;display:flex;align-items:center;gap:7px">' +
-              '<span style="flex:1;min-width:0;opacity:.7">' + (EN ? "Or give them your ID: " : "Eller giv dem dit ID: ") +
-              '<b style="color:var(--kridt);letter-spacing:1px">' + esc(S.mitVenneId) + '</b></span>' +
-              '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="kopier" data-v="mitVenneId">' + (S.kopieret === "mitVenneId" ? (EN?"Copied \u2713":"Kopieret \u2713") : (EN?"Copy":"Kopi\u00e9r")) + '</button></div>'
-            : '<div class="lille" style="margin:9px 2px 0;display:flex;align-items:center;gap:7px">' +
-              '<span style="flex:1;min-width:0">' + (EN?"Until then: ":"Indtil da: ") + '<b style="color:var(--guld);letter-spacing:1px">' + esc(S.mitVenneId) + '</b></span>' +
-              '<button class="knap valg" style="flex:none;min-height:44px;padding:0 12px;font-size:12px" data-a="kopier" data-v="mitVenneId">' + (S.kopieret === "mitVenneId" ? (EN?"Copied \u2713":"Kopieret \u2713") : (EN?"Copy":"Kopi\u00e9r")) + '</button></div>';
-        }
+        /* v4.164.0 · ID-linjen er væk (Nicolai 13/9: «noget internt i basen») — brugernavnet er adressen */
   return h;
 }
 
@@ -3534,8 +3522,8 @@ const A = {
       //   `vennerBesked`, som kun tegnes i venne-panelet — så et tryk fra
       //   Indstillinger gjorde ingenting og sagde ingenting (princip 35+75).
       const _t = { fejl: true, t: EN
-        ? "Your friend ID is not ready yet — open the app once more."
-        : "Dit venne-ID er ikke klar endnu — åbn appen én gang til." };
+        ? "Your username is not ready yet — open the app once more."
+        : "Dit brugernavn er ikke klar endnu — åbn appen én gang til." };
       S.vennerBesked = _t; S.delAppBesked = _t;
       render(); return;
     }
@@ -5213,7 +5201,7 @@ const A = {
         : "Sendt! Når de accepterer, er I venner." };
     } else {
       S.vennerBesked = { fejl: true, t:
-        r.fejl === "ukendt-id" ? (EN ? "That friend ID does not exist — check it." : "Det venne-ID findes ikke — tjek det lige.")
+        r.fejl === "ukendt-id" ? (EN ? "That username does not exist — check it." : "Det brugernavn findes ikke — tjek det lige.")
         : r.fejl === "allerede-venner" ? (EN ? "You are already friends." : "I er allerede venner.")
         : r.fejl === "modsat-bud" ? (EN ? "They already sent you a request — accept it above." : "De har allerede sendt til dig — acceptér ovenfor.")
         : r.fejl === "eget-id" ? (EN ? "That is your own ID." : "Det er dit eget ID.")
@@ -5265,8 +5253,8 @@ const A = {
     const k = erId ? raat.toUpperCase() : raat.toLowerCase();
     if (!erId && !/^[a-zæøå][a-zæøå0-9_-]{2,19}$/.test(k)) {
       S.rumInviBesked = { fejl: true, t: EN
-        ? "Write a username or a friend ID."
-        : "Skriv et brugernavn eller et venne-ID." };
+        ? "Write a username."
+        : "Skriv et brugernavn." };
       render(); return;
     }
     S.rumInviBesked = null; render();
@@ -5275,7 +5263,7 @@ const A = {
     if (r.fejl) {
       S.rumInviBesked = { fejl: true, t:
         r.fejl === "ukendt-id" ? (erId
-          ? (EN ? "That friend ID does not exist — check it." : "Det venne-ID findes ikke — tjek det lige.")
+          ? (EN ? "That username does not exist — check it." : "Det brugernavn findes ikke — tjek det lige.")
           : (EN ? "Nobody has that username." : "Der er ingen med det brugernavn."))
         : r.fejl === "allerede-med" ? (EN ? "They are already in the room." : "De er allerede i rummet.")
         : r.fejl === "fuldt" ? (EN ? "The room is full." : "Rummet er fuldt.")
@@ -6195,7 +6183,8 @@ const A = {
   aargangGem: async () => {
     if (S.aargangSender) return;
     const EN = S.sprog === "en"; const aar = String(S.aargangUdkast || "").trim();
-    if (!/^(199\d|20[0-2]\d)$/.test(aar)) { S.aargangBesked = { fejl: true, t: EN ? "Four digits, e.g. 2013." : "Fire cifre, fx 2013." }; render(); return; }
+    /* v4.162.0 · voksne har også en årgang (Nicolai 13/9: 1977 blev afvist) — fire cifre, 1930 til og med i år */
+    if (!/^\d{4}$/.test(aar) || Number(aar) < 1930 || Number(aar) > new Date().getFullYear()) { S.aargangBesked = { fejl: true, t: EN ? "Four digits \u2014 from 1930 up to this year." : "Fire cifre \u2014 fra 1930 til i \u00e5r." }; render(); return; }
     if (!S.spillerNoegle) { S.aargangBesked = { fejl: true, t: EN ? "Log in first." : "Log ind f\u00f8rst." }; render(); return; }
     S.aargangSender = true; S.aargangBesked = null; render();
     const r = await sync("gem", { fornavn: (SPILLER), aargang: aar });
@@ -6887,7 +6876,7 @@ const A = {
     if (/^[A-ZÆØÅ0-9]{1,12}-\d{4}$/.test(k)) { A.budSend(k); return; }
     if (k.length !== 6) {
       if (/^[a-zæøå][a-zæøå0-9_-]{2,19}$/.test(raa.toLowerCase())) { A.budSend(raa.toLowerCase()); return; }
-      S.vennerBesked = { fejl: true, t: EN ? "Enter a username, a friend ID or a code." : "Indtast et brugernavn, et venne-ID eller en kode." }; render(); return;
+      S.vennerBesked = { fejl: true, t: EN ? "Enter a username." : "Indtast et brugernavn." }; render(); return;
     }
     S.vennerHenter = true; S.vennerBesked = null; render();
     let r = await sync("venne-indloes", { kode: k });
@@ -9699,7 +9688,7 @@ function _tegn() {
             : (S.sprog === "en" ? "CLUB KEY OR FRIEND · OPTIONAL" : "KLUBNØGLE ELLER VEN · VALGFRIT")) + '<span id="ok-indKlubkode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
           '<input data-felt="indKlubkode" maxlength="40" style="letter-spacing:1px;font-weight:700" placeholder="' + (_invitVed()
             ? (S.sprog === "en" ? "only from your club" : "kun fra din klub")
-            : (S.sprog === "en" ? "club key or friend ID" : "klubnøgle eller venne-ID")) + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">' +
+            : (S.sprog === "en" ? "club key — or a friend's username" : "klubnøgle — eller en vens brugernavn")) + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">' +
           // ⭐ v4.72.0 · Tre saetninger blev til én. Etiketten siger selv
           //   «VALGFRIT», saa «ingen kode? gaa bare videre» var det samme
           //   sagt to gange paa 20 pixels afstand.
@@ -10435,14 +10424,14 @@ function _tegn() {
               });
             } else if (S.rumInviVenner) {
               h += '<p class="lille" style="margin:0 0 6px;opacity:.75">' + (EN
-                ? "You have no friends in the app yet \u2014 write their friend ID below."
-                : "Du har ingen venner i appen endnu \u2014 skriv deres venne-ID herunder.") + '</p>';
+                ? "You have no friends in the app yet \u2014 write their username below."
+                : "Du har ingen venner i appen endnu \u2014 skriv deres brugernavn herunder.") + '</p>';
             }
             h += '<p class="lille" style="margin:8px 0 0;opacity:.75">' + (EN
                 ? "Everyone in the room sees each other\u2019s first name, streak and matches."
                 : "Alle i rummet ser hinandens fornavn, streak og kampe.") + '</p>' +
               '<div style="margin-top:9px;border-top:1px solid var(--linje);padding-top:9px">' +
-              '<input placeholder="' + (EN?"username or friend ID":"brugernavn eller venne-ID") + '" value="' + esc(S.rumInviUdkast) + '" data-felt="rumInviUdkast" maxlength="20">' +
+              '<input placeholder="' + (EN?"username":"brugernavn") + '" value="' + esc(S.rumInviUdkast) + '" data-felt="rumInviUdkast" maxlength="20">' +
               '<div class="raekke" style="margin-top:7px">' +
               '<button class="knap" style="min-height:44px" data-a="rumInviSend">' + (EN?"Send invitation":"Send invitation") + '</button>' +
               '<button class="knap valg" style="min-height:44px" data-a="rumInviLuk">' + (EN?"Done":"Færdig") + '</button></div></div>';
@@ -11628,7 +11617,7 @@ function _tegn() {
       /* v4.158.0 · sprog-kortet er væk — se byg-4158 */
 
       /* ⭐ v4.158.0 · HJÆLP: den ene manual bor i Håndbogen; postkassen; betingelserne står som knap nedenfor */
-      _kort.hjaelp = _opsKort("hjaelp", "\ud83d\udcd6", (EN ? "HELP" : "HJ\u00c6LP"), (EN ? "handbook \u00b7 mailbox" : "h\u00e5ndbog \u00b7 postkasse"), "var(--is)",
+      _kort.hjaelp = _opsKort("hjaelp", "\ud83d\udcd6", (EN ? "HELP" : "HJ\u00c6LP"), (EN ? "handbook \u00b7 mailbox \u00b7 terms" : "h\u00e5ndbog \u00b7 postkasse \u00b7 betingelser"), "var(--is)",
         '<p class="lille" style="margin:0 0 9px">' + (EN
           ? "How StreakTennis works \u2014 the four tabs, a match ball by ball, the streak, friends, your team, live and plans \u2014 is written in the handbook."
           : "Hvordan StreakTennis virker \u2014 de fire faner, en kamp bold for bold, streaken, venner, dit team, live og planer \u2014 st\u00e5r i h\u00e5ndbogen.") + '</p>' +
@@ -11636,11 +11625,13 @@ function _tegn() {
         '<p class="lille" style="margin:12px 0 8px">' + (EN
           ? "An idea? Something that bugs you? Write it \u2014 it is read every time we build. A clear improvement is just built; a grey area is discussed first."
           : "En id\u00e9? Noget der driller? Skriv det \u2014 det bliver l\u00e6st, hver gang der bygges. En klar forbedring bliver bare bygget; en gr\u00e5zone bliver vendt f\u00f8rst.") + '</p>' +
-        '<a class="knap valg" href="./forbedringer.html" style="display:block;text-align:center;text-decoration:none;min-height:44px;line-height:44px">\ud83d\udca1 ' + (EN?"Open the mailbox":"\u00c5bn postkassen") + '</a>');
+        '<a class="knap valg" href="./forbedringer.html" style="display:block;text-align:center;text-decoration:none;min-height:44px;line-height:44px">\ud83d\udca1 ' + (EN?"Open the mailbox":"\u00c5bn postkassen") + '</a>' +
+        /* v4.160.0 · betingelserne (v4.151: kunne før kun åbnes fra døren) — nu som den tredje knap i HJÆLP */
+        '<p class="lille" style="margin:12px 0 8px">' + (EN ? "What we keep, what the club sees and what a friend sees \u2014 in one place." : "Hvad vi gemmer, hvad klubben ser, og hvad en ven ser \u2014 \u00e9t sted.") + '</p>' +
+        '<button class="knap valg" data-a="betingelser" style="display:block;width:100%;min-height:44px">\ud83d\udcc4 ' + (EN ? "Terms & privacy" : "Betingelser & privatliv") + '</button>');
       h += [_kort.spillerprofil, _kort.konto, _kort.klub, _kort.familie, _kort.beskeder, _kort.hjaelp].filter(Boolean).join("");
       h += '</div>';   // ⭐ v4.83.0 · indstillings-gitteret lukkes
-      /* v4.151.0 · betingelserne kunne før kun åbnes fra døren — nu også herfra, logget ind */
-      h += '<button class="knap" data-a="betingelser" style="display:block;width:100%;min-height:48px;margin:12px 0 4px;background:var(--grus)">\ud83d\udcc4 ' + (EN ? "Terms & privacy" : "Betingelser & privatliv") + '</button>';
+      /* v4.160.0 · «kun fliser» (Nicolai 13/9): betingelses-knappen bor nu i HJÆLP-kortet — intet under gitteret ud over synk-linjen */
       if (S.syncBesked) h += '<p class="lille" style="margin:6px 2px;color:' +
         (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
           } else if (S.tab === "hb-hjem") {

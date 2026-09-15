@@ -1,6 +1,7 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v4.3 (16/9 kl. 00.30) — byg #6 på macos-26: WWDR G3 findes allerede i nøgleringen («already exists») — tolereres nu VED NAVN, alt andet er stadig rødt.
 # v4.2 (16/9 kl. 00.20) — byg #5: HELE kæden holdt (arkiv · profil · eksport · login hos Apple · upload startet). Apple afviste
 #   kun SDK'en: «built with iOS 17.5 SDK — must be iOS 26 SDK». Runner macos-14 → macos-26 (Xcode 26; GA siden feb. 2026).
 # v4.1 (16/9 kl. 00.15) — byg #4: eksporten ville sætte profilen på Capacitor.framework, fordi PRODUCT_BUNDLE_IDENTIFIER stod som
@@ -73,7 +74,9 @@ jobs:
           security import "$RUNNER_TEMP/dist.p12" -P "$DIST_P12_PASSWORD" -A -t cert -f pkcs12 -k "$KC"
           # Apples mellemled (WWDR G3) — .p12'en fra Windows bærer kun selve certifikatet, kæden skal kunne bygges her
           curl -sSfL -o "$RUNNER_TEMP/wwdr.cer" https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer
-          security import "$RUNNER_TEMP/wwdr.cer" -t cert -k "$KC"
+          if ! security import "$RUNNER_TEMP/wwdr.cer" -t cert -k "$KC" 2>&1 | tee "$RUNNER_TEMP/wwdr.txt"; then
+            grep -q "already exists" "$RUNNER_TEMP/wwdr.txt" && echo "WWDR G3 ligger der allerede (macOS 26) — fint" || { echo "⛔ WWDR G3 kunne ikke importeres"; exit 1; }
+          fi
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" > /dev/null
           security list-keychain -d user -s "$KC" login.keychain-db
           rm -f "$RUNNER_TEMP/dist.p12"

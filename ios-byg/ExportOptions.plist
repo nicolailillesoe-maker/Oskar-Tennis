@@ -2,9 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+  <!-- v2 (15/9-2026 kl. 23.55) · manuel signering: byg #3 viste, at «automatic» kræver sky-forvaltede certifikater = Admin-nøgle.
+       Profilen «StreakTennis App Store» laves én gang i portalen og ligger som hemmelighed (DIST_PROFILE_BASE64). teamID sættes af workflowet. -->
   <key>method</key><string>app-store-connect</string>
   <key>destination</key><string>upload</string>
-  <key>signingStyle</key><string>automatic</string>
+  <key>signingStyle</key><string>manual</string>
+  <key>signingCertificate</key><string>Apple Distribution</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>com.sportsainalytics.streaktennis</key><string>StreakTennis App Store</string>
+  </dict>
   <key>uploadSymbols</key><true/>
   <key>manageAppVersionAndBuildNumber</key><true/>
 </dict>

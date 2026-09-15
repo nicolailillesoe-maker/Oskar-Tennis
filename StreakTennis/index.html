@@ -468,7 +468,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.0.0 · 14. september 2026";
+const VERSION = "v5.0.1 · 14. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -632,6 +632,32 @@ function trendRaekke(EN, label, vals, enhed, stigerGodt) {
     '<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:11.5px;font-weight:700;color:var(--daempet)">' + label + '</span>' +
     '<span style="color:' + nivFarve(godt) + ';font-weight:800;font-size:12px">' + pil + ' ' + (godt === 2 ? "✓" : godt === 0 ? "⚠" : "") + '</span></div>' + soejler +
     '<div style="font-size:10.5px;color:var(--daempet)">' + (EN ? "avg " : "snit ") + (Math.round(snitAlle*10)/10) + (enhed||"") + ' · ' + (EN ? "last 5 " : "sidste 5 ") + '<b style="color:'+(( stigerGodt ? snit5>=snitAlle : snit5<=snitAlle )?"var(--vundet)":"var(--tabt)")+'">' + (Math.round(snit5*10)/10) + (enhed||"") + '</b> · ' + (EN ? "latest " : "seneste ") + '<b style="color:var(--kridt)">' + b + (enhed||"") + '</b><br><span style="color:var(--vundet)">■</span> ' + (EN ? "better than own avg" : "bedre end eget snit") + ' · <span style="color:var(--tabt)">■</span> ' + (EN ? "worse" : "dårligere") + '</div></td></tr>';
+}
+
+/* v5.0.1 · TRIBUNENS PULS · tegnes fra `forloeb` ({r,a} pr. bold — rejser med i hver live-opdatering), så den
+   også findes, når kampen er slut. Ingen sæt-streger: tribunen kender ikke oskarFirst/mtb/saetTil, og et gæt tegnes ikke. */
+function tribuneForloeb(fl, st, live, EN) {
+  if (!fl || fl.length < 5) return "";
+  var diff = 0, serie = [0], stime = 0, bedst = 0, vundne = 0;
+  fl.forEach(function(p){
+    var v = p.r === "V";
+    diff += v ? 1 : -1; serie.push(diff);
+    if (v) { vundne++; stime++; if (stime > bedst) bedst = stime; } else stime = 0;
+  });
+  var mx = Math.max.apply(null, serie.map(Math.abs).concat([1]));
+  var W = 352, midt = 32;
+  var pts = serie.map(function(v, i){ return (4 + Math.round(i / (serie.length - 1) * W)) + "," + Math.round(midt - v / mx * 26); }).join(" ");
+  var slutFarve = diff > 0 ? "var(--vundet)" : diff < 0 ? "var(--tabt)" : "var(--is)";
+  var tal = function(v, t){ return '<div style="text-align:center"><div style="font-size:18px;font-weight:800;font-variant-numeric:tabular-nums">' + v + '</div><div class="lille" style="margin:0;font-size:10px;letter-spacing:1px;text-transform:uppercase">' + t + '</div></div>'; };
+  return '<div class="kort"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">' +
+    '<span style="font-size:10px;font-weight:800;letter-spacing:2px;color:var(--daempet);text-transform:uppercase">' + (EN?"Match pulse":"Kampens puls") + '</span>' +
+    '<span class="lille" style="margin:0">' + (diff > 0 ? "+" : "") + diff + ' ' + (EN?"points":"bolde") + '</span></div>' +
+    '<svg viewBox="0 0 360 64" style="display:block;width:100%"><line x1="4" y1="' + midt + '" x2="356" y2="' + midt + '" stroke="var(--guld)" stroke-width="1" opacity=".8"/>' +
+    '<polyline points="' + pts + '" fill="none" stroke="var(--is)" stroke-width="2" stroke-linejoin="round"/>' +
+    '<circle cx="' + (4 + W) + '" cy="' + Math.round(midt - diff / mx * 26) + '" r="3.5" fill="' + slutFarve + '"/></svg>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--kant)">' +
+    tal(fl.length, EN?"balls":"bolde") + tal(bedst, EN?"best run":"længste stime") +
+    tal(Math.round(vundne / fl.length * 100) + "%", EN?"points won":"bolde vundet") + '</div></div>';
 }
 
 function pulsKort(k, EN) {
@@ -3484,6 +3510,7 @@ const A = {
   ttSlet: (i) => { S.ttLog.splice(+i, 1); S.ttSletB = null; lager.gem("sai-tennis-log", JSON.stringify(S.ttLog)); render(); },
   ingen: () => {},
   rkToggle: (k) => { S.rkAaben = S.rkAaben === k ? null : k; render(); },
+  anbefalVis: (k) => { S.anbefalVis = S.anbefalVis === k ? null : k; render(); },   /* v5.0.1 · fliserne på Anbefalinger */
   rivalToggle: (n) => { S.rivalAaben = S.rivalAaben === n ? null : n; render(); },
   planToggle: (i) => { S.planAaben = S.planAaben === +i ? null : +i; render(); },
   kopier: (felt) => {
@@ -9892,15 +9919,39 @@ function _tegn() {
             '<span style="text-align:center;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums">' + spil + '</span>' +
             '<span style="text-align:center;font-size:19px;font-weight:800;color:var(--guld);font-variant-numeric:tabular-nums">' + pt + '</span></div>';
         };
+        /* v5.0.1 · efter kampen: navn + sæt, vinderen i guld */
+        const raekSlut = function(navn, saet, vandt){
+          return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0">' +
+            '<span style="font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + (vandt ? "var(--guld)" : "var(--kridt)") + '">' + (vandt ? "🏆 " : "") + esc(navn) + '</span>' +
+            '<span style="font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:' + (vandt ? "var(--guld)" : "var(--kridt)") + '">' + saet + '</span></div>';
+        };
+        /* v5.0.1 · SÆT-LINJEN: det, hvert sæt blev — live med det igangværende sidst og fremhævet. Historikken rejser allerede med (saetHistorik). */
+        const saetLinje = function(st, live, EN){
+          const sh = (st.saetHistorik || []).map(function(x){ return String(x); });
+          const nu = live && (sh.length > 0 || (st.partierSpiller||0) + (st.partierModstander||0) > 0) ? ((st.partierSpiller||0) + "-" + (st.partierModstander||0)) : null;
+          if (!sh.length && !nu) return '';
+          const chip = function(t, farve, stor){ return '<span style="font-size:' + (stor ? "16px" : "15px") + ';font-weight:800;font-variant-numeric:tabular-nums;color:' + farve + '">' + esc(t) + '</span>'; };
+          const dele = sh.map(function(x){ return chip(x, live ? "var(--kridt)" : "var(--guld)", !live); });
+          if (nu) dele.push(chip(nu, "var(--is)", true) + '<span class="lille" style="margin:0 0 0 4px;font-size:10px;letter-spacing:1px">' + (st.tiebreak ? "TB" : (EN?"NOW":"NU")) + '</span>');
+          return '<div style="display:flex;flex-wrap:wrap;gap:4px 10px;justify-content:center;align-items:baseline;margin-top:8px;padding-top:8px;border-top:1px dashed var(--kant)">' +
+            '<span class="lille" style="margin:0 6px 0 0;font-size:10px;letter-spacing:1.3px;text-transform:uppercase">' + (EN?"Sets":"Sæt") + '</span>' + dele.join('<span style="color:var(--fod)">·</span>') + '</div>';
+        };
         h += '<div class="kort" style="padding:14px">' +
           '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">' +
           '<span class="lille" style="margin:0;letter-spacing:1.3px;text-transform:uppercase">' + esc(k.turnering || (EN?"Live match":"Livekamp")) + '</span>' +
-          '<span class="lille" style="margin:0;color:var(--is);font-weight:800">' + (st.tiebreak ? "TIEBREAK" : (((st.saetHistorik||[]).length + 1) + ". " + (EN?"SET":"SÆT"))) + '</span></div>' +
-          raek(k.spiller || (EN?"Player":"Spiller"), (st.saetSpiller||0), (st.partierSpiller||0), pv(st.pointSpiller, st.pointModstander), st.spillerServer === true) +
-          '<div style="height:1px;background:var(--kant)"></div>' +
-          raek(k.modstander || (EN?"Opponent":"Modstander"), (st.saetModstander||0), (st.partierModstander||0), pv(st.pointModstander, st.pointSpiller), st.spillerServer === false) +
+          '<span class="lille" style="margin:0;color:' + (live ? "var(--is)" : "var(--guld)") + ';font-weight:800">' + (!live ? (EN?"FINAL":"SLUT") : st.tiebreak ? "TIEBREAK" : (((st.saetHistorik||[]).length + 1) + ". " + (EN?"SET":"SÆT"))) + '</span></div>' +   /* v5.0.1 */
+          (live
+            ? raek(k.spiller || (EN?"Player":"Spiller"), (st.saetSpiller||0), (st.partierSpiller||0), pv(st.pointSpiller, st.pointModstander), st.spillerServer === true) +
+              '<div style="height:1px;background:var(--kant)"></div>' +
+              raek(k.modstander || (EN?"Opponent":"Modstander"), (st.saetModstander||0), (st.partierModstander||0), pv(st.pointModstander, st.pointSpiller), st.spillerServer === false)
+            /* v5.0.1 · SLUT: kun navn og sæt — parti- og point-kolonnerne er tomme efter sidste bold og forvirrer. Vinderen i guld. */
+            : raekSlut(k.spiller || (EN?"Player":"Spiller"), (st.saetSpiller||0), (st.saetSpiller||0) > (st.saetModstander||0)) +
+              '<div style="height:1px;background:var(--kant)"></div>' +
+              raekSlut(k.modstander || (EN?"Opponent":"Modstander"), (st.saetModstander||0), (st.saetModstander||0) > (st.saetSpiller||0))) +
+          saetLinje(st, live, EN) +
           (st.resultat ? '<p class="lille" style="margin:8px 0 0;padding-top:8px;border-top:1px dashed var(--kant);color:var(--guld);font-weight:700">' + esc(st.resultat) + '</p>' : '') +
-          '</div>';
+          '</div>' +
+          tribuneForloeb(k.forloeb || [], st, live, EN);   /* v5.0.1 · kampens puls + tal — også når kampen er slut */
 
         // ── REAKTIONERNE ────────────────────────────────────────────
         // ── LÅSEN (22/8) · "som så låses og foldes sammen" ────────────
@@ -12089,6 +12140,18 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     if (!R) h += '<div class="kort"><p class="lille" style="margin:0">'+(EN?"Recommendations appear after 2+ matches.":"Anbefalinger vises, når der er registreret mindst 2 kampe.")+'</p></div>';
     else {
       h += '<p class="lille">'+(EN?"Auto-generated from ":"Genereret automatisk af ")+R.antal+(EN?" matches — recent 3 vs own average. Updates with every match.":" kampe — de 3 seneste mod eget snit. Opdateres ved hver ny kamp.")+(R.dummy?' 🟡 DUMMY':'')+'</p>';
+      /* v5.0.1 · FLISER (Nicolai 14/9: «Fliser — der skal være fliser»). De to kort blev foldet til bjælker af devFoldning.
+         Nu: to fliser i gitteret, og KUN det valgte kort tegnes under — ét kort → devFoldning rører det ikke. */
+      const _av = S.anbefalVis || null;
+      const _fl = function(v, ik, titel, tekst){
+        return '<button class="dev-flise dev-kant ' + (_av === v ? "dev-kant-guld" : "dev-kant-staal") + '" data-a="anbefalVis" data-v="' + v + '">' +
+          '<span class="dev-ikon">' + ik + '</span><b>' + titel + '</b><small>' + tekst + '</small></button>';
+      };
+      h += '<div class="dev-grid">' +
+        _fl("arbejd", "🔧", (EN?"Work on":"Arbejdspunkter"), R.arbejd.length + (EN ? (R.arbejd.length === 1 ? " point · focus now" : " points · focus now") : (R.arbejd.length === 1 ? " punkt · fokus nu" : " punkter · fokus nu"))) +
+        _fl("virker", "✅", (EN?"Working":"Det virker"), R.virker.length + (EN ? (R.virker.length === 1 ? " goal met · keep it" : " goals met · keep it") : (R.virker.length === 1 ? " mål nået · behold det" : " mål nået · behold det"))) +
+        '</div>';
+      const _hFoer = h; h = '';
       h += '<div class="kort" style="border-left:3px solid var(--grus)"><h3><span class="badge-ai">AI</span> 🔧 '+(EN?"WORK ON — focus next period":"ARBEJDSPUNKTER — fokus den næste periode")+'</h3>';
       if (!R.arbejd.length) h += '<p class="lille" style="margin:0">'+(EN?"Nothing burning — all goals met!":"Intet brænder — alle mål er nået!")+'</p>';
       R.arbejd.forEach(function(m, i){
@@ -12100,14 +12163,16 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '<div style="font-size:10px;color:var(--daempet);margin-top:3px">🎯 '+(EN?'Goal':'Mål')+' '+(m.maalTekst)+' · 🏔 '+(EN?'Sinner':'Sinner')+' '+(m.sinner||"—")+'</div>' +
           (aab ? '<p style="font-size:11.5px;line-height:1.6;margin:6px 0 0;color:var(--kridt)">'+esc(m.hvorfor||"")+'</p>' : '') + '</div>'; }
       });
-      h += '</div><div class="kort" style="border-left:3px solid var(--vundet)"><h3><span class="badge-ai">AI</span> ✅ '+(EN?"WORKING — keep it up":"DET VIRKER — behold det")+'</h3>';
+      h += '</div>'; const _kArbejd = h; h = '';
+      h += '<div class="kort" style="border-left:3px solid var(--vundet)"><h3><span class="badge-ai">AI</span> ✅ '+(EN?"WORKING — keep it up":"DET VIRKER — behold det")+'</h3>';
       if (!R.virker.length) h += '<p class="lille" style="margin:0">'+(EN?"Goals not met yet — see above.":"Ingen mål nået endnu — se arbejdspunkterne.")+'</p>';
       R.virker.forEach(function(m, i){
         h += '<div style="padding:7px 0;border-top:'+(i?'1px solid var(--kant)':'none')+';display:flex;justify-content:space-between;align-items:baseline;gap:8px">' +
           '<span style="font-size:12.5px;font-weight:700">'+m.label+'</span>' +
           '<span style="font-size:11.5px;color:var(--daempet)">'+m.nu+m.enhed+' · '+m.senesteOK+'/'+m.antal+' '+(EN?'recent in goal':'seneste i mål')+' '+(m.trendGodt?'<span style="color:var(--vundet)">▲</span>':'<span style="color:var(--guld)">▼</span>')+'</span></div>';
       });
-      h += '</div>';
+      h += '</div>'; const _kVirker = h;
+      h = _hFoer + (_av === "arbejd" ? _kArbejd : _av === "virker" ? _kVirker : '');   /* v5.0.1 · kun det valgte kort */
     }
   }
 

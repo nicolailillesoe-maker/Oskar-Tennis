@@ -1,7 +1,7 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
-# v3 (15/9-2026 kl. 23.30) — to fund fra byg #2:
+# v3 (15/9-2026 kl. 23.30; v3.1 kl. 23.35: WWDR G3-mellemledet hentes ind i nøgleringen) — to fund fra byg #2:
 #   · «Success» på 57 s med ** ARCHIVE FAILED ** i loggen: et rør (| tail) åd xcodebuilds fejlkode (princip 75). Nu bash med pipefail.
 #   · «Your team has no devices from which to generate a provisioning profile»: arkivet bad om en UDVIKLINGSprofil, og den
 #     kræver en registreret iPhone. Nu signeres arkivet ad hoc (som Apples eget Xcode Cloud gør), og først EKSPORTEN signerer
@@ -63,6 +63,9 @@ jobs:
           security unlock-keychain -p "$KCPW" "$KC"
           echo "$DIST_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
           security import "$RUNNER_TEMP/dist.p12" -P "$DIST_P12_PASSWORD" -A -t cert -f pkcs12 -k "$KC"
+          # Apples mellemled (WWDR G3) — .p12'en fra Windows bærer kun selve certifikatet, kæden skal kunne bygges her
+          curl -sSfL -o "$RUNNER_TEMP/wwdr.cer" https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer
+          security import "$RUNNER_TEMP/wwdr.cer" -t cert -k "$KC"
           security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" > /dev/null
           security list-keychain -d user -s "$KC" login.keychain-db
           rm -f "$RUNNER_TEMP/dist.p12"

@@ -1,6 +1,8 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v4.1 (16/9 kl. 00.15) — byg #4: eksporten ville sætte profilen på Capacitor.framework, fordi PRODUCT_BUNDLE_IDENTIFIER stod som
+#   GLOBAL tilsidesættelse på arkivet og ramte alle targets. Væk — cap add ios sætter appens id selv; en vagt måler det nu.
 # v4 (15/9-2026 kl. 23.55) — byg #3: ARCHIVE SUCCEEDED, men eksporten med «automatic» ville lave et SKY-forvaltet certifikat
 #   («Cloud signing permission error» — kræver Admin-nøgle) og lavede derfor aldrig profilen. Nu MANUEL signering ved eksport:
 #   App Store-profilen laves én gang i portalen og ligger som hemmelighed. API-nøglen (App Manager) bruges kun til uploaden.
@@ -94,9 +96,13 @@ jobs:
           xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release \
             -destination "generic/platform=iOS" -archivePath build/App.xcarchive archive \
             CODE_SIGN_IDENTITY=- AD_HOC_CODE_SIGNING_ALLOWED=YES CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
-            PRODUCT_BUNDLE_IDENTIFIER=com.sportsainalytics.streaktennis | tail -60
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} | tail -60
           test -d build/App.xcarchive
+          # v4.1 · vagt: appens bundle-id kommer fra capacitor.config.json (cap add ios) — ikke fra en global tilsidesættelse,
+          # der også ramte Capacitor.framework/Cordova.framework og fik eksporten til at kræve profilen på dem (byg #4)
+          ID=$(/usr/libexec/PlistBuddy -c "Print :ApplicationProperties:CFBundleIdentifier" build/App.xcarchive/Info.plist)
+          echo "Arkivets app: $ID"
+          test "$ID" = "com.sportsainalytics.streaktennis" || { echo "⛔ arkivets bundle-id er «$ID»"; exit 1; }
       - name: Send til App Store Connect (manuel signering med profilen; API-nøglen bruges kun til uploaden)
         run: |
           xcodebuild -exportArchive -archivePath build/App.xcarchive \

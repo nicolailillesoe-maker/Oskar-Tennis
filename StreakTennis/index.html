@@ -468,7 +468,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.0.1 · 14. september 2026";
+const VERSION = "v5.0.2 · 15. september 2026";
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -9256,7 +9256,7 @@ function _tegn() {
               _b("What the club sees", "With a club key, your club\u2019s coach sees the full name you write under Your profile \u2014 and your matches, training and assessments. Without a club, nobody sees the full name. Friends never do.") +
               _b("What friends see", "Your nickname, your username, your avatar, the few words you may write about yourself (never shown to anyone but friends), your streak and — while a match is live — the score. Never your messages. If you share a match (live or from the archive), the score, tournament and opponent travel with it; friends see the opponent shortened.") +
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
-              _b("Search", "Approved players can find you by searching your username — the result shows first name, username, club and birth year. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
+              _b("Search", "Approved players can find you by searching your username — the result shows username, club and birth year. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
               _b("Messages", "A message disappears a day after your friend has read it — never before. At most 200 per conversation, and after 30 days at the latest. Delete removes it for both of you. Notifications show a name and a place — never content.") +
               _b("Price", "With a club key the club pays. Basic is free and includes 3 AI analyses in total. Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month; beyond that +49 kr/month for unlimited, or 15 kr per live match. Watching is always free. We contact you about payment; nothing is charged automatically.") +
               _b("Leaving", "Log out wipes the phone. Ask us and the account and everything with it is deleted — for good.")
@@ -9265,7 +9265,7 @@ function _tegn() {
               _b("Hvad klubben ser", "Med en klubnøgle ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig.") +
               _b("Hvad venner ser", "Kaldenavn, brugernavn, avatar, de få ord I selv skriver om jer (vises kun for venner — aldrig i søgning), streaken og — mens en kamp er live — stillingen. Aldrig jeres beskeder. Deler I en kamp (live eller fra arkivet), rejser stillingen, turneringen og modstanderens navn med — venner ser modstanderen forkortet.") +
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
-              _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises fornavn, brugernavn, klub og årgang. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
+              _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises brugernavn, klub og årgang. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
               _b("Beskeder", "En besked forsvinder et døgn efter, din ven har læst den — aldrig før. Højst 200 pr. samtale, og senest efter 30 dage. Slet fjerner for jer begge. Notifikationer viser navn og sted — aldrig indhold.") +
               _b("Prisen", "Med klubnøgle betaler klubben. Basis er gratis og rummer 3 AI-analyser i alt. Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — derefter +49 kr/md for uendelig streaming, eller 15 kr pr. live-kamp. At se med er altid gratis. Vi kontakter jer om betalingen; intet trækkes automatisk.") +
               _b("Vejen ud", "Log ud rydder telefonen. Skriv til os, og kontoen med alt i slettes — helt.")) +
@@ -10738,14 +10738,15 @@ function _tegn() {
           const _raa = String(S.venneUdkast || "").trim();
           const _erKode = /^[A-Za-zÆØÅæøå0-9]{1,12}-\d{4}$/.test(_raa) || (/^[A-Za-z0-9]{6}$/.test(_raa) && !/^[a-zæøå][a-zæøå0-9_-]{5}$/.test(_raa.toLowerCase()));
           h += '<div style="margin-top:10px">' +
-            '<input placeholder="\ud83d\udd0d ' + (EN ? "find a friend by username" : "find en ven på brugernavn") + '" value="' + esc(S.venneUdkast) + '" data-felt="venneUdkast" maxlength="20" autocapitalize="off" spellcheck="false" style="letter-spacing:.5px;font-weight:700">';
+            '<input placeholder="\ud83d\udd0d ' + (EN ? "type your friend's username" : "skriv vennens brugernavn") + '" value="' + esc(S.venneUdkast) + '" data-felt="venneUdkast" maxlength="20" autocapitalize="off" spellcheck="false" style="letter-spacing:.5px;font-weight:700">';
           if (S.soegHenter) h += '<p class="lille" style="margin:6px 0 0;opacity:.6">\u23f3 \u2026</p>';
           if (S.soegTraef && S.soegTraef.length) {
             S.soegTraef.forEach(function(v){
               h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--linje)">' +
                 _avatarHtml(v.avatar, 34) +   /* ⭐ v4.136.0 */
-                '<div style="flex:1;min-width:0"><b>' + esc(v.fornavn || "") + '</b>' +
-                '<span class="lille" style="display:block;opacity:.7">' + esc(v.brugernavn || "") + ((v.klub || v.aargang) ? ' \u00b7 ' + esc([v.klub, v.aargang].filter(Boolean).join(" \u00b7 ")) : '') + '</span></div>' +   /* ⭐ v4.155.0 · klub · årgang */
+                /* v5.0.2 · brugernavnet ER identiteten (Nicolai 15/9: «Kun 1 resultat — brugernavnet»); motoren v16 sender intet fornavn */
+                '<div style="flex:1;min-width:0"><b>' + esc(v.brugernavn || "") + '</b>' +
+                ((v.klub || v.aargang) ? '<span class="lille" style="display:block;opacity:.7">' + esc([v.klub, v.aargang].filter(Boolean).join(" \u00b7 ")) + '</span>' : '') + '</div>' +   /* ⭐ v4.155.0 · klub · årgang */
                 (v.ven
                   ? '<span class="lille" style="flex:none;color:var(--vundet)">\u2713 ' + (EN?"friend":"ven") + '</span>'
                   : v.sendt

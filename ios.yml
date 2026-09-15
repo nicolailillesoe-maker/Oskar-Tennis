@@ -1,0 +1,58 @@
+# StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
+# Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
+# Kræver fire hemmeligheder i repoet (Settings → Secrets and variables → Actions):
+#   ASC_KEY_ID        · App Store Connect API-nøglens Key ID
+#   ASC_ISSUER_ID     · Issuer ID (står øverst på API-siden)
+#   ASC_KEY_P8_BASE64 · .p8-filens indhold, base64-kodet (macOS/Linux: base64 -i AuthKey_XXXX.p8 | pbcopy)
+#   APPLE_TEAM_ID     · Team ID (developer.apple.com → Membership details)
+name: ios-testflight
+on:
+  workflow_dispatch:
+    inputs:
+      byg_nr:
+        description: "Byggenummer (hele tal, skal stige for hver upload — fx 1, 2, 3 …)"
+        required: true
+        default: "1"
+jobs:
+  byg:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Xcode-version (maskinens standard — vi vælger ikke selv)
+        run: xcodebuild -version
+      - name: Capacitor · skallen
+        run: |
+          npm install --no-audit --no-fund
+          npx cap add ios || true
+          npx cap sync ios
+      - name: Byggenummer + version fra appen
+        run: |
+          V=$(grep -o 'const VERSION = "v[0-9.]*' StreakTennis/index.html | grep -o '[0-9][0-9.]*')
+          echo "App-version: $V · byg ${{ github.event.inputs.byg_nr }}"
+          cd ios/App && /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $V" App/Info.plist \
+            && /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.event.inputs.byg_nr }}" App/Info.plist
+      - name: API-nøglen lægges, hvor xcodebuild leder
+        run: |
+          mkdir -p ~/private_keys
+          echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+      - name: Arkiv (Apple laver certifikat og profil selv — ingen Mac, ingen Keychain)
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release \
+            -destination "generic/platform=iOS" -archivePath build/App.xcarchive archive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 \
+            -authenticationKeyID ${{ secrets.ASC_KEY_ID }} \
+            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }} \
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} CODE_SIGN_STYLE=Automatic \
+            PRODUCT_BUNDLE_IDENTIFIER=com.sportsainalytics.streaktennis | tail -40
+      - name: Send til App Store Connect (TestFlight)
+        run: |
+          xcodebuild -exportArchive -archivePath build/App.xcarchive \
+            -exportOptionsPlist ios-byg/ExportOptions.plist -exportPath build/ud \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 \
+            -authenticationKeyID ${{ secrets.ASC_KEY_ID }} \
+            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }} | tail -40

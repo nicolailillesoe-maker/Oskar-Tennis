@@ -1,10 +1,20 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
-# Kræver fire hemmeligheder i repoet (Settings → Secrets and variables → Actions):
-#   ASC_KEY_ID        · App Store Connect API-nøglens Key ID
-#   ASC_ISSUER_ID     · Issuer ID (står øverst på API-siden)
-#   ASC_KEY_P8_BASE64 · .p8-filens indhold, base64-kodet (macOS/Linux: base64 -i AuthKey_XXXX.p8 | pbcopy)
-#   APPLE_TEAM_ID     · Team ID (developer.apple.com → Membership details)
+#
+# v3 (15/9-2026 kl. 23.30) — to fund fra byg #2:
+#   · «Success» på 57 s med ** ARCHIVE FAILED ** i loggen: et rør (| tail) åd xcodebuilds fejlkode (princip 75). Nu bash med pipefail.
+#   · «Your team has no devices from which to generate a provisioning profile»: arkivet bad om en UDVIKLINGSprofil, og den
+#     kræver en registreret iPhone. Nu signeres arkivet ad hoc (som Apples eget Xcode Cloud gør), og først EKSPORTEN signerer
+#     til App Store — med ét distributionscertifikat, lavet én gang og gemt som hemmelighed. Lader man xcodebuild lave
+#     certifikatet selv, laver den et nyt pr. kørsel, og Apple siger stop efter få (developer.apple.com/forums/thread/695759).
+#
+# Kræver seks hemmeligheder i repoet (Settings → Secrets and variables → Actions):
+#   ASC_KEY_ID          · App Store Connect API-nøglens Key ID
+#   ASC_ISSUER_ID       · Issuer ID (står øverst på API-siden)
+#   ASC_KEY_P8_BASE64   · .p8-filens indhold, base64-kodet
+#   APPLE_TEAM_ID       · Team ID (App ID Prefix / Membership details)
+#   DIST_P12_BASE64     · Apple Distribution-certifikatet med privat nøgle (.p12/.pfx), base64-kodet — se LÆSMIG trin 2b
+#   DIST_P12_PASSWORD   · kodeordet, .p12'en blev pakket med
 name: ios-testflight
 on:
   workflow_dispatch:
@@ -17,6 +27,9 @@ jobs:
   byg:
     runs-on: macos-14
     timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash   # = bash -eo pipefail hos GitHub — et rør må ikke skjule en fejl
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,7 +39,7 @@ jobs:
       - name: Capacitor · skallen
         run: |
           npm install --no-audit --no-fund
-          npx cap add ios || true
+          npx cap add ios
           npx cap sync ios
       - name: Byggenummer + version fra appen
         run: |
@@ -38,22 +51,41 @@ jobs:
         run: |
           mkdir -p ~/private_keys
           echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
-      - name: Arkiv (Apple laver certifikat og profil selv — ingen Mac, ingen Keychain)
+          test -s ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+      - name: Distributionscertifikatet ind i en midlertidig nøglering
+        env:
+          DIST_P12_BASE64: ${{ secrets.DIST_P12_BASE64 }}
+          DIST_P12_PASSWORD: ${{ secrets.DIST_P12_PASSWORD }}
+        run: |
+          KC="$RUNNER_TEMP/byg.keychain-db"; KCPW=$(uuidgen)
+          security create-keychain -p "$KCPW" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$KCPW" "$KC"
+          echo "$DIST_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security import "$RUNNER_TEMP/dist.p12" -P "$DIST_P12_PASSWORD" -A -t cert -f pkcs12 -k "$KC"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" > /dev/null
+          security list-keychain -d user -s "$KC" login.keychain-db
+          rm -f "$RUNNER_TEMP/dist.p12"
+          echo "Identiteter i nøgleringen:"; security find-identity -v -p codesigning "$KC"
+          security find-identity -v -p codesigning "$KC" | grep -q "Apple Distribution" || { echo "⛔ intet Apple Distribution-certifikat i .p12'en"; exit 1; }
+      - name: Team-id ind i eksport-indstillingerne
+        run: /usr/libexec/PlistBuddy -c "Add :teamID string ${{ secrets.APPLE_TEAM_ID }}" ios-byg/ExportOptions.plist
+      - name: Arkiv (ad hoc-signeret — ingen profil, ingen enhed; som Xcode Cloud)
         run: |
           xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release \
             -destination "generic/platform=iOS" -archivePath build/App.xcarchive archive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 \
-            -authenticationKeyID ${{ secrets.ASC_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }} \
-            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} CODE_SIGN_STYLE=Automatic \
-            PRODUCT_BUNDLE_IDENTIFIER=com.sportsainalytics.streaktennis | tail -40
-      - name: Send til App Store Connect (TestFlight)
+            CODE_SIGN_IDENTITY=- AD_HOC_CODE_SIGNING_ALLOWED=YES CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
+            PRODUCT_BUNDLE_IDENTIFIER=com.sportsainalytics.streaktennis | tail -60
+          test -d build/App.xcarchive
+      - name: Send til App Store Connect (Apple laver App Store-profilen selv — kræver ingen enhed)
         run: |
           xcodebuild -exportArchive -archivePath build/App.xcarchive \
             -exportOptionsPlist ios-byg/ExportOptions.plist -exportPath build/ud \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.ASC_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }} | tail -40
-
+            -authenticationKeyIssuerID ${{ secrets.ASC_ISSUER_ID }} | tail -60
+      - name: Ryd nøgleringen (altid — også når det gik galt)
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/byg.keychain-db" || true

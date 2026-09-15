@@ -1,6 +1,8 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v4.2 (16/9 kl. 00.20) — byg #5: HELE kæden holdt (arkiv · profil · eksport · login hos Apple · upload startet). Apple afviste
+#   kun SDK'en: «built with iOS 17.5 SDK — must be iOS 26 SDK». Runner macos-14 → macos-26 (Xcode 26; GA siden feb. 2026).
 # v4.1 (16/9 kl. 00.15) — byg #4: eksporten ville sætte profilen på Capacitor.framework, fordi PRODUCT_BUNDLE_IDENTIFIER stod som
 #   GLOBAL tilsidesættelse på arkivet og ramte alle targets. Væk — cap add ios sætter appens id selv; en vagt måler det nu.
 # v4 (15/9-2026 kl. 23.55) — byg #3: ARCHIVE SUCCEEDED, men eksporten med «automatic» ville lave et SKY-forvaltet certifikat
@@ -31,7 +33,7 @@ on:
         default: "1"
 jobs:
   byg:
-    runs-on: macos-14
+    runs-on: macos-26   # v4.2: Apple kræver iOS 26 SDK (Xcode 26) — macos-14 har 15.4 (byg #5: «SDK version issue»)
     timeout-minutes: 45
     defaults:
       run:

@@ -1,6 +1,10 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v4.4 (16/9 kl. 01.10) — byg 1 på telefonen: «Kunne ikke logge ind». MÅLT gennem pg_net: motorens dørvagt (TILLADTE_ORIGINS) svarer
+#   tennis.sportsainalytics.com til en afsender, der hedder https://localhost — iPhonen kasserer svaret. Rettet i SKALLEN, ikke i
+#   motoren: capacitor.config.json giver appen jeres eget domæne som adresse (server.hostname). Desuden: MinimumOSVersion 15.0
+#   (Apple ITMS-90068, krav fra foråret 2027) og ITSAppUsesNonExemptEncryption=false i plisten.
 # v4.3 (16/9 kl. 00.30) — byg #6 på macos-26: WWDR G3 findes allerede i nøgleringen («already exists») — tolereres nu VED NAVN, alt andet er stadig rødt.
 # v4.2 (16/9 kl. 00.20) — byg #5: HELE kæden holdt (arkiv · profil · eksport · login hos Apple · upload startet). Apple afviste
 #   kun SDK'en: «built with iOS 17.5 SDK — must be iOS 26 SDK». Runner macos-14 → macos-26 (Xcode 26; GA siden feb. 2026).
@@ -56,6 +60,8 @@ jobs:
           echo "App-version: $V · byg ${{ github.event.inputs.byg_nr }}"
           cd ios/App && /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $V" App/Info.plist \
             && /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.event.inputs.byg_nr }}" App/Info.plist
+          # v4.4 · eksport-compliance svares i plisten (kun styresystemets kryptering: HTTPS + WebCrypto) — så spørger TestFlight ikke igen
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/App/App/Info.plist
       - name: API-nøglen lægges, hvor xcodebuild leder
         run: |
           mkdir -p ~/private_keys
@@ -101,7 +107,7 @@ jobs:
           xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release \
             -destination "generic/platform=iOS" -archivePath build/App.xcarchive archive \
             CODE_SIGN_IDENTITY=- AD_HOC_CODE_SIGNING_ALLOWED=YES CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} | tail -60
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} IPHONEOS_DEPLOYMENT_TARGET=15.0 | tail -60
           test -d build/App.xcarchive
           # v4.1 · vagt: appens bundle-id kommer fra capacitor.config.json (cap add ios) — ikke fra en global tilsidesættelse,
           # der også ramte Capacitor.framework/Cordova.framework og fik eksporten til at kræve profilen på dem (byg #4)

@@ -1,6 +1,8 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v4.7 (16/9 kl. 11.00) — byggenummeret tastes ikke længere i hånden: står feltet tomt, bruges kørslens løbenummer (github.run_number),
+#   som altid stiger. Apple afviser en upload med et tal, der ikke er større end sidste gang — det er en menneskelig fejl, der ventede på at ske.
 # v4.6 (16/9 kl. 07.40) — v4.4's adresse-rettelse ER RULLET TILBAGE i capacitor.config.json: Capacitors doks siger, at iosScheme IKKE må
 #   være https (WKWebView ejer skemaet), og at hostname SKAL blive localhost, ellers mister appen «secure context» — og dermed WebCrypto,
 #   som postkassen og boksens nøgle bygger på. Appen hedder capacitor://localhost, og DEN adresse skal stå i motorernes TILLADTE_ORIGINS.
@@ -38,9 +40,9 @@ on:
   workflow_dispatch:
     inputs:
       byg_nr:
-        description: "Byggenummer (hele tal, skal stige for hver upload — fx 1, 2, 3 …)"
-        required: true
-        default: "1"
+        description: "Byggenummer — lad feltet stå TOMT, så bruges kørslens eget løbenummer (stiger altid)"
+        required: false
+        default: ""
 jobs:
   byg:
     runs-on: macos-26   # v4.2: Apple kræver iOS 26 SDK (Xcode 26) — macos-14 har 15.4 (byg #5: «SDK version issue»)
@@ -60,11 +62,19 @@ jobs:
           npx cap add ios
           npx cap sync ios
       - name: Byggenummer + version fra appen
+        env:
+          BYG_IND: ${{ github.event.inputs.byg_nr }}
+          BYG_LOEB: ${{ github.run_number }}
         run: |
+          # ⭐ v4.7 (16/9) · Nicolai: byggenummeret skal ikke tastes i hånden. Apple afviser en upload, hvis tallet
+          #   ikke er STØRRE end sidste gang — og en tastefejl koster ti minutter og et gæt. Kørslens eget løbenummer
+          #   stiger altid af sig selv. Feltet kan stadig udfyldes, hvis et bestemt tal ønskes.
+          BYG="${BYG_IND:-$BYG_LOEB}"
+          echo "BYG=$BYG" >> $GITHUB_ENV
           V=$(grep -o 'const VERSION = "v[0-9.]*' StreakTennis/index.html | grep -o '[0-9][0-9.]*')
-          echo "App-version: $V · byg ${{ github.event.inputs.byg_nr }}"
+          echo "App-version: $V · byg $BYG"
           cd ios/App && /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $V" App/Info.plist \
-            && /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.event.inputs.byg_nr }}" App/Info.plist
+            && /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BYG" App/Info.plist
           # v4.5 · eksport-compliance svares i plisten (kun styresystemets kryptering: HTTPS + WebCrypto) — så spørger TestFlight ikke igen.
           # ⚠️ v4.4 skrev stien fra RODEN efter et `cd ios/App` — PlistBuddy lavede intet og gav grønt (princip 75). Vagten nedenfor MÅLER nu.
           /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" App/Info.plist 2>/dev/null \
@@ -73,7 +83,7 @@ jobs:
           BYGNR=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" App/Info.plist)
           echo "Plisten: version $(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist) · byg $BYGNR · kryptering-undtaget $KRYPT"
           test "$KRYPT" = "false" || { echo "⛔ ITSAppUsesNonExemptEncryption står ikke i plisten"; exit 1; }
-          test "$BYGNR" = "${{ github.event.inputs.byg_nr }}" || { echo "⛔ byggenummeret i plisten er $BYGNR"; exit 1; }
+          test "$BYGNR" = "$BYG" || { echo "⛔ byggenummeret i plisten er $BYGNR"; exit 1; }
       - name: API-nøglen lægges, hvor xcodebuild leder
         run: |
           mkdir -p ~/private_keys

@@ -44,7 +44,9 @@ a{color:var(--is)}a:hover{color:#C6EAF5}
    hvor der er en bundmenu at komme under. Paa doerens skaerme var de
    praecis det, der skubbede VALGET 24px over kanten. */
 body.doer .wrap{padding:8px 16px 12px}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;position:sticky;top:0;z-index:60;background:radial-gradient(120% 55% at 50% -8%,#14264A 0%,#0B1220 55%) fixed #0B1220;margin:0 -14px;padding:10px 14px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;position:sticky;top:0;z-index:60;background:rgba(12,20,40,.94);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);margin:0 -14px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px}
+/* ⭐ v5.0.5 · den bløde kant: uden den blev kortene skåret tvært over ved headerens underkant. */
+.topbar::after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:16px;pointer-events:none;background:linear-gradient(180deg,rgba(11,18,32,.78),rgba(11,18,32,0))}
 .brand{display:flex;align-items:center;gap:10px}
 .brandlogo{width:34px;height:34px;border-radius:50%;flex:none;box-shadow:0 0 0 1.5px rgba(240,207,97,.45),0 4px 12px rgba(0,0,0,.4)}
 .brandtxt{display:flex;flex-direction:column;gap:1px}
@@ -142,6 +144,10 @@ textarea{width:100%;height:140px;background:var(--dyb);color:var(--is);border:1p
 .statlinje{font-size:12px;line-height:1.7}
 .avat{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;color:var(--dyb);flex:none;vertical-align:middle;letter-spacing:.02em}
 .pil-tilbage{width:44px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--kort);border:1px solid var(--kant);border-radius:12px;color:var(--is);font-size:15px;cursor:pointer;padding:0;flex:none;backdrop-filter:blur(8px)}
+/* ⭐ v5.0.5 · TONEN BAG PILLEN. Bundnavigationen er gennemsigtig med blur; uden den her gled linjerne
+   ind under den og stod halvt læselige. Fladen ligger UNDER pillen (z-index 45 mod 50) og tager ingen tryk. */
+.bundtone{position:fixed;left:0;right:0;bottom:0;height:calc(104px + env(safe-area-inset-bottom));pointer-events:none;z-index:45;background:linear-gradient(180deg,rgba(11,18,32,0) 0%,rgba(11,18,32,.88) 46%,#0B1220 78%)}
+body.flade .bundtone{display:none}
 .bundnav{position:fixed;left:0;right:0;margin:0 auto;bottom:14px;width:min(492px,calc(100% - 28px));display:flex;justify-content:space-around;gap:2px;background:rgba(13,20,38,.85);border:1px solid var(--kant);border-radius:999px;padding:8px 10px calc(8px + env(safe-area-inset-bottom)/2);backdrop-filter:blur(14px);z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.45)}
 .bundnav button{background:none;border:none;color:var(--daempet);font-size:8.5px;letter-spacing:.08em;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:2px 10px;font-family:inherit}
 .bundnav button span{font-size:18px;line-height:1}
@@ -468,7 +474,16 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.0.3 · 15. september 2026";
+const VERSION = "v5.0.5 · 16. september 2026";
+/* ⭐ v5.0.4 · ER VI I SKALLEN ELLER I BROWSEREN? Capacitor serverer appens filer fra sin EGEN adresse
+   (capacitor://localhost) — protokollen er derfor målingen, ikke et gæt på et objekt, der måske er der. */
+const SKAL = (function () {
+  try {
+    if (location.protocol === "capacitor:") return " \u00b7 app";
+    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return " \u00b7 app";
+  } catch (_e) {}
+  return "";
+})();
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -2040,6 +2055,39 @@ window.addEventListener("hashchange", function () {
     history.replaceState(null, "", location.pathname);
     render();
   } catch (e) {}
+});
+
+// ⭐⭐ v5.0.4 · KLUBNØGLEN I LINKET · #klub=XXXX-XXXX-XXXX
+// Nicolai 15/9: nøglen stod i en tekstklump, som ingen kunne kopiere ud. Nu bærer linket den selv.
+// FRAGMENTET, ikke forespørgslen (sikkerhedsreglen — som #ven= og #familie=), og den huskes, til
+// man er oprettet: en forælder kan nå at lukke appen tre gange undervejs.
+function _klubFraHash(raa) {
+  try {
+    const m = /(?:^|&)klub=([^&]+)/.exec(String(raa || "").replace(/^#/, ""));
+    if (!m) return "";
+    let v = m[1]; try { v = decodeURIComponent(v); } catch (_e) {}
+    v = String(v).trim().toUpperCase();
+    return /^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(v) ? v : "";
+  } catch (_e) { return ""; }
+}
+try {
+  const _kk = _klubFraHash(location.hash);
+  if (_kk) {
+    S.indKlubkode = _kk;
+    try { lager.gem("sai-klub-tilbud", _kk); } catch (_e) {}
+    history.replaceState(null, "", location.pathname);
+  } else if (!S.indKlubkode) {
+    try { const _g = lager.hent("sai-klub-tilbud"); if (_g) S.indKlubkode = _g; } catch (_e) {}
+  }
+} catch (e) {}
+// Som #ven= og #familie=: trykkes linket, mens appen allerede er åben, skifter kun fragmentet.
+window.addEventListener("hashchange", function () {
+  const v = _klubFraHash(location.hash);
+  if (!v) return;
+  S.indKlubkode = v;
+  try { lager.gem("sai-klub-tilbud", v); } catch (_e) {}
+  history.replaceState(null, "", location.pathname);
+  render();
 });
 
 // ⭐ HJEMKOMSTEN (v4.4). Samme domaene = samme lager: bor Team Oskar
@@ -4166,7 +4214,7 @@ const A = {
       clearTimeout(ur);
       const d = await r.json().catch(function(){ return {}; });
       return r.ok ? d : { fejl: d.kode || "netvaerk", t: d.fejl || "" };
-    } catch (e) { clearTimeout(ur); return { fejl: "netvaerk", t: "" }; }
+    } catch (e) { clearTimeout(ur); return { fejl: "netvaerk", ingenSvar: true, t: "" }; }   /* ⭐ v5.0.4 · princip 75: et tavst netværk er ikke et forkert kodeord */
   },
   // ══════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ v4.79.0 · SKYGGEKOPIEN
@@ -4661,7 +4709,12 @@ const A = {
     const r = await A.kontoKald("login", { navn: String(S.logNavn).trim(), kode: _skyKode });
     S.kontoHenter = false;
     if (r.fejl) {
-      S.kontoBesked = { fejl: true, t: r.t || (EN ? "Could not log in." : "Kunne ikke logge ind.") };
+      /* ⭐ v5.0.4 · HVERT UDFALD SIN EGEN SÆTNING (princip 75). Natten til 16/9 så en afvist adresse
+         ud som et forkert kodeord, fordi begge sagde det samme — og vi ledte det forkerte sted i timer. */
+      S.kontoBesked = { fejl: true, t: r.t || (r.ingenSvar
+        ? (EN ? "No answer from the server. Check the connection and try again \u2014 nothing was changed."
+              : "Intet svar fra serveren. Tjek forbindelsen og pr\u00f8v igen \u2014 der er ikke \u00e6ndret noget.")
+        : (EN ? "Wrong username or password." : "Forkert brugernavn eller kodeord.")) };
       render(); return;
     }
     // ⭐ NØGLEN ER SVARET. Alt andet i appen kender kun den.
@@ -7213,6 +7266,7 @@ const A = {
       S.indVen = _invitVed();   /* ⭐ v4.149.0 · chippen: invitationen stod ikke i feltet, men den gælder */
     }
     S.indKlubkode = "";
+    try { lager.slet("sai-klub-tilbud"); } catch (_e) {}   /* ⭐ v5.0.4 · tilbuddet er indløst */
     S.portStatus = null;
     try { await inviteretTjek(); } catch (_e) {}
     const inde = !!(S.portStatus && S.portStatus.kendt && S.portStatus.status === "godkendt");
@@ -7986,7 +8040,7 @@ function bundNav(){
   var EN = S.sprog === "en";
   var akt = function(ja){ return ja ? " class=\"aktiv\"" : ""; };
   var udv = S.verden === "udv";
-  return '<nav class="bundnav">' +
+  return '<div class="bundtone" aria-hidden="true"></div><nav class="bundnav">' +
     '<button data-a="devgaa" data-v="udv:hjem"' + akt(udv && (S.tab === "hjem" || S.tab === "hb-hjem")) + '><span>🏠</span>' + (EN?"HOME":"HJEM") + '</button>' +
     '<button data-a="devgaa" data-v="udv:kamp"' + akt(udv && S.tab === "kamp") + '><span>🎾</span>' + (EN?"MATCH":"KAMP") + '</button>' +
     '<button data-a="devgaa" data-v="udv:fysisk"' + akt(udv && S.tab === "fysisk") + '><span>💪</span>' + (EN?"TRAIN":"TRÆN") + '</button>' +
@@ -9586,7 +9640,7 @@ function _tegn() {
               (S.sprog === "en" ? "Back" : "Tilbage") + '</button></div>'
             : '') +
           _prik +
-          '<p class="lille" style="margin:10px 0 0;opacity:.4;font-size:10px">' + VERSION + '</p></div>' +
+          '<p class="lille" style="margin:10px 0 0;opacity:.4;font-size:10px">' + VERSION + SKAL + '</p></div>' +
         '</div>';
       return;
     }
@@ -9635,7 +9689,7 @@ function _tegn() {
           '<p class="lille sai-op" style="animation-delay:.28s;margin:14px auto 0">' +
             '<a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700">' +
             (S.sprog === "en" ? "How does this work? \u2197" : "Hvordan virker det? \u2197") + '</a></p>' +
-          '<p class="lille sai-op" style="animation-delay:.3s;margin:10px auto 0;opacity:.45;font-size:10.5px">' + VERSION + '</p>' +
+          '<p class="lille sai-op" style="animation-delay:.3s;margin:10px auto 0;opacity:.45;font-size:10.5px">' + VERSION + SKAL + '</p>' +
         '</div>';
       return;
     }

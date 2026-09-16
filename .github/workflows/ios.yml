@@ -1,6 +1,11 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v4.6 (16/9 kl. 07.40) — v4.4's adresse-rettelse ER RULLET TILBAGE i capacitor.config.json: Capacitors doks siger, at iosScheme IKKE må
+#   være https (WKWebView ejer skemaet), og at hostname SKAL blive localhost, ellers mister appen «secure context» — og dermed WebCrypto,
+#   som postkassen og boksens nøgle bygger på. Appen hedder capacitor://localhost, og DEN adresse skal stå i motorernes TILLADTE_ORIGINS.
+# v4.5 (16/9 kl. 07.30) — byg 2: «Missing Compliance» igen. Vores fejl: v4.4's PlistBuddy-linje brugte stien fra roden EFTER et `cd ios/App`,
+#   så nøglen blev aldrig skrevet — og trinnet var grønt (princip 75). Rettet sti + vagt, der måler kryptering-svaret OG byggenummeret i plisten.
 # v4.4 (16/9 kl. 01.10) — byg 1 på telefonen: «Kunne ikke logge ind». MÅLT gennem pg_net: motorens dørvagt (TILLADTE_ORIGINS) svarer
 #   tennis.sportsainalytics.com til en afsender, der hedder https://localhost — iPhonen kasserer svaret. Rettet i SKALLEN, ikke i
 #   motoren: capacitor.config.json giver appen jeres eget domæne som adresse (server.hostname). Desuden: MinimumOSVersion 15.0
@@ -60,8 +65,15 @@ jobs:
           echo "App-version: $V · byg ${{ github.event.inputs.byg_nr }}"
           cd ios/App && /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $V" App/Info.plist \
             && /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.event.inputs.byg_nr }}" App/Info.plist
-          # v4.4 · eksport-compliance svares i plisten (kun styresystemets kryptering: HTTPS + WebCrypto) — så spørger TestFlight ikke igen
-          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/App/App/Info.plist
+          # v4.5 · eksport-compliance svares i plisten (kun styresystemets kryptering: HTTPS + WebCrypto) — så spørger TestFlight ikke igen.
+          # ⚠️ v4.4 skrev stien fra RODEN efter et `cd ios/App` — PlistBuddy lavede intet og gav grønt (princip 75). Vagten nedenfor MÅLER nu.
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" App/Info.plist 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" App/Info.plist
+          KRYPT=$(/usr/libexec/PlistBuddy -c "Print :ITSAppUsesNonExemptEncryption" App/Info.plist)
+          BYGNR=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" App/Info.plist)
+          echo "Plisten: version $(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" App/Info.plist) · byg $BYGNR · kryptering-undtaget $KRYPT"
+          test "$KRYPT" = "false" || { echo "⛔ ITSAppUsesNonExemptEncryption står ikke i plisten"; exit 1; }
+          test "$BYGNR" = "${{ github.event.inputs.byg_nr }}" || { echo "⛔ byggenummeret i plisten er $BYGNR"; exit 1; }
       - name: API-nøglen lægges, hvor xcodebuild leder
         run: |
           mkdir -p ~/private_keys

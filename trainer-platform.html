@@ -902,7 +902,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v5.3.0 \u00b7 13. september 2026";
+const VERSION = "v5.3.1 \u00b7 16. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -3246,8 +3246,12 @@ document.addEventListener("click", function(e){
       ? ("\ud83c\udfbe " + _kn + " \u00b7 StreakCoach\n\nDin tr\u00e6nern\u00f8gle: " + S.famNyNoegle +
          "\n\n\u00c5bn platformen og tast n\u00f8glen p\u00e5 skridt 2:\nhttps://tennis.sportsainalytics.com/trainer-platform.html" +
          "\n\nN\u00f8glen er din alene \u2014 del den ikke.")
-      : ("\ud83c\udfbe " + _kn + " inviterer jer ind i StreakTennis!\n\nJeres klubn\u00f8gle: " + S.famNyNoegle +
-         "\n\n\u00c5bn appen og tast den i feltet KLUBN\u00d8GLE, n\u00e5r I opretter jer:\nhttps://tennis.sportsainalytics.com/StreakTennis/");
+      /* ⭐ v5.3.1 · NØGLEN REJSER MED LINKET. Før stod den på egen linje, og familien skulle markere tolv tegn
+         på en telefon og taste dem i et felt. App v5.0.4 læser `#klub=` fra fragmentet og udfylder feltet selv.
+         Nøglen står stadig læsbart nederst — virker linket ikke, skal vejen frem stadig findes. */
+      : ("\ud83c\udfbe " + _kn + " inviterer jer ind i StreakTennis!\n\nTryk p\u00e5 linket \u2014 jeres klubn\u00f8gle er med:\n" +
+         "https://tennis.sportsainalytics.com/StreakTennis/#klub=" + encodeURIComponent(S.famNyNoegle) +
+         "\n\nVirker linket ikke, s\u00e5 tast n\u00f8glen selv, n\u00e5r I opretter jer: " + S.famNyNoegle);
     try {
       navigator.clipboard.writeText(_tekst).then(function(){ S.famKopieret = true; render(); },
         function(){ S.famBesked={fejl:true,t:"Kunne ikke kopiere \u2014 mark\u00e9r n\u00f8glen selv."}; render(); });

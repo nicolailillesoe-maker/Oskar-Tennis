@@ -474,16 +474,24 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.0.5 · 16. september 2026";
+const VERSION = "v5.0.6 · 16. september 2026";
 /* ⭐ v5.0.4 · ER VI I SKALLEN ELLER I BROWSEREN? Capacitor serverer appens filer fra sin EGEN adresse
    (capacitor://localhost) — protokollen er derfor målingen, ikke et gæt på et objekt, der måske er der. */
-const SKAL = (function () {
+const I_SKALLEN = (function () {
   try {
-    if (location.protocol === "capacitor:") return " \u00b7 app";
-    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return " \u00b7 app";
+    if (location.protocol === "capacitor:") return true;
+    if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return true;
   } catch (_e) {}
-  return "";
+  return false;
 })();
+const SKAL = I_SKALLEN ? " \u00b7 app" : "";
+/* \u26d4\u2b50\u2b50\u2b50 v5.0.6 \u00b7 ADRESSEN, ANDRE KAN NAA.
+   MAALT 16/9 kl. 21.23: et delt link lod capacitor://localhost/#ven=nikke og var doedt hos modtageren.
+   location.origin er appens EGEN adresse - den findes kun inde i skallen. Alt, der forlader telefonen,
+   bygges derfor paa DEL_URL. De fire steder: invitationen, live-linket, familielinket og QR-koden. */
+const DEL_URL = I_SKALLEN
+  ? "https://tennis.sportsainalytics.com/StreakTennis/"
+  : (location.origin + location.pathname);
 // ══════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v4.90.0 · TO VISNINGER, ÉN TELEFON (Nicolai 31/8: «man skal adde
 //   team-medlemmer på samme måde som venner. Som team-medlem skifter man
@@ -1693,6 +1701,7 @@ try {
   // for vejledningen, var den eneste der aldrig fik den.
   if (lager.hent("sai-push-vil") === "1"
       && (typeof Notification === "undefined" || Notification.permission === "default")
+      && !I_SKALLEN
       && ((erIOS() && !paaHjemmeskaerm()) || pushMulig())) {
     S.indResultat = "inde"; S.indTrin = 7;
   }
@@ -3051,7 +3060,7 @@ function _qrSvg(tekst) {
     return k.createSvgTag({ cellSize: 4, margin: 3, scalable: true });
   } catch (_e) { return ""; }
 }
-function _qrLink() { return location.origin + location.pathname + "#ven=" + encodeURIComponent(S.mitNavn || S.mitVenneId || ""); }
+function _qrLink() { return DEL_URL + "#ven=" + encodeURIComponent(S.mitNavn || S.mitVenneId || ""); }
 
 // ⭐ v4.133.0 · «Hent spejl» var internt sprog (Nicolai 12/9). Knappen siger
 //   nu, hvad der hentes og fra hvem: spillerens kampe, træning og analyser.
@@ -3603,7 +3612,7 @@ const A = {
       render(); return;
     }
     S.delAppBesked = null;
-    const url = location.origin + location.pathname + "#ven=" + encodeURIComponent(kode);
+    const url = DEL_URL + "#ven=" + encodeURIComponent(kode);
     const t = EN
       ? "I log my tennis matches in StreakTennis — it counts my training streak and shows what to work on. Open the link and create yourself with your own name — I am already waiting as the friend you can ask:\n\n"
       : "Jeg registrerer mine tenniskampe i StreakTennis — den tæller min træningsstreak og viser, hvad jeg skal arbejde med. Åbn linket og opret dig med dit eget navn — jeg står allerede klar som den ven, du kan spørge:\n\n";
@@ -4052,7 +4061,7 @@ const A = {
   },
   liveKopier: () => {
     const EN = S.sprog === "en";
-    const l = location.origin + location.pathname + "?foelg=" + S.foelgekode;
+    const l = DEL_URL + "?foelg=" + S.foelgekode;
     // ⭐ v4.142.0 · ET LIVE-LINK SIGER, AT DET ER ET LIVE-LINK (Nicolai 12/9:
     //   «ellers bliver man forvirret og tror måske det er appen»). Linket rejser
     //   med en sætning — gennem del-arket, hvor det findes.
@@ -5907,7 +5916,7 @@ const A = {
     // ⭐ v4.105.0 · spejlet KUN ved Ja (S.famNySpejl) — ormehullets offentlige nøgle ALTID.
     let _skyDel = ""; try { const _b = lager.hent("sai-sky-noegle"); if (S.famNySpejl && _b && !S.skyLaast) _skyDel = "&sky=" + encodeURIComponent(_b); } catch (_e) {}
     let _postDel = ""; try { const _p = lager.hent("sai-post-offentlig"); if (_p) _postDel = "&post=" + encodeURIComponent(_p); } catch (_e) {}
-    const url = location.origin + location.pathname + "#familie=" + S.famNyKode + _skyDel + _postDel;
+    const url = DEL_URL + "#familie=" + S.famNyKode + _skyDel + _postDel;
     const t = (S.sprog === "en"
       ? "Join our team in StreakTennis — open the link and tap ”Join the team”: "
       : "Vær med på holdet i StreakTennis — åbn linket og tryk ”Bliv en del af teamet”: ");
@@ -9546,7 +9555,13 @@ function _tegn() {
           (S.indVen ? (S.sprog === "en" ? "To the friend zone" : "Til vennezonen") : (S.sprog === "en" ? "Into the app" : "Ind i appen")) + ' →</button>';
         _kro = '<div class="sai-op" style="font-size:54px;line-height:1;margin-bottom:10px">🔔</div>' +
           '<b class="sai-op" style="animation-delay:.06s;font-size:21px;display:block;margin-bottom:8px">' + (S.sprog === "en" ? "Notifications" : "Notifikationer") + '</b>';
-        if (erIOS() && !paaHjemmeskaerm()) {
+        if (I_SKALLEN) {
+          /* v5.0.6 · i skallen findes kanalen ikke — og hjemmeskærmen er ikke vejen dertil. */
+          _kro += '<p class="lille sai-op" style="animation-delay:.1s;margin:0 auto;max-width:21em;line-height:1.55">' + (S.sprog === "en"
+            ? "Notifications arrive in the web version at tennis.sportsainalytics.com. Everything else works right here."
+            : "Notifikationer kommer i web-udgaven p\u00e5 tennis.sportsainalytics.com. Alt andet virker her.") + '</p>';
+          _knap = _sidste;
+        } else if (erIOS() && !paaHjemmeskaerm()) {
           // iPhone i Safari: kanalen findes ikke her — vis vejen.
           try { lager.gem("sai-push-vil", "1"); } catch (_e) {}
           // ⭐⭐⭐ v4.66.0 · HJEMMESKAERMEN FAAR SIN EGEN SKAERM.
@@ -11238,7 +11253,17 @@ function _tegn() {
         // «browseren kan ikke» UDEN at naevne hjemmeskaermen. Louise
         // stod med et kort, der ikke kunne taendes, og ingen vej videre.
         // Paa iPhone ER hjemmeskaermen svaret — den doemmes FOERST.
-        if (forkertBrowser() && !paaHjemmeskaerm()) {
+        if (I_SKALLEN) {
+          /* \u26d4 v5.0.6 \u00b7 MAALT: i en WKWebView findes PushManager ikke (Web Push paa iOS er
+             kun for hjemmeskaerms-web-apps), og service workeren registreres kun paa https:.
+             Kanalen kan altsaa ikke taendes her. Kortet sagde foer "kraever hjemmeskaerm" og bad om
+             en Del-knap, der ikke findes i appen - en umulig opgave paa skaermen. */
+          _pstatus = EN ? "web only" : "kun p\u00e5 web";
+          _pfarve = "var(--daempet)";
+          _pkrop = '<p class="lille" style="margin:0">' + (EN
+            ? "Notifications do not work in the app version. They arrive in the web version at tennis.sportsainalytics.com."
+            : "Notifikationer virker ikke i app-udgaven. De kommer i web-udgaven p\u00e5 tennis.sportsainalytics.com.") + '</p>';
+        } else if (forkertBrowser() && !paaHjemmeskaerm()) {
           // \u26d4\u26d4 v4.78.0 · DEN GAMLE TEKST VAR EN UMULIG OPGAVE HER.
           //   «Tryk paa Del-knappen \u2192 Foej til hjemmeskaerm» findes ikke i
           //   Chrome, Firefox eller Edge paa iPhone. Kortet sendte hende
@@ -11344,7 +11369,7 @@ function _tegn() {
         //   for dem, der trykkede «senere».
         try {
           const _pInde2 = S.portStatus && S.portStatus.kendt && S.portStatus.status === "godkendt";
-          const _safari2 = erIOS() && !paaHjemmeskaerm();
+          const _safari2 = !I_SKALLEN && erIOS() && !paaHjemmeskaerm();
           const _kanSpoerge2 = !_safari2 && pushMulig() && (typeof Notification !== "undefined" && Notification.permission === "default");
           if (_pInde2 && S.rolle !== "familie" && (_safari2 || forkertBrowser())) {
             _pkrop += '<div style="margin-top:10px;padding:10px 12px;border:1.5px solid ' + (forkertBrowser() ? 'var(--guld)' : 'var(--is)') + ';border-radius:12px;display:flex;align-items:center;gap:10px">' +
@@ -13146,8 +13171,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   //     ikke indad i appen. En pilotfamilie læser den her linje 8/9.
   //   Den nye tekst siger de tre ting, der ER sande, og ikke mere.
   if (S.tab !== "chat" && S.tab !== "rumsnak") h += '<p class="fod">'+(EN
-    ? "StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION
-    : "StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION)+'</p>';   /* v4.139.0: hvor det gemmes står på betingelses-siden, ikke i foden */   // ⭐ v4.115.0 · princip 79
+    ? "StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION+SKAL
+    : "StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION+SKAL)+'</p>';   /* v4.139.0: hvor det gemmes står på betingelses-siden, ikke i foden */   // ⭐ v4.115.0 · princip 79
   h += '<i hidden data-bundnav="1"></i>';   /* ⭐ v4.135.0 · markør: denne skærm bærer bjælken */
   el.innerHTML = h;
   devFoldning();

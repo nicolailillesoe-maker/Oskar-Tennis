@@ -905,7 +905,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v5.4.0 \u00b7 18. september 2026";
+const VERSION = "v5.5.0 \u00b7 19. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1846,6 +1846,7 @@ function renderTraener(){
       '<button class="dev-flise dev-kant-is" data-act="tab" data-v="grupper"><span class="ik">👥</span><b>GRUPPER</b><small>hold, spillere & udvikling</small></button>' +
       '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="vurder"><span class="ik">⚡</span><b>VURDÉR TRÆNING</b><small>hele holdet på under 20 sek.</small></button>' +
       '<button class="dev-flise dev-kant-gron" data-act="tab" data-v="kvartal"><span class="ik">📋</span><b>EVALUERING</b><small>AI-udkast — du godkender alt</small></button>' +
+      '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="rum"><span class="ik">💬</span><b>TRÆNERRUMMET</b><small>klubbens trænere — lever ét døgn</small></button>' +
       '<button class="dev-flise" data-act="tab" data-v="indst"><span class="ik">⚙️</span><b>INDSTILLINGER</b><small>klubkode, trup & kopi</small></button>' +
       '</div>';
   } else {
@@ -1854,6 +1855,7 @@ function renderTraener(){
     else if (S.tab==="grupper") h += traenerGrupper(t);
     else if (S.tab==="vurder") h += traenerVurder(t);
     else if (S.tab==="kvartal") h += traenerKvartal(t);
+    else if (S.tab==="rum") h += traenerRummet();
     else if (S.tab==="indst") h += traenerIndstillinger();
   }
   return h;
@@ -1984,6 +1986,111 @@ function famBeskedHer(afsnit){
     (S.famBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.famBesked.t) + '</p>';
 }
 
+// ══ v5.5.0 · TRÆNERRUMMET ══════════════════════════════════════════════
+// Nicolai 19/9: «Et døgn — byg trænerrummet. Dialogen skal leve.»
+// Nicolai 30/8: «INGEN børn der. Det er udelukkende et træner-rum.»
+// Motoren `traener-snak` (v1) lukker KUN trænernøgler ind, filtrerer på
+// klubben fra nøglen og rydder døgnet i hent OG send (princip 70+79).
+// Skærmen: 140 tegn · ingen links · slet kun dine egne · henter hvert
+// 10. sekund, mens rummet er åbent — det er dét, «lever» betyder.
+const SNAK_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/traener-snak";
+S.snakBeskeder = null; S.snakMig = null; S.snakHenter = false; S.snakSender = false; S.snakBesked = null; S.snakUdkast = ""; S.snakHentet = null;
+async function snakKald(handling, krop) {
+  const klub = lager.hent("klubkode", "");
+  if (!klub) return { fejl: "mangler-klubkode" };
+  const st = new AbortController(); const ur = setTimeout(() => st.abort(), 20000);
+  try {
+    const r = await fetch(SNAK_URL, { method: "POST",
+      headers: { "content-type": "application/json", "x-klub-noegle": klub },
+      body: JSON.stringify({ handling, ...krop }), signal: st.signal });
+    clearTimeout(ur);
+    const d = await r.json().catch(() => ({}));
+    return r.ok ? d : { fejl: d.kode || "netvaerk", status: r.status, t: d.fejl };
+  } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+}
+// Hvert udfald sin egen sætning (princip 75) — aldrig «noget gik galt».
+function snakFejltekst(r) {
+  if (!r) return "Ingen forbindelse — prøv igen.";
+  if (r.fejl === "mangler-klubkode" || r.fejl === "mangler-noegle") return "Skriv klubbens trænernøgle under ⚙️ Indstillinger først.";
+  if (r.fejl === "kraever-traener") return "Trænerrummet er kun for klubbens trænere — den nøgle, der er gemt her, er en spillernøgle.";
+  if (r.fejl === "adgang") return "Nøglen blev afvist — den er spærret, udløbet eller ukendt.";
+  if (r.fejl === "link") return "Links er ikke tilladt i rummet.";
+  if (r.fejl === "loft") return "Rummet er fuldt for i dag (200 beskeder) — prøv igen i morgen.";
+  if (r.fejl === "tom") return "Skriv noget først.";
+  return "Ingen forbindelse — prøv igen.";
+}
+async function snakHent(stille) {
+  if (S.snakHenter) return;
+  S.snakHenter = true; if (!stille) { S.snakBesked = null; render(); }
+  const r = await snakKald("hent", {});
+  S.snakHenter = false;
+  if (r && Array.isArray(r.beskeder)) { S.snakBeskeder = r.beskeder; S.snakMig = r.mig || null; S.snakHentet = new Date().toISOString(); }
+  else if (!stille || !S.snakBeskeder) { S.snakBesked = { fejl: true, t: snakFejltekst(r) }; }
+  render();
+}
+async function snakSend() {
+  if (S.snakSender) return;
+  const tekst = String(S.snakUdkast || "").trim().slice(0, 140);
+  if (!tekst) { S.snakBesked = { fejl: true, t: "Skriv noget først." }; render(); return; }
+  S.snakSender = true; S.snakBesked = null; render();
+  const r = await snakKald("send", { navn: String(S.traener || "").slice(0, 40), tekst });
+  S.snakSender = false;
+  if (r && r.besked) {
+    S.snakUdkast = ""; S.snakBeskeder = (S.snakBeskeder || []).concat([r.besked]); S.snakMig = r.besked.fra || S.snakMig;
+    S.snakBesked = { fejl: false, t: "Sendt ✓ — forsvinder om et døgn" };
+  } else { S.snakBesked = { fejl: true, t: snakFejltekst(r) }; }
+  render();
+}
+async function snakSlet(id) {
+  const r = await snakKald("slet", { id });
+  if (r && r.slettet) { S.snakBeskeder = (S.snakBeskeder || []).filter(b => b.id !== id); S.snakBesked = { fejl: false, t: "Slettet ✓" }; }
+  else { S.snakBesked = { fejl: true, t: r && r.fejl === "ukendt" ? "Du kan kun slette dine egne beskeder." : snakFejltekst(r) }; }
+  render();
+}
+function snakKlokke(t) {
+  try { const d = new Date(t); return String(d.getHours()).padStart(2, "0") + "." + String(d.getMinutes()).padStart(2, "0"); } catch (_e) { return ""; }
+}
+function traenerRummet() {
+  let h = '<div class="kort" style="border-left:3px solid var(--guld)">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">💬 TRÆNERRUMMET</div>' +
+      '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="snak-hent">' + (S.snakHenter ? '…' : 'Opdatér') + '</button></div>' +
+    '<p class="lille" style="margin:6px 0 10px;color:var(--daempet)">Kun klubbens trænere — ingen spillere, ingen familier. En besked forsvinder et døgn efter, den er sendt.</p>';
+  const liste = S.snakBeskeder;
+  if (liste === null) {
+    h += '<p class="lille" style="color:var(--daempet);margin:8px 0">' + (S.snakHenter ? 'Henter rummet…' : 'Rummet er ikke hentet endnu.') + '</p>';
+  } else if (!liste.length) {
+    h += '<p class="lille" style="color:var(--daempet);margin:8px 0">Ingen beskeder det seneste døgn. Skriv den første.</p>';
+  } else {
+    h += '<div id="snak-liste" style="display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow-y:auto;padding:2px 0 6px">';
+    for (const b of liste) {
+      const min = !!b.min;
+      h += '<div style="display:flex;flex-direction:column;align-items:' + (min ? 'flex-end' : 'flex-start') + '">' +
+        '<div style="max-width:86%;padding:8px 12px;border-radius:14px;font-size:14px;line-height:1.4;' +
+          (min ? 'background:rgba(240,207,97,.16);border:1px solid rgba(240,207,97,.35)' : 'background:var(--flade);border:1px solid var(--kant)') + '">' +
+          '<div style="font-size:10.5px;font-weight:800;letter-spacing:.6px;color:' + (min ? 'var(--guld)' : 'var(--is)') + ';margin-bottom:2px">' + esc(min ? 'DIG' : (b.navn || 'Træner')).toUpperCase() + ' · ' + snakKlokke(b.t) + '</div>' +
+          '<div class="snak-tekst">' + esc(b.tekst || '') + '</div>' +
+          (min ? '<button class="knap valg" style="flex:none;min-height:0;padding:3px 9px;font-size:10.5px;margin-top:6px" data-act="snak-slet" data-v="' + esc(b.id) + '">Slet</button>' : '') +
+        '</div></div>';
+    }
+    h += '</div>';
+  }
+  const n = String(S.snakUdkast || "").length;
+  h += '<div style="margin-top:10px">' +
+    '<textarea rows="2" maxlength="140" data-felt="snakUdkast" placeholder="Skriv til klubbens trænere …" style="font-size:15px">' + esc(S.snakUdkast || '') + '</textarea>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px">' +
+      '<span class="lille" style="color:var(--daempet)">' + n + ' / 140 · ingen links</span>' +
+      '<button class="knap" style="flex:none;padding:10px 18px;background:var(--guld);color:#12203a" data-act="snak-send">' + (S.snakSender ? 'Sender…' : 'Send') + '</button>' +
+    '</div></div>';
+  if (S.snakBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.snakBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.snakBesked.t) + '</p>';
+  h += '</div>';
+  return h;
+}
+// «Dialogen skal leve»: rummet henter selv hvert 10. sekund, mens det er åbent og synligt.
+setInterval(function () { try { if (S.tab === "rum" && !document.hidden && !S.snakSender) snakHent(true); } catch (_e) {} }, 10000);
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Enter" && !e.shiftKey && e.target && e.target.dataset && e.target.dataset.felt === "snakUdkast") { e.preventDefault(); snakSend(); }
+});
 function noegleKortet(){
   let h = '';
   // ── FAMILIENØGLER (v3.2.0) · traeneren inviterer familierne SELV.
@@ -2879,7 +2986,7 @@ document.addEventListener("click", function(e){
     const nu = S.fokuspunkter[sp] || [];
     S.fokuspunkter[sp] = nu.includes(v) ? nu.filter(x => x !== v) : nu.concat([v]);
     lager.gem("fokuspunkter", S.fokuspunkter); render(); sendVurdering(sp); }
-  if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); }
+  if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); if (v === "rum") { try { snakHent(false); } catch (_e) {} } }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
   else if (act==="vurder-omraade"){ S.vurderOmraade=v; S.vurderScores = {}; render(); }
@@ -3285,6 +3392,9 @@ document.addEventListener("click", function(e){
         function(){ S.famBesked={fejl:true,t:"Kunne ikke kopiere \u2014 mark\u00e9r n\u00f8glen selv."}; render(); });
     } catch(e) { S.famBesked={fejl:true,t:"Kunne ikke kopiere \u2014 mark\u00e9r n\u00f8glen selv."}; render(); } }
   else if (act==="fam-qr"){ S.famQrVis = !S.famQrVis; render(); }
+  else if (act==="snak-hent"){ snakHent(false); }
+  else if (act==="snak-send"){ snakSend(); }
+  else if (act==="snak-slet"){ if (v) snakSlet(v); }
   else if (act==="fam-luk-ny"){ S.famNyNoegle=null; S.famNyEtiket=null; S.famNyRolle=null; S.famKopieret=false; S.famQrVis=false; render(); }
   else if (act==="fam-liste"){
     if (S.famHenter) return;

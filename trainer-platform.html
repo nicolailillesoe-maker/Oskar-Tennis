@@ -905,7 +905,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v5.5.0 \u00b7 19. september 2026";
+const VERSION = "v5.5.1 \u00b7 19. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1846,7 +1846,7 @@ function renderTraener(){
       '<button class="dev-flise dev-kant-is" data-act="tab" data-v="grupper"><span class="ik">👥</span><b>GRUPPER</b><small>hold, spillere & udvikling</small></button>' +
       '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="vurder"><span class="ik">⚡</span><b>VURDÉR TRÆNING</b><small>hele holdet på under 20 sek.</small></button>' +
       '<button class="dev-flise dev-kant-gron" data-act="tab" data-v="kvartal"><span class="ik">📋</span><b>EVALUERING</b><small>AI-udkast — du godkender alt</small></button>' +
-      '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="rum"><span class="ik">💬</span><b>TRÆNERRUMMET</b><small>klubbens trænere — lever ét døgn</small></button>' +
+      '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="rum"><span class="ik">💬</span><b>TRÆNERRUMMET</b><small>klubbens trænere — samtalen bliver</small></button>' +
       '<button class="dev-flise" data-act="tab" data-v="indst"><span class="ik">⚙️</span><b>INDSTILLINGER</b><small>klubkode, trup & kopi</small></button>' +
       '</div>';
   } else {
@@ -1990,7 +1990,8 @@ function famBeskedHer(afsnit){
 // Nicolai 19/9: «Et døgn — byg trænerrummet. Dialogen skal leve.»
 // Nicolai 30/8: «INGEN børn der. Det er udelukkende et træner-rum.»
 // Motoren `traener-snak` (v1) lukker KUN trænernøgler ind, filtrerer på
-// klubben fra nøglen og rydder døgnet i hent OG send (princip 70+79).
+// klubben fra nøglen. Loft 500 pr. klub — de ældste ryger (motor v2).
+// v5.5.1: beskederne BLIVER (motor v2) — «dialogen skal ikke dø imellem trænerne».
 // Skærmen: 140 tegn · ingen links · slet kun dine egne · henter hvert
 // 10. sekund, mens rummet er åbent — det er dét, «lever» betyder.
 const SNAK_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/traener-snak";
@@ -2037,7 +2038,7 @@ async function snakSend() {
   S.snakSender = false;
   if (r && r.besked) {
     S.snakUdkast = ""; S.snakBeskeder = (S.snakBeskeder || []).concat([r.besked]); S.snakMig = r.besked.fra || S.snakMig;
-    S.snakBesked = { fejl: false, t: "Sendt ✓ — forsvinder om et døgn" };
+    S.snakBesked = { fejl: false, t: "Sendt ✓" };
   } else { S.snakBesked = { fejl: true, t: snakFejltekst(r) }; }
   render();
 }
@@ -2055,7 +2056,7 @@ function traenerRummet() {
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">💬 TRÆNERRUMMET</div>' +
       '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="snak-hent">' + (S.snakHenter ? '…' : 'Opdatér') + '</button></div>' +
-    '<p class="lille" style="margin:6px 0 10px;color:var(--daempet)">Kun klubbens trænere — ingen spillere, ingen familier. En besked forsvinder et døgn efter, den er sendt.</p>';
+    '<p class="lille" style="margin:6px 0 10px;color:var(--daempet)">Kun klubbens trænere — ingen spillere, ingen familier. Beskederne bliver stående, til I selv sletter dem.</p>';
   const liste = S.snakBeskeder;
   if (liste === null) {
     h += '<p class="lille" style="color:var(--daempet);margin:8px 0">' + (S.snakHenter ? 'Henter rummet…' : 'Rummet er ikke hentet endnu.') + '</p>';

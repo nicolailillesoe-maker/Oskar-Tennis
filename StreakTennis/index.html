@@ -474,7 +474,10 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.1.0 · 19. september 2026";
+const VERSION = "v5.3.1 · 19. september 2026";
+// ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
+//   Tomt = knappen «Betal her →» tegnes ikke, og kontoen siger «vi kontakter jer», som betingelserne lover.
+const BETALINGSLINK = { fuld: "", fri: "" };
 /* ⭐ v5.0.4 · ER VI I SKALLEN ELLER I BROWSEREN? Capacitor serverer appens filer fra sin EGEN adresse
    (capacitor://localhost) — protokollen er derfor målingen, ikke et gæt på et objekt, der måske er der. */
 const I_SKALLEN = (function () {
@@ -1487,7 +1490,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, side: true, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, fletKasseret: 0, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenPanel: null, kampePanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, liveOvertag: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, ejerBesked: null, klubOpretAaben: false, klubNavnUdkast: "", klubNyNoegle: null, klubNyKlub: "", klubOpretSender: false, klubKopieret: false, gaveAaben: false, gaveSender: null, gaveSoeg: "", klubListe: null, klubHenter: false, klubSpaerSpoerg: null, klubSpaerSender: null, ejerKlubBesked: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null, teamLukket: false, teamForladSpoerg: false, teamInvUdkast: "", budInd: null, budUd: null, budSender: false, budBesked: null, spejlVenter: null, qrVis: false,   /* ⭐ v4.132.0 */ klubBud: null, klubBudHenter: false, klubBudSvarer: null, klubBudBesked: null, klubScannet: "",   /* ⭐ v5.1.0 · klub-bud */
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, side: true, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, fletKasseret: 0, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenPanel: null, kampePanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, liveOvertag: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, ejerBesked: null, klubOpretAaben: false, klubNavnUdkast: "", klubNyNoegle: null, klubNyKlub: "", klubOpretSender: false, klubKopieret: false, gaveAaben: false, gaveSender: null, gaveSoeg: "", klubListe: null, klubHenter: false, klubSpaerSpoerg: null, klubSpaerSender: null, ejerKlubBesked: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null, teamLukket: false, teamForladSpoerg: false, teamInvUdkast: "", budInd: null, budUd: null, budSender: false, budBesked: null, spejlVenter: null, qrVis: false,   /* ⭐ v4.132.0 */ klubBud: null, klubBudHenter: false, klubBudSvarer: null, klubBudBesked: null, klubScannet: "",   /* ⭐ v5.1.0 · klub-bud */ planSkift: false,   /* ⭐ v5.2.0 · skift plan */ betaltTil: null, betaltSender: null,   /* ⭐ v5.3.0 · betalt */
   kaldeAaben: false, kaldeBesked: null, fuldtAaben: false, fuldtUdkast: "", fuldtSender: false, fuldtBesked: null, mitFuldtNavn: null,   /* ⭐ v4.147.0 */
   mitAvatar: undefined, avatarAaben: false, avatarSender: false, gaveInfo: null, gaveMdr: {},   /* ⭐ v4.136.0 */
   gammelAnnul: false,   /* ⭐ v4.138.0 */
@@ -1825,6 +1828,7 @@ async function inviteretTjek() {
     if (r.kendt && r.status === "godkendt" && (r.plan === "gaest" || r.plan === "fuld" || r.plan === "fri" || r.plan === "klub")) {
       S.minPlan = r.plan;
       S.gaveInfo = r.gave ? { gave: true, plan: r.plan, gave_fra: r.gave_fra || null, gave_til: r.gave_til || null } : null;
+      S.betaltTil = r.betalt_til || null;   /* ⭐ v5.3.0 · ejer-port v10 */
     }
     const inde = !!r.kendt && r.status === "godkendt";
     S.doerKamp = !inde;
@@ -2680,7 +2684,18 @@ function liveSend(nu) {
       // ("aktiv" er allerede på hvidlisten i spiller-sync — ingen backend-ændring.)
       aktiv: !_liveDone,
     }).then(function(r){
-      if (r && r.fejl) { S.liveBesked = { fejl: true, t: (S.sprog === "en" ? "Live paused — no connection." : "Live sat på pause — ingen forbindelse.") }; render(); }
+      // ⭐ v5.3.1 · HVERT UDFALD SIN SÆTNING — OG ET GODT KALD SLETTER FEJLEN.
+      //   Målt 19/9 under HRT Cup: «Live sat på pause» stod på skærmen, mens
+      //   basen fik bold efter bold. Beskeden blev sat ved ÉN fejl og aldrig
+      //   slettet. Og «ingen forbindelse» blev sagt om et 403 fra serveren.
+      if (r && r.fejl) {
+        S.liveBesked = { fejl: true, t: r.fejl === "netvaerk"
+          ? (S.sprog === "en" ? "No connection right now — the balls are sent again at the next point." : "Ingen forbindelse lige nu — boldene sendes igen ved næste point.")
+          : (S.sprog === "en" ? "The server refused live (" + r.fejl + ")." : "Serveren afviste live (" + r.fejl + ").") };
+        render();
+      } else if (S.liveBesked && S.liveBesked.fejl) {
+        S.liveBesked = null; render();   /* forbindelsen er tilbage — sig det ved at tie */
+      }
     });
   };
   const siden = Date.now() - _liveSidst;
@@ -3058,7 +3073,10 @@ function _opsRaekke(navn, valg, handling) {
 //   uf · tvunget · returfejl → han tabte point med den fløj
 //   es og dobbeltfejl er serv og har ingen fløj; mod_vinder, mod_es,
 //   mod_uf og mod_dobbelt er modstanderens ketsjer.
-const _HAAND_AARSAG = { vinder: 1, uf: 1, returfejl: 1, mod_tvunget: 1, tvunget: 1 };
+// ⭐ v5.3.0 · «presset til fejl» spørger IKKE om fløjen mere (Nicolai 19/9:
+//   «Der er man bare presset til fejl»). v4.119 satte den ind — fortrudt.
+//   `mod_tvunget` beholder hånden: det er hans eget slag, der pressede dem.
+const _HAAND_AARSAG = { vinder: 1, uf: 1, returfejl: 1, mod_tvunget: 1 };
 const _ZONE_AARSAG  = { uf: 1, tvunget: 1, returfejl: 1 };
 function _efterSkaerm(id, vundet) {
   // ⭐ v4.99.0 · S.side · ⭐ v4.119.0 · side-reglen er væk: årsagerne står
@@ -5148,6 +5166,23 @@ const A = {
   },
   // v er "haandtag|plan"
   gaveMdr: (v) => { const d = String(v || "").split("|"); if (d.length === 2) { S.gaveMdr[d[0]] = +d[1] || 0; render(); } },   /* ⭐ v4.136.0 */
+  // ⭐ v5.3.0 · BETALT. Kontrakten (ejer-port v10, målt 19/9): {h, plan: fuld|fri, maaneder: 1|3|6|12}
+  //   → 200 {betalt, plan, fra, fornavn, betalt_til} · 404 ikke-uden-klub · 422 plan/maaneder.
+  betaltSaet: async (v) => {
+    const d = String(v || "").split("|");
+    if (d.length !== 2) return;
+    const EN = S.sprog === "en";
+    const mdr = S.gaveMdr[d[0]] || 1;   /* «ubegrænset» findes ikke for en betaling — mindst 1 md */
+    S.betaltSender = d[0]; S.ejerBesked = null; render();
+    const r = await A.portKald("betalt", { h: d[0], plan: d[1], maaneder: mdr });
+    S.betaltSender = null;
+    S.ejerBesked = (r && r.fejl)
+      ? { fejl: true, t: r.t || (EN ? "Could not be registered." : "Kunne ikke registreres.") }
+      : { fejl: false, t: (EN ? "Paid: " : "Betalt: ") + (r.fornavn || "") + " \u2192 " + _planNavn(d[1], EN) + (r.betalt_til ? (EN ? " · until " : " · til ") + String(r.betalt_til).slice(0, 10) : "") };
+    const r2 = await A.portKald("liste", { alle: true });
+    if (r2 && !r2.fejl) S.ejerKoe = r2;
+    render();
+  },
   gaveSaet: async (v) => {
     const d = String(v || "").split("|");
     if (d.length !== 2) return;
@@ -7384,6 +7419,13 @@ const A = {
     S.indPlanSender = true; S.indBesked = null; render();
     const r = await A.kontoKald("plan-saet", { plan: oensket });
     S.indPlanSender = false;
+    // ⭐ v5.2.0 · konto v8 skriver oensket paa serveren, ogsaa fra koeen:
+    //   200 { oensket, status: "afventer" }. Saa staar det i Nicolais koe,
+    //   og Luk ind saetter det. Intet parkeres paa telefonen.
+    if (!r.fejl && r.oensket) {
+      try { lager.slet("sai-plan-oensket"); } catch (_e) {}
+      S.minPlan = r.oensket; S.indTrin = 3; render(); return;
+    }
     // ⭐⭐ v4.67.0 · PORTEN ER IKKE EN FEJL PAA DENNE SKAERM.
     //   Et planvalg er et OENSKE, ikke en adgang. Staar man i koeen,
     //   svarer motoren korrekt 403 — men rejsen har ingen anden vej frem,
@@ -7415,6 +7457,27 @@ const A = {
   indTilbage: () => { S.indBesked = null; if ((S.indTrin || 1) === 2 && S.indRolle) { S.indRolle = null; render(); return; } S.indTrin = Math.max(1, (S.indTrin || 1) - 1); render(); },
   // Opgraderingen fra DIN KONTO-kortet — samme kald, andet sted.
   liveDemo: () => { S.liveDemo = !S.liveDemo; render(); try { window.scrollTo(0, 0); } catch (_e) {} },
+  // ⭐ v5.2.0 · SKIFT PLAN. Nicolai 19/9: «man skal kunne ændre ens abonnement i app'en».
+  //   konto plan-saet kunne begge veje siden v5 — skærmen kunne kun én. Kontrakten:
+  //   { plan: gaest|fuld|fri } → 200 { plan } · 409 klub (klubben betaler) · 403 afventer.
+  //   Et eget valg afslutter en gave paa serveren (konto v8) — og kortet siger det samme her.
+  planSkiftAabn: () => { S.planSkift = !S.planSkift; S.kontoBesked = null; render(); },
+  planVaelg: async (v) => {
+    if (S.indPlanSender) return;
+    const oensket = (v === "fuld" || v === "fri") ? v : "gaest";
+    S.indPlanSender = true; S.kontoBesked = null; render();
+    const r = await A.kontoKald("plan-saet", { plan: oensket });
+    S.indPlanSender = false;
+    if (!r.fejl) {
+      S.minPlan = r.plan || oensket; S.gaveInfo = null; S.planSkift = false;
+      S.kontoBesked = { fejl: false, t: oensket === "gaest"
+        ? (S.sprog === "en" ? "Basis — from now. Live is off; analyses count as Basis." : "Basis — gælder fra nu. Live er lukket, og analyserne tæller som Basis.")
+        : (S.sprog === "en" ? _planNavn(oensket, true) + " — we contact you about payment; nothing is charged automatically."
+                            : _planNavn(oensket, false) + " — vi kontakter jer om betalingen; intet trækkes automatisk.") };
+    } else if (r.fejl === "klub") { S.minPlan = "klub"; S.planSkift = false; }
+    else { S.kontoBesked = { fejl: true, t: r.t || (S.sprog === "en" ? "Could not change the plan — try again." : "Kunne ikke skifte plan — prøv igen.") }; }
+    render();
+  },
   planOpgrader: async () => {
     if (S.indPlanSender) return;
     S.indPlanSender = true; render();
@@ -7874,6 +7937,12 @@ const A = {
 // ---------- Rendering ----------
 const esc = (t) => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 // ⭐ v4.121.0 · planens navn, som skaermen kalder den. Ét sted.
+/* ⭐ v5.3.0 · «💳 Betalt til …» på kontokortet — kun når serveren siger det */
+function _betaltTekst(EN) {
+  if (!S.betaltTil) return "";
+  const d = String(S.betaltTil).slice(0, 10).split("-");
+  return ' 💳 ' + (EN ? "Paid until " : "Betalt til ") + (d.length === 3 ? d[2] + "/" + d[1] + "-" + d[0] : S.betaltTil) + '.';
+}
 function _planNavn(p, EN) {
   return p === "gaest" ? (EN ? "Basic" : "Basis")
        : p === "fuld"  ? (EN ? "Full" : "Fuld")
@@ -11069,7 +11138,11 @@ function _tegn() {
             _ekrop += '<div style="padding:8px 0;border-top:1px solid var(--linje)">' +
               '<div style="display:flex;align-items:center;gap:8px">' +
               '<div style="flex:1;min-width:0"><b style="font-size:14px">' + esc(v.fornavn || "") + '</b>' +
-              '<span class="lille" style="display:block;opacity:.7">' + esc(v.klub || "") + ' \u00b7 ' + _ventet(v.oprettet) + '</span></div></div>' +
+              '<span class="lille" style="display:block;opacity:.7">' + esc(v.klub || "") + ' \u00b7 ' + _ventet(v.oprettet) + '</span>' +
+              /* ⭐ v5.2.0 · ØNSKET (ejer-port v9 `oensket`): det, Luk ind sætter. Intet valg → Basis. */
+              '<span class="lille" style="display:block;margin-top:2px;color:var(--guld)">' + (v.oensket
+                ? (EN ? "wants " : "ønsker ") + esc(_planNavn(v.oensket, EN)) + (v.oensket === "fuld" ? " · 49 kr/md" : v.oensket === "fri" ? " · 98 kr/md" : (EN ? " · free" : " · gratis"))
+                : (EN ? "no plan chosen yet → Basis" : "har ikke valgt plan endnu → Basis")) + '</span></div></div>' +
               // \u2b50\u2b50 v4.36.0 \u00b7 HILSNEN. Den staar mellem navnet og
               // knapperne, fordi det er DEN, beslutningen traeffes paa \u2014
               // ikke klubnavnet. `esc` er ikke pynt her: det er fritekst
@@ -11263,7 +11336,9 @@ function _tegn() {
                 '<span class="lille" style="margin:0;opacity:.7">' + (EN?"now: ":"nu: ") + esc(_planNavn(x.plan, EN)) + '</span>' +
                 '<span class="lille" style="margin:0;font-weight:700;color:' + (_erGave ? "var(--guld)" : "var(--daempet)") + '">' +
                   (_erGave ? '\ud83c\udf81 ' + (EN ? "your gift" : "din gave") + (x.givet_tid ? ' \u00b7 ' + esc(String(x.givet_tid).slice(0, 10)) : '') + (x.gave_til ? ' \u00b7 ' + (EN ? "until " : "til ") + esc(String(x.gave_til).slice(0, 10)) : '')
-                           : (EN ? "own plan" : "egen plan")) + '</span></div>' +
+                           : (x.betalt_til && String(x.betalt_til) > new Date().toISOString()
+                             ? '💳 ' + (EN ? "paid until " : "betalt til ") + esc(String(x.betalt_til).slice(0, 10))
+                             : (EN ? "own plan" : "egen plan"))) + '</span></div>' +
                 // ⭐ v4.136.0 · varigheden vælges FØR planen trykkes: ubegrænset · 1 · 3 · 6 · 12 md
                 '<div class="raekke" style="margin-top:6px;gap:4px;flex-wrap:wrap">' + [0, 1, 3, 6, 12].map(function(m){
                   const valgt = (S.gaveMdr[x.h] || 0) === m;
@@ -11274,6 +11349,12 @@ function _tegn() {
                   return '<button class="knap valg" style="min-height:40px;font-size:12px' + (x.plan === pl ? ";border-color:var(--vundet);color:var(--vundet)" : "") + '"' +
                     (S.gaveSender === x.h ? " disabled" : "") + ' data-a="gaveSaet" data-v="' + esc(x.h + "|" + pl) + '">' +
                     (S.gaveSender === x.h ? "\u23f3" : (pl === "gaest" ? (EN?"Basic":"Basis") : pl === "fuld" ? (EN?"Full":"Fuld") : (EN?"Free streaming":"Fri streaming"))) + '</button>';
+                }).join("") + '</div>' +
+                /* ⭐ v5.3.0 · BETALT — pengene er kommet: planen og datoen (måneder = den valgte varighed, mindst 1). ejer-port v10 `betalt`. */
+                '<div class="raekke" style="margin-top:6px;align-items:center;gap:6px"><span class="lille" style="margin:0;flex:0 0 auto;opacity:.8">💳 ' + (EN ? "PAID:" : "BETALT:") + '</span>' +
+                ["fuld", "fri"].map(function(pl){
+                  return '<button class="knap valg" style="min-height:38px;font-size:12px;border-color:var(--guld);color:var(--guld)"' + (S.betaltSender === x.h ? " disabled" : "") +
+                    ' data-a="betaltSaet" data-v="' + esc(x.h + "|" + pl) + '">' + (S.betaltSender === x.h ? "\u23f3" : (pl === "fuld" ? (EN?"Full":"Fuld") : (EN?"Free streaming":"Fri streaming"))) + '</button>';
                 }).join("") + '</div>';
               // ⭐⭐ TAG GAVEN TILBAGE — to trin som Slet, og teksten siger,
               //   hvad der IKKE sker. Kun på rækker, der ER en gave.
@@ -11495,23 +11576,47 @@ function _tegn() {
           if (S.portStatus && S.portStatus.kendt && S.portStatus.status !== "godkendt") {
             _kk += '<div class="lille" style="margin:2px 0 8px;padding:9px 11px;border-left:3px solid var(--guld);background:rgba(240,207,97,.07);border-radius:0 9px 9px 0;line-height:1.55">' +
               '⏳ <b>' + (EN ? "Your access is waiting for a yes." : "Din adgang venter på et ja.") + '</b><br>' +
-              (EN ? "Streak, training and matches already work. Your plan is set the moment you are let in."
-                  : "Streak, træning og kampe virker allerede. Planen sættes, i samme øjeblik I bliver lukket ind.") + '</div>';
-          } else if (S.gaveInfo && S.gaveInfo.gave) {
-            _kk += _gaveTekst(EN);   /* ⭐ v4.136.0 · gaven fremgår */
-          } else if (S.minPlan === "gaest") {
-            _kk += '<div class="lille" style="margin:2px 0 8px;display:flex;align-items:center;gap:8px">' +
-              '<span style="flex:1;min-width:0">🎟 ' + (EN ? "Basis — 3 AI analyses in total, matches are not shared live." : "Basis — 3 AI-analyser i alt, kampene deles ikke live.") + '</span>' +
-              '<button class="knap" style="flex:none;width:auto;min-height:40px;padding:6px 12px;font-size:12px;background:var(--grus)" data-a="planOpgrader">' +
-              (S.indPlanSender ? "\u23f3" : (EN ? "Full access" : "Få fuld adgang")) + '</button></div>';
-          } else if (S.minPlan === "fri") {
-            _kk += '<div class="lille" style="margin:2px 0 8px">🚀 ' + (EN
-              ? "Full access + free streaming — live with no limit."
-              : "Fuld adgang + fri streaming — live uden loft.") + '</div>';
-          } else if (S.minPlan === "fuld") {
-            _kk += '<p class="lille" style="margin:2px 0 8px">⭐ ' + (EN ? "Full access — incl. live streaming (49 kr/mo)." : "Fuld adgang — inkl. live-streaming (49 kr/md).") + '</p>';
-          } else if (S.minPlan === "klub") {
-            _kk += '<p class="lille" style="margin:2px 0 8px">🏛 ' + (EN ? "Your club pays — full access." : "Klubben betaler — fuld adgang.") + '</p>';
+              (EN ? "Streak, training and matches already work. " : "Streak, træning og kampe virker allerede. ") +
+              /* ⭐ v5.2.0 · ejer-port v9 min-status bærer `oensket` */
+              (S.portStatus.oensket
+                ? (EN ? "You chose <b>" + esc(_planNavn(S.portStatus.oensket, EN)) + "</b> — it is set the moment you are let in."
+                      : "I har valgt <b>" + esc(_planNavn(S.portStatus.oensket, EN)) + "</b> — den sættes, i samme øjeblik I bliver lukket ind.")
+                : (EN ? "Your plan is set the moment you are let in." : "Planen sættes, i samme øjeblik I bliver lukket ind.")) + '</div>';
+          } else {
+            /* ⭐ v5.2.0 · PLANEN STÅR — OG KAN SKIFTES. Nicolai 19/9: «man skal kunne ændre ens
+               abonnement i app'en». Før: Basis havde én knap (op til Fuld), Fuld/Fri havde ingen.
+               Nu: planen står, og «Skift plan» åbner de tre kort. Klub kan hverken vælges eller
+               forlades (klubben betaler). Et eget valg afslutter en gave (konto v8). */
+            var _pl = S.minPlan;
+            if (S.gaveInfo && S.gaveInfo.gave) {
+              _kk += _gaveTekst(EN);   /* ⭐ v4.136.0 · gaven fremgår */
+            } else if (_pl === "gaest") {
+              _kk += '<p class="lille" style="margin:2px 0 8px">🎟 ' + (EN ? "Basis — 3 AI analyses in total, matches are not shared live." : "Basis — 3 AI-analyser i alt, kampene deles ikke live.") + '</p>';
+            } else if (_pl === "fri") {
+              _kk += '<p class="lille" style="margin:2px 0 8px">🚀 ' + (EN ? "Full access + free streaming — live with no limit." : "Fuld adgang + fri streaming — live uden loft.") + _betaltTekst(EN) + '</p>';
+            } else if (_pl === "fuld") {
+              _kk += '<p class="lille" style="margin:2px 0 8px">⭐ ' + (EN ? "Full access — incl. live streaming (49 kr/mo)." : "Fuld adgang — inkl. live-streaming (49 kr/md).") + _betaltTekst(EN) + '</p>';
+            } else if (_pl === "klub") {
+              _kk += '<p class="lille" style="margin:2px 0 8px">🏛 ' + (EN ? "Your club pays — full access." : "Klubben betaler — fuld adgang.") + '</p>';
+            }
+            if (_pl && _pl !== "klub") {
+              if (S.planSkift) {
+                var _pv = function(v, ik, titel, pris, tekst){
+                  return '<button class="knap valg" style="width:100%;text-align:left;min-height:52px;margin-top:6px;padding:9px 12px' + (v === _pl ? ';border-color:var(--guld);opacity:.55' : '') + '" data-a="planVaelg" data-v="' + v + '"' + (v === _pl ? ' disabled' : '') + '>' +
+                    '<b>' + ik + ' ' + titel + '</b><span style="float:right;font-weight:800;color:var(--guld)">' + pris + '</span><br>' +
+                    '<span class="lille" style="opacity:.75">' + tekst + (v === _pl ? (EN ? " · your plan now" : " · jeres plan nu") : "") + '</span></button>';
+                };
+                _kk += '<div style="margin:4px 0 8px">' +
+                  _pv("gaest", "🎟", "BASIS", (EN ? "free" : "gratis"), (EN ? "3 AI analyses in total · no live" : "3 AI-analyser i alt · ingen live")) +
+                  _pv("fuld", "⭐", (EN ? "FULL ACCESS" : "FULD ADGANG"), (EN ? "49 kr/mo" : "49 kr/md"), (EN ? "40 AI analyses a month · live, 3 matches a month included" : "40 AI-analyser om måneden · live, 3 kampe om måneden er med")) +
+                  _pv("fri", "🚀", (EN ? "FULL + FREE STREAMING" : "FULD + FRI STREAMING"), (EN ? "98 kr/mo" : "98 kr/md"), (EN ? "live with no limit" : "live uden loft")) +
+                  '<p class="lille" style="margin:8px 0 0;opacity:.7">' + (EN ? "Upgrade: we contact you about payment — nothing is charged automatically. Basis applies at once." : "Op: vi kontakter jer om betalingen — intet trækkes automatisk. Basis gælder med det samme.") + '</p>' +
+                  '<button class="knap valg" style="min-height:40px;margin-top:6px" data-a="planSkiftAabn">' + (EN ? "Cancel" : "Fortryd") + '</button></div>';
+              } else {
+                _kk += '<button class="knap' + (_pl === "gaest" ? '' : ' valg') + '" style="min-height:40px;margin:0 0 8px;padding:6px 14px' + (_pl === "gaest" ? ';background:var(--grus)' : '') + '" data-a="planSkiftAabn">' +
+                  (S.indPlanSender ? "⏳" : (_pl === "gaest" ? (EN ? "Full access" : "Få fuld adgang") : (EN ? "Change plan" : "Skift plan"))) + '</button>';
+              }
+            }
           }
           if (S.kodeAaben2) {
             _kk += '<input type="password" placeholder="' + (EN?"current password":"nuværende kodeord") + '" value="' + esc(S.kodeGammel) + '" data-felt="kodeGammel" maxlength="200" autocomplete="current-password">' +
@@ -11584,6 +11689,11 @@ function _tegn() {
         }
         if (S.kontoBesked && S.kontoAaben !== "log") {
           _kk += '<p class="lille" style="margin:8px 0 0;color:' + (S.kontoBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.kontoBesked.t) + '</p>';
+        }
+        /* ⭐ v5.3.0 · BETAL HER — kun på en ubetalt Fuld/Fri, og kun når linket findes (tomt i dag) */
+        if ((S.minPlan === "fuld" || S.minPlan === "fri") && !S.betaltTil && !(S.gaveInfo && S.gaveInfo.gave) && BETALINGSLINK[S.minPlan]) {
+          _kk += '<a class="knap" href="' + esc(BETALINGSLINK[S.minPlan]) + '" target="_blank" rel="noopener" style="display:block;text-align:center;min-height:44px;line-height:44px;margin-top:8px;text-decoration:none">💳 ' +
+            (EN ? "Pay here" : "Betal her") + ' · ' + (S.minPlan === "fuld" ? "49" : "98") + ' kr/md →</a>';
         }
         /* ⭐ v4.158.0 · sikkerhedskopien er et afsnit i kontoen — den handler om kontoens data */
         _kk += '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--linje)">' +

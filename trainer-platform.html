@@ -905,7 +905,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v5.5.1 \u00b7 19. september 2026";
+const VERSION = "v5.6.0 \u00b7 19. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -991,7 +991,7 @@ var EN = {
 "Læg i trup": "Add to squad",
 "gør ham til din.": "makes them yours.",
 "Vælg, hvad du vil i gang med": "Choose what you want to do",
-"UDSTED NØGLE": "ISSUE KEY",
+"UDSTED NØGLE": "ISSUE KEY", "INVITÉR SPILLER": "INVITE PLAYER", "via brugernavn — eller QR til nye": "by username — or a QR code for new players",
 "én pr. familie — vises kun én gang": "one per family — shown only once",
 "GRUPPER": "GROUPS",
 "hold, spillere & udvikling": "groups, players & development",
@@ -1346,7 +1346,7 @@ var EN = {
 "Vurderet {x} · ugens fokus: fysisk": "Rated {x} · focus of the week: physical",
 "Vurderet {x} · ugens fokus: mentalt": "Rated {x} · focus of the week: mental",
 "{x} er lagt i truppen ✓ · {x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 GRUPPER.": "{x} has been added to the squad ✓ · {x} calls their own group «{x}» — put {x} in a group under 👥 GROUPS.",
-"De forsvinder, så snart din første rigtige spiller er i truppen. 💡 Den nemmeste vej: udsted en nøgle under 🔑 UDSTED NØGLE — når familien har tastet den, dukker spilleren op under 📥 NYE SPILLERE, og et tryk på": "They disappear as soon as your first real player is in the squad. 💡 The easiest way: issue a key under 🔑 ISSUE KEY — once the family has entered it, the player shows up under ⚙️ SETTINGS → 📥 NEW PLAYERS, and one tap on",
+"De forsvinder, så snart din første rigtige spiller er i truppen. 💡 Den nemmeste vej: find spilleren under 📲 INVITÉR SPILLER — siger familien ja i StreakTennis, dukker spilleren op under 📥 NYE SPILLERE, og et tryk på": "They disappear as soon as your first real player is in the squad. 💡 The easiest way: find the player under 📲 INVITE PLAYER — once the family says yes in StreakTennis, the player shows up under ⚙️ SETTINGS → 📥 NEW PLAYERS, and one tap on",
 "Holdets træningsstreaks som venlig konkurrence i spillernes app — kun fornavne og tal. FRA som standard; du vælger til pr. hold, og hver familie skal OGSÅ selv sige ja i deres app (og i forældresamtykkets stige-punkt), før deres barn kan ses.": "The squad's training streaks as friendly competition in the players' app — first names and numbers only. OFF by default; you opt in per group, and every family must ALSO say yes in their own app (and in the streak item of the parental consent) before their child can be seen.",
 "Kommet ind med en nøgle": "Came in with a key",
 "Venter på klubben": "Waiting for the club"
@@ -1822,7 +1822,7 @@ function renderTraener(){
   // Prototype-banneret gaelder kun eksempeldata. Har traeneren skrevet sin egen
   // trup ind, er det hans rigtige spillere — og saa maa der ikke staa "fake data".
   if (!(S.truppen||[]).length) {
-    h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> De forsvinder, så snart din første rigtige spiller er i truppen. 💡 Den nemmeste vej: udsted en nøgle under 🔑 UDSTED NØGLE — når familien har tastet den, dukker spilleren op under 📥 NYE SPILLERE, og et tryk på <b>Læg i trup</b> gør ham til din.</div>';
+    h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> De forsvinder, så snart din første rigtige spiller er i truppen. 💡 Den nemmeste vej: find spilleren under 📲 INVITÉR SPILLER — siger familien ja i StreakTennis, dukker spilleren op under 📥 NYE SPILLERE, og et tryk på <b>Læg i trup</b> gør ham til din.</div>';
   }
   if (S.tab==="hjem") {
     h += '<p style="margin:16px 2px 4px;font-size:12.5px;color:var(--daempet)">Vælg, hvad du vil i gang med</p>';
@@ -1842,7 +1842,7 @@ function renderTraener(){
       //   Og den hører alligevel til alle: BEGGE roller må udstede
       //   spillernøgler (kun trænernøgler er admin-only, og det afsnit
       //   inde i kortet skjuler sig selv). Ingen rolle at spørge om.
-      '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="noegler"><span class="ik">🔑</span><b>UDSTED NØGLE</b><small>én pr. familie — vises kun én gang</small></button>' +
+      '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="noegler"><span class="ik">🔑</span><b>INVITÉR SPILLER</b><small>via brugernavn — eller QR til nye</small></button>' +
       '<button class="dev-flise dev-kant-is" data-act="tab" data-v="grupper"><span class="ik">👥</span><b>GRUPPER</b><small>hold, spillere & udvikling</small></button>' +
       '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="vurder"><span class="ik">⚡</span><b>VURDÉR TRÆNING</b><small>hele holdet på under 20 sek.</small></button>' +
       '<button class="dev-flise dev-kant-gron" data-act="tab" data-v="kvartal"><span class="ik">📋</span><b>EVALUERING</b><small>AI-udkast — du godkender alt</small></button>' +
@@ -2092,8 +2092,101 @@ setInterval(function () { try { if (S.tab === "rum" && !document.hidden && !S.sn
 document.addEventListener("keydown", function (e) {
   if (e.key === "Enter" && !e.shiftKey && e.target && e.target.dataset && e.target.dataset.felt === "snakUdkast") { e.preventDefault(); snakSend(); }
 });
+// ══ v5.6.0 · INVITÉR EN SPILLER GENNEM APPEN ═══════════════════════════
+// Nicolai 19/9: «Vi skal væk imellem at sende koder fra træner til børn. Man skal kunne connecte
+// sig igennem app'en enten ved at finde brugeren og invitere — eller ved QR-koden.»
+// Motoren `klub-bud` v1 (oppe 19/9, målt 18/18): soeg · inviter · sendte på TRÆNERnøglen.
+// Træneren ser aldrig en spillernøgle — kun brugernavn, årgang og om spilleren allerede er med.
+// Siger spilleren ja i StreakTennis, udsteder serveren nøglen direkte til spillerens app.
+const KLUBBUD_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/klub-bud";
+S.budNavn = ""; S.budTraef = null; S.budHenter = false; S.budSender = false; S.budBesked = null; S.budSendte = null;
+async function budKald(handling, krop) {
+  const klub = lager.hent("klubkode", "");
+  if (!klub) return { fejl: "mangler-klubkode" };
+  const st = new AbortController(); const ur = setTimeout(() => st.abort(), 20000);
+  try {
+    const r = await fetch(KLUBBUD_URL, { method: "POST",
+      headers: { "content-type": "application/json", "x-klub-noegle": klub },
+      body: JSON.stringify({ handling, ...krop }), signal: st.signal });
+    clearTimeout(ur);
+    const d = await r.json().catch(() => ({}));
+    return r.ok ? d : { fejl: d.kode || "netvaerk", status: r.status, t: d.fejl };
+  } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+}
+function budFejltekst(r) {
+  const k = r && r.fejl;
+  if (k === "mangler-klubkode" || k === "mangler-noegle") return "Skriv klubbens trænernøgle under ⚙️ Indstillinger først.";
+  if (k === "kraever-traener") return "Kun klubbens trænere kan invitere — nøglen her er en spillernøgle.";
+  if (k === "adgang") return "Nøglen blev afvist — den er spærret, udløbet eller ukendt.";
+  if (k === "ingen") return "Ingen med det brugernavn — eller spilleren har valgt ikke at kunne findes. Så virker QR-koden stadig.";
+  if (k === "format") return "Skriv spillerens brugernavn (3-20 tegn).";
+  if (k === "allerede-i-klubben") return "Spilleren er allerede i klubben.";
+  if (k === "bud-findes") return "Spilleren har allerede en invitation fra jer — den venter på et ja.";
+  if (k === "loft") return "For mange åbne invitationer.";
+  return "Ingen forbindelse — prøv igen.";
+}
+async function budSoeg() {
+  if (S.budHenter) return;
+  const bn = String(S.budNavn || "").trim();
+  if (!bn) { S.budBesked = { fejl: true, t: "Skriv spillerens brugernavn." }; render(); return; }
+  S.budHenter = true; S.budBesked = null; S.budTraef = null; render();
+  const r = await budKald("soeg", { brugernavn: bn });
+  S.budHenter = false;
+  if (r && r.fundet) S.budTraef = r.fundet; else S.budBesked = { fejl: true, t: budFejltekst(r) };
+  render();
+}
+async function budInviter() {
+  if (S.budSender || !S.budTraef) return;
+  S.budSender = true; S.budBesked = null; render();
+  const r = await budKald("inviter", { brugernavn: S.budTraef.brugernavn, navn: String(S.traener || "").slice(0, 40) });
+  S.budSender = false;
+  if (r && r.bud) {
+    S.budBesked = { fejl: false, t: "Invitationen er sendt til " + r.bud.brugernavn + " ✓ — spilleren ser den i StreakTennis under ⚙️ → DIN KLUB og siger selv ja. Ingen kode at sende." };
+    S.budTraef = null; S.budNavn = "";
+    try { budSendteHent(); } catch (_e) {}
+  } else { S.budBesked = { fejl: true, t: budFejltekst(r) }; }
+  render();
+}
+async function budSendteHent() {
+  const r = await budKald("sendte", {});
+  if (r && Array.isArray(r.bud)) { S.budSendte = r.bud; render(); }
+}
+function budKortet() {
+  let h = '<div class="kort" style="border-left:3px solid var(--guld)">' +
+    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">📲 INVITÉR EN SPILLER, DER HAR STREAKTENNIS</div>' +
+    '<p class="lille" style="margin:6px 0 10px;color:var(--daempet)">Skriv spillerens brugernavn. Invitationen lander i spillerens app — siger spilleren ja, er han med i klubben. <b>Ingen kode at sende.</b> Har spilleren ikke StreakTennis endnu, er QR-koden nedenfor vejen.</p>' +
+    '<div style="display:flex;gap:8px;align-items:center">' +
+      '<input class="felt" data-felt="budNavn" placeholder="brugernavn" autocapitalize="none" autocomplete="off" value="' + esc(S.budNavn || '') + '" style="flex:1;min-width:0">' +
+      '<button class="knap" style="flex:none;padding:12px 16px;background:var(--grus)" data-act="bud-soeg">' + (S.budHenter ? '…' : 'Find') + '</button></div>';
+  if (S.budTraef) {
+    const f = S.budTraef;
+    h += '<div style="margin-top:10px;padding:10px 12px;border-radius:14px;background:var(--flade);border:1px solid var(--kant)">' +
+      '<div style="font-weight:800;font-size:15px">' + esc(f.brugernavn || '') + '</div>' +
+      '<div class="lille" style="color:var(--daempet)">' + (f.klub ? esc(f.klub) : 'ingen klub') + (f.aargang ? ' · årgang ' + esc(f.aargang) : '') + '</div>' +
+      (f.allerede ? '<p class="lille" style="margin:8px 0 0;color:var(--vundet)">Er allerede i klubben ✓</p>'
+        : f.bud ? '<p class="lille" style="margin:8px 0 0;color:var(--is)">Har allerede en invitation fra jer — den venter på et ja.</p>'
+        : '<button class="knap" style="margin-top:10px;background:var(--guld);color:#12203a" data-act="bud-inviter">' + (S.budSender ? 'Sender…' : '✉️ Invitér ' + esc(f.brugernavn || '')) + '</button>') +
+      '</div>';
+  }
+  if (S.budBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.budBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.budBesked.t) + '</p>';
+  if (S.budSendte && S.budSendte.length) {
+    const aabne = S.budSendte.filter(b => b.status === "afventer");
+    h += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--kant)"><div class="lille" style="color:var(--daempet);margin-bottom:4px">Sendte invitationer</div>';
+    for (const b of S.budSendte.slice(0, 20)) {
+      h += '<div class="lille" style="display:flex;justify-content:space-between;gap:8px"><span>' + esc(b.brugernavn || '?') + '</span><span style="color:' +
+        (b.status === "taget" ? 'var(--vundet)' : b.status === "afvist" ? 'var(--tabt)' : 'var(--daempet)') + '">' +
+        (b.status === "taget" ? 'sagde ja ✓' : b.status === "afvist" ? 'sagde nej' : 'venter') + '</span></div>';
+    }
+    h += (aabne.length ? '' : '') + '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Enter" && e.target && e.target.dataset && e.target.dataset.felt === "budNavn") { e.preventDefault(); budSoeg(); }
+});
 function noegleKortet(){
-  let h = '';
+  let h = budKortet();   /* ⭐ v5.6.0 · invitationen først — koden er reserven */
   // ── FAMILIENØGLER (v3.2.0) · traeneren inviterer familierne SELV.
     // Noeglen dannes paa serveren, vises EEN gang og gemmes kun som hash.
     // Ingen mennesker administrerer hemmeligheder — heller ikke Nicolai.
@@ -2905,7 +2998,7 @@ function traenerKvartal(t){
 //   Malingen er væk. I stedet normaliseres VÆRDIEN, så skærm og server
 //   altid er enige. Kodeord og navn røres ikke.
 var SC_STORT = ["doerNoegle", "lukNyNoegle", "skiftNoegle"];
-var SC_SMAAT = ["doerBrugernavn", "doerLogNavn", "doerMail"];
+var SC_SMAAT = ["doerBrugernavn", "doerLogNavn", "doerMail", "budNavn"];
 document.addEventListener("input", function(e){
   var f = e.target.dataset && e.target.dataset.felt; if (!f) return;
   var raa = e.target.value;
@@ -2987,7 +3080,7 @@ document.addEventListener("click", function(e){
     const nu = S.fokuspunkter[sp] || [];
     S.fokuspunkter[sp] = nu.includes(v) ? nu.filter(x => x !== v) : nu.concat([v]);
     lager.gem("fokuspunkter", S.fokuspunkter); render(); sendVurdering(sp); }
-  if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); if (v === "rum") { try { snakHent(false); } catch (_e) {} } }
+  if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); if (v === "rum") { try { snakHent(false); } catch (_e) {} } if (v === "noegler") { try { budSendteHent(); } catch (_e) {} } }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
   else if (act==="vurder-omraade"){ S.vurderOmraade=v; S.vurderScores = {}; render(); }
@@ -3393,6 +3486,8 @@ document.addEventListener("click", function(e){
         function(){ S.famBesked={fejl:true,t:"Kunne ikke kopiere \u2014 mark\u00e9r n\u00f8glen selv."}; render(); });
     } catch(e) { S.famBesked={fejl:true,t:"Kunne ikke kopiere \u2014 mark\u00e9r n\u00f8glen selv."}; render(); } }
   else if (act==="fam-qr"){ S.famQrVis = !S.famQrVis; render(); }
+  else if (act==="bud-soeg"){ budSoeg(); }
+  else if (act==="bud-inviter"){ budInviter(); }
   else if (act==="snak-hent"){ snakHent(false); }
   else if (act==="snak-send"){ snakSend(); }
   else if (act==="snak-slet"){ if (v) snakSlet(v); }

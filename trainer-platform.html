@@ -167,6 +167,45 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 .dev-kant-grus{box-shadow:inset 0 0 0 1px rgba(123,155,255,.4),inset 0 22px 44px -30px rgba(123,155,255,.55)}
 .dev-kant-gron{box-shadow:inset 0 0 0 1px rgba(34,153,90,.4),inset 0 22px 44px -30px rgba(34,153,90,.5)}
 .dev-pilknap{width:44px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--kort);border:1px solid var(--kant);border-radius:12px;color:var(--is);font-size:15px;cursor:pointer;padding:0;margin:10px 0 6px;backdrop-filter:blur(8px)}
+/* ══ v6.0.0 · STREAKTENNIS' SKAL: bjælken i bunden (ordret fra appens .bundnav/.bundtone), den brede knap, programmet ══ */
+body{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
+.bundtone{position:fixed;left:0;right:0;bottom:0;height:calc(104px + env(safe-area-inset-bottom));pointer-events:none;z-index:45;background:linear-gradient(180deg,rgba(11,18,32,0) 0%,rgba(11,18,32,.88) 46%,#0B1220 78%)}
+.bundnav{position:fixed;left:0;right:0;margin:0 auto;bottom:14px;width:min(492px,calc(100% - 28px));display:flex;justify-content:space-around;gap:2px;background:rgba(13,20,38,.85);border:1px solid var(--kant);border-radius:999px;padding:8px 10px calc(8px + env(safe-area-inset-bottom)/2);backdrop-filter:blur(14px);z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.bundnav button{background:none;border:none;color:var(--daempet);font-size:8.5px;letter-spacing:.08em;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:2px 10px;font-family:inherit;min-height:0}
+.bundnav button span{font-size:18px;line-height:1}
+.bundnav button.aktiv{color:var(--is)}
+.knap.stor{width:100%;padding:24px 8px;font-size:19px;letter-spacing:1.5px;text-transform:uppercase;border-radius:20px;box-shadow:0 10px 28px rgba(0,0,0,.35);min-height:72px}
+.knap.gron{background:var(--vundet);color:#fff}
+.knap.roed{background:var(--tabt);color:#fff}
+.dag-rk{display:flex;gap:5px;margin:10px 0 8px}
+.dag-rk button{flex:1;min-height:40px;padding:6px 0;border:1px solid var(--kant);border-radius:11px;background:transparent;color:var(--daempet);font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit;position:relative}
+.dag-rk button.aktiv{background:rgba(159,216,232,.12);color:var(--is);border-color:var(--is)}
+.dag-rk button i{position:absolute;top:-6px;right:-4px;font-style:normal;font-size:9.5px;font-weight:800;background:var(--guld);color:#12203a;border-radius:9px;padding:1px 5px;line-height:1.3}
+.pas-kort{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:15px;border:1px solid var(--kant);background:var(--kort);margin-bottom:8px;cursor:pointer;text-align:left;width:100%;color:var(--kridt);font-family:inherit}
+.pas-kort .tid{flex:none;font-size:14px;font-weight:800;color:var(--is);min-width:84px;line-height:1.25}
+.pas-kort .tid small{display:block;font-size:10.5px;color:var(--daempet);font-weight:700;letter-spacing:.04em}
+.pas-kort .om{flex:1;min-width:0;font-size:13px;line-height:1.35}
+.pas-kort .om small{display:block;font-size:11.5px;color:var(--daempet);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pas-kort .mrk{flex:none;font-size:10px;font-weight:800;letter-spacing:.06em;padding:3px 7px;border-radius:8px;background:var(--flade);color:var(--daempet)}
+.pas-kort .mrk.gron{background:rgba(34,153,90,.18);color:#5fd68f}
+.pas-kort .mrk.guld{background:rgba(240,207,97,.16);color:var(--guld)}
+.pas-kort .mrk.roed{background:rgba(210,72,78,.16);color:#ff8a8f}
+.delt-rk{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--kant)}
+.delt-rk:first-of-type{border-top:none}
+.delt-rk .nv{flex:1;min-width:0;font-size:13.5px;font-weight:700}
+.delt-rk .nv small{display:block;font-size:11px;color:var(--daempet);font-weight:600}
+.delt-rk .hold{flex:none;display:flex;gap:4px}
+.delt-rk .hold button{min-height:30px;padding:4px 9px;font-size:11px;border-radius:9px;border:1px solid var(--kant);background:transparent;color:var(--daempet);font-weight:800;cursor:pointer;font-family:inherit}
+.delt-rk .hold button.til{background:rgba(159,216,232,.12);color:var(--is);border-color:var(--is)}
+.delt-rk .x{flex:none;width:34px;height:34px;border-radius:50%;border:1px solid var(--kant);background:transparent;color:var(--daempet);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.moedt-rk{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--kant);cursor:pointer}
+.moedt-rk:first-of-type{border-top:none}
+.moedt-rk .flueben{flex:none;width:30px;height:30px;border-radius:9px;border:2px solid var(--kant);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:transparent}
+.moedt-rk.ja .flueben{background:var(--vundet);border-color:var(--vundet);color:#fff}
+.moedt-rk .nv{flex:1;font-size:14px;font-weight:700}
+.moedt-rk.nej .nv{color:var(--daempet);text-decoration:line-through}
+.tid-rk{display:flex;gap:8px;align-items:center}
+.tid-rk .felt{flex:1;min-width:0}
 </style>
 
 <div id="app"></div>
@@ -187,7 +226,8 @@ class Component extends DCLogic {
 <script>
 if (!window.__oskarLoaded) { window.__oskarLoaded = true; (function(){
 
-const DATA = {"grupper": {"U14 Elite": {"aargang": "U14", "spillere": ["Oskar Lillesø", "Elias Vinter", "Anton Skovgaard", "Felix Enevold", "Malte Nørlund"]}, "U14 Talent": {"aargang": "U14", "spillere": ["Philip Aackermann", "Storm Søby", "Albert Foss", "Theo Lindqvist"]}, "U12 Udvikling": {"aargang": "U12", "spillere": ["Villads Krog", "Marius Bæk", "Milan Ravn", "Oliver Dam"]}}, "spillere": {"Oskar Lillesø": {"navn": "Oskar Lillesø", "rang": 15, "klub": "B.93", "wtn": 29.5, "erBruger": true, "gruppe": "U14 Elite", "fysStreak": 8, "tennisStreak": 11, "vurdering": {"fysisk": {"score": 9, "tekst": "Meget stærk indsats i den fysiske træning, som du har deltaget i. Du gør dig umage med øvelserne, du brokker dig ikke, og du forsøger at give 100 procent og giver ikke op, selvom det kan være hårdt. Det har været rigtig positivt at se, og det skal du fortsætte med, for det vil virkelig gøre en forskel for dig i din tennisudvikling."}, "petersbane": {"score": 8, "tekst": "God indsats. Jeg har ikke haft fornøjelsen af dig lige så mange gange som med de andre, da du var lidt skadet i starten, men generelt har du gjort det rigtig godt og leveret en rigtig god arbejdsindsats, og du får meget ud af øvelserne. Vi arbejder med, at du kan slå de samme slag med samme spin, fart, højde over nettet og længde igen og igen, og det kan udfordre dig, men du arbejder rigtig godt med det."}, "spilselv": {"score": 7, "tekst": "God indsats. Du har leveret en god arbejdsindsats på spil-selv-banen, og det er positivt, for det er vanskeligt for mange. Det er vigtigt at kunne spille med en 100 procents arbejdsindsats, når man selv er ansvarlig, og der ikke står en forælder eller træner og fortæller en, hvad man skal gøre. Der er stadig mulighed for at gøre mere ved det, men det er et godt sted lige nu."}}, "kampe": 10, "sejre": 5, "sidsteTraening": "I dag", "traeningerKvartal": 25, "kampliste": [{"mod": "Elias Vinter", "res": "4-6, 7-6, 3-6", "dato": "2026-05-10", "v": false, "vin": 35, "uf": 31, "pct": 44}, {"mod": "Elias Vinter", "res": "5-7, 6-4", "dato": "2026-06-10", "v": true, "vin": 30, "uf": 24, "pct": 51}, {"mod": "Jonas Weidemann", "res": "3-6, 6-7", "dato": "2026-05-11", "v": false, "vin": 29, "uf": 28, "pct": 46}, {"mod": "Jonas Weidemann", "res": "3-6, 6-7", "dato": "2026-06-11", "v": false, "vin": 25, "uf": 29, "pct": 45}, {"mod": "Anton Skovgaard", "res": "7-5, 6-4", "dato": "2026-05-12", "v": true, "vin": 20, "uf": 26, "pct": 55}, {"mod": "Anton Skovgaard", "res": "6-4, 6-2", "dato": "2026-06-12", "v": true, "vin": 17, "uf": 18, "pct": 56}, {"mod": "Felix Enevold", "res": "7-6, 6-2", "dato": "2026-05-13", "v": true, "vin": 29, "uf": 24, "pct": 53}, {"mod": "Felix Enevold", "res": "6-4, 6-4", "dato": "2026-06-13", "v": true, "vin": 22, "uf": 14, "pct": 56}, {"mod": "Malte Nørlund", "res": "3-6, 4-6", "dato": "2026-05-14", "v": false, "vin": 30, "uf": 29, "pct": 44}, {"mod": "Malte Nørlund", "res": "1-6, 2-6", "dato": "2026-06-14", "v": false, "vin": 18, "uf": 19, "pct": 35}], "statistik": {"pointPct": 49, "vindere": 255, "esser": 75, "uf": 242, "dobbelt": 33, "diff": 13}, "rivaler": {"Elias Vinter": {"k": 2, "v": 1}, "Jonas Weidemann": {"k": 2, "v": 0}, "Anton Skovgaard": {"k": 2, "v": 2}, "Felix Enevold": {"k": 2, "v": 2}, "Malte Nørlund": {"k": 2, "v": 0}}}, "Elias Vinter": {"navn": "Elias Vinter", "rang": 2, "klub": "Virum-Sorgenfri", "wtn": 26.2, "erBruger": false, "gruppe": "U14 Elite", "fysStreak": 2, "tennisStreak": 4, "vurdering": {"fysisk": {"score": 7, "tekst": "God indsats i den fysiske træning. Elias arbejder godt med øvelserne. Der kan skrues yderligere op for intensiteten, men niveauet er godt."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 9, "tekst": "Meget stærk selvstændig indsats. Spiller med fuld arbejdsindsats uden at skulle guides — imponerende."}}, "kampe": 13, "sejre": 2, "sidsteTraening": "2 dage siden", "traeningerKvartal": 31}, "Anton Skovgaard": {"navn": "Anton Skovgaard", "rang": 3, "klub": "KB", "wtn": 27.8, "erBruger": false, "gruppe": "U14 Elite", "fysStreak": 2, "tennisStreak": 12, "vurdering": {"fysisk": {"score": 7, "tekst": "God indsats i den fysiske træning. Andreas arbejder godt med øvelserne. Der kan skrues yderligere op for intensiteten, men niveauet er godt."}, "petersbane": {"score": 9, "tekst": "Meget stærk indsats på banen. Får rigtig meget ud af øvelserne og udfordrer sig selv. Vi arbejder videre med konsistens i slagene."}, "spilselv": {"score": 9, "tekst": "Meget stærk selvstændig indsats. Spiller med fuld arbejdsindsats uden at skulle guides — imponerende."}}, "kampe": 5, "sejre": 5, "sidsteTraening": "I dag", "traeningerKvartal": 29}, "Felix Enevold": {"navn": "Felix Enevold", "rang": 7, "klub": "KB", "wtn": 28.2, "erBruger": false, "gruppe": "U14 Elite", "fysStreak": 6, "tennisStreak": 5, "vurdering": {"fysisk": {"score": 7, "tekst": "God indsats i den fysiske træning. Philip arbejder godt med øvelserne. Der kan skrues yderligere op for intensiteten, men niveauet er godt."}, "petersbane": {"score": 8, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 8, "tekst": "God arbejdsindsats på spil-selv-banen — vanskeligt for mange. Vigtigt at kunne yde 100 procent, når man selv er ansvarlig. Stadig plads til mere, men et godt sted."}}, "kampe": 11, "sejre": 3, "sidsteTraening": "I dag", "traeningerKvartal": 15}, "Malte Nørlund": {"navn": "Malte Nørlund", "rang": 9, "klub": "KB", "wtn": 29.5, "erBruger": false, "gruppe": "U14 Elite", "fysStreak": 2, "tennisStreak": 6, "vurdering": {"fysisk": {"score": 7, "tekst": "God indsats i den fysiske træning. Emil arbejder godt med øvelserne. Der kan skrues yderligere op for intensiteten, men niveauet er godt."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 7, "tekst": "God arbejdsindsats på spil-selv-banen — vanskeligt for mange. Vigtigt at kunne yde 100 procent, når man selv er ansvarlig. Stadig plads til mere, men et godt sted."}}, "kampe": 4, "sejre": 5, "sidsteTraening": "2 dage siden", "traeningerKvartal": 20}, "Philip Aackermann": {"navn": "Philip Aackermann", "rang": 19, "klub": "Hellerup", "wtn": 29.7, "erBruger": false, "gruppe": "U14 Talent", "fysStreak": 8, "tennisStreak": 3, "vurdering": {"fysisk": {"score": 9, "tekst": "Meget stærk indsats i den fysiske træning. Philip giver 100 procent, brokker sig ikke og giver ikke op, selvom det er hårdt. Rigtig positivt — fortsæt det."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 9, "tekst": "Meget stærk selvstændig indsats. Spiller med fuld arbejdsindsats uden at skulle guides — imponerende."}}, "kampe": 11, "sejre": 8, "sidsteTraening": "I dag", "traeningerKvartal": 31}, "Storm Søby": {"navn": "Storm Søby", "rang": 18, "klub": "Roskilde", "wtn": 31.2, "erBruger": false, "gruppe": "U14 Talent", "fysStreak": 6, "tennisStreak": 11, "vurdering": {"fysisk": {"score": 7, "tekst": "God indsats i den fysiske træning. Magnus arbejder godt med øvelserne. Der kan skrues yderligere op for intensiteten, men niveauet er godt."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 8, "tekst": "God arbejdsindsats på spil-selv-banen — vanskeligt for mange. Vigtigt at kunne yde 100 procent, når man selv er ansvarlig. Stadig plads til mere, men et godt sted."}}, "kampe": 5, "sejre": 10, "sidsteTraening": "I dag", "traeningerKvartal": 23}, "Albert Foss": {"navn": "Albert Foss", "rang": 20, "klub": "Fruens Bøge", "wtn": 31.6, "erBruger": false, "gruppe": "U14 Talent", "fysStreak": 1, "tennisStreak": 12, "vurdering": {"fysisk": {"score": 6, "tekst": "Svingende indsats fysisk. Vi arbejder på, at Victor giver mere konsekvent i øvelserne."}, "petersbane": {"score": 9, "tekst": "Meget stærk indsats på banen. Får rigtig meget ud af øvelserne og udfordrer sig selv. Vi arbejder videre med konsistens i slagene."}, "spilselv": {"score": 6, "tekst": "Der arbejdes på at holde intensiteten oppe, når der spilles selvstændigt uden voksenstyring."}}, "kampe": 13, "sejre": 9, "sidsteTraening": "I dag", "traeningerKvartal": 14}, "Theo Lindqvist": {"navn": "Theo Lindqvist", "rang": 22, "klub": "Skovbakken", "wtn": 30.8, "erBruger": false, "gruppe": "U14 Talent", "fysStreak": 3, "tennisStreak": 6, "vurdering": {"fysisk": {"score": 9, "tekst": "Meget stærk indsats i den fysiske træning. William giver 100 procent, brokker sig ikke og giver ikke op, selvom det er hårdt. Rigtig positivt — fortsæt det."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 8, "tekst": "God arbejdsindsats på spil-selv-banen — vanskeligt for mange. Vigtigt at kunne yde 100 procent, når man selv er ansvarlig. Stadig plads til mere, men et godt sted."}}, "kampe": 14, "sejre": 5, "sidsteTraening": "I dag", "traeningerKvartal": 25}, "Villads Krog": {"navn": "Villads Krog", "rang": 4, "klub": "Esbjerg", "wtn": 33.1, "erBruger": false, "gruppe": "U12 Udvikling", "fysStreak": 6, "tennisStreak": 5, "vurdering": {"fysisk": {"score": 6, "tekst": "Svingende indsats fysisk. Vi arbejder på, at Frederik giver mere konsekvent i øvelserne."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 7, "tekst": "God arbejdsindsats på spil-selv-banen — vanskeligt for mange. Vigtigt at kunne yde 100 procent, når man selv er ansvarlig. Stadig plads til mere, men et godt sted."}}, "kampe": 11, "sejre": 2, "sidsteTraening": "2 dage siden", "traeningerKvartal": 25}, "Marius Bæk": {"navn": "Marius Bæk", "rang": 8, "klub": "Greve", "wtn": 34.0, "erBruger": false, "gruppe": "U12 Udvikling", "fysStreak": 6, "tennisStreak": 11, "vurdering": {"fysisk": {"score": 8, "tekst": "God indsats i den fysiske træning. Marcus arbejder godt med øvelserne. Der kan skrues yderligere op for intensiteten, men niveauet er godt."}, "petersbane": {"score": 7, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 9, "tekst": "Meget stærk selvstændig indsats. Spiller med fuld arbejdsindsats uden at skulle guides — imponerende."}}, "kampe": 12, "sejre": 8, "sidsteTraening": "I går", "traeningerKvartal": 18}, "Milan Ravn": {"navn": "Milan Ravn", "rang": 12, "klub": "Greve", "wtn": 33.8, "erBruger": false, "gruppe": "U12 Udvikling", "fysStreak": 7, "tennisStreak": 10, "vurdering": {"fysisk": {"score": 6, "tekst": "Svingende indsats fysisk. Vi arbejder på, at Milan giver mere konsekvent i øvelserne."}, "petersbane": {"score": 8, "tekst": "God indsats på banen og en rigtig god arbejdsindsats. Vi arbejder med at slå de samme slag med samme spin, fart, højde og længde igen og igen — det udfordrer, men der arbejdes godt."}, "spilselv": {"score": 6, "tekst": "Der arbejdes på at holde intensiteten oppe, når der spilles selvstændigt uden voksenstyring."}}, "kampe": 4, "sejre": 4, "sidsteTraening": "2 dage siden", "traeningerKvartal": 25}, "Oliver Dam": {"navn": "Oliver Dam", "rang": 16, "klub": "Hørsholm", "wtn": 35.2, "erBruger": false, "gruppe": "U12 Udvikling", "fysStreak": 6, "tennisStreak": 2, "vurdering": {"fysisk": {"score": 10, "tekst": "Meget stærk indsats i den fysiske træning. Noah giver 100 procent, brokker sig ikke og giver ikke op, selvom det er hårdt. Rigtig positivt — fortsæt det."}, "petersbane": {"score": 6, "tekst": "Nogenlunde indsats. Vi arbejder på at holde fokus gennem hele træningen."}, "spilselv": {"score": 9, "tekst": "Meget stærk selvstændig indsats. Spiller med fuld arbejdsindsats uden at skulle guides — imponerende."}}, "kampe": 4, "sejre": 3, "sidsteTraening": "I går", "traeningerKvartal": 17}}, "venner": {"Oskar Lillesø": ["Elias Vinter", "Philip Aackermann", "Villads Krog"], "Philip Aackermann": ["Oskar Lillesø", "Storm Søby"], "Elias Vinter": ["Oskar Lillesø", "Anton Skovgaard"]}, "traenere": [{"navn": "Cheftræneren", "grupper": ["U14 Elite", "U14 Talent"]}, {"navn": "Ungdomstræneren", "grupper": ["U12 Udvikling"]}], "omraader": [{"id": "fysisk", "navn": "Den fysiske træning", "emoji": "💪"}, {"id": "petersbane", "navn": "Træningen på trænerens bane", "emoji": "🎾"}, {"id": "spilselv", "navn": "Træningen på spil-selv-banen", "emoji": "🤝"}], "saeson": ["🏛 Rom · 23/7", "🎾 Sommer Cup · Rungsted · 30/7", "🌍 TE-hovedrunden · Rungsted · 3/8", "🛡 Holdkamp · 4. runde · 9/8", "🛡 Holdkamp · 5. runde · 16/8"]};
+// ⭐⭐⭐ v6.0.0 · EKSEMPELDATAENE ER UDE (Nicolai 19/9). Truppen kommer fra klubben — ingen opdigtede spillere.
+const DATA = {"grupper": {}, "spillere": {}, "venner": [], "traenere": [{"navn": "Cheftræneren", "grupper": []}, {"navn": "Ungdomstræneren", "grupper": []}], "omraader": [{"id": "fysisk", "navn": "Den fysiske træning", "emoji": "💪"}, {"id": "petersbane", "navn": "Træningen på trænerens bane", "emoji": "🎾"}, {"id": "spilselv", "navn": "Træningen på spil-selv-banen", "emoji": "🤝"}], "saeson": []};
 const KONFIG = {
   klub: "Tennisklubben", klubKort: "Klubben", saeson: "2026", maaned: "juni",
   aargange: ["U10","U12","U14","U16"],
@@ -439,6 +479,7 @@ function ryddKlubben(){
   S.truppen = []; S.grupper = []; S.vurderinger = []; S.fokuspunkter = {}; S.evalueringer = {};
   S.ugefokus = {}; S.stigeHold = []; S.noegler = {}; S.minRolle = null;
   S.tilmeldinger = []; S.tilmHentet = null; S.tilmHenter = false;
+  S.nu = null; S.nuHentet = 0; S.prg = null; S.prgGodkendt = null; S.reg = null; S.vurderLige = null;   /* v6.0.0 · klubskifte tømmer programmet */
   S.aabenSpiller = null; S.vurderOmraade = null; S.vurderGruppe = null;
   S.fpAaben = null; S.noegleFor = null; S.stigeHold = [];
   genskabDemo();                 // ⛔ ellers står den gamle klubs børn i DATA
@@ -665,8 +706,9 @@ function syncFejltekst(r) {
 let S = {
   // ⭐ v4.1.0 · rollen huskes mellem åbninger (se noten ved klubnavnet).
   minRolle: (function(){ try { return localStorage.getItem("tp-minrolle") ? JSON.parse(localStorage.getItem("tp-minrolle")) : null; } catch (_e) { return null; } })(),
-  traener: "Cheftræneren", spiller: "Oskar Lillesø",
+  traener: "Cheftræneren", spiller: null,
   tab: "hjem", aabenSpiller: null,
+  nu: null, nuHentet: 0, prg: null, prgGodkendt: null, reg: null, vurderLige: null, prgUgedag: 0,   /* ⭐ v6.0.0 · programmet */
   vurderOmraade: null, vurderGruppe: null, vurderScores: {},
   kvartalUdkast: null, kvartalAI: null, kvartalHenter: false, kvartalNote: null,
   // ── gemte data
@@ -905,7 +947,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v5.6.0 \u00b7 19. september 2026";
+const VERSION = "v6.0.0 \u00b7 20. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1351,6 +1393,33 @@ var EN = {
 "Kommet ind med en nøgle": "Came in with a key",
 "Venter på klubben": "Waiting for the club"
 };
+// ⭐ v6.0.0 · programmet og REGISTRÉR på engelsk
+Object.assign(EN, {
+"📋 Registrér": "📋 Register",
+"HJEM": "HOME", "PROGRAM": "SCHEDULE", "VURDÉR": "RATE", "GRUPPER": "GROUPS", "MERE": "MORE",
+"📅 UGESKEMAET": "📅 THE WEEKLY SCHEDULE",
+"✓ Godkend og send ud": "✓ Approve and publish",
+"Trænerne retter kladden. Når admin godkender, ser spillerne programmet under TRÆN, og der kan registreres fremøde på det.": "Coaches edit the draft. Once the admin approves, players see the schedule under TRAIN, and attendance can be registered on it.",
+"Kladde — ikke godkendt endnu": "Draft — not approved yet",
+"Tomt — tryk + og læg det første pas ind": "Empty — tap + to add the first session",
+"Man": "Mon", "Tir": "Tue", "Ons": "Wed", "Tor": "Thu", "Fre": "Fri", "Lør": "Sat", "Søn": "Sun",
+"+ Nyt pas mandag": "+ New session Monday", "+ Nyt pas tirsdag": "+ New session Tuesday", "+ Nyt pas onsdag": "+ New session Wednesday", "+ Nyt pas torsdag": "+ New session Thursday", "+ Nyt pas fredag": "+ New session Friday", "+ Nyt pas lørdag": "+ New session Saturday", "+ Nyt pas søndag": "+ New session Sunday",
+"Opret passet": "Create the session", "Gem ændringerne": "Save changes", "Luk": "Close",
+"bane, fx 8 eller 10&11": "court, e.g. 8 or 10&11", "træner (tomt = dig)": "coach (empty = you)", "medtræner (frivilligt)": "co-coach (optional)", "titel, fx U14 Elite (frivilligt)": "title, e.g. U14 Elite (optional)",
+"PASSET": "THE SESSION", "+ Tilføj spillere": "+ Add players", "Slet passet": "Delete the session", "Tryk igen for at slette": "Tap again to delete", "Luk listen": "Close the list",
+"søg i truppen": "search the squad", "+ læg på": "+ add", "Alle i truppen er på passet.": "Everyone in the squad is on this session.",
+"Ingen spillere på passet endnu.": "No players on this session yet.", "ingen spillere endnu": "no players yet", "ingen spillere på passet": "no players on the session",
+"hold 1": "group 1", "hold 2": "group 2", "TIMER OM UGEN": "HOURS PER WEEK",
+"📋 REGISTRÉR FREMMØDE": "📋 REGISTER ATTENDANCE", "lige slut": "just ended", "registreret ✓": "registered ✓", "mit": "mine",
+"Alle står som mødt — tryk dem fra, der ikke kom. Passet skrives i spillernes træningslog og tæller i streaken.": "Everyone is marked present — tap off those who didn't come. The session is written to the players' training log and counts in the streak.",
+"⚡ Vurdér dem nu →": "⚡ Rate them now →", "Registrér et andet pas": "Register another session", "‹ Vælg et andet pas": "‹ Choose another session",
+"Dagens pas fra det godkendte program. Glemte du et pas i går? Vælg datoen.": "Today's sessions from the approved schedule. Forgot one yesterday? Pick the date.",
+"Ingen pas i dag i det godkendte program.": "No sessions today in the approved schedule.",
+"Henter dagens pas …": "Fetching today's sessions …",
+"Forbind klubnøglen under ⚙️ først.": "Connect the club key under ⚙️ first.",
+"Henter …": "Fetching …"
+});
+
 Object.assign(EN, {
   "\u2601\ufe0f SKYEN": "\u2601\ufe0f THE CLOUD",
   "Din trup, dine grupper, vurderinger og evalueringer gemmes i skyen \u2014 l\u00e5st med dit kodeord. Mister du telefonen, logger du bare ind p\u00e5 en ny. Heller ikke vi kan l\u00e6se boksen.": "Your squad, groups, ratings and evaluations are saved in the cloud \u2014 locked with your password. Lose the phone and you just log in on a new one. Not even we can read the box.",
@@ -1812,6 +1881,291 @@ function renderRejse(){
 }
 
 // ---------- TRÆNER ----------
+// ═══════════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v6.0.0 · TRÆNINGSPROGRAMMET OG REGISTRÉR (Nicolai 19/9, med B.93's ugeskema
+//   i hånden: «Det skal man kunne lave i appen … et helt flow»). Motoren `traening`
+//   v1 er oppe og målt 20/9 (kontrakten i vidensbasen). Fire valg: ① REGISTRÉR skriver
+//   passet i spillerens træningslog og tæller i streaken · ② admin godkender, én plan
+//   pr. klub · ③ eksempeldataene er ude · ④ trin for trin.
+//   To lag: trænerne retter KLADDEN; «Godkend og send ud» kopierer den til det
+//   godkendte program, som spillerne ser, og som der registreres på. Spillerne
+//   adresseres med HÅNDTAG (h) — samme som hent-hold; en spillernøgle rejser aldrig.
+// ═══════════════════════════════════════════════════════════════════════
+const TRAENING_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/traening";
+var DAGE_KORT = ["", "Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"];
+var DAGE_LANG = ["", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag", "søndag"];
+async function traeningKald(handling, krop) {
+  const kn = lager.hent("klubkode", "");
+  if (!kn) return { fejl: "mangler-klubkode" };
+  const h = { "content-type": "application/json", "x-klub-noegle": kn };
+  const st = new AbortController(); const ur = setTimeout(() => st.abort(), 20000);
+  try {
+    const r = await fetch(TRAENING_URL, { method: "POST", headers: h,
+      body: JSON.stringify({ handling, ...(krop || {}) }), signal: st.signal });
+    clearTimeout(ur);
+    const d = await r.json().catch(() => ({}));
+    // Hvert udfald sin egen sætning (princip 75): koden rejser med, teksten står ved siden af.
+    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || "netvaerk", status: r.status, t: d.fejl || "", ukendte: d.ukendte, felter: d.felter, loft: d.loft });
+  } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+}
+function traeningFejl(r){
+  if (!r) return "Ingen forbindelse lige nu.";
+  if (r.fejl === "netvaerk") return "Ingen forbindelse lige nu — prøv igen.";
+  if (r.fejl === "mangler-klubkode") return "Forbind klubnøglen under ⚙️ først.";
+  if (r.fejl === "kraever-admin") return "Kun klubbens administrator kan godkende programmet.";
+  if (r.fejl === "kraever-traener" || r.fejl === "adgang" || r.fejl === "mangler-noegle") return "Nøglen gælder ikke som trænernøgle.";
+  if (r.fejl === "bane-optaget") return "Banen er optaget i det tidsrum.";
+  if (r.fejl === "ikke-kladde") return "Kun kladden kan rettes — godkend igen bagefter.";
+  if (r.fejl === "ikke-godkendt") return "Der registreres kun på det godkendte program.";
+  if (r.fejl === "ugedag") return "Passet ligger ikke på den ugedag.";
+  if (r.fejl === "dato") return "Datoen kan ikke bruges (fremtid, eller mere end 30 dage gammel).";
+  if (r.fejl === "tom") return "Der er ingen kladde at godkende.";
+  if (r.fejl === "loft") return "For mange pas i programmet (højst " + (r.loft || 60) + ").";
+  if (r.fejl === "ukendt-spiller") return "Serveren kender ikke " + ((r.ukendte || []).length || "en") + " af spillerne i klubben — hent truppen igen under ⚙️.";
+  if (r.fejl === "format") return "Udfyld " + ((r.felter || []).length ? r.felter.join(", ") : "felterne") + " rigtigt.";
+  return "Serveren afviste det (" + (r.fejl || "ukendt") + ").";
+}
+// Navnet på et håndtag: trænerens eget navn i truppen → serverens fornavn → «spiller».
+function navnFor(h, fornavn){
+  var p = (S.truppen || []).filter(function(x){ return x && x.noegle === h; })[0];
+  if (p && p.navn) return p.navn;
+  if (S.srvNavne && S.srvNavne[h]) return S.srvNavne[h];
+  return fornavn || "spiller";
+}
+// Kandidater til et pas: truppen på serveren (hent-hold), med trænerens navne ovenpå.
+function trupKandidater(){
+  var ud = [];
+  (S.tilmeldinger || []).forEach(function(x){
+    if (!x || !x.haandtag) return;
+    ud.push({ h: x.haandtag, navn: navnFor(x.haandtag, x.fornavn), aargang: x.aargang || "" });
+  });
+  ud.sort(function(a, b){ return a.navn.localeCompare(b.navn, "da"); });
+  return ud;
+}
+function tidTekst(p){ return String(p.start || "").slice(0, 5) + "–" + String(p.slut || "").slice(0, 5); }
+function pasTekst(p){
+  var t = [];
+  if (p.traener) t.push(p.traener + (p.traener2 ? " & " + p.traener2 : ""));
+  if (p.titel) t.push(p.titel);
+  return t.join(" · ");
+}
+function pasDeltagerNavne(p){
+  return (p.deltagere || []).map(function(d){ return navnFor(d.h, d.fornavn); });
+}
+function dkIdag(){ var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function ugedagAf(iso){ var d = new Date(iso + "T12:00:00"); var u = d.getDay(); return u === 0 ? 7 : u; }
+function datoTekst(iso){ var m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(String(iso || "")); if (!m) return String(iso || ""); return DAGE_LANG[ugedagAf(iso)] + " " + (+m[3]) + "/" + (+m[2]); }   /* 2026-09-20 → søndag 20/9 */
+
+// ── «NU»: dagens godkendte pas med tre flag — mine · lige slut · registreret. Skærmen vælger; motoren skjuler intet.
+function nuHent(tving){
+  if (!lager.hent("klubkode", "")) return;
+  if (!tving && S.nuHentet && Date.now() - S.nuHentet < 60000) return;
+  if (S.nuHenter) return;
+  S.nuHenter = true;
+  traeningKald("nu", {}).then(function(r){
+    S.nuHenter = false;
+    S.nuHentet = Date.now();   /* også ved en fejl — ellers beder hver gentegning om et nyt kald, og skærmen går i ring (målt 20/9 med regressionen) */
+    if (r && !r.fejl && Array.isArray(r.pas)) { S.nu = r; S.nuFejl = null; }
+    else S.nuFejl = traeningFejl(r);
+    try { render(); } catch (_e) {}
+  });
+}
+// Det pas, REGISTRÉR peger på først: lige slut og ikke registreret (mine først) → ellers næste i dag.
+function nuBedste(){
+  if (!S.nu || !S.nu.pas || !S.nu.pas.length) return null;
+  var ls = S.nu.pas.filter(function(p){ return p.lige_slut && !p.registreret; });
+  ls.sort(function(a, b){ return (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || a.slut_for_min - b.slut_for_min; });
+  if (ls.length) return ls[0];
+  var kommer = S.nu.pas.filter(function(p){ return p.slut_for_min < 0; });
+  return kommer.length ? kommer[0] : null;
+}
+function nuUdenFremmoede(){ return (S.nu && S.nu.pas ? S.nu.pas : []).filter(function(p){ return p.lige_slut && !p.registreret; }).length; }
+
+// ── PROGRAMMET (kladden) hentes, når fanen åbnes, og efter hver ændring.
+function prgHent(status){
+  if (S.prgHenter) return;
+  S.prgHenter = true;   /* kvitteringen fra pas-gem/godkend bliver stående — kun en fejl slettes af det næste gode kald (princip 94) */
+  traeningKald("pas-liste", { status: status || "kladde" }).then(function(r){
+    S.prgHenter = false;
+    if (r && !r.fejl && Array.isArray(r.pas)) {
+      if ((status || "kladde") === "godkendt") S.prgGodkendt = r; else S.prg = r;
+      if (S.prgBesked && S.prgBesked.fejl) S.prgBesked = null;
+    } else S.prgBesked = { fejl: true, t: traeningFejl(r) };
+    render();
+  });
+}
+function prgNulstilForm(){ S.prgNy = false; S.prgAaben = null; S.prgVaelg = false; S.prgSoeg = ""; S.prgStart = ""; S.prgSlut = ""; S.prgBane = ""; S.prgTraener = ""; S.prgTraener2 = ""; S.prgTitel = ""; }
+function prgFyldForm(p){ S.prgStart = String(p.start || "").slice(0, 5); S.prgSlut = String(p.slut || "").slice(0, 5); S.prgBane = p.bane || ""; S.prgTraener = p.traener || ""; S.prgTraener2 = p.traener2 || ""; S.prgTitel = p.titel || ""; }
+function prgPas(id){ return ((S.prg && S.prg.pas) || []).filter(function(p){ return p.id === id; })[0] || null; }
+function prgFormular(erNy){
+  var traenere = (S.prg && S.prg.traenere) || [];
+  var h = '<datalist id="prg-traenere">' + traenere.map(function(n){ return '<option value="' + esc(n) + '">'; }).join("") + '</datalist>';
+  h += '<div class="tid-rk" style="margin-top:6px"><input class="felt" type="time" data-felt="prgStart" value="' + esc(S.prgStart || "") + '" aria-label="start"><span class="lille" style="margin:0">–</span><input class="felt" type="time" data-felt="prgSlut" value="' + esc(S.prgSlut || "") + '" aria-label="slut"></div>';
+  h += '<input class="felt" style="margin-top:6px" data-felt="prgBane" value="' + esc(S.prgBane || "") + '" placeholder="bane, fx 8 eller 10&amp;11" maxlength="20">';
+  h += '<input class="felt" style="margin-top:6px" data-felt="prgTraener" list="prg-traenere" value="' + esc(S.prgTraener || "") + '" placeholder="træner (tomt = dig)" maxlength="40" autocapitalize="words">';
+  h += '<input class="felt" style="margin-top:6px" data-felt="prgTraener2" list="prg-traenere" value="' + esc(S.prgTraener2 || "") + '" placeholder="medtræner (frivilligt)" maxlength="40" autocapitalize="words">';
+  h += '<input class="felt" style="margin-top:6px" data-felt="prgTitel" value="' + esc(S.prgTitel || "") + '" placeholder="titel, fx U14 Elite (frivilligt)" maxlength="40" autocapitalize="words">';
+  h += '<div class="raekke" style="margin-top:8px"><button class="knap" style="background:var(--grus)"' + (S.prgGemmer ? ' disabled' : '') + ' data-act="prg-gem">' + (S.prgGemmer ? '⏳ …' : (erNy ? 'Opret passet' : 'Gem ændringerne')) + '</button>' +
+    '<button class="knap valg" data-act="prg-luk">Luk</button></div>';
+  return h;
+}
+function traenerProgram(){
+  var h = '';
+  if (!lager.hent("klubkode", "")) return '<div class="kort"><h3>📅 Programmet</h3><p class="lille">Forbind klubnøglen under ⚙️ først — så kan ugeskemaet laves her.</p></div>';
+  if (!S.prg && !S.prgHenter && !S.prgBesked) { setTimeout(function(){ prgHent("kladde"); }, 0); }
+  if (!S.prgUgedag) S.prgUgedag = ugedagAf(dkIdag());
+  var prg = S.prg || { pas: [], sidst_godkendt: null, aendret_siden: 0, traenere: [], timer: [] };
+  // ── status + godkend
+  var sg = prg.sidst_godkendt ? new Date(prg.sidst_godkendt) : null;
+  var sgT = sg ? (sg.getDate() + "/" + (sg.getMonth() + 1) + " kl. " + String(sg.getHours()).padStart(2, "0") + "." + String(sg.getMinutes()).padStart(2, "0")) : null;
+  h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+      '<div><div class="eyebrow">📅 UGESKEMAET</div>' +
+      '<div style="font-size:13px;margin-top:3px">' + (S.prgHenter && !S.prg ? 'Henter …' :
+        (sgT ? 'Godkendt ' + sgT + (prg.aendret_siden ? ' · <b style="color:var(--guld)">' + prg.aendret_siden + (prg.aendret_siden === 1 ? ' ændring' : ' ændringer') + ' siden</b>' : ' · ingen ændringer siden')
+              : (prg.pas.length ? '<b style="color:var(--guld)">Kladde — ikke godkendt endnu</b>' : 'Tomt — tryk + og læg det første pas ind'))) + '</div></div>' +
+      (S.minRolle === "traener" ? '' : '<button class="knap" style="flex:none;background:var(--vundet);color:#fff;padding:9px 12px;font-size:12.5px"' + (S.prgGodkender || !prg.pas.length ? ' disabled' : '') + ' data-act="prg-godkend">' + (S.prgGodkender ? '⏳' : '✓ Godkend og send ud') + '</button>') +
+    '</div>' +
+    '<p class="lille" style="margin:6px 0 0">Trænerne retter kladden. Når admin godkender, ser spillerne programmet under TRÆN, og der kan registreres fremøde på det.</p>';
+  if (S.prgBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.prgBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.prgBesked.t) + '</p>';
+  h += '</div>';
+  // ── ugedagene
+  var prDag = {}; prg.pas.forEach(function(p){ prDag[p.ugedag] = (prDag[p.ugedag] || 0) + 1; });
+  h += '<div class="dag-rk">' + [1,2,3,4,5,6,7].map(function(d){
+    return '<button class="' + (S.prgUgedag === d ? 'aktiv' : '') + '" data-act="prg-dag" data-v="' + d + '">' + DAGE_KORT[d] + (prDag[d] ? '<i>' + prDag[d] + '</i>' : '') + '</button>'; }).join('') + '</div>';
+  var dagens = prg.pas.filter(function(p){ return p.ugedag === S.prgUgedag; });
+  // ── nyt pas
+  if (S.prgNy) {
+    h += '<div class="kort" style="border-left:3px solid var(--is)"><div class="eyebrow">NYT PAS · ' + DAGE_LANG[S.prgUgedag].toUpperCase() + '</div>' + prgFormular(true) + '</div>';
+  } else {
+    h += '<button class="knap valg" style="width:100%;margin-bottom:8px;border-style:dashed" data-act="prg-ny">+ Nyt pas ' + DAGE_LANG[S.prgUgedag] + '</button>';
+  }
+  // ── dagens pas
+  if (!dagens.length && !S.prgNy) h += '<p class="lille" style="text-align:center;margin:14px 0">Ingen pas ' + DAGE_LANG[S.prgUgedag] + ' endnu.</p>';
+  dagens.forEach(function(p){
+    var aaben = S.prgAaben === p.id;
+    var n = (p.deltagere || []).length;
+    h += '<button class="pas-kort" data-act="prg-aabn" data-v="' + esc(p.id) + '">' +
+      '<div class="tid">' + tidTekst(p) + '<small>bane ' + esc(p.bane) + '</small></div>' +
+      '<div class="om">' + esc(pasTekst(p) || '—') + '<small>' + (n ? n + (n === 1 ? ' spiller: ' : ' spillere: ') + esc(pasDeltagerNavne(p).join(", ")) : 'ingen spillere endnu') + '</small></div>' +
+      '<div class="mrk">' + (aaben ? '✕' : '✏️') + '</div></button>';
+    if (!aaben) return;
+    h += '<div class="kort" style="margin-top:-2px;border-left:3px solid var(--is)">';
+    h += '<div class="eyebrow">PASSET</div>' + prgFormular(false);
+    // deltagerne
+    var loft = 4 * Math.max(1, (String(p.bane).match(/\d+/g) || []).length);
+    h += '<div class="eyebrow" style="margin-top:14px">SPILLERE · ' + n + (n > loft ? ' <span style="color:var(--tabt)">(max ' + loft + ' på banen)</span>' : ' af ' + loft) + '</div>';
+    if (!n) h += '<p class="lille">Ingen spillere på passet endnu.</p>';
+    (p.deltagere || []).forEach(function(d){
+      h += '<div class="delt-rk"><div class="nv">' + esc(navnFor(d.h, d.fornavn)) + (d.forladt ? ' <span style="color:var(--tabt);font-weight:600">· har forladt klubben</span>' : '') + (d.aargang ? '<small>årgang ' + esc(d.aargang) + '</small>' : '') + '</div>' +
+        '<div class="hold"><button class="' + (d.hold === 1 ? 'til' : '') + '" data-act="prg-hold" data-v="' + esc(d.h) + '" data-sp="1">hold 1</button><button class="' + (d.hold === 2 ? 'til' : '') + '" data-act="prg-hold" data-v="' + esc(d.h) + '" data-sp="2">hold 2</button></div>' +
+        '<button class="x" data-act="prg-delt-fjern" data-v="' + esc(d.h) + '" aria-label="fjern">✕</button></div>';
+    });
+    if (S.prgVaelg) {
+      var paa = {}; (p.deltagere || []).forEach(function(d){ paa[d.h] = true; });
+      var kand = trupKandidater().filter(function(k){ return !paa[k.h]; });
+      h += '<div style="margin-top:10px;border-top:1px solid var(--kant);padding-top:10px"><input class="felt" data-felt="prgSoeg" value="' + esc(S.prgSoeg || "") + '" placeholder="søg i truppen" autocapitalize="words">';
+      if (!(S.tilmeldinger || []).length) h += '<p class="lille" style="margin-top:8px">' + (S.tilmHenter ? 'Henter truppen …' : 'Truppen på serveren er tom — spillerne kommer ind med klubnøglen eller en invitation.') + '</p>';
+      else if (!kand.length) h += '<p class="lille" style="margin-top:8px">Alle i truppen er på passet.</p>';
+      kand.slice(0, 40).forEach(function(k){
+        h += '<div class="delt-rk" style="cursor:pointer" data-act="prg-delt-tilfoej" data-v="' + esc(k.h) + '" data-kand="' + esc(k.navn.toLowerCase()) + '"><div class="nv">' + esc(k.navn) + (k.aargang ? '<small>årgang ' + esc(k.aargang) + '</small>' : '') + '</div><span style="color:var(--is);font-weight:800">+ læg på</span></div>';
+      });
+      h += '<button class="knap valg" style="width:100%;margin-top:8px" data-act="prg-vaelg">Luk listen</button></div>';
+    } else {
+      h += '<div class="raekke" style="margin-top:10px"><button class="knap valg" data-act="prg-vaelg">+ Tilføj spillere</button>' +
+        '<button class="knap valg" style="border-color:rgba(210,72,78,.5);color:#ff8a8f' + (S.prgSlet === p.id ? ';background:var(--tabt);color:#fff' : '') + '" data-act="prg-slet" data-v="' + esc(p.id) + '">' + (S.prgSlet === p.id ? 'Tryk igen for at slette' : 'Slet passet') + '</button></div>';
+    }
+    h += '</div>';
+  });
+  // ── timer om ugen (kun kladdens tal — forslaget kommer i trin 4)
+  var timer = (prg.timer || []).filter(function(t){ return t.min_pr_uge > 0; });
+  if (timer.length) {
+    h += '<div class="kort" style="margin-top:12px"><div class="eyebrow">TIMER OM UGEN</div>';
+    timer.forEach(function(t){
+      var under = t.planlagt_min < t.min_pr_uge;
+      h += '<div class="delt-rk"><div class="nv">' + esc(navnFor(t.h, t.fornavn)) + '</div><span style="font-size:12.5px;font-weight:800;color:' + (under ? '#ff8a8f' : '#5fd68f') + '">' + (t.planlagt_min / 60).toFixed(1).replace('.0', '') + ' af ' + (t.min_pr_uge / 60).toFixed(1).replace('.0', '') + ' t</span></div>';
+    });
+    h += '</div>';
+  }
+  return h;
+}
+
+// ── REGISTRÉR · fremmødet → passet i spillerens log → «Vurdér dem nu».
+function regNulstil(){ S.reg = { trin: 1, pas: null, moedt: {}, svar: null, sender: false, fejl: null }; S.regDato = dkIdag(); }
+function regPasListe(){
+  // i dag: `nu` (med flagene) · en anden dato: det godkendte program for den ugedag
+  var dato = S.regDato || dkIdag();
+  if (dato === dkIdag() && S.nu && S.nu.pas) return S.nu.pas.slice();
+  var ug = ugedagAf(dato);
+  return ((S.prgGodkendt && S.prgGodkendt.pas) || []).filter(function(p){ return p.ugedag === ug; });
+}
+function traenerRegistrer(){
+  if (!S.reg) regNulstil();
+  var r = S.reg, h = '';
+  if (!lager.hent("klubkode", "")) return '<div class="kort"><h3>📋 Registrér</h3><p class="lille">Forbind klubnøglen under ⚙️ først.</p></div>';
+  if (r.trin === 3 && r.svar) {
+    var p3 = r.pas, moedte = pasDeltagerNavne({ deltagere: (p3.deltagere || []).filter(function(d){ return r.moedt[d.h]; }) });
+    h += '<div class="kort" style="border:1.5px solid var(--vundet);text-align:center"><div style="font-size:44px;line-height:1;margin-bottom:8px">✅</div>' +
+      '<h3 style="color:var(--vundet);margin:0">' + r.svar.moedt + (r.svar.moedt === 1 ? ' spiller' : ' spillere') + ' registreret</h3>' +
+      '<p class="lille" style="margin:4px 0 0">' + tidTekst(p3) + ' · bane ' + esc(p3.bane) + ' · ' + esc(r.svar.dato) + '</p>' +
+      '<p class="lille" style="margin:6px 0 0">Passet står nu i loggen hos ' + r.svar.log_skrevet + (r.svar.log_fjernet ? ' · fjernet hos ' + r.svar.log_fjernet : '') + ' — og tæller i streaken.' + (r.svar.ikke_moedt ? ' ' + r.svar.ikke_moedt + ' ikke mødt.' : '') + '</p></div>';
+    var iTrup = moedte.filter(function(n){ return (S.truppen || []).some(function(t){ return t.navn === n; }); });
+    h += '<button class="knap stor gron" data-act="reg-vurder">⚡ Vurdér dem nu →</button>';
+    if (iTrup.length < moedte.length) h += '<p class="lille" style="text-align:center;margin-top:8px">' + (moedte.length - iTrup.length) + ' af dem er ikke i din trup endnu — læg dem i truppen under GRUPPER, så kan du vurdere dem.</p>';
+    h += '<button class="knap valg" style="width:100%;margin-top:10px" data-act="reg-igen">Registrér et andet pas</button>';
+    return h;
+  }
+  if (r.trin === 2 && r.pas) {
+    var p = r.pas, alle = p.deltagere || [], antal = alle.filter(function(d){ return r.moedt[d.h]; }).length;
+    h += '<div class="kort" style="padding:11px 14px"><div style="display:flex;justify-content:space-between;align-items:center">' +
+      '<div><div class="eyebrow">FREMMØDE · ' + esc(datoTekst(r.dato || S.regDato)) + '</div><h3 style="margin:2px 0 0">' + tidTekst(p) + ' · bane ' + esc(p.bane) + '</h3><p class="lille" style="margin:2px 0 0">' + esc(pasTekst(p)) + '</p></div>' +
+      '<div style="text-align:right"><div style="font-size:22px;font-weight:800">' + antal + '/' + alle.length + '</div><div class="lille">mødt</div></div></div></div>';
+    h += '<div class="kort">';
+    if (!alle.length) h += '<p class="lille">Ingen spillere på passet — læg dem på under PROGRAM og godkend igen.</p>';
+    alle.forEach(function(d){
+      var ja = !!r.moedt[d.h];
+      h += '<div class="moedt-rk ' + (ja ? 'ja' : 'nej') + '" data-act="reg-slaa" data-v="' + esc(d.h) + '"><div class="flueben">✓</div><div class="nv">' + esc(navnFor(d.h, d.fornavn)) + '</div></div>';
+    });
+    h += '</div>';
+    if (r.fejl) h += '<p class="lille" style="color:var(--tabt);margin:0 0 8px">' + esc(r.fejl) + '</p>';
+    h += '<button class="knap stor gron"' + (r.sender || !alle.length ? ' disabled' : '') + ' data-act="reg-send">' + (r.sender ? '⏳ sender …' : '✓ Registrér ' + antal + ' mødt') + '</button>';
+    h += '<p class="lille" style="text-align:center;margin-top:8px">Alle står som mødt — tryk dem fra, der ikke kom. Passet skrives i spillernes træningslog og tæller i streaken.</p>';
+    h += '<button class="knap valg" style="width:100%;margin-top:6px" data-act="reg-igen">‹ Vælg et andet pas</button>';
+    return h;
+  }
+  // trin 1 · vælg pas (og dato)
+  var idag = (S.regDato || dkIdag()) === dkIdag();
+  if (!idag && !S.prgGodkendt && !S.prgHenter) setTimeout(function(){ prgHent("godkendt"); }, 0);
+  if (idag && !S.nuHentet && !S.nuHenter) setTimeout(function(){ nuHent(false); }, 0);   /* én gang — ikke i ring */
+  h += '<div class="kort" style="padding:11px 14px"><div class="eyebrow">📋 REGISTRÉR FREMMØDE</div>' +
+    '<div class="tid-rk" style="margin-top:6px"><input class="felt" type="date" data-felt="regDato" value="' + esc(S.regDato || dkIdag()) + '" max="' + dkIdag() + '" aria-label="dato"></div>' +
+    '<p class="lille" style="margin:6px 0 0">' + (idag ? 'Dagens pas fra det godkendte program. Glemte du et pas i går? Vælg datoen.' : 'Pas ' + DAGE_LANG[ugedagAf(S.regDato)] + ' i det godkendte program.') + '</p></div>';
+  var liste = regPasListe();
+  if (S.nuFejl && idag) h += '<p class="lille" style="color:var(--tabt)">' + esc(S.nuFejl) + '</p>';
+  if ((idag && S.nuHenter && !S.nu) || (!idag && S.prgHenter)) h += '<p class="lille" style="text-align:center">Henter …</p>';
+  else if (!liste.length) h += '<div class="kort"><p class="lille" style="margin:0">Ingen pas ' + (idag ? 'i dag' : DAGE_LANG[ugedagAf(S.regDato)]) + ' i det godkendte program.' + (S.prg && S.prg.pas && S.prg.pas.length && !(S.prg.sidst_godkendt) ? ' Kladden er ikke godkendt endnu — admin trykker «Godkend og send ud» under PROGRAM.' : '') + '</p></div>';
+  liste.sort(function(a, b){ return (b.lige_slut && !b.registreret ? 1 : 0) - (a.lige_slut && !a.registreret ? 1 : 0) || String(a.start).localeCompare(String(b.start)); });
+  liste.forEach(function(p){
+    var n = (p.deltagere || []).length;
+    var mrk = p.registreret ? '<div class="mrk gron">registreret ✓</div>' : (p.lige_slut ? '<div class="mrk guld">lige slut</div>' : (p.mine ? '<div class="mrk">mit</div>' : ''));
+    h += '<button class="pas-kort" data-act="reg-vaelg" data-v="' + esc(p.id) + '"><div class="tid">' + tidTekst(p) + '<small>bane ' + esc(p.bane) + '</small></div>' +
+      '<div class="om">' + esc(pasTekst(p) || '—') + '<small>' + (n ? n + (n === 1 ? ' spiller: ' : ' spillere: ') + esc(pasDeltagerNavne(p).join(", ")) : 'ingen spillere på passet') + '</small></div>' + mrk + '</button>';
+  });
+  return h;
+}
+
+// ── STREAKTENNIS' SKAL · bjælken i bunden (samme fem greb som appens: ikon + ord)
+function bundNav(){
+  var akt = function(id){ return S.tab === id ? ' class="aktiv"' : ''; };
+  return '<div class="bundtone" aria-hidden="true"></div><nav class="bundnav">' +
+    '<button data-act="tab" data-v="hjem"' + akt("hjem") + '><span>🏠</span>HJEM</button>' +
+    '<button data-act="tab" data-v="program"' + akt("program") + '><span>📅</span>PROGRAM</button>' +
+    '<button data-act="tab" data-v="vurder"' + akt("vurder") + '><span>⚡</span>VURDÉR</button>' +
+    '<button data-act="tab" data-v="grupper"' + akt("grupper") + '><span>👥</span>GRUPPER</button>' +
+    '<button data-act="tab" data-v="indst"' + akt("indst") + '><span>⚙️</span>MERE</button>' +
+    '</nav>';
+}
+
 function renderTraener(){
   const t = DATA.traenere.find(x=>x.navn===S.traener);
   let h = LOGO + '<div class="top"><div class="avatar">'+init(t.navn)+'</div>' +
@@ -1822,7 +2176,7 @@ function renderTraener(){
   // Prototype-banneret gaelder kun eksempeldata. Har traeneren skrevet sin egen
   // trup ind, er det hans rigtige spillere — og saa maa der ikke staa "fake data".
   if (!(S.truppen||[]).length) {
-    h += '<div class="proto-note">⚡ <b>Eksempeldata.</b> De forsvinder, så snart din første rigtige spiller er i truppen. 💡 Den nemmeste vej: find spilleren under 📲 INVITÉR SPILLER — siger familien ja i StreakTennis, dukker spilleren op under 📥 NYE SPILLERE, og et tryk på <b>Læg i trup</b> gør ham til din.</div>';
+    if (S.tab === "hjem") h += '<div class="proto-note">👋 <b>Truppen er tom endnu.</b> Find spilleren under 📲 INVITÉR SPILLER — siger familien ja i StreakTennis, dukker spilleren op under 📥 NYE SPILLERE, og et tryk på <b>Læg i trup</b> gør ham til din.</div>';
   }
   if (S.tab==="hjem") {
     h += '<p style="margin:16px 2px 4px;font-size:12.5px;color:var(--daempet)">Vælg, hvad du vil i gang med</p>';
@@ -1832,6 +2186,23 @@ function renderTraener(){
       (S.syncBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
     h += '</div>';
 
+    // ⭐⭐⭐ v6.0.0 · REGISTRÉR ER DEN BREDE KNAP (Nicolai 19/9: «Den brede Registrer skal
+    //   være fremtrædende også. Det er jo registrering af træning.»). Under den står det
+    //   pas, `nu` peger på — motoren skjuler intet, skærmen vælger (princip 64).
+    (function(){
+      if (lager.hent("klubkode", "") && !S.nuHentet && !S.nuHenter) setTimeout(function(){ nuHent(false); }, 0);
+      var b = nuBedste(), uf = nuUdenFremmoede();
+      h += '<button class="knap stor gron" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + '>📋 Registrér</button>';
+      var linje;
+      if (!lager.hent("klubkode", "")) linje = 'Forbind klubnøglen under ⚙️ — så kommer dagens pas frem her.';
+      else if (S.nuFejl) linje = S.nuFejl;
+      else if (!S.nu) linje = 'Henter dagens pas …';
+      else if (b) linje = (b.lige_slut ? 'Lige slut: ' : 'Næste: ') + tidTekst(b) + ' · bane ' + esc(b.bane) + (pasTekst(b) ? ' · ' + esc(pasTekst(b)) : '') + ' · ' + (b.deltagere || []).length + ' spillere';
+      else if (S.nu.pas && S.nu.pas.length) linje = 'Dagens ' + S.nu.pas.length + (S.nu.pas.length === 1 ? ' pas er registreret ✓' : ' pas er registreret ✓');
+      else linje = 'Ingen pas i dag i det godkendte program.';
+      h += '<p class="lille" style="text-align:center;margin:8px 0 2px">' + linje + '</p>';
+      if (uf > 1) h += '<p class="lille" style="text-align:center;margin:0;color:#ff8a8f;font-weight:700">' + uf + ' pas uden fremmøde i dag</p>';
+    })();
     h += '<div class="dev-grid">' +
       // ⭐⭐⭐ v4.1.0 · AFTENENS VIGTIGSTE KNAP STÅR FORREST.
       //   ⚠️ FANGET FØR DEN BLEV BYGGET: første udkast skrev
@@ -1843,6 +2214,7 @@ function renderTraener(){
       //   spillernøgler (kun trænernøgler er admin-only, og det afsnit
       //   inde i kortet skjuler sig selv). Ingen rolle at spørge om.
       '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="noegler"><span class="ik">🔑</span><b>INVITÉR SPILLER</b><small>via brugernavn — eller QR til nye</small></button>' +
+      '<button class="dev-flise dev-kant-is" data-act="tab" data-v="program"><span class="ik">📅</span><b>PROGRAM</b><small>ugeskemaet — tid, bane, træner, spillere</small></button>' +
       '<button class="dev-flise dev-kant-is" data-act="tab" data-v="grupper"><span class="ik">👥</span><b>GRUPPER</b><small>hold, spillere & udvikling</small></button>' +
       '<button class="dev-flise dev-kant-guld" data-act="tab" data-v="vurder"><span class="ik">⚡</span><b>VURDÉR TRÆNING</b><small>hele holdet på under 20 sek.</small></button>' +
       '<button class="dev-flise dev-kant-gron" data-act="tab" data-v="kvartal"><span class="ik">📋</span><b>EVALUERING</b><small>AI-udkast — du godkender alt</small></button>' +
@@ -1857,7 +2229,10 @@ function renderTraener(){
     else if (S.tab==="kvartal") h += traenerKvartal(t);
     else if (S.tab==="rum") h += traenerRummet();
     else if (S.tab==="indst") h += traenerIndstillinger();
+    else if (S.tab==="program") h += traenerProgram();      /* v6.0.0 */
+    else if (S.tab==="registrer") h += traenerRegistrer();  /* v6.0.0 */
   }
+  h += bundNav();   /* ⭐ v6.0.0 · StreakTennis' skal: bjælken i bunden */
   return h;
 }
 function faneKnap(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'" data-act="tab" data-v="'+id+'">'+label+'</button>'; }
@@ -2873,7 +3248,7 @@ function traenerVurder(t){
     return h;
   }
 
-  if (!S.vurderGruppe){
+  if (!S.vurderGruppe && !S.vurderLige){   /* v6.0.0 · lige trænet springer gruppevalget over */
     let h = '<button class="knap valg" style="margin-bottom:10px;flex:none;padding:8px 14px" data-act="luk-omraade">‹ Skift område</button>';
     h += '<p class="lille">'+OMRNAVN[S.vurderOmraade].emoji+' '+esc(OMRNAVN[S.vurderOmraade].navn)+' — vælg gruppe:</p>';
     h += '<div class="dev-grid">';
@@ -2885,13 +3260,14 @@ function traenerVurder(t){
     h += '</div>';
     return h;
   }
-  const sp = DATA.grupper[S.vurderGruppe].spillere;
+  const sp = S.vurderLige ? S.vurderLige.navne : DATA.grupper[S.vurderGruppe].spillere;   /* v6.0.0 */
   const done = sp.filter(n => S.vurderScores[n]).length;
-  let h = '<button class="knap valg" style="margin-bottom:10px;flex:none;padding:8px 14px" data-act="luk-gruppe">‹ '+esc(S.vurderGruppe)+'</button>';
+  let h = '<button class="knap valg" style="margin-bottom:10px;flex:none;padding:8px 14px" data-act="luk-gruppe">‹ '+esc(S.vurderLige ? S.vurderLige.titel : S.vurderGruppe)+'</button>';
   h += '<div class="kort" style="padding:11px 14px"><div style="display:flex;justify-content:space-between;align-items:center">' +
     '<div><div class="eyebrow">'+OMRNAVN[S.vurderOmraade].emoji+' '+esc(OMRNAVN[S.vurderOmraade].navn).toUpperCase()+'</div><h3 style="margin:2px 0 0">Dagens indsats</h3></div>' +
     '<div style="text-align:right"><div style="font-size:18px;font-weight:800">'+done+'/'+sp.length+'</div><div class="lille">færdig</div></div></div>' +
     '<p class="lille" style="margin-top:6px">Ét tryk pr. spiller på farveskalaen — under 20 sek. i alt.</p></div>';
+  if (S.vurderLige && !sp.length) h += '<div class="kort"><p class="lille" style="margin:0">Ingen af dem, du lige har trænet, er i din trup endnu — læg dem i truppen under GRUPPER, så kan du vurdere dem.</p></div>';   /* v6.0.0 */
   sp.forEach(function(n){
     const s = DATA.spillere[n], valgt = S.vurderScores[n];
     h += '<div class="kort" style="padding:11px 13px"><div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">' +
@@ -3012,6 +3388,8 @@ document.addEventListener("input", function(e){
     try { e.target.setSelectionRange(pos, pos); } catch (_e) {}
   }
   S[f] = ny;
+  if (f === "regDato") { if (S.reg) { S.reg.trin = 1; S.reg.pas = null; } render(); }   /* v6.0.0 */
+  if (f === "prgSoeg") { var _q = String(ny || "").toLowerCase(); document.querySelectorAll("[data-kand]").forEach(function(e2){ e2.style.display = e2.dataset.kand.indexOf(_q) >= 0 ? "" : "none"; }); }
   // ⭐ v4.0.0 · fordørens felter svarer ved hvert bogstav — UDEN
   //   gentegning (princip 38). Kun de felter, der har en dom.
   if (f.indexOf("doer") === 0 || f === "lukNyNoegle" || f === "skiftNoegle") { try { scMaerk(); } catch (_e) {} }
@@ -3080,13 +3458,99 @@ document.addEventListener("click", function(e){
     const nu = S.fokuspunkter[sp] || [];
     S.fokuspunkter[sp] = nu.includes(v) ? nu.filter(x => x !== v) : nu.concat([v]);
     lager.gem("fokuspunkter", S.fokuspunkter); render(); sendVurdering(sp); }
-  if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.kvartalUdkast=null; render(); if (v === "rum") { try { snakHent(false); } catch (_e) {} } if (v === "noegler") { try { budSendteHent(); } catch (_e) {} } }
+  // ══ v6.0.0 · PROGRAMMET ═══════════════════════════════════════════════
+  if (act==="prg-dag"){ S.prgUgedag = +v; prgNulstilForm(); render(); }
+  else if (act==="prg-ny"){ prgNulstilForm(); S.prgNy = true; render(); }
+  else if (act==="prg-luk"){ prgNulstilForm(); render(); }
+  else if (act==="prg-aabn"){
+    if (S.prgAaben === v) { prgNulstilForm(); render(); return; }
+    var _pa = prgPas(v); if (!_pa) return;
+    prgNulstilForm(); S.prgAaben = v; prgFyldForm(_pa); S.prgSlet = null; render();
+    if (!(S.tilmeldinger || []).length && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }
+  else if (act==="prg-gem"){
+    if (S.prgGemmer) return;
+    var _st = String(S.prgStart || "").slice(0, 5), _sl = String(S.prgSlut || "").slice(0, 5), _ba = String(S.prgBane || "").trim();
+    if (!/^\d\d:\d\d$/.test(_st) || !/^\d\d:\d\d$/.test(_sl)) { S.prgBesked = { fejl: true, t: "S\u00e6t start og slut." }; render(); return; }
+    if (_sl <= _st) { S.prgBesked = { fejl: true, t: "Slut skal ligge efter start." }; render(); return; }
+    if (!_ba) { S.prgBesked = { fejl: true, t: "Skriv banen." }; render(); return; }
+    var _krop = { ugedag: S.prgUgedag, start: _st, slut: _sl, bane: _ba, traener: String(S.prgTraener || "").trim(), traener2: String(S.prgTraener2 || "").trim(), titel: String(S.prgTitel || "").trim() };
+    if (S.prgAaben) _krop.id = S.prgAaben;
+    S.prgGemmer = true; S.prgBesked = null; render();
+    traeningKald("pas-gem", _krop).then(function(r){
+      S.prgGemmer = false;
+      if (!r || r.fejl) { S.prgBesked = { fejl: true, t: traeningFejl(r) }; render(); return; }
+      var _ny = !S.prgAaben; prgNulstilForm();
+      if (!_ny) S.prgAaben = r.pas.id;
+      S.prgBesked = { fejl: false, t: _ny ? "Passet er lagt i kladden \u2713" : "\u00c6ndringen er gemt i kladden \u2713" };
+      prgHent("kladde"); }); }
+  else if (act==="prg-delt-tilfoej" || act==="prg-delt-fjern" || act==="prg-hold"){
+    if (!S.prgAaben || S.prgGemmer) return;
+    var _k2 = { id: S.prgAaben };
+    if (act==="prg-delt-tilfoej") _k2.tilfoej = [v]; else if (act==="prg-delt-fjern") _k2.fjern = [v]; else { _k2.hold = {}; _k2.hold[v] = +t.dataset.sp; }
+    S.prgGemmer = true; render();
+    traeningKald("pas-deltagere", _k2).then(function(r){
+      S.prgGemmer = false;
+      if (!r || r.fejl) { S.prgBesked = { fejl: true, t: traeningFejl(r) }; render(); return; }
+      var _p2 = prgPas(S.prgAaben); if (_p2) _p2.deltagere = r.deltagere || [];
+      S.prgBesked = r.advarsel ? { fejl: true, t: r.advarsel.antal + " p\u00e5 banen \u2014 max " + r.advarsel.loft + ". Det er en advarsel, ikke en sp\u00e6rring." } : null;
+      if (S.prg) S.prg.aendret_siden = (S.prg.aendret_siden || 0);   /* tallet hentes rigtigt ved næste pas-liste */
+      render(); }); }
+  else if (act==="prg-vaelg"){ S.prgVaelg = !S.prgVaelg; S.prgSoeg = ""; render(); if (S.prgVaelg && !(S.tilmeldinger || []).length && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }
+  else if (act==="prg-slet"){
+    if (S.prgSlet !== v) { S.prgSlet = v; render(); return; }
+    S.prgGemmer = true; render();
+    traeningKald("pas-slet", { id: v }).then(function(r){
+      S.prgGemmer = false;
+      if (!r || r.fejl) { S.prgBesked = { fejl: true, t: traeningFejl(r) }; render(); return; }
+      prgNulstilForm(); S.prgBesked = { fejl: false, t: "Passet er slettet fra kladden \u2713 \u2014 godkend igen, s\u00e5 forsvinder det fra planen." };
+      prgHent("kladde"); }); }
+  else if (act==="prg-godkend"){
+    if (S.prgGodkender) return;
+    S.prgGodkender = true; S.prgBesked = null; render();
+    traeningKald("godkend", {}).then(function(r){
+      S.prgGodkender = false;
+      if (!r || r.fejl) { S.prgBesked = { fejl: true, t: traeningFejl(r) }; render(); return; }
+      S.prgBesked = { fejl: false, t: "Programmet er godkendt og sendt ud \u2713 (" + r.godkendt + (r.godkendt === 1 ? " pas)" : " pas)") };
+      S.prgGodkendt = null; S.nuHentet = 0; nuHent(true); prgHent("kladde"); }); }
+  // ══ v6.0.0 · REGISTRÉR ════════════════════════════════════════════════
+  else if (act==="reg-start"){
+    regNulstil(); S.tab = "registrer"; S.aabenSpiller = null;
+    var _pn = v && S.nu && S.nu.pas ? S.nu.pas.filter(function(p){ return p.id === v; })[0] : null;
+    if (_pn) { S.reg.pas = _pn; S.reg.dato = dkIdag(); S.reg.trin = 2; (_pn.deltagere || []).forEach(function(d){ S.reg.moedt[d.h] = true; }); }
+    render(); if (!_pn) nuHent(false); }
+  else if (act==="reg-vaelg"){
+    if (!S.reg) regNulstil();
+    var _pv = regPasListe().filter(function(p){ return p.id === v; })[0]; if (!_pv) return;
+    S.reg.pas = _pv; S.reg.dato = S.regDato || dkIdag(); S.reg.trin = 2; S.reg.moedt = {}; S.reg.fejl = null;
+    (_pv.deltagere || []).forEach(function(d){ S.reg.moedt[d.h] = true; }); render(); }
+  else if (act==="reg-slaa"){ if (!S.reg) return; S.reg.moedt[v] = !S.reg.moedt[v]; render(); }
+  else if (act==="reg-send"){
+    if (!S.reg || !S.reg.pas || S.reg.sender) return;
+    var _rp = S.reg.pas, _mo = [], _ik = [];
+    (_rp.deltagere || []).forEach(function(d){ (S.reg.moedt[d.h] ? _mo : _ik).push(d.h); });
+    if (!_mo.length && !_ik.length) return;
+    S.reg.sender = true; S.reg.fejl = null; render();
+    traeningKald("registrer", { pas_id: _rp.id, dato: S.reg.dato, moedt: _mo, ikke_moedt: _ik }).then(function(r){
+      S.reg.sender = false;
+      if (!r || r.fejl) { S.reg.fejl = traeningFejl(r); render(); return; }
+      S.reg.svar = r; S.reg.trin = 3; S.nuHentet = 0; render(); nuHent(true); }); }
+  else if (act==="reg-igen"){ regNulstil(); render(); nuHent(false); }
+  else if (act==="reg-vurder"){
+    if (!S.reg || !S.reg.pas) return;
+    var _navne = [];
+    (S.reg.pas.deltagere || []).forEach(function(d){
+      if (!S.reg.moedt[d.h]) return;
+      var _tp = (S.truppen || []).filter(function(x){ return x && x.noegle === d.h; })[0];
+      if (_tp && _tp.navn && DATA.spillere[_tp.navn]) _navne.push(_tp.navn); });
+    S.vurderLige = { titel: "Lige tr\u00e6net \u00b7 " + tidTekst(S.reg.pas) + " bane " + S.reg.pas.bane, navne: _navne };
+    S.vurderOmraade = null; S.vurderGruppe = null; S.vurderScores = {}; S.tab = "vurder"; S.aabenSpiller = null; render(); }
+  if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer") regNulstil(); render(); if (v === "program") { S.prgBesked = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { try { snakHent(false); } catch (_e) {} } if (v === "noegler") { try { budSendteHent(); } catch (_e) {} } }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
   else if (act==="vurder-omraade"){ S.vurderOmraade=v; S.vurderScores = {}; render(); }
   else if (act==="luk-omraade"){ S.vurderOmraade=null; S.vurderGruppe=null; render(); }
   else if (act==="vurder-gruppe"){ S.vurderGruppe=v; render(); }
-  else if (act==="luk-gruppe"){ S.vurderGruppe=null; render(); }
+  else if (act==="luk-gruppe"){ S.vurderGruppe=null; S.vurderLige=null; render(); }
   else if (act==="score"){
     const sp = t.dataset.sp;
     const idag = new Date().toISOString().slice(0,10);
@@ -3733,6 +4197,7 @@ window.__oskarInit = function(){
   // hentes tilmeldinger og truppens tal af sig selv, én gang pr. sideindlæsning.
   setTimeout(function(){ try {
     if (lager.hent("klubkode","") && !S.tilmHentet) hentTilmeldinger();
+    try { nuHent(false); } catch (_e2) {}   /* v6.0.0 · dagens pas */
   } catch (e) {} }, 500);
   // ⭐⭐⭐ v4.3.0 · LEVER NØGLEN STADIG? Spørges ved HVER åbning, fordi
   //   en spærring sker, mens telefonen ligger i lommen. Svaret er det

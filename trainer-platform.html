@@ -182,7 +182,7 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 button.dev-hero.dev-kant{background:linear-gradient(160deg,#101E3A,#0C1526) padding-box,linear-gradient(135deg,#083EA7,#4B17B6 40%,#EF3E4A 75%,#FB9B2A) border-box !important;border:1.5px solid transparent !important;box-shadow:none;backdrop-filter:none}
 .avat{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;color:var(--dyb);flex:none;vertical-align:middle;letter-spacing:.02em}
 .fod{font-size:10.5px;color:var(--fod);margin-top:22px;border-top:1px dashed var(--kant);padding-top:9px}
-.dev-pilknap{width:44px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--kort);border:1px solid var(--kant);border-radius:12px;color:var(--is);font-size:15px;cursor:pointer;padding:0;margin:10px 0 6px;backdrop-filter:blur(8px)}
+.pil-tilbage{width:44px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--kort);border:1px solid var(--kant);border-radius:12px;color:var(--is);font-size:15px;cursor:pointer;padding:0;flex:none;backdrop-filter:blur(8px)}   /* v6.2.0 · StreakTennis' ← ordret; StreakCoachs egen pil-knap udgik */
 /* ══ v6.0.0 · STREAKTENNIS' SKAL: bjælken i bunden (ordret fra appens .bundnav/.bundtone), den brede knap, programmet ══ */
 body{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .bundtone{position:fixed;left:0;right:0;bottom:0;height:calc(104px + env(safe-area-inset-bottom));pointer-events:none;z-index:45;background:linear-gradient(180deg,rgba(11,18,32,0) 0%,rgba(11,18,32,.88) 46%,#0B1220 78%)}
@@ -972,7 +972,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.1.0 \u00b7 20. september 2026";
+const VERSION = "v6.2.0 \u00b7 20. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1421,7 +1421,7 @@ var EN = {
 // ⭐ v6.0.0 · programmet og REGISTRÉR på engelsk
 Object.assign(EN, {
 "📋 Registrér": "📋 Register", "REGISTRÉR": "REGISTER",
-"Invitér spiller": "Invite player", "Program": "Schedule", "Grupper": "Groups", "Vurdér træning": "Rate practice", "Evaluering": "Evaluation", "Trænerrummet": "The coaches' room", "Indstillinger": "Settings", "Cheftræner": "Head coach", "Træner": "Coach",
+"Invitér spiller": "Invite player", "Program": "Schedule", "🔑 Invitér spiller": "🔑 Invite player", "📅 Program": "📅 Schedule", "👥 Grupper": "👥 Groups", "⚡ Vurdér træning": "⚡ Rate practice", "📋 Evaluering": "📋 Evaluation", "💬 Trænerrummet": "💬 The coaches' room", "⚙️ Indstillinger": "⚙️ Settings", "📋 Registrér": "📋 Register", "Grupper": "Groups", "Vurdér træning": "Rate practice", "Evaluering": "Evaluation", "Trænerrummet": "The coaches' room", "Indstillinger": "Settings", "Cheftræner": "Head coach", "Træner": "Coach",
 "via brugernavn — eller QR til nye": "by username — or a QR code for new players", "ugeskemaet — tid, bane, træner, spillere": "the weekly schedule — time, court, coach, players", "klubkode, trup & kopi": "club key, squad & backup",
 "HJEM": "HOME", "PROGRAM": "SCHEDULE", "VURDÉR": "RATE", "GRUPPER": "GROUPS", "MERE": "MORE",
 "📅 UGESKEMAET": "📅 THE WEEKLY SCHEDULE",
@@ -2191,14 +2191,19 @@ function bundNav(){
     '</nav>';   /* v6.1.0 · fire knapper som StreakTennis — Indstillinger er en flise */
 }
 
+function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emoji som flisen på HJEM */
+  return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Grupper", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ning",
+           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\ud83d\udccb Registr\u00e9r" }[tab] || "";
+}
 function renderTraener(){
   const t = DATA.traenere.find(x=>x.navn===S.traener);
   // ⭐⭐⭐ v6.1.0 · HILSNEN SOM STREAKTENNIS (Nicolai 20/9: «identisk»): den dæmpede linje ovenover, avat(46), «Hej Navn».
   //   ⭐ v4.0.0 · rollen kommer stadig fra serveren, ikke fra en antagelse.
   let h = topbarMedSprog() +
     '<div class="hero"><span style="font-size:11px;color:var(--daempet);letter-spacing:.5px">' + esc(KONFIG.klub) + ' \u00b7 ' +
-      (S.minRolle === "admin" ? '<span style="color:var(--guld)">Cheftr\u00e6ner</span>' : 'Tr\u00e6ner') + '</span></div>' +
-    '<div style="margin:16px 2px 6px;display:flex;align-items:center;gap:12px">' + avat(t.navn, 46) +
+      (S.minRolle === "admin" ? '<span style="color:var(--guld)">Cheftr\u00e6ner</span>' : 'Tr\u00e6ner') + '</span></div>';
+  /* v6.2.0 · hilsnen er HJEM's — inde på en fane står der ingen (målt i StreakTennis' TRÆN/Statistik/Indstillinger) */
+  if (S.tab === "hjem") h += '<div style="margin:16px 2px 6px;display:flex;align-items:center;gap:12px">' + avat(t.navn, 46) +
       '<div><h2 style="margin:0;font-size:23px">Hej ' + esc(t.navn.split(" ")[0]) + '</h2></div></div>';
   // Prototype-banneret gaelder kun eksempeldata. Har traeneren skrevet sin egen
   // trup ind, er det hans rigtige spillere — og saa maa der ikke staa "fake data".
@@ -2250,7 +2255,8 @@ function renderTraener(){
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="indst"><span class="dev-ikon">\u2699\ufe0f</span><b>Indstillinger</b><small>klubkode, trup & kopi</small></button>' +
       '</div>';
   } else {
-    h += '<button class="dev-pilknap" data-act="tab" data-v="hjem">←</button>';
+    /* v6.2.0 · StreakTennis' titelrække, ordret (linje 10425 i v5.3.1): ← og fanens navn i én række */
+    h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px"><button class="pil-tilbage" data-act="tab" data-v="hjem">\u2190</button><b style="font-size:16px">' + faneTitel(S.tab) + '</b></div>';
     if (S.tab==="noegler") h += noegleKortet();
     else if (S.tab==="grupper") h += traenerGrupper(t);
     else if (S.tab==="vurder") h += traenerVurder(t);

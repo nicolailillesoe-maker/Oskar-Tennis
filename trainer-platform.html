@@ -220,6 +220,19 @@ body{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .moedt-rk.ja .flueben{background:var(--vundet);border-color:var(--vundet);color:#fff}
 .moedt-rk .nv{flex:1;font-size:14px;font-weight:700}
 .moedt-rk.nej .nv{color:var(--daempet);text-decoration:line-through}
+/* ⭐⭐⭐ v6.4.0 · FREMMØDE OG VURDERING I ÉT TRYK — rækken: navn · ✗ · farveskalaen (samme .dot som VURDÉR) */
+.reg-rk{padding:10px 0;border-top:1px solid var(--kant)}
+.reg-rk:first-of-type{border-top:none}
+.reg-rk .reg-top{display:flex;align-items:center;gap:9px}
+.reg-rk .nv{flex:1;font-size:14px;font-weight:700}
+.reg-rk .reg-vaek{flex:none;width:34px;height:34px;border-radius:10px;border:1.5px solid var(--kant);background:transparent;color:var(--daempet);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.reg-rk.nej .nv{color:var(--daempet)}
+.reg-rk.nej .reg-navn{text-decoration:line-through}
+.reg-rk.nej .reg-vaek{color:#fff;border-color:var(--tabt);background:rgba(255,90,99,.22)}
+.reg-rk .reg-dots{display:flex;gap:7px;justify-content:space-between;margin-top:9px}
+.omr-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.omr-chip{flex:1 1 auto;min-height:36px;padding:6px 8px;border-radius:12px;border:1.5px solid var(--kant);background:transparent;color:var(--kridt);font-size:12px;font-weight:700;cursor:pointer;text-align:center;font-family:inherit}
+.omr-chip.valgt{border-color:var(--guld);background:rgba(255,210,74,.14)}
 .tid-rk{display:flex;gap:8px;align-items:center}
 .tid-rk .felt{flex:1;min-width:0}
 </style>
@@ -591,6 +604,7 @@ async function sendVurdering(spillerNavn) {
   const r = await sync("vurdering-gem", krop);
   S.syncBesked = r.fejl ? { fejl: true, t: syncFejltekst(r) } : { fejl: false, t: "Sendt til " + spillerNavn.split(" ")[0] + " ✓" };
   render();
+  return r;   /* v6.4.0 · kvitteringen på REGISTRÉR siger, hvem vurderingen nåede */
 }
 
 // ÆGTE AI-UDKAST (19/8, lukker LLM-oprustningskortets punkt 5): rundens
@@ -717,7 +731,8 @@ function syncFejltekst(r) {
   if (r.fejl === "mangler-klubkode") return "Indtast klubkoden først.";
   if (r.fejl === "adgang") return "Klubkoden blev afvist.";
   if (r.fejl === "validering") return "Data blev afvist af vagten: " + ((r.detaljer||[])[0]?.grund || "");
-  return "Ingen forbindelse — prøv igen.";
+  if (r.fejl === "netvaerk" || !r.fejl) return "Ingen forbindelse — prøv igen.";
+  return "Serveren afviste det (" + r.fejl + (r.status ? " " + r.status : "") + ").";   /* v6.4.0 · princip 94 */
 }
 
 let S = {
@@ -974,7 +989,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.3.0 \u00b7 20. september 2026";
+const VERSION = "v6.4.0 \u00b7 20. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1454,7 +1469,20 @@ Object.assign(EN, {
 "Ryd kladden først (sæsonstart)": "Clear the draft first (season start)", "Se ugeskemaet →": "See the weekly schedule →",
 "Intet går ud til spillerne, før admin trykker «Godkend og send ud».": "Nothing reaches the players until the admin taps “Approve and publish”.",
 "Sæt rækkerne ind først.": "Paste the rows first.", "⏱ TIMER OM UGEN": "⏱ HOURS PER WEEK",
-"Ingen spillere har et mål endnu. Mål og forslag kommer i næste trin.": "No players have a target yet. Targets and suggestions come in the next step."
+"Ingen spillere har et mål endnu. Mål og forslag kommer i næste trin.": "No players have a target yet. Targets and suggestions come in the next step.",
+"FREMMØDE OG VURDERING · {x}": "ATTENDANCE AND RATING · {x}", "mødt": "present", "· ikke mødt": "· absent", "ikke mødt": "absent", "mødt alligevel": "present after all",
+"📋 DAGENS PAS": "📋 TODAY'S SESSIONS", "Fremmøde og vurdering i ét tryk.": "Attendance and rating in one tap.", "Uden et pas? Vælg område herunder og vurdér en gruppe.": "No session? Pick an area below and rate a group.",
+"💪 Fysisk": "💪 Physical", "🎾 Trænerens bane": "🎾 Coach's court", "🤝 Spil-selv": "🤝 Play-yourself court", "Scores kobles til ugens fokus: {x}": "Scores are tied to this week's focus: {x}",
+"Ingen spillere på passet — læg dem på under PROGRAM og godkend igen.": "No players on this session — add them under SCHEDULE and approve again.",
+"Registreres — kan først vurderes, når {x} er i din trup (GRUPPER).": "Will be registered — can be rated once {x} is in your squad (GROUPS).",
+"⏳ gemmer …": "⏳ saving …", "✓ Gem · {n} mødt · {n} vurderet": "✓ Save · {n} present · {n} rated",
+"Én farve pr. spiller = mødt og vurderet. ✗ = ikke mødt. Ingen farve = mødt uden score. Passet skrives i spillernes træningslog og tæller i streaken.": "One colour per player = present and rated. ✗ = absent. No colour = present without a score. The session is written to the players' training log and counts in the streak.",
+"{n} spillere registreret · {n} vurderet": "{n} players registered · {n} rated", "{n} spiller registreret · {n} vurderet": "{n} player registered · {n} rated", "{n} spillere registreret": "{n} players registered", "{n} spiller registreret": "{n} player registered",
+"Passet står nu i loggen hos {n} — og tæller i streaken.": "The session is now in the log of {n} — and counts in the streak.", "Passet står nu i loggen hos {n} — og tæller i streaken. {n} ikke mødt.": "The session is now in the log of {n} — and counts in the streak. {n} absent.",
+"Passet står nu i loggen hos {n} · fjernet hos {n} — og tæller i streaken.": "The session is now in the log of {n} · removed from {n} — and counts in the streak.", "Passet står nu i loggen hos {n} · fjernet hos {n} — og tæller i streaken. {n} ikke mødt.": "The session is now in the log of {n} · removed from {n} — and counts in the streak. {n} absent.",
+"Vurderingen ({x}) står nu hos {x} ✓": "The rating ({x}) is now with {x} ✓", "Vurderingen står nu hos {x} ✓": "The rating is now with {x} ✓",
+"⏳ Sender {n} vurdering …": "⏳ Sending {n} rating …", "⏳ Sender {n} vurderinger …": "⏳ Sending {n} ratings …",
+"Vurderingen kom ikke frem hos {x}. Fremmødet er gemt.": "The rating didn't reach {x}. Attendance is saved.", "Send vurderingerne igen": "Send the ratings again"
 });
 
 Object.assign(EN, {
@@ -2239,7 +2267,60 @@ function traenerProgram(){
 }
 
 // ── REGISTRÉR · fremmødet → passet i spillerens log → «Vurdér dem nu».
-function regNulstil(){ S.reg = { trin: 1, pas: null, moedt: {}, svar: null, sender: false, fejl: null }; S.regDato = dkIdag(); }
+// ⭐⭐⭐ v6.4.0 · FREMMØDE OG VURDERING I ÉT TRYK (Nicolai 20/9: «De får jo ikke en vurdering med mindre de har været der»).
+//   Scores gemmes lokalt og sendes FØRST, når fremmødet er i basen — og kun for dem, der står som mødt. En vurdering uden
+//   fremmøde kan ikke opstå. Rækkefølgen er reglen, ikke en hjælpetekst (princip 70).
+var OMR_KORT = { fysisk: "Fysisk", petersbane: "Trænerens bane", spilselv: "Spil-selv" };   /* korte navne til chips — de lange står i KONFIG.omraader */
+function regOmraadeDefault(){ var o = KONFIG.omraader.filter(function(x){ return x.id === "petersbane"; })[0] || KONFIG.omraader[0]; return o ? o.id : null; }
+function regTrupNavn(h){
+  /* scores bor lokalt på NAVNET (trænerens boks) og rejser på håndtaget — derfor skal spilleren være i truppen, ligesom i VURDÉR */
+  var p = (S.truppen || []).filter(function(x){ return x && x.noegle === h; })[0];
+  return p && p.navn && DATA.spillere[p.navn] && (S.noegler || {})[p.navn] ? p.navn : null;
+}
+function vurdFejltekst(r){   /* princip 94: «ingen forbindelse» siges KUN om netværket — serverens nej får sin egen sætning */
+  if (!r) return "ingen nøgle";
+  if (r.fejl === "netvaerk") return "ingen forbindelse";
+  if (r.fejl === "mangler-klubkode") return "klubkoden mangler";
+  if (r.fejl === "adgang") return "klubkoden blev afvist";
+  if (r.fejl === "validering") return "afvist af vagten: " + ((((r.detaljer || [])[0]) || {}).grund || "");
+  return "serveren sagde nej (" + (r.fejl || "?") + (r.status ? " " + r.status : "") + ")";
+}
+function regSendVurderinger(kunFejlede){
+  var r = S.reg; if (!r || !r.pas) return;
+  var idag = r.dato || dkIdag(), omr = r.omraade, pasId = r.pas.kilde || r.pas.id, liste = [];
+  var igen = kunFejlede && r.vurd ? r.vurd.fejl.map(function(f){ return f.navn; }) : null;
+  (r.pas.deltagere || []).forEach(function(d){
+    if (!r.moedt[d.h] || !r.score[d.h]) return;
+    var navn = regTrupNavn(d.h); if (!navn) return;
+    if (igen && igen.indexOf(navn) < 0) return;
+    liste.push({ h: d.h, navn: navn, score: r.score[d.h] });
+  });
+  var sendt = igen && r.vurd ? r.vurd.sendt.slice() : [];
+  r.vurd = { sendt: sendt, fejl: [], venter: liste.length };
+  if (!liste.length) return;
+  if (!igen) {
+    liste.forEach(function(x){
+      /* hændelser, aldrig celler (19/8): to pas samme dag overskriver ALDRIG hinanden — men samme pas gemt igen retter scoren (nøglen er passet, ikke dagen) */
+      var rettet = false;
+      for (var j = S.vurderinger.length - 1; j >= 0; j--) {
+        var y = S.vurderinger[j];
+        if (y.spiller === x.navn && y.omraade === omr && y.dato === idag && y.pas === pasId) { y.score = x.score; y.fokus = ugensFokus(); rettet = true; break; }
+      }
+      if (!rettet) S.vurderinger.push({ dato: idag, spiller: x.navn, omraade: omr, score: x.score, fokus: ugensFokus(), pas: pasId });
+      if (S.truppen && S.truppen.length && DATA.spillere[x.navn]) DATA.spillere[x.navn].vurdering = vurderingAf(x.navn);
+    });
+    lager.gem("vurderinger", S.vurderinger);
+  }
+  liste.forEach(function(x){
+    sendVurdering(x.navn).then(function(res){
+      if (S.reg !== r) return;   /* skærmen er gået videre — kvitteringen er væk */
+      r.vurd.venter--;
+      if (res && !res.fejl) r.vurd.sendt.push(x.navn); else r.vurd.fejl.push({ navn: x.navn, t: vurdFejltekst(res) });
+      render();
+    }).catch(function(){ if (S.reg !== r) return; r.vurd.venter--; r.vurd.fejl.push({ navn: x.navn, t: "ingen forbindelse" }); render(); });
+  });
+}
+function regNulstil(){ S.reg = { trin: 1, pas: null, moedt: {}, score: {}, omraade: regOmraadeDefault(), vurd: null, svar: null, sender: false, fejl: null }; S.regDato = dkIdag(); }   /* v6.4.0 */
 function regPasListe(){
   // i dag: `nu` (med flagene) · en anden dato: det godkendte program for den ugedag
   var dato = S.regDato || dkIdag();
@@ -2252,32 +2333,52 @@ function traenerRegistrer(){
   var r = S.reg, h = '';
   if (!lager.hent("klubkode", "")) return '<div class="kort"><h3>📋 Registrér</h3><p class="lille">Forbind klubnøglen under ⚙️ først.</p></div>';
   if (r.trin === 3 && r.svar) {
-    var p3 = r.pas, moedte = pasDeltagerNavne({ deltagere: (p3.deltagere || []).filter(function(d){ return r.moedt[d.h]; }) });
+    /* ⭐⭐⭐ v6.4.0 · ÉN KVITTERING FOR BEGGE (Nicolai 20/9: «Det skal vel kunne gøres samtidig — jo nærmest i samme tryk»):
+       fremmødet er i basen, scores sendes bagefter — og KUN for dem, der stod som mødt. Hvert udfald sin sætning (princip 75). */
+    var p3 = r.pas, vd = r.vurd || { sendt: [], fejl: [], venter: 0 }, omr3 = OMRNAVN[r.omraade] || null;
     h += '<div class="kort" style="border:1.5px solid var(--vundet);text-align:center"><div style="font-size:44px;line-height:1;margin-bottom:8px">✅</div>' +
-      '<h3 style="color:var(--vundet);margin:0">' + r.svar.moedt + (r.svar.moedt === 1 ? ' spiller' : ' spillere') + ' registreret</h3>' +
+      '<h3 style="color:var(--vundet);margin:0">' + r.svar.moedt + (r.svar.moedt === 1 ? ' spiller' : ' spillere') + ' registreret' + (vd.sendt.length ? ' · ' + vd.sendt.length + ' vurderet' : '') + '</h3>' +
       '<p class="lille" style="margin:4px 0 0">' + tidTekst(p3) + ' · bane ' + esc(p3.bane) + ' · ' + esc(r.svar.dato) + '</p>' +
-      '<p class="lille" style="margin:6px 0 0">Passet står nu i loggen hos ' + r.svar.log_skrevet + (r.svar.log_fjernet ? ' · fjernet hos ' + r.svar.log_fjernet : '') + ' — og tæller i streaken.' + (r.svar.ikke_moedt ? ' ' + r.svar.ikke_moedt + ' ikke mødt.' : '') + '</p></div>';
-    var iTrup = moedte.filter(function(n){ return (S.truppen || []).some(function(t){ return t.navn === n; }); });
-    h += '<button class="knap stor gron" data-act="reg-vurder">⚡ Vurdér dem nu →</button>';
-    if (iTrup.length < moedte.length) h += '<p class="lille" style="text-align:center;margin-top:8px">' + (moedte.length - iTrup.length) + ' af dem er ikke i din trup endnu — læg dem i truppen under GRUPPER, så kan du vurdere dem.</p>';
+      '<p class="lille" style="margin:6px 0 0">Passet står nu i loggen hos ' + r.svar.log_skrevet + (r.svar.log_fjernet ? ' · fjernet hos ' + r.svar.log_fjernet : '') + ' — og tæller i streaken.' + (r.svar.ikke_moedt ? ' ' + r.svar.ikke_moedt + ' ikke mødt.' : '') + '</p>';
+    if (vd.sendt.length) h += '<p class="lille" style="margin:6px 0 0">Vurderingen' + (omr3 ? ' (' + omr3.emoji + ' ' + esc(omr3.navn.toLowerCase()) + ')' : '') + ' står nu hos ' + vd.sendt.map(function(x){ return esc(x.split(" ")[0]); }).join(', ') + ' ✓</p>';
+    if (vd.venter) h += '<p class="lille" style="margin:6px 0 0">⏳ Sender ' + vd.venter + (vd.venter === 1 ? ' vurdering …' : ' vurderinger …') + '</p>';
+    h += '</div>';
+    if (vd.fejl.length) h += '<div class="kort" style="border-left:3px solid var(--tabt)"><p class="lille" style="margin:0;color:var(--tabt)">Vurderingen kom ikke frem hos ' + vd.fejl.map(function(f){ return esc(f.navn.split(" ")[0]) + ' (' + esc(f.t) + ')'; }).join(', ') + '. Fremmødet er gemt.</p>' +
+      '<button class="knap valg" style="width:100%;margin-top:8px" data-act="reg-vurd-igen">Send vurderingerne igen</button></div>';
     h += '<button class="knap valg" style="width:100%;margin-top:10px" data-act="reg-igen">Registrér et andet pas</button>';
     return h;
   }
   if (r.trin === 2 && r.pas) {
+    /* ⭐⭐⭐ v6.4.0 · FREMMØDE OG VURDERING PÅ ÉN SKÆRM: en farve = mødt + score · ✗ = ikke mødt · ingen farve = mødt uden score.
+       Den billige vej bliver billig (princip 41): ingen tvinges til at digte en score for at registrere. */
     var p = r.pas, alle = p.deltagere || [], antal = alle.filter(function(d){ return r.moedt[d.h]; }).length;
+    var vurd = alle.filter(function(d){ return r.moedt[d.h] && r.score[d.h]; }).length, uf2 = ugensFokus();
     h += '<div class="kort" style="padding:11px 14px"><div style="display:flex;justify-content:space-between;align-items:center">' +
-      '<div><div class="eyebrow">FREMMØDE · ' + esc(datoTekst(r.dato || S.regDato)) + '</div><h3 style="margin:2px 0 0">' + tidTekst(p) + ' · bane ' + esc(p.bane) + '</h3><p class="lille" style="margin:2px 0 0">' + esc(pasTekst(p)) + '</p></div>' +
-      '<div style="text-align:right"><div style="font-size:22px;font-weight:800">' + antal + '/' + alle.length + '</div><div class="lille">mødt</div></div></div></div>';
+      '<div><div class="eyebrow">FREMMØDE OG VURDERING · ' + esc(datoTekst(r.dato || S.regDato)) + '</div><h3 style="margin:2px 0 0">' + tidTekst(p) + ' · bane ' + esc(p.bane) + '</h3><p class="lille" style="margin:2px 0 0">' + esc(pasTekst(p)) + '</p></div>' +
+      '<div style="text-align:right"><div style="font-size:22px;font-weight:800">' + antal + '/' + alle.length + '</div><div class="lille">mødt</div></div></div>';
+    h += '<div class="omr-chips">' + KONFIG.omraader.map(function(o){ return '<button class="omr-chip' + (o.id === r.omraade ? ' valgt' : '') + '" data-act="reg-omraade" data-v="' + esc(o.id) + '">' + o.emoji + ' ' + esc(OMR_KORT[o.id] || o.navn) + '</button>'; }).join('') + '</div>';
+    if (uf2) h += '<p class="lille" style="margin:8px 0 0">Scores kobles til ugens fokus: ' + UGEOMRAADER.filter(function(o){ return o.id === uf2; }).map(function(o){ return o.ikon + ' ' + o.navn.toLowerCase(); })[0] + '</p>';
+    h += '</div>';
     h += '<div class="kort">';
     if (!alle.length) h += '<p class="lille">Ingen spillere på passet — læg dem på under PROGRAM og godkend igen.</p>';
     alle.forEach(function(d){
-      var ja = !!r.moedt[d.h];
-      h += '<div class="moedt-rk ' + (ja ? 'ja' : 'nej') + '" data-act="reg-slaa" data-v="' + esc(d.h) + '"><div class="flueben">✓</div><div class="nv">' + esc(navnFor(d.h, d.fornavn)) + '</div></div>';
+      var ja = !!r.moedt[d.h], navn = navnFor(d.h, d.fornavn), kan = !!regTrupNavn(d.h), valgt = r.score[d.h];
+      h += '<div class="reg-rk ' + (ja ? 'ja' : 'nej') + '" data-h="' + esc(d.h) + '"><div class="reg-top"><div class="nv"><span class="reg-navn">' + esc(navn) + '</span>' + (ja ? '' : ' <span class="lille">· ikke mødt</span>') + '</div>' +
+        '<button class="reg-vaek" data-act="reg-slaa" data-v="' + esc(d.h) + '" aria-label="' + (ja ? 'ikke mødt' : 'mødt alligevel') + '">' + (ja ? '✗' : '↩') + '</button></div>';
+      if (ja && kan) {
+        h += '<div class="reg-dots">';
+        KONFIG.farveskala.forEach(function(b){
+          var on = valgt === b.max;
+          h += '<div class="dot' + (on ? ' valgt' : '') + '" style="background:' + b.farve + ';color:' + b.farve + '" data-act="reg-score" data-sp="' + esc(d.h) + '" data-v="' + b.max + '"><span style="color:#fff;font-size:9px">' + b.min + '-' + b.max + '</span></div>';
+        });
+        h += '</div>';
+      } else if (ja) h += '<p class="lille" style="margin:6px 0 0">Registreres — kan først vurderes, når ' + esc(navn) + ' er i din trup (GRUPPER).</p>';
+      h += '</div>';
     });
     h += '</div>';
     if (r.fejl) h += '<p class="lille" style="color:var(--tabt);margin:0 0 8px">' + esc(r.fejl) + '</p>';
-    h += '<button class="knap stor gron"' + (r.sender || !alle.length ? ' disabled' : '') + ' data-act="reg-send">' + (r.sender ? '⏳ sender …' : '✓ Registrér ' + antal + ' mødt') + '</button>';
-    h += '<p class="lille" style="text-align:center;margin-top:8px">Alle står som mødt — tryk dem fra, der ikke kom. Passet skrives i spillernes træningslog og tæller i streaken.</p>';
+    h += '<button class="knap stor gron"' + (r.sender || !alle.length ? ' disabled' : '') + ' data-act="reg-send">' + (r.sender ? '⏳ gemmer …' : '✓ Gem · ' + antal + ' mødt · ' + vurd + ' vurderet') + '</button>';
+    h += '<p class="lille" style="text-align:center;margin-top:8px">Én farve pr. spiller = mødt og vurderet. ✗ = ikke mødt. Ingen farve = mødt uden score. Passet skrives i spillernes træningslog og tæller i streaken.</p>';
     h += '<button class="knap valg" style="width:100%;margin-top:6px" data-act="reg-igen">‹ Vælg et andet pas</button>';
     return h;
   }
@@ -2372,7 +2473,6 @@ function renderTraener(){
       })() +
       '<button class="dev-flise dev-kant dev-kant-guld" data-act="tab" data-v="program"><span class="dev-ikon">\ud83d\udcc5</span><b>Program</b><small>ugeskemaet \u2014 tid, bane, tr\u00e6ner, spillere</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="grupper"><span class="dev-ikon">\ud83d\udc65</span><b>Grupper</b><small>hold, spillere & udvikling</small></button>' +
-      '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="vurder"><span class="dev-ikon">\u26a1</span><b>Vurd\u00e9r tr\u00e6ning</b><small>hele holdet p\u00e5 under 20 sek.</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="kvartal"><span class="dev-ikon">\ud83d\udccb</span><b>Evaluering</b><small>AI-udkast \u2014 du godkender alt</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="rum"><span class="dev-ikon">\ud83d\udcac</span><b>Tr\u00e6nerrummet</b><small>klubbens tr\u00e6nere \u2014 samtalen bliver</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="indst"><span class="dev-ikon">\u2699\ufe0f</span><b>Indstillinger</b><small>klubkode, trup & kopi</small></button>' +
@@ -3373,7 +3473,23 @@ function traenerVurder(t){
     // hjemme i vurderingsflowet, ikke på forsiden: fokus sættes lige før man
     // vurderer, og hver vurdering kobles til det.
     const uf = ugensFokus();
-    let h = '<p class="lille" style="margin-bottom:2px">Hvad trænede du? Vælg område — så giver du hver spiller en score på farveskalaen med ét tryk.</p>';
+    let h = '';
+    /* ⭐⭐ v6.4.0 · ER DER ET PAS I DAG, ER FREMMØDE OG VURDERING ÉT TRYK — samme skærm som REGISTRÉR. Uden et pas (Øresund
+       kører uden program endnu) er VURDÉR gruppeflowet som før. Motoren skjuler intet; skærmen vælger (princip 64). */
+    if (lager.hent("klubkode", "") && !S.nuHentet && !S.nuHenter) setTimeout(function(){ nuHent(false); }, 0);
+    var _dp = (lager.hent("klubkode", "") && S.nu && S.nu.pas) ? S.nu.pas.slice() : [];
+    if (_dp.length) {
+      _dp.sort(function(a, b){ return (b.lige_slut && !b.registreret ? 1 : 0) - (a.lige_slut && !a.registreret ? 1 : 0) || String(a.start).localeCompare(String(b.start)); });
+      h += '<div class="kort" style="padding:11px 14px"><div class="eyebrow">📋 DAGENS PAS</div><p class="lille" style="margin:2px 0 8px">Fremmøde og vurdering i ét tryk.</p>';
+      _dp.forEach(function(p){
+        var n2 = (p.deltagere || []).length;
+        var mrk2 = p.registreret ? '<div class="mrk gron">registreret ✓</div>' : (p.lige_slut ? '<div class="mrk guld">lige slut</div>' : (p.mine ? '<div class="mrk">mit</div>' : ''));
+        h += '<button class="pas-kort" data-act="reg-start" data-v="' + esc(p.id) + '"><div class="tid">' + tidTekst(p) + '<small>bane ' + esc(p.bane) + '</small></div>' +
+          '<div class="om">' + esc(pasTekst(p) || '—') + '<small>' + (n2 ? n2 + (n2 === 1 ? ' spiller' : ' spillere') : 'ingen spillere på passet') + '</small></div>' + mrk2 + '</button>';
+      });
+      h += '</div><p class="lille" style="margin:0 2px 8px">Uden et pas? Vælg område herunder og vurdér en gruppe.</p>';
+    }
+    h += '<p class="lille" style="margin-bottom:2px">Hvad trænede du? Vælg område — så giver du hver spiller en score på farveskalaen med ét tryk.</p>';
 
     h += '<div class="dev-grid">';
     h += '<button class="dev-flise dev-kant-guld" data-act="vurder-omraade" data-v="__fokus">' +
@@ -3710,9 +3826,16 @@ document.addEventListener("click", function(e){
   else if (act==="reg-vaelg"){
     if (!S.reg) regNulstil();
     var _pv = regPasListe().filter(function(p){ return p.id === v; })[0]; if (!_pv) return;
-    S.reg.pas = _pv; S.reg.dato = S.regDato || dkIdag(); S.reg.trin = 2; S.reg.moedt = {}; S.reg.fejl = null;
+    S.reg.pas = _pv; S.reg.dato = S.regDato || dkIdag(); S.reg.trin = 2; S.reg.moedt = {}; S.reg.score = {}; S.reg.vurd = null; S.reg.fejl = null;
     (_pv.deltagere || []).forEach(function(d){ S.reg.moedt[d.h] = true; }); render(); }
-  else if (act==="reg-slaa"){ if (!S.reg) return; S.reg.moedt[v] = !S.reg.moedt[v]; render(); }
+  /* ══ v6.4.0 · FREMMØDE OG VURDERING I ÉT TRYK ═══════════════════════════ */
+  else if (act==="reg-slaa"){ if (!S.reg) return; S.reg.moedt[v] = !S.reg.moedt[v]; if (!S.reg.moedt[v]) delete S.reg.score[v]; render(); }
+  else if (act==="reg-score"){
+    if (!S.reg || !S.reg.moedt[t.dataset.sp]) return;
+    /* samme farve igen = fortryd scoren (mødt uden score) — en glidende finger må ikke blive til en dom */
+    if (S.reg.score[t.dataset.sp] === +v) delete S.reg.score[t.dataset.sp]; else S.reg.score[t.dataset.sp] = +v;
+    render(); }
+  else if (act==="reg-omraade"){ if (!S.reg) return; S.reg.omraade = v; render(); }
   else if (act==="reg-send"){
     if (!S.reg || !S.reg.pas || S.reg.sender) return;
     var _rp = S.reg.pas, _mo = [], _ik = [];
@@ -3722,18 +3845,12 @@ document.addEventListener("click", function(e){
     traeningKald("registrer", { pas_id: _rp.id, dato: S.reg.dato, moedt: _mo, ikke_moedt: _ik }).then(function(r){
       S.reg.sender = false;
       if (!r || r.fejl) { S.reg.fejl = traeningFejl(r); render(); return; }
-      S.reg.svar = r; S.reg.trin = 3; S.nuHentet = 0; render(); nuHent(true); }); }
+      S.reg.svar = r; S.reg.trin = 3; S.nuHentet = 0;
+      regSendVurderinger(false);   /* v6.4.0 · scores KUN for de mødte — og først nu, hvor fremmødet er i basen */
+      render(); nuHent(true); }); }
+  else if (act==="reg-vurd-igen"){ if (!S.reg || S.reg.trin !== 3) return; regSendVurderinger(true); render(); }
   else if (act==="reg-igen"){ regNulstil(); render(); nuHent(false); }
-  else if (act==="reg-vurder"){
-    if (!S.reg || !S.reg.pas) return;
-    var _navne = [];
-    (S.reg.pas.deltagere || []).forEach(function(d){
-      if (!S.reg.moedt[d.h]) return;
-      var _tp = (S.truppen || []).filter(function(x){ return x && x.noegle === d.h; })[0];
-      if (_tp && _tp.navn && DATA.spillere[_tp.navn]) _navne.push(_tp.navn); });
-    S.vurderLige = { titel: "Lige tr\u00e6net \u00b7 " + tidTekst(S.reg.pas) + " bane " + S.reg.pas.bane, navne: _navne };
-    S.vurderOmraade = null; S.vurderGruppe = null; S.vurderScores = {}; S.tab = "vurder"; S.aabenSpiller = null; render(); }
-  if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { try { snakHent(false); } catch (_e) {} } if (v === "noegler") { try { budSendteHent(); } catch (_e) {} } }
+  if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { try { snakHent(false); } catch (_e) {} } if (v === "noegler") { try { budSendteHent(); } catch (_e) {} } }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
   else if (act==="vurder-omraade"){ S.vurderOmraade=v; S.vurderScores = {}; render(); }

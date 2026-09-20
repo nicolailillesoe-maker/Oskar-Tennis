@@ -989,7 +989,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.4.0 \u00b7 20. september 2026";
+const VERSION = "v6.4.1 \u00b7 20. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1437,7 +1437,7 @@ var EN = {
 };
 // ⭐ v6.0.0 · programmet og REGISTRÉR på engelsk
 Object.assign(EN, {
-"📋 Registrér": "📋 Register", "REGISTRÉR": "REGISTER",
+"📋 Registrér": "📋 Register", "REGISTRÉR": "REGISTER", "⚡ Vurdér træningen": "⚡ Rate the practice", "VURDÉR TRÆNINGEN": "RATE THE PRACTICE", "⚡ VURDÉR TRÆNINGEN": "⚡ RATE THE PRACTICE", "Vurdér et andet pas": "Rate another session",
 "Invitér spiller": "Invite player", "Program": "Schedule", "🔑 Invitér spiller": "🔑 Invite player", "📅 Program": "📅 Schedule", "👥 Grupper": "👥 Groups", "⚡ Vurdér træning": "⚡ Rate practice", "📋 Evaluering": "📋 Evaluation", "💬 Trænerrummet": "💬 The coaches' room", "⚙️ Indstillinger": "⚙️ Settings", "📋 Registrér": "📋 Register", "Grupper": "Groups", "Vurdér træning": "Rate practice", "Evaluering": "Evaluation", "Trænerrummet": "The coaches' room", "Indstillinger": "Settings", "Cheftræner": "Head coach", "Træner": "Coach",
 "via brugernavn — eller QR til nye": "by username — or a QR code for new players", "ugeskemaet — tid, bane, træner, spillere": "the weekly schedule — time, court, coach, players", "klubkode, trup & kopi": "club key, squad & backup",
 "HJEM": "HOME", "PROGRAM": "SCHEDULE", "VURDÉR": "RATE", "GRUPPER": "GROUPS", "MERE": "MORE",
@@ -2331,7 +2331,7 @@ function regPasListe(){
 function traenerRegistrer(){
   if (!S.reg) regNulstil();
   var r = S.reg, h = '';
-  if (!lager.hent("klubkode", "")) return '<div class="kort"><h3>📋 Registrér</h3><p class="lille">Forbind klubnøglen under ⚙️ først.</p></div>';
+  if (!lager.hent("klubkode", "")) return '<div class="kort"><h3>⚡ Vurdér træningen</h3><p class="lille">Forbind klubnøglen under ⚙️ først.</p></div>';
   if (r.trin === 3 && r.svar) {
     /* ⭐⭐⭐ v6.4.0 · ÉN KVITTERING FOR BEGGE (Nicolai 20/9: «Det skal vel kunne gøres samtidig — jo nærmest i samme tryk»):
        fremmødet er i basen, scores sendes bagefter — og KUN for dem, der stod som mødt. Hvert udfald sin sætning (princip 75). */
@@ -2345,7 +2345,7 @@ function traenerRegistrer(){
     h += '</div>';
     if (vd.fejl.length) h += '<div class="kort" style="border-left:3px solid var(--tabt)"><p class="lille" style="margin:0;color:var(--tabt)">Vurderingen kom ikke frem hos ' + vd.fejl.map(function(f){ return esc(f.navn.split(" ")[0]) + ' (' + esc(f.t) + ')'; }).join(', ') + '. Fremmødet er gemt.</p>' +
       '<button class="knap valg" style="width:100%;margin-top:8px" data-act="reg-vurd-igen">Send vurderingerne igen</button></div>';
-    h += '<button class="knap valg" style="width:100%;margin-top:10px" data-act="reg-igen">Registrér et andet pas</button>';
+    h += '<button class="knap valg" style="width:100%;margin-top:10px" data-act="reg-igen">Vurdér et andet pas</button>';
     return h;
   }
   if (r.trin === 2 && r.pas) {
@@ -2386,7 +2386,7 @@ function traenerRegistrer(){
   var idag = (S.regDato || dkIdag()) === dkIdag();
   if (!idag && !S.prgGodkendt && !S.prgHenter) setTimeout(function(){ prgHent("godkendt"); }, 0);
   if (idag && !S.nuHentet && !S.nuHenter) setTimeout(function(){ nuHent(false); }, 0);   /* én gang — ikke i ring */
-  h += '<div class="kort" style="padding:11px 14px"><div class="eyebrow">📋 REGISTRÉR FREMMØDE</div>' +
+  h += '<div class="kort" style="padding:11px 14px"><div class="eyebrow">⚡ VURDÉR TRÆNINGEN</div>' +
     '<div class="tid-rk" style="margin-top:6px"><input class="felt" type="date" data-felt="regDato" value="' + esc(S.regDato || dkIdag()) + '" max="' + dkIdag() + '" aria-label="dato"></div>' +
     '<p class="lille" style="margin:6px 0 0">' + (idag ? 'Dagens pas fra det godkendte program. Glemte du et pas i går? Vælg datoen.' : 'Pas ' + DAGE_LANG[ugedagAf(S.regDato)] + ' i det godkendte program.') + '</p></div>';
   var liste = regPasListe();
@@ -2417,7 +2417,7 @@ function bundNav(){
 function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emoji som flisen på HJEM */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Grupper", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ning",
-           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\ud83d\udccb Registr\u00e9r" }[tab] || "";
+           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen" }[tab] || "";
 }
 function renderTraener(){
   const t = DATA.traenere.find(x=>x.navn===S.traener);
@@ -2453,7 +2453,7 @@ function renderTraener(){
       else linje = 'Ingen pas i dag i det godkendte program.';
       if (uf > 1) linje += ' \u00b7 <span style="color:#ff8a8f;font-weight:700">' + uf + ' pas uden fremm\u00f8de</span>';
       /* v6.1.0 · StreakTennis' helt (.dev-hero) — samme markup som START KAMP, ordret */
-      h += '<button class="dev-hero dev-kant dev-kant-grus" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + '><span style="font-size:30px">\ud83d\udccb</span><span><b>REGISTR\u00c9R</b><br><small>' + linje + '</small></span><span class="dev-pil">\u2192</span></button>';
+      h += '<button class="dev-hero dev-kant dev-kant-grus" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + '><span style="font-size:30px">\u26a1</span><span><b>VURD\u00c9R TR\u00c6NINGEN</b><br><small>' + linje + '</small></span><span class="dev-pil">\u2192</span></button>';
     })();
     h += '<div class="dev-grid">' +
       // ⭐⭐⭐ v4.1.0 · AFTENENS VIGTIGSTE KNAP STÅR FORREST.

@@ -496,6 +496,7 @@ function ryddKlubben(){
   S.ugefokus = {}; S.stigeHold = []; S.noegler = {}; S.minRolle = null;
   S.tilmeldinger = []; S.tilmHentet = null; S.tilmHenter = false;
   S.nu = null; S.nuHentet = 0; S.prg = null; S.prgGodkendt = null; S.reg = null; S.vurderLige = null;   /* v6.0.0 · klubskifte tømmer programmet */
+  S.prgVisning = null; S.imp = null; S.impTekst = "";   /* v6.3.0 */
   S.aabenSpiller = null; S.vurderOmraade = null; S.vurderGruppe = null;
   S.fpAaben = null; S.noegleFor = null; S.stigeHold = [];
   genskabDemo();                 // ⛔ ellers står den gamle klubs børn i DATA
@@ -725,6 +726,7 @@ let S = {
   traener: "Cheftræneren", spiller: null,
   tab: "hjem", aabenSpiller: null,
   nu: null, nuHentet: 0, prg: null, prgGodkendt: null, reg: null, vurderLige: null, prgUgedag: 0,   /* ⭐ v6.0.0 · programmet */
+  prgVisning: null, imp: null, impTekst: "",   /* v6.3.0 · fliserne under PROGRAM + importen */
   vurderOmraade: null, vurderGruppe: null, vurderScores: {},
   kvartalUdkast: null, kvartalAI: null, kvartalHenter: false, kvartalNote: null,
   // ── gemte data
@@ -972,7 +974,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.2.0 \u00b7 20. september 2026";
+const VERSION = "v6.3.0 \u00b7 20. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1444,7 +1446,15 @@ Object.assign(EN, {
 "Ingen pas i dag i det godkendte program.": "No sessions today in the approved schedule.",
 "Henter dagens pas …": "Fetching today's sessions …",
 "Forbind klubnøglen under ⚙️ først.": "Connect the club key under ⚙️ first.",
-"Henter …": "Fetching …"
+"Henter …": "Fetching …",
+"Ugeskemaet": "The weekly schedule", "Importér": "Import", "Godkend og send ud": "Approve and publish", "Godkender …": "Approving …", "Timer om ugen": "Hours per week",
+"sæt ind fra Excel — én række pr. pas": "paste from Excel — one row per session", "kladden er tom": "the draft is empty", "ingen mål sat endnu": "no targets set yet",
+"📅 Ugeskemaet": "📅 The weekly schedule", "📥 Importér": "📥 Import", "⏱ Timer om ugen": "⏱ Hours per week",
+"📥 IMPORTÉR FRA EXCEL": "📥 IMPORT FROM EXCEL", "Tjek rækkerne": "Check the rows", "Ryd": "Clear", "TJEKKET": "CHECKED", "✓ LAGT I KLADDEN": "✓ ADDED TO THE DRAFT",
+"Ryd kladden først (sæsonstart)": "Clear the draft first (season start)", "Se ugeskemaet →": "See the weekly schedule →",
+"Intet går ud til spillerne, før admin trykker «Godkend og send ud».": "Nothing reaches the players until the admin taps “Approve and publish”.",
+"Sæt rækkerne ind først.": "Paste the rows first.", "⏱ TIMER OM UGEN": "⏱ HOURS PER WEEK",
+"Ingen spillere har et mål endnu. Mål og forslag kommer i næste trin.": "No players have a target yet. Targets and suggestions come in the next step."
 });
 
 Object.assign(EN, {
@@ -1931,7 +1941,7 @@ async function traeningKald(handling, krop) {
     clearTimeout(ur);
     const d = await r.json().catch(() => ({}));
     // Hvert udfald sin egen sætning (princip 75): koden rejser med, teksten står ved siden af.
-    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || "netvaerk", status: r.status, t: d.fejl || "", ukendte: d.ukendte, felter: d.felter, loft: d.loft });
+    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || "netvaerk", status: r.status, t: typeof d.fejl === "string" ? d.fejl : "", ukendte: d.ukendte, felter: d.felter, loft: d.loft, krop: d });   /* v6.3.0 · krop: importens fejl pr. række */
   } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
 }
 function traeningFejl(r){
@@ -2020,8 +2030,8 @@ function prgHent(status){
     render();
   });
 }
-function prgNulstilForm(){ S.prgNy = false; S.prgAaben = null; S.prgVaelg = false; S.prgSoeg = ""; S.prgStart = ""; S.prgSlut = ""; S.prgBane = ""; S.prgTraener = ""; S.prgTraener2 = ""; S.prgTitel = ""; }
-function prgFyldForm(p){ S.prgStart = String(p.start || "").slice(0, 5); S.prgSlut = String(p.slut || "").slice(0, 5); S.prgBane = p.bane || ""; S.prgTraener = p.traener || ""; S.prgTraener2 = p.traener2 || ""; S.prgTitel = p.titel || ""; }
+function prgNulstilForm(){ S.prgNy = false; S.prgAaben = null; S.prgVaelg = false; S.prgSoeg = ""; S.prgStart = ""; S.prgSlut = ""; S.prgBane = ""; S.prgTraener = ""; S.prgTraener2 = ""; S.prgTitel = ""; S.prgUdenApp = ""; }
+function prgFyldForm(p){ S.prgStart = String(p.start || "").slice(0, 5); S.prgSlut = String(p.slut || "").slice(0, 5); S.prgBane = p.bane || ""; S.prgTraener = p.traener || ""; S.prgTraener2 = p.traener2 || ""; S.prgTitel = p.titel || ""; S.prgUdenApp = p.uden_app ? String(p.uden_app) : ""; }
 function prgPas(id){ return ((S.prg && S.prg.pas) || []).filter(function(p){ return p.id === id; })[0] || null; }
 function prgFormular(erNy){
   var traenere = (S.prg && S.prg.traenere) || [];
@@ -2031,10 +2041,127 @@ function prgFormular(erNy){
   h += '<input class="felt" style="margin-top:6px" data-felt="prgTraener" list="prg-traenere" value="' + esc(S.prgTraener || "") + '" placeholder="træner (tomt = dig)" maxlength="40" autocapitalize="words">';
   h += '<input class="felt" style="margin-top:6px" data-felt="prgTraener2" list="prg-traenere" value="' + esc(S.prgTraener2 || "") + '" placeholder="medtræner (frivilligt)" maxlength="40" autocapitalize="words">';
   h += '<input class="felt" style="margin-top:6px" data-felt="prgTitel" value="' + esc(S.prgTitel || "") + '" placeholder="titel, fx U14 Elite (frivilligt)" maxlength="40" autocapitalize="words">';
+  h += '<input class="felt" style="margin-top:6px" type="number" min="0" max="40" inputmode="numeric" data-felt="prgUdenApp" value="' + esc(S.prgUdenApp === undefined || S.prgUdenApp === null ? "" : String(S.prgUdenApp)) + '" placeholder="uden app \u2014 antal p\u00e5 banen uden StreakTennis (frivilligt)">';   /* v6.3.0 · et tal, aldrig navne */
   h += '<div class="raekke" style="margin-top:8px"><button class="knap" style="background:var(--grus)"' + (S.prgGemmer ? ' disabled' : '') + ' data-act="prg-gem">' + (S.prgGemmer ? '⏳ …' : (erNy ? 'Opret passet' : 'Gem ændringerne')) + '</button>' +
     '<button class="knap valg" data-act="prg-luk">Luk</button></div>';
   return h;
 }
+// ═══════════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v6.3.0 · PROGRAM SOM FLISER + IMPORTÉR FRA EXCEL (Nicolai 20/9: «lad os bygge
+//   flowet … import kun … Vi definerer jo bare selv strukturen» · «ALT skal laves som fliser»).
+//   Fliserne er StreakTennis' egne (.dev-flise, som TRÆN-fanen). Importen: én række pr. pas,
+//   tabulator-adskilt som Excel kopierer den. Appen normaliserer kun det, der ikke er en regel
+//   (man/tir…, 17.00 → 17:00); motoren er dommeren og svarer pr. række (princip 89).
+//   Et ukendt navn gemmes ALDRIG — det listes, så klubben kan invitere (princip 79 / Julie).
+// ═══════════════════════════════════════════════════════════════════════
+function prgFlise(a, v, ik, titel, tekst, farve, slukket){
+  return '<button class="dev-flise dev-kant ' + farve + '" data-act="' + a + '" data-v="' + esc(v) + '"' + (slukket ? ' disabled' : '') + '><span class="dev-ikon">' + ik + '</span><b>' + titel + '</b><small>' + tekst + '</small></button>';
+}
+function prgOversigt(prg, sgT){
+  var n = prg.pas.length, sp = {};
+  prg.pas.forEach(function(p){ (p.deltagere || []).forEach(function(d){ sp[d.h] = 1; }); });
+  var nSp = Object.keys(sp).length;
+  var status = S.prgHenter && !S.prg ? 'henter …'
+    : (sgT ? 'godkendt ' + sgT + (prg.aendret_siden ? ' · <span style="color:var(--guld);font-weight:800">' + prg.aendret_siden + (prg.aendret_siden === 1 ? ' ændring siden' : ' ændringer siden') + '</span>' : ' · ingen ændringer')
+           : (n ? '<span style="color:var(--guld);font-weight:800">kladde — ikke godkendt endnu</span>' : 'tomt — læg det første pas ind'));
+  var timer = (prg.timer || []).filter(function(t){ return t.min_pr_uge > 0; });
+  var under = timer.filter(function(t){ return t.planlagt_min < t.min_pr_uge; }).length;
+  var h = '';
+  if (S.prgBesked) h += '<p class="lille" style="margin:0 0 10px;color:' + (S.prgBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.prgBesked.t) + '</p>';
+  h += '<div class="dev-grid">' +
+    prgFlise("prg-visning", "skema", "📅", "Ugeskemaet", n + ' pas · ' + nSp + (nSp === 1 ? ' spiller' : ' spillere') + ' · ' + status, "dev-kant-guld") +
+    prgFlise("prg-visning", "import", "📥", "Importér", "sæt ind fra Excel — én række pr. pas", "dev-kant-guld") +
+    (S.minRolle === "traener" ? '' :
+      prgFlise("prg-godkend", "", "✓", S.prgGodkender ? "Godkender …" : "Godkend og send ud",
+        !n ? 'kladden er tom' : (prg.aendret_siden ? prg.aendret_siden + (prg.aendret_siden === 1 ? ' ændring venter' : ' ændringer venter') : (sgT ? 'ingen ændringer siden ' + sgT : n + ' pas venter på godkendelse')),
+        (prg.aendret_siden || (!sgT && n)) ? "dev-kant-gron" : "dev-kant-staal", S.prgGodkender || !n)) +
+    prgFlise("prg-visning", "timer", "⏱", "Timer om ugen", timer.length ? timer.length + ' med mål · ' + (under ? '<span style="color:#ff8a8f;font-weight:800">' + under + ' under mål</span>' : 'alle på mål') : 'ingen mål sat endnu', "dev-kant-staal") +
+    '</div>';
+  return h;
+}
+function prgTimer(prg){
+  var timer = (prg.timer || []).filter(function(t){ return t.min_pr_uge > 0; });
+  var h = '<div class="kort"><div class="eyebrow">⏱ TIMER OM UGEN</div>';
+  if (!timer.length) h += '<p class="lille">Ingen spillere har et mål endnu. Mål og forslag kommer i næste trin.</p>';
+  timer.forEach(function(t){
+    var und = t.planlagt_min < t.min_pr_uge;
+    h += '<div class="delt-rk"><div class="nv">' + esc(navnFor(t.h, t.fornavn)) + '</div><span style="font-size:12.5px;font-weight:800;color:' + (und ? '#ff8a8f' : '#5fd68f') + '">' + (t.planlagt_min / 60).toFixed(1).replace('.0', '') + ' af ' + (t.min_pr_uge / 60).toFixed(1).replace('.0', '') + ' t</span></div>';
+  });
+  return h + '</div>';
+}
+// ── importen: teksten fra Excel → rækker (kun normalisering — reglerne bor i motoren)
+var IMP_ALIAS = { "ugedag": "ugedag", "dag": "ugedag", "start": "start", "fra": "start", "slut": "slut", "til": "slut", "bane": "bane", "baner": "bane",
+  "træner": "traener", "traener": "traener", "trainer": "traener", "medtræner": "traener2", "medtraener": "traener2", "træner 2": "traener2", "traener2": "traener2",
+  "titel": "titel", "gruppe": "titel", "hold": "titel", "spillere": "spillere", "spiller": "spillere", "navne": "spillere", "uden app": "uden_app", "uden_app": "uden_app", "uden": "uden_app" };
+var IMP_KOL = ["ugedag", "start", "slut", "bane", "traener", "traener2", "titel", "spillere", "uden_app"];
+function impUgedag(v){
+  var t = String(v || "").trim().toLowerCase().replace(/\.$/, "");
+  if (/^[1-7]$/.test(t)) return +t;
+  var m = { man: 1, mandag: 1, tir: 2, tirs: 2, tirsdag: 2, ons: 3, onsdag: 3, tor: 4, tors: 4, torsdag: 4, fre: 5, fredag: 5, "lør": 6, loer: 6, lor: 6, "lørdag": 6, loerdag: 6, "søn": 7, soen: 7, son: 7, "søndag": 7, soendag: 7 };
+  return m[t] || 0;
+}
+function impTid(v){
+  var t = String(v || "").trim(); var m = /^(\d{1,2})[:.,h]?(\d{2})?(?::\d{2})?$/.exec(t);
+  if (!m) return t;
+  var ti = +m[1], mi = m[2] ? +m[2] : 0;
+  if (ti > 23 || mi > 59) return t;
+  return String(ti).padStart(2, "0") + ":" + String(mi).padStart(2, "0");
+}
+function impParse(tekst){
+  var linjer = String(tekst || "").split(/\r?\n/).map(function(l){ return l.replace(/\s+$/, ""); }).filter(function(l){ return l.trim(); });
+  if (!linjer.length) return { raekker: [], fejl: "Sæt rækkerne ind først." };
+  if (!linjer.some(function(l){ return l.indexOf("\t") >= 0; })) return { raekker: [], fejl: "Kolonnerne skal være adskilt med tabulator — kopiér rækkerne direkte fra Excel og sæt dem ind." };
+  var orden = IMP_KOL.slice();
+  var foerste = linjer[0].split("\t").map(function(c){ return c.trim().toLowerCase(); });
+  if (foerste.some(function(c){ return IMP_ALIAS[c] === "ugedag"; })) { orden = foerste.map(function(c){ return IMP_ALIAS[c] || null; }); linjer = linjer.slice(1); }
+  if (!linjer.length) return { raekker: [], fejl: "Kun overskriften kom med — sæt rækkerne ind også." };
+  var raekker = linjer.map(function(l){
+    var c = l.split("\t"), r = {};
+    orden.forEach(function(k, i){ if (k) r[k] = (c[i] || "").trim(); });
+    var ua = r.uden_app === undefined ? "" : r.uden_app;
+    return { ugedag: impUgedag(r.ugedag), start: impTid(r.start), slut: impTid(r.slut), bane: r.bane || "", traener: r.traener || "", traener2: r.traener2 || "", titel: r.titel || "",
+      spillere: String(r.spillere || "").split(/[;,]/).map(function(x){ return x.trim(); }).filter(Boolean), uden_app: ua === "" ? 0 : (/^\d+$/.test(ua) ? +ua : -1) };
+  });
+  return { raekker: raekker, fejl: null };
+}
+function impFejlTekst(f, mod){
+  return { ugedag: "ugedagen (man, tir, ons, tor, fre, lør, søn)", start: "starttiden (fx 17:00)", slut: "sluttiden (fx 18:00)", "slut-foer-start": "slut skal ligge efter start", bane: "banen mangler",
+    uden_app: "«uden app» skal være et tal 0-40", spillere: "for mange navne (højst 40)", "bane-optaget": "banen er optaget af række " + (mod || "?") + " i samme tidsrum",
+    "bane-optaget-kladde": "banen er optaget i kladden i det tidsrum — ret tiden, eller ryd kladden først" }[f] || f;
+}
+function prgImport(prg){
+  var im = S.imp || {};
+  var h = '<div class="kort" style="border-left:3px solid var(--guld)"><div class="eyebrow">📥 IMPORTÉR FRA EXCEL</div>' +
+    '<p class="lille" style="margin:6px 0 8px">Én række pr. pas. Kolonnerne: <b>ugedag · start · slut · bane · træner · medtræner · titel · spillere · uden app</b>. Kopiér rækkerne i Excel og sæt dem ind her — spillere adskilles med <b>;</b>, og «Ryan R (2)» sætter hold 2. Ukendte navne gemmes ikke; de listes, så du kan invitere dem.</p>' +
+    '<textarea class="felt" data-felt="impTekst" rows="7" spellcheck="false" placeholder="tir\t17:00\t18:00\t10&amp;11\tArtem\tCarlos\tU14 Elite\tTerkel Thomsen; Ryan R (2)\t2">' + esc(S.impTekst || "") + '</textarea>' +
+    '<div class="raekke" style="margin-top:8px"><button class="knap" style="background:var(--grus)"' + (im.koerer ? ' disabled' : '') + ' data-act="prg-imp-tjek">' + (im.koerer && !im.skarp ? '⏳ …' : 'Tjek rækkerne') + '</button>' +
+    '<button class="knap valg" data-act="prg-imp-nulstil">Ryd</button></div>' +
+    (im.fejl ? '<p class="lille" style="margin:8px 0 0;color:var(--tabt)">' + esc(im.fejl) + '</p>' : '') + '</div>';
+  var sv = im.svar;
+  if (!sv) return h;
+  var fejl = sv.fejl || [], uk = sv.ukendte || [], fl = sv.flertydige || [], adv = sv.advarsler || [], fu = sv.fundet || [];
+  var lagt = im.lagt;
+  var fejlRk = Object.keys(fejl.reduce(function(o, f){ o[f.raekke] = 1; return o; }, {})).length;   /* rækker med mindst én fejl */
+  var klar = Math.max(0, (sv.pas_i_alt || 0) - fejlRk);   /* det, der faktisk kan lægges ind — ikke motorens format-tal */
+  h += '<div class="kort" style="border-left:3px solid ' + (fejl.length ? 'var(--tabt)' : (lagt ? 'var(--vundet)' : 'var(--is)')) + '">' +
+    '<div class="eyebrow">' + (lagt ? '✓ LAGT I KLADDEN' : 'TJEKKET') + '</div>' +
+    '<div style="font-size:14px;font-weight:800;margin-top:4px">' + (lagt ? lagt.pas_oprettet + ' pas lagt i kladden · ' + lagt.deltagere + ' spillere' + (lagt.kladde_ryddet ? ' · kladden ryddet (' + lagt.kladde_ryddet + ' pas)' : '')
+      : klar + ' pas klar' + (fejlRk ? ' · <span style="color:var(--tabt)">' + fejlRk + (fejlRk === 1 ? ' række med fejl' : ' rækker med fejl') + '</span>' : '') + ' · ' + fu.length + ' spillere fundet' + (uk.length ? ' · ' + uk.length + ' ukendte' : '') + (fl.length ? ' · ' + fl.length + ' flertydige' : '')) + '</div>';
+  if (!lagt && klar === 0 && !fejl.length) h += '<p class="lille" style="margin:6px 0 0">Ingen pas i det, du satte ind.</p>';
+  fejl.forEach(function(f){ h += '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">Række ' + f.raekke + ': ' + esc((f.felter || []).map(function(x){ return impFejlTekst(x, f.mod); }).join(' · ')) + '</p>'; });
+  adv.forEach(function(a){ h += '<p class="lille" style="margin:6px 0 0;color:var(--guld)">Række ' + a.raekke + ': ' + a.antal + ' på banen — max ' + a.loft + ' (en advarsel, ikke en spærring)</p>'; });
+  if (fl.length) h += '<p class="lille" style="margin:8px 0 0"><b>Flertydige:</b> ' + esc(fl.join(', ')) + ' — flere i truppen hedder det; skriv det fulde navn.</p>';
+  if (uk.length) h += '<p class="lille" style="margin:8px 0 0"><b>Ukendte (' + uk.length + '):</b> ' + esc(uk.join(', ')) + '<br>De har ikke StreakTennis i klubben endnu — invitér dem under 🔑 Invitér spiller, og kør importen igen. De gemmes ikke.</p>';
+  if (lagt) {
+    h += '<button class="knap" style="width:100%;margin-top:10px;background:var(--grus)" data-act="prg-visning" data-v="skema">Se ugeskemaet →</button>';
+  } else if (!fejl.length && klar > 0) {
+    h += '<label class="lille" style="display:flex;align-items:center;gap:8px;margin:10px 0 0;cursor:pointer"><input type="checkbox" data-act="prg-imp-ryd"' + (im.ryd ? ' checked' : '') + '> Ryd kladden først (sæsonstart)</label>';
+    h += '<button class="knap" style="width:100%;margin-top:8px;background:var(--vundet);color:#fff"' + (im.koerer ? ' disabled' : '') + ' data-act="prg-imp-laeg">' + (im.koerer && im.skarp ? '⏳ …' : '✓ Læg ' + klar + ' pas i kladden') + '</button>';
+    h += '<p class="lille" style="margin:6px 0 0">Intet går ud til spillerne, før admin trykker «Godkend og send ud».</p>';
+  }
+  return h + '</div>';
+}
+
 function traenerProgram(){
   var h = '';
   if (!lager.hent("klubkode", "")) return '<div class="kort"><h3>📅 Programmet</h3><p class="lille">Forbind klubnøglen under ⚙️ først — så kan ugeskemaet laves her.</p></div>';
@@ -2044,6 +2171,10 @@ function traenerProgram(){
   // ── status + godkend
   var sg = prg.sidst_godkendt ? new Date(prg.sidst_godkendt) : null;
   var sgT = sg ? (sg.getDate() + "/" + (sg.getMonth() + 1) + " kl. " + String(sg.getHours()).padStart(2, "0") + "." + String(sg.getMinutes()).padStart(2, "0")) : null;
+  /* ⭐⭐⭐ v6.3.0 · PROGRAM ÅBNER SOM FLISER (Nicolai 20/9: «ALT skal laves som fliser») — som StreakTennis' TRÆN */
+  if (!S.prgVisning) return prgOversigt(prg, sgT);
+  if (S.prgVisning === "import") return prgImport(prg);
+  if (S.prgVisning === "timer") return prgTimer(prg);
   h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
       '<div><div class="eyebrow">📅 UGESKEMAET</div>' +
@@ -2073,14 +2204,15 @@ function traenerProgram(){
     var n = (p.deltagere || []).length;
     h += '<button class="pas-kort" data-act="prg-aabn" data-v="' + esc(p.id) + '">' +
       '<div class="tid">' + tidTekst(p) + '<small>bane ' + esc(p.bane) + '</small></div>' +
-      '<div class="om">' + esc(pasTekst(p) || '—') + '<small>' + (n ? n + (n === 1 ? ' spiller: ' : ' spillere: ') + esc(pasDeltagerNavne(p).join(", ")) : 'ingen spillere endnu') + '</small></div>' +
+      '<div class="om">' + esc(pasTekst(p) || '—') + '<small>' + (n ? n + (n === 1 ? ' spiller: ' : ' spillere: ') + esc(pasDeltagerNavne(p).join(", ")) : 'ingen spillere endnu') + (p.uden_app ? ' \u00b7 +' + p.uden_app + ' uden app' : '') + '</small></div>' +
       '<div class="mrk">' + (aaben ? '✕' : '✏️') + '</div></button>';
     if (!aaben) return;
     h += '<div class="kort" style="margin-top:-2px;border-left:3px solid var(--is)">';
     h += '<div class="eyebrow">PASSET</div>' + prgFormular(false);
     // deltagerne
     var loft = 4 * Math.max(1, (String(p.bane).match(/\d+/g) || []).length);
-    h += '<div class="eyebrow" style="margin-top:14px">SPILLERE · ' + n + (n > loft ? ' <span style="color:var(--tabt)">(max ' + loft + ' på banen)</span>' : ' af ' + loft) + '</div>';
+    var paaBanen = n + (p.uden_app || 0);   /* v6.3.0 · dem uden app fylder også */
+    h += '<div class="eyebrow" style="margin-top:14px">SPILLERE · ' + n + (p.uden_app ? ' + ' + p.uden_app + ' uden app' : '') + (paaBanen > loft ? ' <span style="color:var(--tabt)">(max ' + loft + ' på banen)</span>' : ' af ' + loft) + '</div>';
     if (!n) h += '<p class="lille">Ingen spillere på passet endnu.</p>';
     (p.deltagere || []).forEach(function(d){
       h += '<div class="delt-rk"><div class="nv">' + esc(navnFor(d.h, d.fornavn)) + (d.forladt ? ' <span style="color:var(--tabt);font-weight:600">· har forladt klubben</span>' : '') + (d.aargang ? '<small>årgang ' + esc(d.aargang) + '</small>' : '') + '</div>' +
@@ -2103,16 +2235,6 @@ function traenerProgram(){
     }
     h += '</div>';
   });
-  // ── timer om ugen (kun kladdens tal — forslaget kommer i trin 4)
-  var timer = (prg.timer || []).filter(function(t){ return t.min_pr_uge > 0; });
-  if (timer.length) {
-    h += '<div class="kort" style="margin-top:12px"><div class="eyebrow">TIMER OM UGEN</div>';
-    timer.forEach(function(t){
-      var under = t.planlagt_min < t.min_pr_uge;
-      h += '<div class="delt-rk"><div class="nv">' + esc(navnFor(t.h, t.fornavn)) + '</div><span style="font-size:12.5px;font-weight:800;color:' + (under ? '#ff8a8f' : '#5fd68f') + '">' + (t.planlagt_min / 60).toFixed(1).replace('.0', '') + ' af ' + (t.min_pr_uge / 60).toFixed(1).replace('.0', '') + ' t</span></div>';
-    });
-    h += '</div>';
-  }
   return h;
 }
 
@@ -2192,6 +2314,7 @@ function bundNav(){
 }
 
 function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emoji som flisen på HJEM */
+  if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Grupper", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ning",
            kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\ud83d\udccb Registr\u00e9r" }[tab] || "";
 }
@@ -2256,7 +2379,8 @@ function renderTraener(){
       '</div>';
   } else {
     /* v6.2.0 · StreakTennis' titelrække, ordret (linje 10425 i v5.3.1): ← og fanens navn i én række */
-    h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px"><button class="pil-tilbage" data-act="tab" data-v="hjem">\u2190</button><b style="font-size:16px">' + faneTitel(S.tab) + '</b></div>';
+    var _tilbage = (S.tab === "program" && S.prgVisning) ? 'data-act="prg-visning" data-v=""' : 'data-act="tab" data-v="hjem"';   /* v6.3.0 · fra en undervisning går ← til fliserne */
+    h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px"><button class="pil-tilbage" ' + _tilbage + '>\u2190</button><b style="font-size:16px">' + faneTitel(S.tab) + '</b></div>';
     if (S.tab==="noegler") h += noegleKortet();
     else if (S.tab==="grupper") h += traenerGrupper(t);
     else if (S.tab==="vurder") h += traenerVurder(t);
@@ -3493,7 +3617,36 @@ document.addEventListener("click", function(e){
     S.fokuspunkter[sp] = nu.includes(v) ? nu.filter(x => x !== v) : nu.concat([v]);
     lager.gem("fokuspunkter", S.fokuspunkter); render(); sendVurdering(sp); }
   // ══ v6.0.0 · PROGRAMMET ═══════════════════════════════════════════════
-  if (act==="prg-dag"){ S.prgUgedag = +v; prgNulstilForm(); render(); }
+  // ══ v6.3.0 · PROGRAM SOM FLISER + IMPORTEN ═══════════════════════════════
+  if (act==="prg-visning"){
+    S.prgVisning = v || null; prgNulstilForm(); S.prgSlet = null;
+    if (S.prgVisning === "import") { S.imp = null; }
+    render();
+    if (!S.prgVisning || S.prgVisning === "skema" || S.prgVisning === "timer") { try { prgHent("kladde"); } catch (_e) {} } }
+  else if (act==="prg-imp-nulstil"){ S.impTekst = ""; S.imp = null; render(); }
+  else if (act==="prg-imp-ryd"){ if (!S.imp) S.imp = {}; S.imp.ryd = !S.imp.ryd; render(); }
+  else if (act==="prg-imp-tjek" || act==="prg-imp-laeg"){
+    if (S.imp && S.imp.koerer) return;
+    if (!S.imp) S.imp = {};
+    var _pa = impParse(S.impTekst);
+    if (_pa.fejl) { S.imp.fejl = _pa.fejl; S.imp.svar = null; S.imp.lagt = null; render(); return; }
+    var _skarp = act === "prg-imp-laeg";
+    S.imp.fejl = null; S.imp.koerer = true; S.imp.skarp = _skarp; S.imp.lagt = null; render();
+    /* kontrakten (traening v2, målt 20/9): {raekker, toer, ryd_kladde?} — præcis de felter, motoren læser */
+    var _krop = { raekker: _pa.raekker, toer: !_skarp };
+    if (_skarp && S.imp.ryd) _krop.ryd_kladde = true;
+    traeningKald("import", _krop).then(function(r){
+      S.imp.koerer = false;
+      /* et 422 med fejl pr. række er et SVAR, ikke et sammenbrud — kroppen følger med (princip 75: hvert udfald sin sætning) */
+      /* ⚠️ i import-svaret er `fejl` en LISTE (fejl pr. r\u00e6kke) \u2014 ikke husets fejlkode-streng. En liste = et svar. */
+      var _sv = (r && Array.isArray(r.fejl)) ? r : (r && r.krop && Array.isArray(r.krop.fejl) ? r.krop : null);
+      if (!_sv) { S.imp.fejl = (r && r.fejl === "tom") ? "Ingen pas i det, du satte ind." : traeningFejl(r); S.imp.svar = null; render(); return; }
+      S.imp.svar = _sv;
+      if (_skarp && !_sv.kode && (_sv.pas_oprettet || 0) > 0) { S.imp.lagt = _sv; S.prg = null; S.prgGodkendt = null;
+        var _d1 = (_pa.raekker[0] || {}).ugedag; if (_d1 >= 1 && _d1 <= 7) S.prgUgedag = _d1; }   /* ugeskemaet åbner på den første importerede dag */
+      render();
+      if (S.imp.lagt) { try { prgHent("kladde"); } catch (_e) {} } }); }
+  else if (act==="prg-dag"){ S.prgUgedag = +v; prgNulstilForm(); render(); }
   else if (act==="prg-ny"){ prgNulstilForm(); S.prgNy = true; render(); }
   else if (act==="prg-luk"){ prgNulstilForm(); render(); }
   else if (act==="prg-aabn"){
@@ -3509,6 +3662,8 @@ document.addEventListener("click", function(e){
     if (!_ba) { S.prgBesked = { fejl: true, t: "Skriv banen." }; render(); return; }
     var _krop = { ugedag: S.prgUgedag, start: _st, slut: _sl, bane: _ba, traener: String(S.prgTraener || "").trim(), traener2: String(S.prgTraener2 || "").trim(), titel: String(S.prgTitel || "").trim() };
     if (S.prgAaben) _krop.id = S.prgAaben;
+    var _ua = String(S.prgUdenApp === undefined || S.prgUdenApp === null ? "" : S.prgUdenApp).trim();   /* v6.3.0 */
+    if (_ua !== "") { if (!/^\d{1,2}$/.test(_ua) || +_ua > 40) { S.prgBesked = { fejl: true, t: "\u00abUden app\u00bb skal v\u00e6re et tal fra 0 til 40." }; render(); return; } _krop.uden_app = +_ua; }
     S.prgGemmer = true; S.prgBesked = null; render();
     traeningKald("pas-gem", _krop).then(function(r){
       S.prgGemmer = false;
@@ -3578,7 +3733,7 @@ document.addEventListener("click", function(e){
       if (_tp && _tp.navn && DATA.spillere[_tp.navn]) _navne.push(_tp.navn); });
     S.vurderLige = { titel: "Lige tr\u00e6net \u00b7 " + tidTekst(S.reg.pas) + " bane " + S.reg.pas.bane, navne: _navne };
     S.vurderOmraade = null; S.vurderGruppe = null; S.vurderScores = {}; S.tab = "vurder"; S.aabenSpiller = null; render(); }
-  if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer") regNulstil(); render(); if (v === "program") { S.prgBesked = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { try { snakHent(false); } catch (_e) {} } if (v === "noegler") { try { budSendteHent(); } catch (_e) {} } }
+  if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { try { snakHent(false); } catch (_e) {} } if (v === "noegler") { try { budSendteHent(); } catch (_e) {} } }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
   else if (act==="vurder-omraade"){ S.vurderOmraade=v; S.vurderScores = {}; render(); }

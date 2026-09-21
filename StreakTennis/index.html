@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.3.3 · 21. september 2026";
+const VERSION = "v5.3.4 · 21. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke, og kontoen siger «vi kontakter jer», som betingelserne lover.
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -688,7 +688,7 @@ function tribuneForloeb(fl, st, live, EN) {
   var slutFarve = diff > 0 ? "var(--vundet)" : diff < 0 ? "var(--tabt)" : "var(--is)";
   return '<div class="kort"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">' +
     '<span style="font-size:10px;font-weight:800;letter-spacing:2px;color:var(--daempet);text-transform:uppercase">' + (EN?"Match pulse":"Kampens puls") + '</span>' +
-    '<span class="lille" style="margin:0">' + (diff > 0 ? "+" : "") + diff + ' ' + (EN?"points":"bolde") + '</span></div>' +
+    '<span class="lille" style="margin:0">' + (diff > 0 ? "+" : "") + diff + '</span></div>' +   /* ⭐ v5.3.4 · Nicolai: «Bare +5» — antallet står i tallene nedenunder */
     '<svg viewBox="0 0 360 64" style="display:block;width:100%"><line x1="4" y1="' + midt + '" x2="356" y2="' + midt + '" stroke="var(--guld)" stroke-width="1" opacity=".8"/>' +
     '<polyline points="' + pts + '" fill="none" stroke="var(--is)" stroke-width="2" stroke-linejoin="round"/>' +
     '<circle cx="' + (4 + W) + '" cy="' + Math.round(midt - diff / mx * 26) + '" r="3.5" fill="' + slutFarve + '"/></svg>' +

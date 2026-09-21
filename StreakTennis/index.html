@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.3.2 · 21. september 2026";
+const VERSION = "v5.3.3 · 21. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke, og kontoen siger «vi kontakter jer», som betingelserne lover.
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -662,6 +662,18 @@ function trendRaekke(EN, label, vals, enhed, stigerGodt) {
 
 /* v5.0.1 · TRIBUNENS PULS · tegnes fra `forloeb` ({r,a} pr. bold — rejser med i hver live-opdatering), så den
    også findes, når kampen er slut. Ingen sæt-streger: tribunen kender ikke oskarFirst/mtb/saetTil, og et gæt tegnes ikke. */
+/* ⭐⭐ v5.3.3 · DE TRE TAL — ÉT sted (Nicolai 21/9: «Kunne godt lide det var nemt
+   at se % vundet mv.»). Bruges af tribunen, kampskærmen, følge-visningen OG kampkortet,
+   så tallet betyder det samme, uanset hvem der kigger. */
+function pulsTal(fl, EN) {
+  var vundne = 0, stime = 0, bedst = 0;
+  fl.forEach(function(p){ if (p.r === "V") { vundne++; stime++; if (stime > bedst) bedst = stime; } else stime = 0; });
+  var t = function(v, tekst){ return '<div style="text-align:center"><div style="font-size:18px;font-weight:800;font-variant-numeric:tabular-nums">' + v + '</div><div class="lille" style="margin:0;font-size:10px;letter-spacing:1px;text-transform:uppercase">' + tekst + '</div></div>'; };
+  return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--kant)">' +
+    t(fl.length, EN ? "balls" : "bolde") + t(bedst, EN ? "best run" : "l\u00e6ngste stime") +
+    t(Math.round(vundne / fl.length * 100) + "%", EN ? "points won" : "bolde vundet") + '</div>';
+}
+
 function tribuneForloeb(fl, st, live, EN) {
   if (!fl || fl.length < 5) return "";
   var diff = 0, serie = [0], stime = 0, bedst = 0, vundne = 0;
@@ -674,16 +686,13 @@ function tribuneForloeb(fl, st, live, EN) {
   var W = 352, midt = 32;
   var pts = serie.map(function(v, i){ return (4 + Math.round(i / (serie.length - 1) * W)) + "," + Math.round(midt - v / mx * 26); }).join(" ");
   var slutFarve = diff > 0 ? "var(--vundet)" : diff < 0 ? "var(--tabt)" : "var(--is)";
-  var tal = function(v, t){ return '<div style="text-align:center"><div style="font-size:18px;font-weight:800;font-variant-numeric:tabular-nums">' + v + '</div><div class="lille" style="margin:0;font-size:10px;letter-spacing:1px;text-transform:uppercase">' + t + '</div></div>'; };
   return '<div class="kort"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">' +
     '<span style="font-size:10px;font-weight:800;letter-spacing:2px;color:var(--daempet);text-transform:uppercase">' + (EN?"Match pulse":"Kampens puls") + '</span>' +
     '<span class="lille" style="margin:0">' + (diff > 0 ? "+" : "") + diff + ' ' + (EN?"points":"bolde") + '</span></div>' +
     '<svg viewBox="0 0 360 64" style="display:block;width:100%"><line x1="4" y1="' + midt + '" x2="356" y2="' + midt + '" stroke="var(--guld)" stroke-width="1" opacity=".8"/>' +
     '<polyline points="' + pts + '" fill="none" stroke="var(--is)" stroke-width="2" stroke-linejoin="round"/>' +
     '<circle cx="' + (4 + W) + '" cy="' + Math.round(midt - diff / mx * 26) + '" r="3.5" fill="' + slutFarve + '"/></svg>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--kant)">' +
-    tal(fl.length, EN?"balls":"bolde") + tal(bedst, EN?"best run":"længste stime") +
-    tal(Math.round(vundne / fl.length * 100) + "%", EN?"points won":"bolde vundet") + '</div></div>';
+    pulsTal(fl, EN) + '</div>';   /* v5.3.3 · tallene bor ét sted */
 }
 
 function pulsKort(k, EN) {
@@ -723,7 +732,8 @@ function pulsKort(k, EN) {
       cap = '<p class="lille" style="margin:3px 0 0;color:var(--kridt)"><b>' + (EN ? "Ball " : "Bold ") + (bi + 1) + '</b> · ' + (sd ? sd + " · " : "") + (EN ? "games " : "partier ") + stc.gO + "-" + stc.gM + ' · <b style="color:' + (p.r === "V" ? "var(--vundet)" : "var(--tabt)") + '">' + (p.r === "V" ? (EN ? "won" : "vundet") : (EN ? "lost" : "tabt")) + '</b> · ' + (AA[p.å] || p.å) + zt + '</p>';
     }
   }
-  return '<div style="margin:8px 0 2px">' + emne(EN ? "THE MATCH PULSE — tap the curve" : "KAMPENS PULS — tryk på kurven") + svg + (cap || '<p class="lille" style="margin:3px 0 0">' + (EN ? "Point difference ball by ball — game scores along the axis. Tap a spot to see score and cause." : "Point-forskel bold for bold — parti-stillinger langs aksen. Tryk på kurven og se stilling og årsag.") + '</p>') + '</div>';
+  return '<div style="margin:8px 0 2px">' + emne(EN ? "THE MATCH PULSE — tap the curve" : "KAMPENS PULS — tryk på kurven") + svg +
+    pulsTal(k.point, EN) +   /* ⭐ v5.3.3 · bolde · længste stime · % vundet, også på overblikket */ (cap || '<p class="lille" style="margin:3px 0 0">' + (EN ? "Point difference ball by ball — game scores along the axis. Tap a spot to see score and cause." : "Point-forskel bold for bold — parti-stillinger langs aksen. Tryk på kurven og se stilling og årsag.") + '</p>') + '</div>';
 }
 
 function statTabel(s, EN) {
@@ -8348,24 +8358,11 @@ function foelgTegn() {
         '<svg viewBox="0 0 360 54" style="display:block;width:100%"><line x1="4" y1="27" x2="356" y2="27" stroke="var(--fod)" stroke-width="1"/>' + dots + '</svg></div>';
     }
 
-    // KAMPENS PULS — kumulativ pointforskel, guldkurven fra kamp-kortene
-    if (fl.length >= 5) {
-      let diff = 0, serie = [0];
-      fl.forEach(function(p){ diff += (p.r === "V" ? 1 : -1); serie.push(diff); });
-      const mx = Math.max.apply(null, serie.map(Math.abs).concat([1]));
-      const W = 352, H0 = 58, midt = 32;
-      const pts = serie.map(function(v, i){
-        return (4 + Math.round(i / (serie.length - 1) * W)) + "," + Math.round(midt - v / mx * 26);
-      });
-      const sidste = pts[pts.length - 1].split(",");
-      h += '<div class="kort"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">' +
-        '<span style="font-size:10px;font-weight:800;letter-spacing:2px;color:var(--daempet);text-transform:uppercase">' + (EN?"Match pulse":"Kampens puls") + '</span>' +
-        '<span style="font-size:13px;font-weight:800;color:var(--guld)">' + (diff >= 0 ? "+" : "") + diff + '</span></div>' +
-        '<svg viewBox="0 0 360 ' + H0 + '" style="display:block;width:100%">' +
-        '<line x1="4" y1="' + midt + '" x2="356" y2="' + midt + '" stroke="var(--fod)" stroke-width="1" stroke-dasharray="3 4"/>' +
-        '<polyline points="' + pts.join(" ") + '" fill="none" stroke="var(--guld)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
-        '<circle cx="' + sidste[0] + '" cy="' + sidste[1] + '" r="4" fill="var(--guld)"/></svg></div>';
-    }
+    /* ⭐⭐ v5.3.3 · FØLGE-VISNINGEN BRUGER NU HUSETS ENE KURVE.
+       Før tegnede den sin egen (17 linjer, samme tal, anden streg) — to kurver,
+       der kunne drive fra hinanden. Nu ser Signe i sofaen nøjagtig det samme som
+       Nicolai ved banen, og de tre tal følger med (Nicolai 21/9). */
+    h += tribuneForloeb(fl, st, !!k.aktiv, EN);
 
     // DE SENESTE BOLDE — inkl. mod_es (v3.0.5 #19)
     const f = fl.slice(-24).reverse();

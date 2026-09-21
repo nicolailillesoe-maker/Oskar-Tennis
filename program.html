@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Træningsprogram · StreakCoach</title>
+<style>
+/* v1 · 20/9-2026 · trin 2c · klubbens program på klubbens hjemmeside — samme farver som StreakTennis (tokens fra appens :root) */
+:root{--nat:#111C33;--dyb:#070D19;--kort:rgba(255,255,255,.05);--kant:rgba(255,255,255,.12);--kant2:#31415F;--flade:#1B2A44;--kridt:#EDF2FA;--daempet:#8B99B5;--is:#9FD8E8;--grus:#2E56D6;--gruslys:#7B9BFF;--guld:#F0CF61;--vundet:#22995A;--tabt:#D2484E;--tekst2:#B9C6D8;--fod:#4A5A78}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'Helvetica Neue',Arial,sans-serif;background:radial-gradient(120% 55% at 50% -8%,#14264A 0%,#0B1220 55%) fixed #0B1220;color:var(--kridt);min-height:100vh}
+.side{max-width:760px;margin:0 auto;padding:14px 14px 40px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0 12px;border-bottom:1px solid var(--kant);margin-bottom:14px}
+.brand{display:flex;flex-direction:column;gap:3px}
+.wordmark{font-size:11px;letter-spacing:4px;font-weight:700;color:var(--guld);line-height:1}
+.brandby{font-size:9px;letter-spacing:.6px;font-weight:600;color:var(--kridt);line-height:1}
+.brandby b{color:var(--is)}
+h1{font-size:22px;margin:0 0 2px;font-weight:800}
+.eyebrow{font-size:11px;color:var(--daempet);letter-spacing:1.4px;font-weight:800;text-transform:uppercase}
+.lille{font-size:12.5px;color:var(--daempet);line-height:1.5}
+.dag{margin:18px 0 6px;display:flex;align-items:baseline;gap:8px}
+.dag b{font-size:15px;letter-spacing:.3px}
+.dag span{font-size:12px;color:var(--daempet)}
+.pas{display:grid;grid-template-columns:86px 1fr;gap:10px;background:var(--kort);border:1px solid var(--kant);border-radius:16px;padding:11px 13px;margin-bottom:8px}
+.tid{font-weight:800;font-size:15px;color:var(--is);line-height:1.15}
+.tid small{display:block;font-size:11px;color:var(--daempet);font-weight:700;margin-top:3px}
+.om b{font-size:14px;display:block}
+.om .tr{font-size:12.5px;color:var(--tekst2);margin-top:2px}
+.navne{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.navn{font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;border:1px solid var(--kant2);background:rgba(255,255,255,.04)}
+.antal{font-size:12px;color:var(--daempet);margin-top:6px}
+.besked{background:var(--kort);border:1px solid var(--kant);border-radius:16px;padding:16px;text-align:center;margin-top:20px}
+.fod{margin-top:30px;padding-top:12px;border-top:1px dashed var(--kant2);font-size:11.5px;color:var(--fod);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.knap{appearance:none;border:1px solid var(--kant2);background:transparent;color:var(--kridt);font:inherit;font-size:12px;font-weight:700;padding:7px 12px;border-radius:12px;cursor:pointer}
+@media print{
+  body{background:#fff !important;color:#111}
+  .side{max-width:none;padding:0}
+  .pas{border:1px solid #bbb;background:#fff;break-inside:avoid}
+  .tid{color:#1a3a8a}.wordmark{color:#8a6d00}.brandby,.om .tr,.lille,.antal,.dag span,.eyebrow{color:#555}
+  .navn{border-color:#bbb;background:#f4f4f4;color:#111}
+  .knap{display:none}
+  .fod{color:#777;border-color:#ccc}
+}
+</style>
+</head>
+<body>
+<div class="side">
+  <div class="topbar">
+    <div class="brand"><span class="wordmark">STREAKCOACH</span><span class="brandby">Sports<b>AI</b>nalytics</span></div>
+    <button class="knap" id="print" type="button">🖨 Udskriv</button>
+  </div>
+  <div id="app"><p class="lille">Henter programmet …</p></div>
+  <div class="fod"><span>Klubbens træningsprogram · StreakCoach</span><span id="stempel"></span></div>
+</div>
+<script>
+(function(){
+  var URL_VIS = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/program-vis";
+  var DAGE = ["", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag", "Søndag"];
+  var app = document.getElementById("app");
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function token(){
+    var m = /[#?&]k=([0-9a-fA-F]{24})/.exec(location.hash) || /[?&]k=([0-9a-fA-F]{24})/.exec(location.search);
+    return m ? m[1].toLowerCase() : "";
+  }
+  function besked(t){ app.innerHTML = '<div class="besked"><p class="lille" style="margin:0;font-size:14px;color:var(--kridt)">' + esc(t) + '</p></div>'; }
+  function tegn(d){
+    var h = '<div class="eyebrow">Træningsprogram</div><h1>' + esc(d.klub) + '</h1>';
+    var pas = d.pas || [];
+    if (!pas.length) { h += '<p class="lille">Programmet er tomt lige nu.</p>'; app.innerHTML = h; return; }
+    var pr = {}; pas.forEach(function(p){ (pr[p.ugedag] = pr[p.ugedag] || []).push(p); });
+    /* skærmen sorterer selv — motoren skjuler intet, men rækkefølgen er sidens ansvar (dag → tid → bane) */
+    Object.keys(pr).forEach(function(u){ pr[u].sort(function(a, b){ return String(a.start).localeCompare(String(b.start)) || String(a.bane).localeCompare(String(b.bane), "da", { numeric: true }); }); });
+    for (var u = 1; u <= 7; u++) {
+      var liste = pr[u]; if (!liste || !liste.length) continue;
+      h += '<div class="dag"><b>' + DAGE[u] + '</b><span>' + liste.length + (liste.length === 1 ? ' pas' : ' pas') + '</span></div>';
+      liste.forEach(function(p){
+        var tr = [p.traener, p.traener2].filter(Boolean).join(" & ");
+        h += '<div class="pas"><div class="tid">' + esc(p.start) + '–' + esc(p.slut) + '<small>bane ' + esc(p.bane) + '</small></div><div class="om">' +
+          '<b>' + esc(p.titel || "Træning") + '</b>' + (tr ? '<div class="tr">' + esc(tr) + '</div>' : '');
+        if (p.navne && p.navne.length) h += '<div class="navne">' + p.navne.map(function(n){ return '<span class="navn">' + esc(n) + '</span>'; }).join('') + '</div>';
+        else if (p.antal) h += '<div class="antal">' + p.antal + (p.antal === 1 ? ' spiller' : ' spillere') + '</div>';
+        h += '</div></div>';
+      });
+    }
+    app.innerHTML = h;
+    if (d.opdateret) { var t = new Date(d.opdateret); document.getElementById("stempel").textContent = "Godkendt " + t.getDate() + "/" + (t.getMonth() + 1) + "-" + t.getFullYear(); }
+    document.title = esc(d.klub) + " · Træningsprogram";
+  }
+  document.getElementById("print").addEventListener("click", function(){ window.print(); });
+  var k = token();
+  if (!k) { besked("Der mangler et link-id. Klubben finder linket under PROGRAM → Udstil i StreakCoach."); return; }
+  fetch(URL_VIS, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ handling: "vis", token: k }) })
+    .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
+    .then(function(x){
+      if (x.ok) return tegn(x.d);
+      if (x.status === 404) return besked("Programmet er ikke offentligt lige nu.");
+      besked("Programmet kunne ikke hentes (" + x.status + "). Prøv igen om lidt.");
+    })
+    .catch(function(){ besked("Ingen forbindelse — prøv igen om lidt."); });
+})();
+</script>
+</body>
+</html>

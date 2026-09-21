@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.3.1 · 19. september 2026";
+const VERSION = "v5.3.2 · 21. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke, og kontoen siger «vi kontakter jer», som betingelserne lover.
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -12192,6 +12192,15 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '<b style="font-size:15px">' + saetVis + ' · vs ' + esc(S.aktiv.modstander) + '</b>' +
           '<p class="lille" style="margin:6px 0 0">' + (EN?"The engine says the match is over — summary and analysis are ready below. Save to move it to Statistics.":"Motoren siger kampen er slut — resumé og analyse står klar nedenfor. Gem kampen, så flytter den til Statistik.") + '</p>' + turneringsKontekst(EN) + '</div>';
       }
+      // ⭐⭐ v5.3.2 · KAMPENS PULS PÅ EGEN SKÆRM.
+      //   Nicolai 21/9, midt i TE Copenhagen: «Og kampens kurve skal med her
+      //   over live-sendingen.» Målt samme aften: følge-visningen OG tribunen
+      //   havde begge kurven — kun den, der taster, havde den ikke (princip 66).
+      //   SAMME funktion som tribunen, så han ser præcis det, de ser i sofaen.
+      //   O(n), ingen ny tilstand, ingen tryk-flade midt i registreringen.
+      if (S.aktiv && (S.aktiv.point || []).length >= 5)
+        h += tribuneForloeb(S.aktiv.point.map(function(p){ return { r: p.r, a: p["\u00e5"] }; }), st, true, EN);
+
       // ══════════════════════════════════════════════════════════════
       // FØLG FRA SOFAEN · familien deler kampen mens den spilles
       // Koden giver adgang til DENNE kamp og intet andet. Stoppes delingen,

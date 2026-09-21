@@ -990,7 +990,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.6.0 \u00b7 20. september 2026";
+const VERSION = "v6.7.0 \u00b7 21. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1141,7 +1141,7 @@ var EN = {
 "⛔ Din egen administratornøgle kan ikke spærres herfra — ét fejlklik må ikke kunne lukke klubben ude af sin egen platform.": "⛔ Your own admin key cannot be blocked from here — one wrong tap must not be able to lock the club out of its own platform.",
 "⚠️ Er klubbens egen nøgle på listen, ligner den en trænernøgle. Spær kun en nøgle, du selv har udstedt.": "⚠️ If the club's own key is on the list, it looks like a coach key. Only block a key you issued yourself.",
 "fx familien Jensen": "e.g. the Jensen family",
-"fx Gani": "e.g. Gani",
+"fx Mette": "e.g. Mette",
 "⛔ spærret": "⛔ blocked",
 "Spær": "Block",
 "Sikker? Tryk igen": "Sure? Tap again",
@@ -1444,7 +1444,7 @@ Object.assign(EN, {
 "HJEM": "HOME", "PROGRAM": "SCHEDULE", "VURDÉR": "RATE", "GRUPPER": "GROUPS", "MERE": "MORE",
 "📅 UGESKEMAET": "📅 THE WEEKLY SCHEDULE",
 "✓ Godkend og send ud": "✓ Approve and publish",
-"Trænerne retter kladden. Når admin godkender, ser spillerne programmet under TRÆN, og der kan registreres fremøde på det.": "Coaches edit the draft. Once the admin approves, players see the schedule under TRAIN, and attendance can be registered on it.",
+"Trænerne retter kladden. Når admin godkender, er det dét program, der registreres fremmøde på — og hvert fremmøde skrives i spillerens træningslog.": "Coaches edit the draft. Once the admin approves, that is the schedule attendance is registered on — and every attendance is written to the player's training log.",
 "Kladde — ikke godkendt endnu": "Draft — not approved yet",
 "Tomt — tryk + og læg det første pas ind": "Empty — tap + to add the first session",
 "Man": "Mon", "Tir": "Tue", "Ons": "Wed", "Tor": "Thu", "Fre": "Fri", "Lør": "Sat", "Søn": "Sun",
@@ -1505,7 +1505,9 @@ Object.assign(EN, {
 "LINKET": "THE LINK", "✓ Kopieret": "✓ Copied", "Kopiér linket": "Copy the link", "Kopiér iframe": "Copy iframe",
 "Læg linket på klubbens hjemmeside — eller sæt iframe-stumpen ind, så programmet står direkte på siden. Siden kan også udskrives til væggen.": "Put the link on the club's website — or paste the iframe snippet so the schedule sits right on the page. The page can also be printed for the wall.",
 "NYT LINK": "NEW LINK", "Et nyt link gør det gamle dødt i samme sekund — brug det, hvis linket er havnet et sted, det ikke skulle.": "A new link kills the old one the same second — use it if the link ended up somewhere it shouldn't.",
-"Ja, lav et nyt link": "Yes, make a new link", "Fortryd": "Cancel", "Lav et nyt link …": "Make a new link …", "Kunne ikke hente udstillingen.": "Couldn't fetch the publishing settings.", "Kunne ikke kopiere — markér teksten og kopiér selv.": "Couldn't copy — select the text and copy it yourself."
+"Ja, lav et nyt link": "Yes, make a new link", "Fortryd": "Cancel", "Lav et nyt link …": "Make a new link …", "Kunne ikke hente udstillingen.": "Couldn't fetch the publishing settings.", "Kunne ikke kopiere — markér teksten og kopiér selv.": "Couldn't copy — select the text and copy it yourself.",
+"📖 SÅDAN VIRKER STREAKCOACH": "📖 HOW STREAKCOACH WORKS", "Nøgler og QR til familierne · ⚡ Vurdér træningen · programmet · skyen — med billeder af hver skærm. Åbner i en ny fane.": "Keys and QR codes for the families · ⚡ Rate the session · the schedule · the cloud — with a picture of every screen. Opens in a new tab.",
+"📖 Åbn guiden": "📖 Open the guide", "📖 Sådan virker StreakCoach": "📖 How StreakCoach works", "Skyen (kortet nedenfor) har en låst kopi. Sikkerhedskopien her er din egen fil ved siden af — til dig selv, ikke til os.": "The cloud (the card below) holds a locked copy. The backup here is your own file alongside it — for you, not for us."
 });
 
 Object.assign(EN, {
@@ -1908,6 +1910,7 @@ function renderRejse(){
       '<div style="flex:1;height:1px;background:var(--kant)"></div></div>';
 
     h += '<button class="knap sc-op" style="animation-delay:.24s;background:var(--guld);color:#12203a;width:100%;height:54px;min-height:54px;font-size:16px;font-weight:800" data-act="doer-frem">Ny træner? Start her →</button>';
+    h += '<p class="lille sc-op" style="animation-delay:.28s;text-align:center;margin:14px 0 0"><a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700;text-decoration:none">\ud83d\udcd6 S\u00e5dan virker StreakCoach</a></p>';   /* v6.7.0 */
     return h + '</div>';
   }
 
@@ -2224,8 +2227,8 @@ function impFejlTekst(f, mod){
 function prgImport(prg){
   var im = S.imp || {};
   var h = '<div class="kort" style="border-left:3px solid var(--guld)"><div class="eyebrow">📥 IMPORTÉR FRA EXCEL</div>' +
-    '<p class="lille" style="margin:6px 0 8px">Én række pr. pas. Kolonnerne: <b>ugedag · start · slut · bane · træner · medtræner · titel · spillere · uden app</b>. Kopiér rækkerne i Excel og sæt dem ind her — spillere adskilles med <b>;</b>, og «Ryan R (2)» sætter hold 2. Ukendte navne gemmes ikke; de listes, så du kan invitere dem.</p>' +
-    '<textarea class="felt" data-felt="impTekst" rows="7" spellcheck="false" placeholder="tir\t17:00\t18:00\t10&amp;11\tArtem\tCarlos\tU14 Elite\tTerkel Thomsen; Ryan R (2)\t2">' + esc(S.impTekst || "") + '</textarea>' +
+    '<p class="lille" style="margin:6px 0 8px">Én række pr. pas. Kolonnerne: <b>ugedag · start · slut · bane · træner · medtræner · titel · spillere · uden app</b>. Kopiér rækkerne i Excel og sæt dem ind her — spillere adskilles med <b>;</b>, og «Bertil B (2)» sætter hold 2. Ukendte navne gemmes ikke; de listes, så du kan invitere dem.</p>' +
+    '<textarea class="felt" data-felt="impTekst" rows="7" spellcheck="false" placeholder="tir\t17:00\t18:00\t10&amp;11\tJonas\tMette\tU14 Elite\tAlma Askholm; Bertil B (2)\t2">' + esc(S.impTekst || "") + '</textarea>' +
     '<div class="raekke" style="margin-top:8px"><button class="knap" style="background:var(--grus)"' + (im.koerer ? ' disabled' : '') + ' data-act="prg-imp-tjek">' + (im.koerer && !im.skarp ? '⏳ …' : 'Tjek rækkerne') + '</button>' +
     '<button class="knap valg" data-act="prg-imp-nulstil">Ryd</button></div>' +
     (im.fejl ? '<p class="lille" style="margin:8px 0 0;color:var(--tabt)">' + esc(im.fejl) + '</p>' : '') + '</div>';
@@ -2276,7 +2279,7 @@ function traenerProgram(){
               : (prg.pas.length ? '<b style="color:var(--guld)">Kladde — ikke godkendt endnu</b>' : 'Tomt — tryk + og læg det første pas ind'))) + '</div></div>' +
       (S.minRolle === "traener" ? '' : '<button class="knap" style="flex:none;background:var(--vundet);color:#fff;padding:9px 12px;font-size:12.5px"' + (S.prgGodkender || !prg.pas.length ? ' disabled' : '') + ' data-act="prg-godkend">' + (S.prgGodkender ? '⏳' : '✓ Godkend og send ud') + '</button>') +
     '</div>' +
-    '<p class="lille" style="margin:6px 0 0">Trænerne retter kladden. Når admin godkender, ser spillerne programmet under TRÆN, og der kan registreres fremøde på det.</p>';
+    '<p class="lille" style="margin:6px 0 0">Trænerne retter kladden. Når admin godkender, er det dét program, der registreres fremmøde på — og hvert fremmøde skrives i spillerens træningslog.</p>';
   if (S.prgBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.prgBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.prgBesked.t) + '</p>';
   h += '</div>';
   // ── ugedagene
@@ -2823,6 +2826,7 @@ document.addEventListener("keydown", function (e) {
 // Træneren ser aldrig en spillernøgle — kun brugernavn, årgang og om spilleren allerede er med.
 // Siger spilleren ja i StreakTennis, udsteder serveren nøglen direkte til spillerens app.
 const KLUBBUD_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/klub-bud";
+const GUIDE_URL = "https://tennis.sportsainalytics.com/coach-guide.html";   /* v6.7.0 · guiden bor i ROD */
 S.budNavn = ""; S.budTraef = null; S.budHenter = false; S.budSender = false; S.budBesked = null; S.budSendte = null;
 async function budKald(handling, krop) {
   const klub = lager.hent("klubkode", "");
@@ -2964,7 +2968,7 @@ function noegleKortet(){
           '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">\ud83e\uddd1\u200d\ud83c\udfeb TR\u00c6NERN\u00d8GLER</div>' +
           '<p class="lille" style="margin:5px 0 0;opacity:.75">\u00c9n n\u00f8gle pr. tr\u00e6ner \u2014 aldrig en delt. Skifter en tr\u00e6ner klub, sp\u00e6rrer du hans egen og r\u00f8rer ikke de andres.</p>' +
           '<div class="raekke" style="margin-top:9px">' +
-            '<input class="felt" style="flex:1;min-width:0" data-felt="famEtiketT" value="'+esc(S.famEtiketT||'')+'" placeholder="fx Gani" maxlength="40" autocapitalize="words">' +
+            '<input class="felt" style="flex:1;min-width:0" data-felt="famEtiketT" value="'+esc(S.famEtiketT||'')+'" placeholder="fx Mette" maxlength="40" autocapitalize="words">' +
             '<button class="knap" style="flex:none;background:var(--guld);color:#12203a;min-height:44px;font-weight:800;padding:8px 14px" data-act="fam-udsted" data-v="traener">' +
             (S.famUdsteder ? '\u23f3' : '\u2795 Tr\u00e6ner') + '</button></div>' +
           noegleKvittering("traener") + famBeskedHer("traener") +
@@ -2996,6 +3000,12 @@ function noegleKortet(){
 
 function traenerIndstillinger(){
   let h = '';
+  // ── 📖 GUIDEN · v6.7.0 (Nicolai 21/9: «en online guide til ham således han kan se hvordan app'en virker for ham»)
+  //   Siden bor i ROD (coach-guide.html) — én kilde; kortet linker kun. Åbner i en ny fane, så platformen står, hvor den stod.
+  h += '<div class="kort" style="border-left:3px solid var(--is)">' +
+    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">📖 SÅDAN VIRKER STREAKCOACH</div>' +
+    '<p class="lille" style="margin:6px 0 8px">Nøgler og QR til familierne · ⚡ Vurdér træningen · programmet · skyen — med billeder af hver skærm. Åbner i en ny fane.</p>' +
+    '<a class="knap" href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;background:var(--grus)">📖 Åbn guiden</a></div>';
     // ── NYE TILMELDINGER · familier, der har oprettet sig og venter paa klubben
     {
       // ⭐⭐⭐ v4.7.0 · KORTET SVARER NU PÅ TRÆNERENS SPØRGSMÅL.
@@ -3065,11 +3075,31 @@ function traenerIndstillinger(){
       '" placeholder="klubkode" autocapitalize="off" spellcheck="false" autocomplete="off">' + '</div>' +
       '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="ops-gem">Gem</button></div>' +
       '<p class="lille" style="margin:8px 0 0;font-style:italic">Koden gemmes kun på denne enhed og står ingen steder i koden.</p>';
-    // ── ☁️ SKYEN · v5.1.0
+    // ── SIKKERHEDSKOPI
+    h += '<div style="border-top:1px solid var(--kant);margin-top:12px;padding-top:10px">' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udcbe SIKKERHEDSKOPI</div>' +
+      '<p class="lille" style="margin:6px 0 8px">Skyen (kortet nedenfor) har en l\u00e5st kopi. Sikkerhedskopien her er din egen fil ved siden af \u2014 til dig selv, ikke til os.</p>' +
+      '<div class="raekke"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-lav">\ud83d\udcbe Lav kopi</button>' +
+      '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-gendan-aabn">\u267b\ufe0f Gendan</button></div>';
+    if (S.bkTekst) {
+      h += '<textarea rows="5" readonly style="margin-top:8px;font-size:11px">'+esc(S.bkTekst)+'</textarea>' +
+        '<div class="raekke" style="margin-top:6px"><button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px" data-act="bk-kopier">\ud83d\udccb Kopiér</button>' +
+        '<button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px" data-act="bk-del">\ud83d\udce4 Del\u2026</button></div>' +
+        '<p class="lille" style="margin:6px 0 0;font-style:italic">Kopien indeholder trænerens tekst om spillerne. Gem den et sikkert sted \u2014 klubkoden er IKKE med.</p>';
+    }
+    if (S.bkAaben) {
+      h += '<textarea rows="4" data-felt="gendanUdkast" placeholder="Indsæt en sikkerhedskopi her" style="margin-top:8px;font-size:11px">'+esc(S.gendanUdkast||'')+'</textarea>' +
+        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:'+(S.gendanBekraeft?'var(--tabt)':'var(--grus)')+'" data-act="bk-gendan">' +
+        (S.gendanBekraeft ? '\u26a0\ufe0f Tryk igen \u2014 ERSTATTER alt' : '\u267b\ufe0f Gendan') + '</button></div>';
+    }
+    h += '</div>';
+  }
+  h += '</div>';   // FORBINDELSE-kortet lukkes her, saa MIN TRUP staar for sig selv
+  // ── ☁️ SKYEN · v5.1.0 · v6.7.0: EGET KORT, altid synligt (lå før inde i FORBINDELSE-kortets ✏️-panel — fund 21/9, princip 64)
     {
       var _bn = !!lager.hent("boksnoegle", ""), _bs = S.boksStatus || {}, _st = boksStempler();
       var _tid = function(iso){ try { var d = new Date(iso); if (isNaN(d)) return ""; return d.getDate() + "/" + (d.getMonth()+1) + " " + String(d.getHours()).padStart(2,"0") + "." + String(d.getMinutes()).padStart(2,"0"); } catch (_e) { return ""; } };
-      h += '<div style="border-top:1px solid var(--kant);margin-top:12px;padding-top:10px">' +
+      h += '<div class="kort" style="border-left:3px solid ' + (_bn ? 'var(--vundet)' : 'var(--guld)') + '">' +
         '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\u2601\ufe0f SKYEN</div>' +
         '<p class="lille" style="margin:6px 0 8px">Din trup, dine grupper, vurderinger og evalueringer gemmes i skyen \u2014 l\u00e5st med dit kodeord. Mister du telefonen, logger du bare ind p\u00e5 en ny. Heller ikke vi kan l\u00e6se boksen.</p>';
       if (!_bn) {
@@ -3091,26 +3121,6 @@ function traenerIndstillinger(){
       }
       h += '</div>';
     }
-    // ── SIKKERHEDSKOPI
-    h += '<div style="border-top:1px solid var(--kant);margin-top:12px;padding-top:10px">' +
-      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udcbe SIKKERHEDSKOPI</div>' +
-      '<p class="lille" style="margin:6px 0 8px">Skyen ovenfor har en l\u00e5st kopi. Sikkerhedskopien her er din egen fil ved siden af \u2014 til dig selv, ikke til os.</p>' +
-      '<div class="raekke"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-lav">\ud83d\udcbe Lav kopi</button>' +
-      '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-gendan-aabn">\u267b\ufe0f Gendan</button></div>';
-    if (S.bkTekst) {
-      h += '<textarea rows="5" readonly style="margin-top:8px;font-size:11px">'+esc(S.bkTekst)+'</textarea>' +
-        '<div class="raekke" style="margin-top:6px"><button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px" data-act="bk-kopier">\ud83d\udccb Kopiér</button>' +
-        '<button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px" data-act="bk-del">\ud83d\udce4 Del\u2026</button></div>' +
-        '<p class="lille" style="margin:6px 0 0;font-style:italic">Kopien indeholder trænerens tekst om spillerne. Gem den et sikkert sted \u2014 klubkoden er IKKE med.</p>';
-    }
-    if (S.bkAaben) {
-      h += '<textarea rows="4" data-felt="gendanUdkast" placeholder="Indsæt en sikkerhedskopi her" style="margin-top:8px;font-size:11px">'+esc(S.gendanUdkast||'')+'</textarea>' +
-        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:'+(S.gendanBekraeft?'var(--tabt)':'var(--grus)')+'" data-act="bk-gendan">' +
-        (S.gendanBekraeft ? '\u26a0\ufe0f Tryk igen \u2014 ERSTATTER alt' : '\u267b\ufe0f Gendan') + '</button></div>';
-    }
-    h += '</div>';
-  }
-  h += '</div>';   // FORBINDELSE-kortet lukkes her, saa MIN TRUP staar for sig selv
 
   // ══════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ v4.0.0 · DIN KONTO · og de to veje ud

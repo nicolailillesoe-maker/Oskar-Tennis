@@ -509,7 +509,7 @@ function ryddKlubben(){
   S.ugefokus = {}; S.stigeHold = []; S.noegler = {}; S.minRolle = null;
   S.tilmeldinger = []; S.tilmHentet = null; S.tilmHenter = false;
   S.nu = null; S.nuHentet = 0; S.prg = null; S.prgGodkendt = null; S.reg = null; S.vurderLige = null;   /* v6.0.0 · klubskifte tømmer programmet */
-  S.prgVisning = null; S.imp = null; S.impTekst = ""; S.udstil = null;   /* v6.3.0 · v6.6.0 */
+  S.prgVisning = null; S.imp = null; S.impTekst = ""; S.udstil = null; S.indstVisning = null;   /* v6.3.0 · v6.6.0 · v6.8.0 */
   S.aabenSpiller = null; S.vurderOmraade = null; S.vurderGruppe = null;
   S.fpAaben = null; S.noegleFor = null; S.stigeHold = [];
   genskabDemo();                 // ⛔ ellers står den gamle klubs børn i DATA
@@ -990,7 +990,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.7.0 \u00b7 21. september 2026";
+const VERSION = "v6.8.0 \u00b7 21. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1506,8 +1506,15 @@ Object.assign(EN, {
 "Læg linket på klubbens hjemmeside — eller sæt iframe-stumpen ind, så programmet står direkte på siden. Siden kan også udskrives til væggen.": "Put the link on the club's website — or paste the iframe snippet so the schedule sits right on the page. The page can also be printed for the wall.",
 "NYT LINK": "NEW LINK", "Et nyt link gør det gamle dødt i samme sekund — brug det, hvis linket er havnet et sted, det ikke skulle.": "A new link kills the old one the same second — use it if the link ended up somewhere it shouldn't.",
 "Ja, lav et nyt link": "Yes, make a new link", "Fortryd": "Cancel", "Lav et nyt link …": "Make a new link …", "Kunne ikke hente udstillingen.": "Couldn't fetch the publishing settings.", "Kunne ikke kopiere — markér teksten og kopiér selv.": "Couldn't copy — select the text and copy it yourself.",
-"📖 SÅDAN VIRKER STREAKCOACH": "📖 HOW STREAKCOACH WORKS", "Nøgler og QR til familierne · ⚡ Vurdér træningen · programmet · skyen — med billeder af hver skærm. Åbner i en ny fane.": "Keys and QR codes for the families · ⚡ Rate the session · the schedule · the cloud — with a picture of every screen. Opens in a new tab.",
-"📖 Åbn guiden": "📖 Open the guide", "📖 Sådan virker StreakCoach": "📖 How StreakCoach works", "Skyen (kortet nedenfor) har en låst kopi. Sikkerhedskopien her er din egen fil ved siden af — til dig selv, ikke til os.": "The cloud (the card below) holds a locked copy. The backup here is your own file alongside it — for you, not for us."
+"Sådan virker StreakCoach": "How StreakCoach works", "guide med billeder af hver skærm — åbner i en ny fane": "a guide with a picture of every screen — opens in a new tab",
+"Nøgler og invitationer": "Keys and invitations", "familier og trænere — via brugernavn eller QR": "families and coaches — by username or QR", "Skyen": "The cloud",
+"ikke tændt på denne telefon": "not on for this phone", "skyen er nyere end telefonen": "the cloud is newer than this phone", "intet at gemme endnu": "nothing to save yet", "gemt i skyen ✓": "saved to the cloud ✓",
+"Nye spillere": "New players", "ikke tjekket endnu — åbn for at se": "not checked yet — open to see", "alle klubbens spillere er i din trup ✓": "all the club's players are in your squad ✓",
+"Forbindelse": "Connection", "ingen klubkode — alt bliver på telefonen": "no club code — everything stays on this phone", "Min trup": "My squad", "tom — læg den første spiller ind": "empty — add the first player",
+"Din konto": "Your account", "ikke logget ind": "not signed in", "Sprog": "Language", "Streak": "Streak", "stigen er fra for alle grupper": "the ladder is off for every group",
+"TÆND SKYEN": "TURN ON THE CLOUD", "Din trup og dine vurderinger ligger kun på denne telefon — tast dit kodeord én gang": "Your squad and your ratings live only on this phone — enter your password once",
+"NY SPILLER": "NEW PLAYER", "NYE SPILLERE": "NEW PLAYERS", "kommet ind med en nøgle — mangler i truppen": "came in with a key — not in your squad yet",
+"📖 Sådan virker StreakCoach": "📖 How StreakCoach works", "Skyen (kortet nedenfor) har en låst kopi. Sikkerhedskopien her er din egen fil ved siden af — til dig selv, ikke til os.": "The cloud (the card below) holds a locked copy. The backup here is your own file alongside it — for you, not for us."
 });
 
 Object.assign(EN, {
@@ -2509,6 +2516,8 @@ function bundNav(){
 }
 
 function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emoji som flisen på HJEM */
+  if (tab === "indst" && S.indstVisning) return { nye: "\ud83d\udce5 Nye spillere", forbindelse: "\u2699\ufe0f Forbindelse", sky: "\u2601\ufe0f Skyen",
+    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen", udstil: "\ud83c\udf10 Udstil" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Grupper", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
            kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen" }[tab] || "";
@@ -2573,7 +2582,8 @@ function renderTraener(){
       '</div>';
   } else {
     /* v6.2.0 · StreakTennis' titelrække, ordret (linje 10425 i v5.3.1): ← og fanens navn i én række */
-    var _tilbage = (S.tab === "program" && S.prgVisning) ? 'data-act="prg-visning" data-v=""' : (((S.tab === "vurder" || S.tab === "registrer") && S.reg && S.reg.trin > 1 && !S.vurderOmraade) ? 'data-act="reg-igen"' : 'data-act="tab" data-v="hjem"');   /* v6.5.0 · fra trin 2/3 går ← til trin 1 */   /* v6.3.0 · fra en undervisning går ← til fliserne */
+    var _tilbage = (S.tab === "indst" && S.indstVisning) ? 'data-act="indst-vis" data-v=""' :   /* v6.8.0 */
+      (S.tab === "program" && S.prgVisning) ? 'data-act="prg-visning" data-v=""' : (((S.tab === "vurder" || S.tab === "registrer") && S.reg && S.reg.trin > 1 && !S.vurderOmraade) ? 'data-act="reg-igen"' : 'data-act="tab" data-v="hjem"');   /* v6.5.0 · fra trin 2/3 går ← til trin 1 */   /* v6.3.0 · fra en undervisning går ← til fliserne */
     h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px"><button class="pil-tilbage" ' + _tilbage + '>\u2190</button><b style="font-size:16px">' + faneTitel(S.tab) + '</b></div>';
     if (S.tab==="noegler") h += noegleKortet();
     else if (S.tab==="grupper") h += traenerGrupper(t);
@@ -2998,14 +3008,10 @@ function noegleKortet(){
   return h;
 }
 
-function traenerIndstillinger(){
+/* ⭐⭐⭐ v6.8.0 · INDSTILLINGER SOM FLISER (Nicolai 21/9: «ALT skal laves som tiles») — hvert kort er nu sin egen undervisning,
+   præcis som PROGRAM fik det i v6.3.0. Kortenes indhold er FLYTTET, ikke skrevet om: samme kode, samme knapper, samme tekster. */
+function indstNye(){   /* v6.8.0 · 📥 nye spillere — familier, der har tastet en nøgle */
   let h = '';
-  // ── 📖 GUIDEN · v6.7.0 (Nicolai 21/9: «en online guide til ham således han kan se hvordan app'en virker for ham»)
-  //   Siden bor i ROD (coach-guide.html) — én kilde; kortet linker kun. Åbner i en ny fane, så platformen står, hvor den stod.
-  h += '<div class="kort" style="border-left:3px solid var(--is)">' +
-    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">📖 SÅDAN VIRKER STREAKCOACH</div>' +
-    '<p class="lille" style="margin:6px 0 8px">Nøgler og QR til familierne · ⚡ Vurdér træningen · programmet · skyen — med billeder af hver skærm. Åbner i en ny fane.</p>' +
-    '<a class="knap" href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;background:var(--grus)">📖 Åbn guiden</a></div>';
     // ── NYE TILMELDINGER · familier, der har oprettet sig og venter paa klubben
     {
       // ⭐⭐⭐ v4.7.0 · KORTET SVARER NU PÅ TRÆNERENS SPØRGSMÅL.
@@ -3057,7 +3063,10 @@ function traenerIndstillinger(){
       }
       h += '</div>';
     }
-    h += noegleKortet();
+  return h;
+}
+function indstForbindelse(){   /* v6.8.0 · ⚙️ forbindelse: klubkoden + (bag ✏️) sikkerhedskopien */
+  let h = '';
     // ── OPSÆTNING · klubkoden bor på enheden, aldrig i koden
   const kk = lager.hent("klubkode","");
   const antalN = Object.keys(S.noegler||{}).length;
@@ -3095,6 +3104,10 @@ function traenerIndstillinger(){
     h += '</div>';
   }
   h += '</div>';   // FORBINDELSE-kortet lukkes her, saa MIN TRUP staar for sig selv
+  return h;
+}
+function indstSkyen(){   /* v6.8.0 · ☁️ skyen — trænerens boks, låst med hans kodeord */
+  let h = '';
   // ── ☁️ SKYEN · v5.1.0 · v6.7.0: EGET KORT, altid synligt (lå før inde i FORBINDELSE-kortets ✏️-panel — fund 21/9, princip 64)
     {
       var _bn = !!lager.hent("boksnoegle", ""), _bs = S.boksStatus || {}, _st = boksStempler();
@@ -3123,6 +3136,10 @@ function traenerIndstillinger(){
     }
 
   // ══════════════════════════════════════════════════════════════════
+  return h;
+}
+function indstKonto(){   /* v6.8.0 · 👤 din konto — log ud · skift klub · start forfra */
+  let h = '';
   // ⭐⭐⭐ v4.0.0 · DIN KONTO · og de to veje ud
   //   Nicolai 30/8: «fjerne alt jeg har lagt ind for mig på
   //   trænerplatformen». Målt før: der fandtes INGEN vej — eneste
@@ -3160,6 +3177,10 @@ function traenerIndstillinger(){
       '<p class="lille" style="margin:6px 0 0;opacity:.6">Start forfra sletter trup, vurderinger, klubkode og login p\u00e5 denne telefon. Kontoen p\u00e5 serveren r\u00f8res ikke.</p>' +
       '</div>';
   }
+  return h;
+}
+function indstSprog(){   /* v6.8.0 · 🌐 sprog: skærmen og evalueringerne */
+  let h = '';
     // ── SPROG · v5.0.0
   {
     var ev = function(v, tekst){ return '<button class="knap valg' + (EVALSPROG === v ? ' til' : '') + '" style="flex:1;min-height:40px;padding:6px 10px;font-size:12.5px" data-act="evalsprog-saet" data-v="' + v + '">' + tekst + '</button>'; };
@@ -3170,6 +3191,10 @@ function traenerIndstillinger(){
       '<div class="lille" style="font-weight:700;margin:10px 0 4px">Evalueringer til spillerne</div>' +
       '<div style="display:flex;gap:6px">' + ev("da", "\ud83c\udde9\ud83c\uddf0 Dansk") + ev("en", "\ud83c\uddec\ud83c\udde7 Engelsk") + '</div></div>';
   }
+  return h;
+}
+function indstStreak(){   /* v6.8.0 · 🔥 streak-stigen pr. gruppe */
+  let h = '';
     // ── STREAK-STIGEN · vaelges til pr. hold (Julie 17/8). FRA som standard.
   {
     const grupperILive = [];
@@ -3192,6 +3217,10 @@ function traenerIndstillinger(){
     }
     h += '</div>';
   }
+  return h;
+}
+function indstTrup(){   /* v6.8.0 · 👥 min trup */
+  let h = '';
     // ── MIN TRUP
   {
     const egen = (S.truppen||[]).length;
@@ -3270,6 +3299,67 @@ function traenerIndstillinger(){
   h += '</div>';
   return h;
 }
+function indstOversigt(){   /* v6.8.0 · fliserne — hver bærer sin status, så tilstanden kan ses UDEN at åbne den (princip 64) */
+  var _k = S.konto || lager.hent("konto", null);
+  var _bn = !!lager.hent("boksnoegle", ""), _bs = S.boksStatus || {}, _st = boksStempler();
+  var _kk = lager.hent("klubkode", ""), _antalN = Object.keys(S.noegler || {}).length;
+  var _ny = { venter: [], nye: [] }; try { _ny = nyeSpillere(); } catch (_e) {}
+  var _ialt = _ny.venter.length + _ny.nye.length;
+  var _egen = (S.truppen || []).length, _antG = _egen ? Object.keys(DATA.grupper).length : 0;
+  var _stige = (S.stigeHold || []).length;
+  var h = '';
+  /* ⭐⭐⭐ HELTEN: det, der kræver en hånd NU. En flise alene ville skjule det igen — og det var præcis fejlen i går (traener_boks: 0 rækker). */
+  if (_k && !_bn) {
+    h += '<button class="dev-hero dev-kant dev-kant-guld" data-act="indst-vis" data-v="sky"><span style="font-size:30px">☁️</span><span><b>TÆND SKYEN</b><br><small>Din trup og dine vurderinger ligger kun på denne telefon — tast dit kodeord én gang</small></span><span class="dev-pil">→</span></button>';
+  } else if (_ialt) {
+    h += '<button class="dev-hero dev-kant dev-kant-guld" data-act="indst-vis" data-v="nye"><span style="font-size:30px">📥</span><span><b>' + _ialt + (_ialt === 1 ? ' NY SPILLER' : ' NYE SPILLERE') + '</b><br><small>' + (_ny.venter.length ? _ny.venter.length + (_ny.venter.length === 1 ? ' venter på jeres ja' : ' venter på jeres ja') : 'kommet ind med en nøgle — mangler i truppen') + '</small></span><span class="dev-pil">→</span></button>';
+  }
+  h += '<div class="dev-grid">' +
+    /* guiden er et LINK, ikke en undervisning — den bor i ROD og åbner i en ny fane */
+    '<a class="dev-flise dev-kant dev-kant-is" href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="text-decoration:none"><span class="dev-ikon">📖</span><b>Sådan virker StreakCoach</b><small>guide med billeder af hver skærm — åbner i en ny fane</small></a>' +
+    prgFlise("tab", "noegler", "🔑", "Nøgler og invitationer",
+      _ialt ? '<span style="color:var(--guld);font-weight:800">' + _ialt + (_ialt === 1 ? ' ny spiller venter' : ' nye spillere venter') + '</span>' : 'familier og trænere — via brugernavn eller QR',
+      _ialt ? "dev-kant-guld" : "dev-kant-staal") +
+    prgFlise("indst-vis", "sky", "☁️", "Skyen",
+      !_bn ? '<span style="color:var(--guld);font-weight:800">ikke tændt på denne telefon</span>'
+           : (_bs.konflikt ? '<span style="color:var(--guld);font-weight:800">skyen er nyere end telefonen</span>'
+           : (_bs.fejl ? '<span style="color:#ff8a8f;font-weight:800">' + esc(_bs.fejl) + '</span>'
+           : (_st.sendt ? 'gemt i skyen ✓' + (boksUsendt() ? ' · ændringer på vej' : '') : 'intet at gemme endnu'))),
+      !_bn ? "dev-kant-guld" : "dev-kant-gron") +
+    prgFlise("indst-vis", "nye", "📥", "Nye spillere",
+      !S.tilmHentet ? 'ikke tjekket endnu — åbn for at se'
+        : (_ialt ? '<span style="color:var(--guld);font-weight:800">' + _ialt + (_ialt === 1 ? ' venter' : ' venter') + '</span>' : 'alle klubbens spillere er i din trup ✓'),
+      _ialt ? "dev-kant-guld" : "dev-kant-staal") +
+    prgFlise("indst-vis", "forbindelse", "⚙️", "Forbindelse",
+      _kk ? 'klubkode gemt · ' + _antalN + (_antalN === 1 ? ' spiller koblet' : ' spillere koblet') : '<span style="color:var(--guld);font-weight:800">ingen klubkode — alt bliver på telefonen</span>',
+      _kk ? "dev-kant-gron" : "dev-kant-guld") +
+    prgFlise("indst-vis", "trup", "👥", "Min trup",
+      _egen ? _egen + (_egen === 1 ? ' spiller' : ' spillere') + ' · ' + _antG + (_antG === 1 ? ' gruppe' : ' grupper') : 'tom — læg den første spiller ind',
+      "dev-kant-staal") +
+    prgFlise("indst-vis", "konto", "👤", "Din konto",
+      _k ? 'logget ind som ' + esc(_k.brugernavn) : '<span style="color:var(--guld);font-weight:800">ikke logget ind</span>',
+      _k ? "dev-kant-staal" : "dev-kant-guld") +
+    prgFlise("indst-vis", "sprog", "🌐", "Sprog",
+      'skærmen: ' + (SPROG === "en" ? "engelsk" : "dansk") + ' · evalueringer: ' + (EVALSPROG === "en" ? "engelsk" : "dansk"), "dev-kant-staal") +
+    prgFlise("indst-vis", "streak", "🔥", "Streak",
+      _stige ? _stige + (_stige === 1 ? ' gruppe har stigen til' : ' grupper har stigen til') : 'stigen er fra for alle grupper', "dev-kant-staal") +
+    '</div>';
+  if (S.syncBesked) h += '<p class="lille" style="margin:10px 0 0;color:' + (S.syncBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
+  return h;
+}
+function traenerIndstillinger(){   /* v6.8.0 · fliser først, undervisningen bagefter — som traenerProgram() */
+  if (!S.indstVisning) return indstOversigt();
+  if (S.indstVisning === "nye") return indstNye();
+  if (S.indstVisning === "forbindelse") return indstForbindelse();
+  if (S.indstVisning === "sky") return indstSkyen();
+  if (S.indstVisning === "konto") return indstKonto();
+  if (S.indstVisning === "sprog") return indstSprog();
+  if (S.indstVisning === "streak") return indstStreak();
+  if (S.indstVisning === "trup") return indstTrup();
+  S.indstVisning = null;   /* et ukendt navn må aldrig give en tom skærm (princip 84) */
+  return indstOversigt();
+}
+
 
 function traenerGrupper(t){
   if (S.aabenSpiller) return spillerDetalje(S.aabenSpiller);
@@ -3755,6 +3845,11 @@ document.addEventListener("click", function(e){
     lager.gem("fokuspunkter", S.fokuspunkter); render(); sendVurdering(sp); }
   // ══ v6.0.0 · PROGRAMMET ═══════════════════════════════════════════════
   // ══ v6.3.0 · PROGRAM SOM FLISER + IMPORTEN ═══════════════════════════════
+  // ══ v6.8.0 · INDSTILLINGER SOM FLISER ═══════════════════════════════════
+  if (act==="indst-vis"){   /* v6.8.0 · tom v = tilbage til fliserne */
+    S.indstVisning = v || null;
+    if (S.indstVisning === "nye" && !S.tilmHentet && !S.tilmHenter) { render(); hentTilmeldinger(); return; }
+    render(); }
   if (act==="prg-visning"){
     S.prgVisning = v || null; prgNulstilForm(); S.prgSlet = null;
     if (S.prgVisning === "import") { S.imp = null; }
@@ -3895,7 +3990,7 @@ document.addEventListener("click", function(e){
       render(); nuHent(true); }); }
   else if (act==="reg-vurd-igen"){ if (!S.reg || S.reg.trin !== 3) return; regSendVurderinger(true); render(); }
   else if (act==="reg-igen"){ regNulstil(); render(); nuHent(false); }
-  if (act==="tab"){ S.tab=v; S.aabenSpiller=null; S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { try { snakHent(false); } catch (_e) {} } if (v === "noegler") { try { budSendteHent(); } catch (_e) {} } }
+  if (act==="tab"){ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { try { snakHent(false); } catch (_e) {} } if (v === "noegler") { try { budSendteHent(); } catch (_e) {} } }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
   else if (act==="vurder-omraade"){ S.vurderOmraade=v; render(); }   /* v6.5.0 · kun UGENS FOKUS (__fokus) bruger den */

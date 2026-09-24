@@ -1,6 +1,11 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v5 (24/9-2026) — NOTIFIKATIONER I APP-UDGAVEN. Nicolai: «Og den kan stadig ikke sende notifikationer. Det skal vi have fikset.»
+#   Web-push findes ikke i en WKWebView (målt 16/9) — appen får Apples egen kanal gennem @capacitor/push-notifications.
+#   ⭐ PORTEN STÅR FØR BYGGET (princip 95): App Store-profilen læses FØRST. Bærer den Push (aps-environment), installeres
+#   pluginet, AppDelegate får de to linjer, Capacitor kræver, og appen får sin entitlements-fil. Bærer den det IKKE,
+#   bygges appen som i v4.7 — uden pluginet — og loggen siger ligeud hvorfor, og hvad der skal til.
 # v4.7 (16/9 kl. 11.00) — byggenummeret tastes ikke længere i hånden: står feltet tomt, bruges kørslens løbenummer (github.run_number),
 #   som altid stiger. Apple afviser en upload med et tal, der ikke er større end sidste gang — det er en menneskelig fejl, der ventede på at ske.
 # v4.6 (16/9 kl. 07.40) — v4.4's adresse-rettelse ER RULLET TILBAGE i capacitor.config.json: Capacitors doks siger, at iosScheme IKKE må
@@ -56,11 +61,71 @@ jobs:
         with: { node-version: "20" }
       - name: Xcode-version (maskinens standard — vi vælger ikke selv)
         run: xcodebuild -version
+      - name: Bærer App Store-profilen Push? (v5 · porten står FØR bygget)
+        env:
+          DIST_PROFILE_BASE64: ${{ secrets.DIST_PROFILE_BASE64 }}
+        run: |
+          echo "$DIST_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/tjek.mobileprovision"
+          test -s "$RUNNER_TEMP/tjek.mobileprovision" || { echo "⛔ DIST_PROFILE_BASE64 er tom"; exit 1; }
+          if security cms -D -i "$RUNNER_TEMP/tjek.mobileprovision" | grep -q "<key>aps-environment</key>"; then
+            echo "PUSH=ja" >> $GITHUB_ENV; echo "⭐ Profilen bærer Push — appen bygges MED notifikationer (Apples kanal)."
+          else
+            echo "PUSH=nej" >> $GITHUB_ENV
+            echo "⚠️ Profilen bærer IKKE Push. Appen bygges som før, UDEN notifikationer."
+            echo "   Det, der skal til: developer.apple.com → Identifiers → com.sportsainalytics.streaktennis → Push Notifications ✓ → Save,"
+            echo "   derefter Profiles → «StreakTennis App Store» → Edit → Save → Download → ny DIST_PROFILE_BASE64."
+          fi
+          rm -f "$RUNNER_TEMP/tjek.mobileprovision"
       - name: Capacitor · skallen
         run: |
           npm install --no-audit --no-fund
+          # v5 · pluginet KUN, når profilen bærer Push — ellers ville appen tilbyde en knap, der ikke kan virke
+          if [ "$PUSH" = "ja" ]; then npm install --no-audit --no-fund --no-save "@capacitor/push-notifications@^6"; fi
           npx cap add ios
           npx cap sync ios
+          if [ "$PUSH" = "ja" ]; then
+            grep -q "PushNotifications" ios/App/Podfile || { echo "⛔ pluginet kom ikke med i Podfile"; exit 1; }
+          else
+            ! grep -q "PushNotifications" ios/App/Podfile || { echo "⛔ pluginet er med, selv om profilen ikke bærer Push"; exit 1; }
+          fi
+      - name: Push · AppDelegate + entitlements (v5 · kun når profilen bærer Push)
+        if: env.PUSH == 'ja'
+        run: |
+          AD=ios/App/App/AppDelegate.swift
+          test -f "$AD"
+          # Capacitors egen opskrift: Apples svar sendes videre til pluginet. Indsættes før klassens sidste krøllede parentes.
+          python3 - "$AD" <<'PY'
+          import sys, io
+          p = sys.argv[1]; s = io.open(p, encoding="utf-8").read()
+          assert "capacitorDidRegisterForRemoteNotifications" not in s
+          i = s.rstrip().rfind("}")
+          ind = '''
+              func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+                  NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+              }
+
+              func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+                  NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+              }
+          '''
+          s = s[:i] + ind + s[i:]
+          io.open(p, "w", encoding="utf-8").write(s)
+          PY
+          test "$(grep -c 'capacitorDidRegisterForRemoteNotifications\|capacitorDidFailToRegisterForRemoteNotifications' "$AD")" = "2" || { echo "⛔ AppDelegate fik ikke de to linjer"; exit 1; }
+          cat > ios/App/App/App.entitlements <<'PL'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+          	<key>aps-environment</key>
+          	<string>production</string>
+          </dict>
+          </plist>
+          PL
+          plutil -lint ios/App/App/App.entitlements
+          # KUN app-targetet får filen — en global tilsidesættelse ramte engang Capacitor.framework (byg #4, v4.1)
+          ruby -e 'require "xcodeproj"; pr = Xcodeproj::Project.open("ios/App/App.xcodeproj"); t = pr.targets.find { |x| x.name == "App" } or abort("⛔ intet App-target"); t.build_configurations.each { |c| c.build_settings["CODE_SIGN_ENTITLEMENTS"] = "App/App.entitlements" }; pr.save; puts "entitlements sat på " + t.name'
+          grep -q "CODE_SIGN_ENTITLEMENTS = App/App.entitlements" ios/App/App.xcodeproj/project.pbxproj || { echo "⛔ CODE_SIGN_ENTITLEMENTS står ikke i projektet"; exit 1; }
       - name: Byggenummer + version fra appen
         env:
           BYG_IND: ${{ github.event.inputs.byg_nr }}
@@ -136,6 +201,11 @@ jobs:
           ID=$(/usr/libexec/PlistBuddy -c "Print :ApplicationProperties:CFBundleIdentifier" build/App.xcarchive/Info.plist)
           echo "Arkivets app: $ID"
           test "$ID" = "com.sportsainalytics.streaktennis" || { echo "⛔ arkivets bundle-id er «$ID»"; exit 1; }
+          # v5 · vagt: med Push skal arkivets app BÆRE aps-environment — ellers er knappen en løgn
+          if [ "$PUSH" = "ja" ]; then
+            codesign -d --entitlements :- build/App.xcarchive/Products/Applications/App.app 2>/dev/null | grep -q "aps-environment" \
+              && echo "⭐ arkivets app bærer aps-environment" || { echo "⛔ arkivets app bærer IKKE aps-environment"; exit 1; }
+          fi
       - name: Send til App Store Connect (manuel signering med profilen; API-nøglen bruges kun til uploaden)
         run: |
           xcodebuild -exportArchive -archivePath build/App.xcarchive \

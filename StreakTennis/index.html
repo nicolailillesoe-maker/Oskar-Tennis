@@ -474,10 +474,12 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.3.5 · 21. september 2026";
+const VERSION = "v5.3.6 · 24. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke, og kontoen siger «vi kontakter jer», som betingelserne lover.
 const BETALINGSLINK = { fuld: "", fri: "" };
+/* ⭐ v5.3.6 · HANDELSBETINGELSERNE OG KONTAKTEN — ét sted (Vipps MobilePay kræver dem synlige). */
+const HANDEL = { url: "https://tennis.sportsainalytics.com/handelsbetingelser.html", mail: "nicolai@sportsainalytics.com", tlf: "61 22 76 07" };
 /* ⭐ v5.0.4 · ER VI I SKALLEN ELLER I BROWSEREN? Capacitor serverer appens filer fra sin EGEN adresse
    (capacitor://localhost) — protokollen er derfor målingen, ikke et gæt på et objekt, der måske er der. */
 const I_SKALLEN = (function () {
@@ -7484,15 +7486,22 @@ const A = {
   //   konto plan-saet kunne begge veje siden v5 — skærmen kunne kun én. Kontrakten:
   //   { plan: gaest|fuld|fri } → 200 { plan } · 409 klub (klubben betaler) · 403 afventer.
   //   Et eget valg afslutter en gave paa serveren (konto v8) — og kortet siger det samme her.
-  planSkiftAabn: () => { S.planSkift = !S.planSkift; S.kontoBesked = null; render(); },
+  planSkiftAabn: () => { S.planSkift = !S.planSkift; S.udtjek = null; S.kontoBesked = null; render(); },
+  /* ⭐ v5.3.6 · tilbage fra «Bekræft køb» til de tre planer */
+  udtjekTilbage: () => { S.udtjek = null; render(); },
+  /* ⭐ v5.3.6 · FORTRYD AFTALE: ét tryk til at spørge, ét til at bekræfte */
+  fortrydSpoerg: () => { S.fortrydSpoerg = true; render(); },
+  fortrydNej: () => { S.fortrydSpoerg = false; render(); },
   planVaelg: async (v) => {
     if (S.indPlanSender) return;
+    /* ⭐ v5.3.6 · et køb bekræftes FØR planen skiftes — Fuld/Fri åbner «Bekræft køb» */
+    if ((v === "fuld" || v === "fri") && S.udtjek !== v) { S.udtjek = v; S.kontoBesked = null; render(); return; }
     const oensket = (v === "fuld" || v === "fri") ? v : "gaest";
     S.indPlanSender = true; S.kontoBesked = null; render();
     const r = await A.kontoKald("plan-saet", { plan: oensket });
     S.indPlanSender = false;
     if (!r.fejl) {
-      S.minPlan = r.plan || oensket; S.gaveInfo = null; S.planSkift = false;
+      S.minPlan = r.plan || oensket; S.gaveInfo = null; S.planSkift = false; S.udtjek = null;
       S.kontoBesked = { fejl: false, t: oensket === "gaest"
         ? (S.sprog === "en" ? "Basis — from now. Live is off; analyses count as Basis." : "Basis — gælder fra nu. Live er lukket, og analyserne tæller som Basis.")
         : (S.sprog === "en" ? _planNavn(oensket, true) + " — we contact you about payment; nothing is charged automatically."
@@ -9499,7 +9508,8 @@ function _tegn() {
               _b("Beskeder", "En besked forsvinder et døgn efter, din ven har læst den — aldrig før. Højst 200 pr. samtale, og senest efter 30 dage. Slet fjerner for jer begge. Notifikationer viser navn og sted — aldrig indhold.") +
               _b("Prisen", "Med klubnøgle betaler klubben. Basis er gratis og rummer 3 AI-analyser i alt. Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — derefter +49 kr/md for uendelig streaming, eller 15 kr pr. live-kamp. At se med er altid gratis. Vi kontakter jer om betalingen; intet trækkes automatisk.") +
               _b("Vejen ud", "Log ud rydder telefonen. Skriv til os, og kontoen med alt i slettes — helt.")) +
-          '<p class="lille" style="margin:4px 0 0;opacity:.6">StreakTennis · SportsAInalytics · CVR 40524002</p>' +
+          '<p class="lille" style="margin:4px 0 0;opacity:.6">StreakTennis · SportsAInalytics · CVR 40524002<br>' + HANDEL.mail + ' \u00b7 ' + HANDEL.tlf + '</p>' +
+          '<p class="lille" style="margin:8px 0 0"><a href="' + HANDEL.url + '" target="_blank" rel="noopener" data-handelsbetingelser="2" style="color:var(--is)">' + (S.sprog === "en" ? "Terms of sale for subscriptions \u2192" : "Handelsbetingelser for abonnementer \u2192") + '</a></p>' +
           '</div>' +
           '<div class="raekke" style="margin-top:14px"><button class="knap stor" style="background:var(--grus)" data-a="betingelser">' + (S.sprog === "en" ? "Back" : "Tilbage") + '</button></div>' +
         '</div>';
@@ -11610,7 +11620,30 @@ function _tegn() {
               _kk += '<p class="lille" style="margin:2px 0 8px">🏛 ' + (EN ? "Your club pays — full access." : "Klubben betaler — fuld adgang.") + '</p>';
             }
             if (_pl && _pl !== "klub") {
-              if (S.planSkift) {
+              if (S.planSkift && S.udtjek) {
+                /* ⭐ v5.3.6 · UDTJEKNINGEN — «Bekræft køb» står FØR planen skiftes. Alt, man køber, står her:
+                   pris · løbetid · opsigelse · fortrydelsesret · betaling · handelsbetingelserne (link).
+                   «Betal med MobilePay» er slået fra, til BETALINGSLINK findes — den gamle vej står under. */
+                var _up = S.udtjek === "fri" ? 98 : 49;
+                var _un = S.udtjek === "fri" ? (EN ? "\ud83d\ude80 FULL + FREE STREAMING" : "\ud83d\ude80 FULD + FRI STREAMING") : (EN ? "\u2b50 FULL ACCESS" : "\u2b50 FULD ADGANG");
+                _kk += '<div style="margin:4px 0 8px;padding:12px;border:1px solid var(--guld);border-radius:12px">' +
+                  '<div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">\ud83e\uddfe ' + (EN ? "CONFIRM PURCHASE" : "BEKR\u00c6FT K\u00d8B") + '</div>' +
+                  '<div style="margin:6px 0 2px"><b>' + _un + '</b><span style="float:right;font-weight:800;color:var(--guld)">' + _up + (EN ? " kr/mo" : " kr./md.") + '</span></div>' +
+                  '<ul class="lille" style="margin:6px 0 8px;padding-left:18px;line-height:1.5">' +
+                    '<li>' + (EN ? "Renews every month until you cancel. No commitment." : "Fornyes hver m\u00e5ned, til I opsiger. Ingen binding.") + '</li>' +
+                    '<li>' + (EN ? "Cancel any time \u2014 access lasts the month you paid for." : "Opsig n\u00e5r som helst \u2014 adgangen g\u00e6lder den m\u00e5ned, I har betalt for.") + '</li>' +
+                    '<li>' + (EN ? "14-day right of withdrawal \u2014 full refund." : "14 dages fortrydelsesret \u2014 hele bel\u00f8bet tilbage.") + '</li>' +
+                    '<li>' + (EN ? "Payment: MobilePay" : "Betaling: MobilePay") + '</li></ul>' +
+                  '<p class="lille" style="margin:0 0 8px">' + (EN ? "By paying you accept the " : "Ved at betale accepterer I ") +
+                    '<a href="' + HANDEL.url + '" target="_blank" rel="noopener" data-handelsbetingelser="1" style="color:var(--is)">' + (EN ? "terms of sale" : "handelsbetingelserne") + '</a>.</p>' +
+                  (BETALINGSLINK[S.udtjek]
+                    ? '<a class="knap" href="' + esc(BETALINGSLINK[S.udtjek]) + '" target="_blank" rel="noopener" style="display:block;text-align:center;min-height:48px;line-height:48px;text-decoration:none;background:#5a78ff">' + (EN ? "Pay with MobilePay" : "Betal med MobilePay") + ' \u00b7 ' + _up + ' kr \u2192</a>'
+                    : '<button class="knap" disabled style="width:100%;min-height:48px;opacity:.55;background:#5a78ff">' + (EN ? "Pay with MobilePay \u00b7 opening soon" : "Betal med MobilePay \u00b7 \u00e5bner snart") + '</button>' +
+                      '<button class="knap valg" style="width:100%;min-height:44px;margin-top:8px" data-a="planVaelg" data-v="' + S.udtjek + '">' +
+                        (S.indPlanSender ? "\u23f3" : (EN ? "Choose the plan now \u2014 we contact you about payment" : "V\u00e6lg planen nu \u2014 vi kontakter jer om betalingen")) + '</button>') +
+                  '<button class="knap valg" style="min-height:40px;margin-top:6px" data-a="udtjekTilbage">\u2190 ' + (EN ? "Back" : "Tilbage") + '</button>' +
+                '</div>';
+              } else if (S.planSkift) {
                 var _pv = function(v, ik, titel, pris, tekst){
                   return '<button class="knap valg" style="width:100%;text-align:left;min-height:52px;margin-top:6px;padding:9px 12px' + (v === _pl ? ';border-color:var(--guld);opacity:.55' : '') + '" data-a="planVaelg" data-v="' + v + '"' + (v === _pl ? ' disabled' : '') + '>' +
                     '<b>' + ik + ' ' + titel + '</b><span style="float:right;font-weight:800;color:var(--guld)">' + pris + '</span><br>' +
@@ -11699,6 +11732,20 @@ function _tegn() {
         }
         if (S.kontoBesked && S.kontoAaben !== "log") {
           _kk += '<p class="lille" style="margin:8px 0 0;color:' + (S.kontoBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.kontoBesked.t) + '</p>';
+        }
+        /* ⭐ v5.3.6 · FORTRYD AFTALE (forbrugeraftaleloven fra 19/6-2026: fortrydelsen skal kunne ske i appen).
+           Kun på en betalt Fuld/Fri. «Bekræft fortrydelse» åbner en mail til os med brugernavnet — svaret er kvitteringen. */
+        if ((S.minPlan === "fuld" || S.minPlan === "fri") && S.betaltTil && S.kontoAaben !== "log") {
+          if (S.fortrydSpoerg) {
+            var _fm = "mailto:" + HANDEL.mail + "?subject=" + encodeURIComponent(EN ? "Withdraw agreement" : "Fortryd aftale") +
+              "&body=" + encodeURIComponent((EN ? "I withdraw from my StreakTennis subscription. Username: " : "Jeg fortryder mit abonnement p\u00e5 StreakTennis. Brugernavn: ") + (S.minKonto || ""));
+            _kk += '<div style="margin-top:10px;padding:10px;border:1px dashed var(--kant);border-radius:9px">' +
+              '<p class="lille" style="margin:0 0 8px">' + (EN ? "Within 14 days of buying you can withdraw and get the full amount back. We confirm by mail." : "Inden for 14 dage fra k\u00f8bet kan I fortryde og f\u00e5 hele bel\u00f8bet tilbage. Vi bekr\u00e6fter p\u00e5 mail.") + '</p>' +
+              '<div class="raekke"><a class="knap" href="' + _fm + '" style="min-height:44px;line-height:44px;text-align:center;text-decoration:none">' + (EN ? "Confirm withdrawal" : "Bekr\u00e6ft fortrydelse") + '</a>' +
+              '<button class="knap valg" style="min-height:44px" data-a="fortrydNej">' + (EN ? "Keep it" : "Behold") + '</button></div></div>';
+          } else {
+            _kk += '<div style="margin-top:9px"><button class="knap valg" style="min-height:40px;padding:6px 14px;color:var(--daempet)" data-a="fortrydSpoerg">' + (EN ? "Withdraw agreement" : "Fortryd aftale") + '</button></div>';
+          }
         }
         /* ⭐ v5.3.0 · BETAL HER — kun på en ubetalt Fuld/Fri, og kun når linket findes (tomt i dag) */
         if ((S.minPlan === "fuld" || S.minPlan === "fri") && !S.betaltTil && !(S.gaveInfo && S.gaveInfo.gave) && BETALINGSLINK[S.minPlan]) {

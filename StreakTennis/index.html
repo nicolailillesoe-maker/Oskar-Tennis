@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.7.0 · 25. september 2026";
+const VERSION = "v5.7.1 · 25. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -558,6 +558,21 @@ function teamsListe() {
     const g = JSON.parse(window.localStorage.getItem("sai-profil-team") || "null");
     return g ? [{ ns: "tm1", navn: String(g.navn || "") }] : [];
   } catch (_e) { return []; }
+}
+// ⭐ v5.7.1 · HVILKE TEAMS FØLGER MED — samme regel som skyKrop (kun egen visning, kun en team-nøgle af den rigtige form).
+//   Returnerer ét udfald pr. team: ok · mangler · form. Aldrig nøglen selv.
+function teamFoelgerMed() {
+  const ud = [];
+  try {
+    teamsListe().forEach(function (t) {
+      let k = null; try { k = window.localStorage.getItem(t.ns + "-sai-spillernoegle"); } catch (_e) {}
+      const navn = String(t.navn || t.ns);
+      if (!k) ud.push({ navn: navn, u: "mangler" });
+      else if (!/^fam-[0-9a-f]{32}$/.test(String(k))) ud.push({ navn: navn, u: "form", l: String(k).length, fam: String(k).indexOf("fam-") === 0 });
+      else ud.push({ navn: navn, u: "ok" });
+    });
+  } catch (_e) {}
+  return ud;
 }
 function teamsGem(liste) {
   try {
@@ -13884,6 +13899,23 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         h += '<p class="lille" style="margin:9px 0 0;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0;line-height:1.5">' + (EN
           ? "<b>Remember your password.</b> The box is locked with it. If you forget it <i>and</i> lose the phone, no one can open the box \u2014 not even us: opponents\u2019 names and your notes are gone. Your matches, balls and analyses come back from the archive anyway."
           : "<b>Husk dit kodeord.</b> Boksen er l\u00e5st med det. Glemmer du det <i>og</i> mister telefonen, kan ingen \u00e5bne boksen \u2014 heller ikke vi: modstandernes navne og dine noter er v\u00e6k. Dine kampe, bolde og analyser kommer tilbage fra arkivet alligevel.") + '</p>';
+        // ⭐ v5.7.1 · teamene, sagt ét ad gangen (princip 75)
+        try {
+          const _tfm = teamFoelgerMed();
+          if (_tfm.length && teamKunStreaks()) {
+            h += '<p class="lille" style="margin:8px 0 0;color:var(--guld)">👥 ' + (EN
+              ? "Your teams travel with your account from your own view — switch to your own player first."
+              : "Dine teams følger med kontoen fra din egen visning — skift til din egen spiller først.") + '</p>';
+          } else if (_tfm.length) {
+            _tfm.forEach(function (x) {
+              h += '<p class="lille" style="margin:6px 0 0;color:' + (x.u === "ok" ? 'var(--vundet)' : 'var(--guld)') + '">👥 ' + esc("Team " + x.navn) + ' — ' + (x.u === "ok"
+                ? (EN ? "travels with your account to a new phone ✓" : "følger med kontoen til en ny telefon ✓")
+                : x.u === "mangler"
+                  ? (EN ? "does not travel: the team key is missing on this phone." : "følger ikke med: team-nøglen mangler på denne telefon.")
+                  : (EN ? "does not travel: the team key has an unknown form (" + x.l + " characters" + (x.fam ? ", fam-" : "") + ")." : "følger ikke med: team-nøglen har en ukendt form (" + x.l + " tegn" + (x.fam ? ", fam-" : "") + ").")) + '</p>';
+            });
+          }
+        } catch (_e) {}
         if (_sk && _sk.har && _sk.bytes) {
           h += '<p class="lille" style="margin:7px 0 0;opacity:.6">' +
             Math.max(1, Math.round(_sk.bytes / 1024)) + ' KB' + (_sk.enhed ? ' \u00b7 ' + esc(_sk.enhed) : '') + '</p>';

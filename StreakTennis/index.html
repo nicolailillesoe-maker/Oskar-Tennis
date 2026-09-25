@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.6.0 · 25. september 2026";
+const VERSION = "v5.7.0 · 25. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -4207,6 +4207,24 @@ const A = {
         if (!teamKunStreaks() && d.postPrivat && d.postOffentlig && !lager.hent("sai-post-privat")) {
           try { lager.gem("sai-post-privat", String(d.postPrivat)); lager.gem("sai-post-offentlig", String(d.postOffentlig)); } catch (_e) {}
         }
+        // ⭐⭐ v5.7.0 · teamene kommer hjem — kun på en telefon, der ingen har (telefonens egne vinder altid).
+        if (!teamKunStreaks() && Array.isArray(d.teams) && d.teams.length && !teamsListe().length) {
+          try {
+            const _reg = [];
+            d.teams.slice(0, 9).forEach(function (t) {
+              const ns = String((t && t.ns) || ""), nk = String((t && t.noegle) || "");
+              if (!/^tm[1-9]$/.test(ns) || !/^fam-[0-9a-f]{32}$/.test(nk)) return;
+              if (_reg.some(function (x) { return x.ns === ns; })) return;
+              const s2 = function (k, v) { if (v !== null && v !== undefined && v !== "") window.localStorage.setItem(ns + "-sai-" + k, String(v)); };
+              s2("spillernoegle", nk); s2("rolle", "familie"); s2("venne-aktiv", "1"); s2("laas", "op");
+              s2("sky-noegle", t.sky); s2("post-til", t.postTil); s2("spiller", String(t.spiller || "").slice(0, 40));
+              const e = { ns: ns, navn: String(t.navn || t.spiller || "").slice(0, 40) };
+              if (t.id) e.id = String(t.id).slice(0, 64); if (t.spejl) e.spejl = true;
+              _reg.push(e);
+            });
+            if (_reg.length) { teamsGem(_reg); S.fletEkstra.push(_reg.length === 1 ? (S.sprog === "en" ? "1 team" : "1 team") : _reg.length + " teams"); }
+          } catch (_e) {}
+        }
         if (d.scout && typeof d.scout === "object") {
           let _sn = 0;
           S.scout = S.scout || {};
@@ -4626,6 +4644,22 @@ const A = {
       try { await A.synkroniser(); } catch (_e) {}
     } else { S.klubBudBesked = { fejl: true, t: klubBudFejltekst(r) }; render(); }
   },
+  // ⭐⭐ v5.7.0 · KLUBBEN FØLGER KONTOEN (fundet af Nicolai på sin iPhone 25/9: web sagde klubben, appen «ingen klub»).
+  //   Står kontoen i en klub, udsteder serveren en ny klubnøgle til DENNE telefon (klub-bud v2 `min-klub`) — klubben har
+  //   allerede sagt ja. Kun når telefonen ingen har, aldrig i team-visningen. Stille: skærmen viser bare klubben.
+  klubHjem: async () => {
+    if (S.klubKode || !S.spillerNoegle || teamKunStreaks() || S.klubHjemHenter) return;
+    S.klubHjemHenter = true;
+    try {
+      const r = await klubBudKald("min-klub", {});
+      if (r && r.klub && /^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(String(r.noegle || "")) && !S.klubKode) {
+        S.klubKode = String(r.noegle); lager.gem("sai-klubkode", S.klubKode);
+        S.minKlub = r.klub; try { lager.gem("sai-min-klub", S.minKlub); } catch (_e) {}
+        render();
+        try { await A.synkroniser(); } catch (_e) {}
+      }
+    } catch (_e) {} finally { S.klubHjemHenter = false; }
+  },
   klubBudJa: (v) => { A.klubBudSvar(v, true); },
   klubBudNej: (v) => { A.klubBudSvar(v, false); },
   opsFold: (v) => {
@@ -4746,7 +4780,9 @@ const A = {
   //     rettes tilbage. Fortrydelsen er med vilje gjort billig.
   //
   //   HØRER IKKE I BOKSEN, fordi SERVEREN sender dem hjem ved login:
-  //     spillernoegle · konto · brugernavn · klub · min-klub · venne-id · rolle
+  //     spillernoegle · konto · brugernavn · venne-id · rolle
+  //     klubben: `klub-bud min-klub` (v5.7.0 — før stod der «klub · min-klub» her, og det holdt ikke; målt 25/9)
+  //   RØGER I BOKSEN FRA v5.7.0: teamene (team-nøgle + boksens nøgle + postkasse + navn) — kun den låste.
   //   HØRER TIL ENHEDEN og må aldrig rejse:
   //     sky-* · foelgekode · liveaktiv · push-* · laas · doed-noegle
   //     traenerdata (klubbens, hentes igen) · klublogo (klubbens)
@@ -4781,6 +4817,15 @@ const A = {
     //   (klartekst-backuppen kan sendes hvorhen som helst). Prisen ved en
     //   manuel flytning: et nyt par laves ved næste nøgle, gamle links dør.
     if (iBoks) { try { const pp = lager.hent("sai-post-privat"), po = lager.hent("sai-post-offentlig"); if (pp && po) { ud.postPrivat = pp; ud.postOffentlig = po; } } catch (_e) {} }
+    // ⭐⭐ v5.7.0 · TEAMENE FØLGER KONTOEN — kun i den LÅSTE boks, kun fra egen visning. Nøglen til et team er en
+    //   team-nøgle (fam-), aldrig et barns spillernøgle. Klartekst-backuppen bærer den aldrig.
+    if (iBoks && !teamKunStreaks()) { try {
+      const _tl = teamsListe().map(function (t) {
+        const g = function (k) { try { return window.localStorage.getItem(t.ns + "-sai-" + k); } catch (_e) { return null; } };
+        return { ns: t.ns, navn: t.navn || "", id: t.id || null, spejl: !!t.spejl, noegle: g("spillernoegle"), sky: g("sky-noegle"), postTil: g("post-til"), spiller: g("spiller") };
+      }).filter(function (x) { return /^fam-[0-9a-f]{32}$/.test(String(x.noegle || "")); });
+      if (_tl.length) ud.teams = _tl;
+    } catch (_e) {} }
     // Kampen, der er I GANG. Nicolai: «Mister man telefonen midt i en kamp,
     // er den væk.» Den følger med som RÅ tekst — appen renser den selv, når
     // den flettes ind, og den flettes kun ind på en telefon uden en kamp.
@@ -5010,7 +5055,7 @@ const A = {
         //   blive sendt, fordi de tre længder ovenfor stod uændret.
         String(JSON.stringify(krop.scout || {}).length) + ":" +
         String(JSON.stringify(krop.indst || {}).length) + ":" +
-        String((krop.navn || "").length) + ":" + String((krop.kampAktiv || "").length); } catch (_e) {}
+        String((krop.navn || "").length) + ":" + String((krop.kampAktiv || "").length) + ":" + String(JSON.stringify(krop.teams || []).length); } catch (_e) {}   /* v5.7.0 · teamene */
       if (!straks && aftryk && aftryk === lager.hent("sai-sky-aftryk")) return;
       try {
         S.skySender = true; if (straks) render();
@@ -5033,7 +5078,7 @@ const A = {
             try { aftryk = String(JSON.stringify(krop2.kampe).length) + ":" +
               String(JSON.stringify(krop2.fysLog).length) + ":" + String(JSON.stringify(krop2.ttLog).length) + ":" +
               String(JSON.stringify(krop2.scout || {}).length) + ":" + String(JSON.stringify(krop2.indst || {}).length) + ":" +
-              String((krop2.navn || "").length) + ":" + String((krop2.kampAktiv || "").length); } catch (_e) {}
+              String((krop2.navn || "").length) + ":" + String((krop2.kampAktiv || "").length) + ":" + String(JSON.stringify(krop2.teams || []).length); } catch (_e) {}   /* v5.7.0 */
             krypt = await skyLaas(krop2, bits);
             r = await skyKald("gem", { krypt, salt, basis: foer.opdateret || null,
               enhed: (erIOS() ? "iPhone" : "Enhed") + " \u00b7 " + browserNavn() });
@@ -5217,6 +5262,7 @@ const A = {
     }
     // ⭐ NØGLEN ER SVARET. Alt andet i appen kender kun den.
     S.spillerNoegle = r.noegle; lager.gem("sai-spillernoegle", r.noegle);
+    setTimeout(function(){ try { A.klubHjem(); } catch (_e) {} }, 1500);   /* ⭐ v5.7.0 · klubben følger kontoen */
     S.mitNavn = r.brugernavn || null; S.minKonto = r.brugernavn || null;
     if (S.mitNavn) lager.gem("sai-brugernavn", S.mitNavn);
     lager.gem("sai-konto", r.brugernavn || "1");
@@ -14240,6 +14286,9 @@ window.__oskarInit = function(){
   if (!rod) return;
   window.__oskarInited = true; try { autoSynk(); } catch(e) {}
   setTimeout(function(){ try { if (S.klubScannet) A.klubIndloes(); else A.klubBudHent(true); } catch (_e) {} }, 700);   /* ⭐ v5.1.0 · klub-bud */
+  setTimeout(function(){ try { if (!S.klubScannet) A.klubHjem(); } catch (_e) {} }, 1100);   /* ⭐ v5.7.0 · klubben følger kontoen */
+  /* ⭐ v5.7.0 · teamene rejser i den låste kopi — et stille skub, så en telefon med teams sender dem op (aftrykket afgør) */
+  setTimeout(function(){ try { if (!teamKunStreaks() && teamsListe().length && A.skySik) A.skySik(); } catch (_e) {} }, 5000);
   rod.addEventListener("toggle", function(e){ var d = e.target; if (d && d.matches && d.matches("details[data-sf]")) { S._sf = S._sf || {}; S._sf[d.dataset.sf] = d.open; } }, true);
   var _lpT = null, _lpFired = false;
   // v3.0.5i (16/8-2026): langt tryk styres nu af data-lp, som KUN sættes, hvor det

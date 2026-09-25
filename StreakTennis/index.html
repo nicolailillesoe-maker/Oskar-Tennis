@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.4.0 · 25. september 2026";
+const VERSION = "v5.7.0 · 25. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -967,7 +967,7 @@ function ugeplanLaes() {
     return Array.isArray(u) ? ugeplanSorter(u.filter(ugeplanGyldig).slice(0, UGEPLAN_MAKS)) : []; }
   catch (_e) { return []; }
 }
-function ugeplanGem() { try { lager.gem("sai-ugeplan", JSON.stringify(S.ugeplan || [])); } catch (_e) {} }
+function ugeplanGem() { try { lager.gem("sai-ugeplan", JSON.stringify(S.ugeplan || [])); } catch (_e) {} try { ugPaamindSaet(true); } catch (_e) {} }   /* ⭐ v5.5.0 */
 // Dansk dato og klokkeslæt — telefonens ur kan stå i en anden zone, klubbens gør ikke.
 function dkDato(forskydDage) {
   return new Date(Date.now() + (forskydDage || 0) * 86400000).toLocaleDateString("sv-SE", { timeZone: "Europe/Copenhagen" });
@@ -1003,6 +1003,80 @@ function ugTid(t, EN) { return EN ? String(t) : String(t).replace(":", "."); }
 function ugLinje(p, EN) {
   return ugTid(p.start, EN) + "–" + ugTid(p.slut, EN) + " · " + (p.type === "fysisk" ? "💪 " + (EN ? "Fitness" : "Fysisk") : "🎾 Tennis") +
     (p.med ? " · " + (EN ? "with coach" : "med træner") : "") + (p.sted ? " · " + esc(p.sted) : "");
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ⭐⭐ v5.5.0 · PÅMINDELSERNE FRA MIN UGE. Nicolai 25/9: «den skal bare bygges med det samme» ·
+//   «og notifikationer om at man skal huske tennis på dagen og hvad tid det er..»
+//   Lokale påmindelser — de bor på telefonen, intet sendes. Lægges for de næste 14 dage, hver gang
+//   appen åbnes, ugen ændres eller et pas logges. Princip 40: kun type og klokkeslæt, aldrig stedet.
+// ══════════════════════════════════════════════════════════════════════
+const UG_PAAMIND_FRA = 7000, UG_PAAMIND_TIL = 7400;   // vores id'er — alt andet lader vi være
+let ugPaamindKoe = Promise.resolve();
+function nativLokal() {
+  try {
+    if (!I_SKALLEN) return null;
+    const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
+    return P && typeof P.schedule === "function" && typeof P.getPending === "function" ? P : null;
+  } catch (_e) { return null; }
+}
+function ugPaamindTil() { try { return lager.hent("sai-ugepaamind") !== "0"; } catch (_e) { return true; } }
+function ugPaamindVore(r) {
+  return ((r && r.notifications) || []).filter(function(x){ const i = Number(x && x.id); return i >= UG_PAAMIND_FRA && i < UG_PAAMIND_TIL; });
+}
+function ugPaamindListe(EN) {
+  const ud = [], plan = S.ugeplan || [];
+  if (!plan.length) return ud;
+  const nuTid = dkDato(0) + " " + ugTidAfMin(dkNuMin() + 1);
+  const hm = function(t){ return { hour: Number(String(t).slice(0, 2)), minute: Number(String(t).slice(3, 5)) }; };
+  const paa = function(dato, t){ const h = hm(t);
+    return { year: Number(dato.slice(0, 4)), month: Number(dato.slice(5, 7)), day: Number(dato.slice(8, 10)), hour: h.hour, minute: h.minute }; };
+  const type = function(p){ return p.type === "fysisk" ? (EN ? "fitness" : "fysisk") : "tennis"; };
+  for (let k = 0; k <= 13; k++) {
+    const dato = dkDato(k), dag = isoUgedagAf(dato);
+    const pas = plan.filter(function(p){ return p.dag === dag; }).sort(function(a, b){ return minAf(a.start) - minAf(b.start); });
+    if (!pas.length) continue;
+    const tider = pas.map(function(p){ return type(p) + (EN ? " at " : " kl. ") + ugTid(p.start, EN); }).join(" · ");
+    const tidlig = minAf(pas[0].start) < 8 * 60 + 30;
+    const dD = tidlig ? dkDato(k - 1) : dato, dT = tidlig ? "20:00" : "07:30";
+    if (dD + " " + dT > nuTid) ud.push({ id: UG_PAAMIND_FRA + k * 20, title: "StreakTennis",
+      body: (tidlig ? (EN ? "Tomorrow: " : "I morgen: ") : (EN ? "Today: " : "I dag: ")) + tider,
+      schedule: { on: paa(dD, dT), allowWhileIdle: true }, extra: { sti: "gaa=traen" } });
+    pas.forEach(function(p, i){
+      if (ugeplanLogget(p, dato)) return;
+      const efter = minAf(p.slut) + 15;
+      if (efter >= 21 * 60 || efter < 7 * 60) return;   // nattero 21-07
+      const t = ugTidAfMin(efter);
+      if (dato + " " + t <= nuTid) return;
+      const T = type(p);
+      ud.push({ id: UG_PAAMIND_FRA + k * 20 + 1 + i, title: "StreakTennis",
+        body: T.charAt(0).toUpperCase() + T.slice(1) + (EN ? " at " : " kl. ") + ugTid(p.start, EN) + "–" + ugTid(p.slut, EN) +
+          (EN ? " is over. How did it go?" : " er slut. Hvordan gik det?"),
+        schedule: { on: paa(dato, t), allowWhileIdle: true }, extra: { sti: "gaa=traen" } });
+    });
+  }
+  return ud;
+}
+function ugTidAfMin(m) { m = Math.max(0, Math.min(23 * 60 + 59, m)); return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); }
+// Én ad gangen: åbning, synlighed og et gemt pas kan komme samtidigt.
+function ugPaamindSaet(maaSpoerge) {
+  ugPaamindKoe = ugPaamindKoe.then(function(){ return ugPaamindKoer(maaSpoerge); }, function(){ return ugPaamindKoer(maaSpoerge); });
+  return ugPaamindKoe;
+}
+async function ugPaamindKoer(maaSpoerge) {
+  const L = nativLokal(); if (!L) return;
+  try {
+    const gl = ugPaamindVore(await L.getPending());
+    if (gl.length) await L.cancel({ notifications: gl.map(function(x){ return { id: Number(x.id) }; }) });
+    const liste = ugPaamindTil() ? ugPaamindListe(S.sprog === "en") : [];
+    if (!liste.length) { S.ugPaamindAntal = 0; render(); return; }
+    let ret = await L.checkPermissions();
+    if (ret && ret.display === "prompt" && maaSpoerge) ret = await L.requestPermissions();
+    if (!ret || ret.display !== "granted") { S.ugPaamindAntal = ret && ret.display === "denied" ? -2 : -3; render(); return; }
+    await L.schedule({ notifications: liste });
+    S.ugPaamindAntal = ugPaamindVore(await L.getPending()).length;   // princip 70: det, telefonen SELV siger
+  } catch (_e) { S.ugPaamindAntal = -1; }
+  render();
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1085,6 +1159,26 @@ function ugeMaal(fysLog) {
     if (streak > 260) break;
   }
   return { denneUge, MAAL, streak };
+}
+// ⭐ v5.6.0 · UGENS MÅL ER DIN UGE (Nicolai 25/9: «Ugens mål skal være i forhold til hvad der ligger i min uge»).
+//   Med faste pas i Min uge er målet antallet af dem, og hvert logget pas — tennis eller fysisk — tæller.
+//   Uden en uge: det gamle mål. ⛔ ugeMaal() ovenfor regner streaken, synken sender til træneren — den røres ikke.
+function ugeMaalVis() {
+  const plan = S.ugeplan || [];
+  if (!plan.length) { const m0 = ugeMaal(S.fysLog || []); m0.minUge = false; return m0; }
+  const MAAL = plan.length, taelling = {};
+  (S.ttLog || []).concat(S.fysLog || []).forEach(function(e){ if (e && e.d) { const k = ugeNoegle(String(e.d).slice(0, 10)); taelling[k] = (taelling[k] || 0) + 1; } });
+  const nuISO = dkDato(0), denneUge = taelling[ugeNoegle(nuISO)] || 0;
+  let streak = denneUge >= MAAL ? 1 : 0;
+  const d = new Date(nuISO + "T12:00:00");   // middag: en mandag glider ikke over i ugen før
+  for (let i = 0; i < 260; i++) {
+    d.setDate(d.getDate() - 7);
+    const iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    if ((taelling[ugeNoegle(iso)] || 0) >= MAAL) streak += 1; else break;
+  }
+  const dage = [];
+  ugeplanSorter(plan.slice()).forEach(function(p){ if (dage.indexOf(p.dag) < 0) dage.push(p.dag); });
+  return { denneUge, MAAL, streak, minUge: true, dage };
 }
 
 // Træningsresumé til trænerlaget (19/8, Nicolais beslutning): OMFANGET pr. uge
@@ -3864,6 +3958,7 @@ const A = {
       else { S.ttLog = sorterNyestFoerst(S.ttLog, "d"); lager.gem("sai-tennis-log", JSON.stringify(S.ttLog)); }
       if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);   // som «Gem træningen»
     }
+    try { ugPaamindSaet(false); } catch (_e) {}   /* ⭐ v5.5.0 · et logget pas mister sin «hvordan gik det?» */
     S.ugKvalId = { id: id, fys: fys }; S.ugLogBesked = null;
     render();
   },
@@ -4111,6 +4206,24 @@ const A = {
         //   sendt fra DEN, skal blive ved med at virke).
         if (!teamKunStreaks() && d.postPrivat && d.postOffentlig && !lager.hent("sai-post-privat")) {
           try { lager.gem("sai-post-privat", String(d.postPrivat)); lager.gem("sai-post-offentlig", String(d.postOffentlig)); } catch (_e) {}
+        }
+        // ⭐⭐ v5.7.0 · teamene kommer hjem — kun på en telefon, der ingen har (telefonens egne vinder altid).
+        if (!teamKunStreaks() && Array.isArray(d.teams) && d.teams.length && !teamsListe().length) {
+          try {
+            const _reg = [];
+            d.teams.slice(0, 9).forEach(function (t) {
+              const ns = String((t && t.ns) || ""), nk = String((t && t.noegle) || "");
+              if (!/^tm[1-9]$/.test(ns) || !/^fam-[0-9a-f]{32}$/.test(nk)) return;
+              if (_reg.some(function (x) { return x.ns === ns; })) return;
+              const s2 = function (k, v) { if (v !== null && v !== undefined && v !== "") window.localStorage.setItem(ns + "-sai-" + k, String(v)); };
+              s2("spillernoegle", nk); s2("rolle", "familie"); s2("venne-aktiv", "1"); s2("laas", "op");
+              s2("sky-noegle", t.sky); s2("post-til", t.postTil); s2("spiller", String(t.spiller || "").slice(0, 40));
+              const e = { ns: ns, navn: String(t.navn || t.spiller || "").slice(0, 40) };
+              if (t.id) e.id = String(t.id).slice(0, 64); if (t.spejl) e.spejl = true;
+              _reg.push(e);
+            });
+            if (_reg.length) { teamsGem(_reg); S.fletEkstra.push(_reg.length === 1 ? (S.sprog === "en" ? "1 team" : "1 team") : _reg.length + " teams"); }
+          } catch (_e) {}
         }
         if (d.scout && typeof d.scout === "object") {
           let _sn = 0;
@@ -4531,6 +4644,22 @@ const A = {
       try { await A.synkroniser(); } catch (_e) {}
     } else { S.klubBudBesked = { fejl: true, t: klubBudFejltekst(r) }; render(); }
   },
+  // ⭐⭐ v5.7.0 · KLUBBEN FØLGER KONTOEN (fundet af Nicolai på sin iPhone 25/9: web sagde klubben, appen «ingen klub»).
+  //   Står kontoen i en klub, udsteder serveren en ny klubnøgle til DENNE telefon (klub-bud v2 `min-klub`) — klubben har
+  //   allerede sagt ja. Kun når telefonen ingen har, aldrig i team-visningen. Stille: skærmen viser bare klubben.
+  klubHjem: async () => {
+    if (S.klubKode || !S.spillerNoegle || teamKunStreaks() || S.klubHjemHenter) return;
+    S.klubHjemHenter = true;
+    try {
+      const r = await klubBudKald("min-klub", {});
+      if (r && r.klub && /^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(String(r.noegle || "")) && !S.klubKode) {
+        S.klubKode = String(r.noegle); lager.gem("sai-klubkode", S.klubKode);
+        S.minKlub = r.klub; try { lager.gem("sai-min-klub", S.minKlub); } catch (_e) {}
+        render();
+        try { await A.synkroniser(); } catch (_e) {}
+      }
+    } catch (_e) {} finally { S.klubHjemHenter = false; }
+  },
   klubBudJa: (v) => { A.klubBudSvar(v, true); },
   klubBudNej: (v) => { A.klubBudSvar(v, false); },
   opsFold: (v) => {
@@ -4651,7 +4780,9 @@ const A = {
   //     rettes tilbage. Fortrydelsen er med vilje gjort billig.
   //
   //   HØRER IKKE I BOKSEN, fordi SERVEREN sender dem hjem ved login:
-  //     spillernoegle · konto · brugernavn · klub · min-klub · venne-id · rolle
+  //     spillernoegle · konto · brugernavn · venne-id · rolle
+  //     klubben: `klub-bud min-klub` (v5.7.0 — før stod der «klub · min-klub» her, og det holdt ikke; målt 25/9)
+  //   RØGER I BOKSEN FRA v5.7.0: teamene (team-nøgle + boksens nøgle + postkasse + navn) — kun den låste.
   //   HØRER TIL ENHEDEN og må aldrig rejse:
   //     sky-* · foelgekode · liveaktiv · push-* · laas · doed-noegle
   //     traenerdata (klubbens, hentes igen) · klublogo (klubbens)
@@ -4686,6 +4817,15 @@ const A = {
     //   (klartekst-backuppen kan sendes hvorhen som helst). Prisen ved en
     //   manuel flytning: et nyt par laves ved næste nøgle, gamle links dør.
     if (iBoks) { try { const pp = lager.hent("sai-post-privat"), po = lager.hent("sai-post-offentlig"); if (pp && po) { ud.postPrivat = pp; ud.postOffentlig = po; } } catch (_e) {} }
+    // ⭐⭐ v5.7.0 · TEAMENE FØLGER KONTOEN — kun i den LÅSTE boks, kun fra egen visning. Nøglen til et team er en
+    //   team-nøgle (fam-), aldrig et barns spillernøgle. Klartekst-backuppen bærer den aldrig.
+    if (iBoks && !teamKunStreaks()) { try {
+      const _tl = teamsListe().map(function (t) {
+        const g = function (k) { try { return window.localStorage.getItem(t.ns + "-sai-" + k); } catch (_e) { return null; } };
+        return { ns: t.ns, navn: t.navn || "", id: t.id || null, spejl: !!t.spejl, noegle: g("spillernoegle"), sky: g("sky-noegle"), postTil: g("post-til"), spiller: g("spiller") };
+      }).filter(function (x) { return /^fam-[0-9a-f]{32}$/.test(String(x.noegle || "")); });
+      if (_tl.length) ud.teams = _tl;
+    } catch (_e) {} }
     // Kampen, der er I GANG. Nicolai: «Mister man telefonen midt i en kamp,
     // er den væk.» Den følger med som RÅ tekst — appen renser den selv, når
     // den flettes ind, og den flettes kun ind på en telefon uden en kamp.
@@ -4915,7 +5055,7 @@ const A = {
         //   blive sendt, fordi de tre længder ovenfor stod uændret.
         String(JSON.stringify(krop.scout || {}).length) + ":" +
         String(JSON.stringify(krop.indst || {}).length) + ":" +
-        String((krop.navn || "").length) + ":" + String((krop.kampAktiv || "").length); } catch (_e) {}
+        String((krop.navn || "").length) + ":" + String((krop.kampAktiv || "").length) + ":" + String(JSON.stringify(krop.teams || []).length); } catch (_e) {}   /* v5.7.0 · teamene */
       if (!straks && aftryk && aftryk === lager.hent("sai-sky-aftryk")) return;
       try {
         S.skySender = true; if (straks) render();
@@ -4938,7 +5078,7 @@ const A = {
             try { aftryk = String(JSON.stringify(krop2.kampe).length) + ":" +
               String(JSON.stringify(krop2.fysLog).length) + ":" + String(JSON.stringify(krop2.ttLog).length) + ":" +
               String(JSON.stringify(krop2.scout || {}).length) + ":" + String(JSON.stringify(krop2.indst || {}).length) + ":" +
-              String((krop2.navn || "").length) + ":" + String((krop2.kampAktiv || "").length); } catch (_e) {}
+              String((krop2.navn || "").length) + ":" + String((krop2.kampAktiv || "").length) + ":" + String(JSON.stringify(krop2.teams || []).length); } catch (_e) {}   /* v5.7.0 */
             krypt = await skyLaas(krop2, bits);
             r = await skyKald("gem", { krypt, salt, basis: foer.opdateret || null,
               enhed: (erIOS() ? "iPhone" : "Enhed") + " \u00b7 " + browserNavn() });
@@ -5122,6 +5262,7 @@ const A = {
     }
     // ⭐ NØGLEN ER SVARET. Alt andet i appen kender kun den.
     S.spillerNoegle = r.noegle; lager.gem("sai-spillernoegle", r.noegle);
+    setTimeout(function(){ try { A.klubHjem(); } catch (_e) {} }, 1500);   /* ⭐ v5.7.0 · klubben følger kontoen */
     S.mitNavn = r.brugernavn || null; S.minKonto = r.brugernavn || null;
     if (S.mitNavn) lager.gem("sai-brugernavn", S.mitNavn);
     lager.gem("sai-konto", r.brugernavn || "1");
@@ -6918,6 +7059,13 @@ const A = {
   },
   // Slaar man fra, skal BAADE telefonen og serveren glemme det. Ellers
   // ligger der et abonnement tilbage, som ingen kan se og ingen kan slette.
+  // ⭐ v5.5.0 · påmindelserne fra Min uge. Siger telefonen «ikke spurgt endnu», spørger et tryk i stedet for at slukke.
+  ugPaamind: async () => {
+    const til = ugPaamindTil();
+    if (!(til && S.ugPaamindAntal === -3)) { try { lager.gem("sai-ugepaamind", til ? "0" : "1"); } catch (_e) {} }
+    S.ugPaamindAntal = null; render();
+    await ugPaamindSaet(true);
+  },
   pushFra: async () => {
     if (S.pushSender) return;
     const EN = S.sprog === "en";
@@ -11989,6 +12137,25 @@ function _tegn() {
           _pkrop += '<p class="lille" style="margin:8px 0 0;color:' +
             (S.pushBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.pushBesked.t) + '</p>';
         }
+        // ⭐ v5.5.0 · PÅMINDELSERNE FRA MIN UGE — kun i app-udgaven, hvor telefonen selv kan lægge dem.
+        if (nativLokal()) {
+          const _ugTil = ugPaamindTil(), _ugA = S.ugPaamindAntal, _ugTom = !(S.ugeplan || []).length;
+          const _ugSt = !_ugTil ? (EN ? "Off." : "Slået fra.")
+            : _ugTom ? (EN ? "Add your regular sessions under TRAIN → My week, and they show up here." : "Læg dine faste pas ind under TRÆN → Min uge, så kommer de her.")
+            : _ugA === -2 ? (EN ? "The phone said no to notifications — change it in the phone's Settings → StreakTennis." : "Telefonen har sagt nej til notifikationer — det laves om i telefonens Indstillinger → StreakTennis.")
+            : _ugA === -3 ? (EN ? "The phone has not been asked yet — tap above." : "Telefonen er ikke spurgt endnu — tryk ovenfor.")
+            : _ugA === -1 ? (EN ? "Could not set the reminders — try again." : "Kunne ikke lægge påmindelserne — prøv igen.")
+            : typeof _ugA === "number" ? (EN ? _ugA + " reminders are set for the next two weeks. They live on this phone — nothing is sent." : _ugA + " påmindelser ligger klar de næste to uger. De bor på telefonen — intet sendes.")
+            : "⏳ …";
+          _pkrop += '<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12)">' +
+            '<button class="knap valg" style="width:100%;min-height:44px;justify-content:flex-start;text-align:left;font-size:13px;' +
+            (_ugTil ? "border-color:var(--grus)" : "opacity:.55") + '" data-a="ugPaamind">' + (_ugTil ? "✅" : "⬜") + ' 📅 ' +
+            (EN ? "My week: today's sessions, and «how did it go?» afterwards" : "Min uge: dagens pas, og «hvordan gik det?» bagefter") + '</button>' +
+            '<p class="lille" style="margin:6px 0 0;opacity:.75">' + esc(_ugSt) + '</p>' +
+            '<p class="lille" style="margin:4px 0 0;opacity:.6">' + (EN
+              ? "In the morning at 07:30 (the evening before at 20:00 if the first session starts before 08:30) · 15 min after each session · never the place · nothing between 21 and 07."
+              : "Om morgenen kl. 07.30 (aftenen før kl. 20.00, hvis første pas starter før 08.30) · et kvarter efter hvert pas · aldrig stedet · intet mellem 21 og 07.") + '</p></div>';
+        }
         // ⭐⭐ v4.126.0 · OPSAMLINGEN, FLYTTET FRA FORSIDEN. Ordlyden er
         //   ORDRET den fra v4.59.0/v4.78.0 — kun adressen er ny. Den er her
         //   for dem, der kom igennem, før spørgsmålet fandtes (Louise!), og
@@ -13016,7 +13183,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       // ══════════════════════════════════════════════════════════════
       var _tp = S.traenPanel;
       var _nFys = (S.fysLog || []).length, _nTt = (S.ttLog || []).length;
-      var _uM = ugeMaal(S.fysLog);
+      var _uM = ugeMaalVis();   /* ⭐ v5.6.0 · din uge */
       var _tflise = function(v, ik, titel, tal, kant) {
         return '<button class="dev-flise dev-kant' + (_tp === v ? ' dev-kant-is' : (kant ? ' ' + kant : '')) + '"'
           + ' style="min-height:92px' + (_tp === v ? ';border-color:var(--is)' : '') + '"'
@@ -13112,7 +13279,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       if (_tp === "uge") {
       h += _minUgeKort(EN);   /* ⭐ v5.4.0 · min uge */
       (function(){
-        const m = ugeMaal(S.fysLog);
+        const m = ugeMaalVis();   /* ⭐ v5.6.0 · din uge */
         const naaet = m.denneUge >= m.MAAL;
         const pct = Math.min(100, Math.round(m.denneUge / m.MAAL * 100));
         h += '<div class="kort" style="border:1.5px solid '+(naaet?'var(--vundet)':'var(--kant)')+'">' +
@@ -13121,7 +13288,10 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           (m.streak > 0 ? '<span style="font-size:11px;font-weight:800;color:var(--guld)">🔥 '+m.streak+' '+(EN?(m.streak===1?"week":"weeks")+" in a row":(m.streak===1?"uge":"uger")+" i træk")+'</span>' : '') + '</div>' +
           '<div style="font-size:16px;font-weight:800;margin:5px 0 7px">'+(naaet ? '🎉 '+(EN?"Goal reached — "+m.denneUge+"/"+m.MAAL+" sessions!":"Ugens mål nået — "+m.denneUge+"/"+m.MAAL+" pas!") : m.denneUge+'/'+m.MAAL+' '+(EN?"sessions this week":"pas denne uge"))+'</div>' +
           '<div style="position:relative;background:var(--dyb);border-radius:5px;height:10px"><div style="background:'+(naaet?'var(--vundet)':'var(--is)')+';height:100%;width:'+pct+'%;border-radius:5px"></div></div>' +
-          (naaet ? '' : '<p class="lille" style="margin-top:6px">'+(EN?"Goal: 3 sessions a week — running, strength or footwork. Every logged session counts.":"Målet er 3 pas om ugen — løb, styrke eller benarbejde. Hvert registreret pas tæller.")+'</p>') + '</div>';
+          (naaet ? '' : '<p class="lille" style="margin-top:6px">'+(m.minUge
+            ? (EN ? "Goal: your week — " + m.MAAL + (m.MAAL === 1 ? " session" : " sessions") + " (" + m.dage.map(function(x){ return UG_DAG.en[x]; }).join(", ") + "). Every session you log counts — tennis or fitness."
+                  : "Målet er din uge: " + m.MAAL + " pas (" + m.dage.map(function(x){ return UG_DAG.da[x].toLowerCase(); }).join(", ").replace(/, ([^,]*)$/, " og $1") + "). Hvert pas, du logger — tennis eller fysisk — tæller.")
+            : (EN?"Goal: 3 sessions a week — running, strength or footwork. Every logged session counts.":"Målet er 3 pas om ugen — løb, styrke eller benarbejde. Hvert registreret pas tæller."))+'</p>') + '</div>';
       })();
       // ══ TRÆNING · SENESTE UGER · spejlet af trænerens kort (1:1) ═════
       // Regnet af traeningsResume() — SAMME funktion som synken sender af.
@@ -14116,6 +14286,9 @@ window.__oskarInit = function(){
   if (!rod) return;
   window.__oskarInited = true; try { autoSynk(); } catch(e) {}
   setTimeout(function(){ try { if (S.klubScannet) A.klubIndloes(); else A.klubBudHent(true); } catch (_e) {} }, 700);   /* ⭐ v5.1.0 · klub-bud */
+  setTimeout(function(){ try { if (!S.klubScannet) A.klubHjem(); } catch (_e) {} }, 1100);   /* ⭐ v5.7.0 · klubben følger kontoen */
+  /* ⭐ v5.7.0 · teamene rejser i den låste kopi — et stille skub, så en telefon med teams sender dem op (aftrykket afgør) */
+  setTimeout(function(){ try { if (!teamKunStreaks() && teamsListe().length && A.skySik) A.skySik(); } catch (_e) {} }, 5000);
   rod.addEventListener("toggle", function(e){ var d = e.target; if (d && d.matches && d.matches("details[data-sf]")) { S._sf = S._sf || {}; S._sf[d.dataset.sf] = d.open; } }, true);
   var _lpT = null, _lpFired = false;
   // v3.0.5i (16/8-2026): langt tryk styres nu af data-lp, som KUN sættes, hvor det
@@ -14309,6 +14482,23 @@ window.__oskarInit = function(){
           else if (sti) __saiRute(sti);
         } catch (_e) {}
       });
+    }
+  } catch (e) {}
+
+  /* ⭐ v5.5.0 · PÅMINDELSERNE: et tryk går til TRÆN (lukket liste: kun «gaa=traen»). Pluginet gemmer trykket,
+     til nogen lytter (retainUntilConsumed — målt i 6.1.3), så en kold start fra en påmindelse lander også. */
+  try {
+    const _ln = nativLokal();
+    if (_ln && _ln.addListener && !window.__saiLokalLyt) {
+      window.__saiLokalLyt = true;
+      _ln.addListener("localNotificationActionPerformed", function (h) {
+        try { const sti = String((h && h.notification && h.notification.extra && h.notification.extra.sti) || ""); if (sti === "gaa=traen") __saiRute(sti); } catch (_e) {}
+      });
+    }
+    if (_ln && !window.__saiUgSynlig) {
+      window.__saiUgSynlig = true;
+      setTimeout(function(){ ugPaamindSaet(false); }, 1500);
+      document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") ugPaamindSaet(false); });
     }
   } catch (e) {}
 

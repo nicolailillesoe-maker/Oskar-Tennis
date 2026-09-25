@@ -1,6 +1,12 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v6 (25/9-2026) — PROFILEN LAVES AF API'ET. Nicolai: «Jeg vil virkeligt gerne der over.»
+#   Ingen skal længere hente en profilfil i hånden: ios-byg/profil-push.mjs bruger den API-nøgle, der allerede ligger her,
+#   til at slå Push til på appens id og lave (eller genbruge) en App Store-profil, der bærer det. Siger Apple nej — fx fordi
+#   nøglens rolle ikke må — falder bygget tilbage til profilen i DIST_PROFILE_BASE64 og kører som v5, og loggen siger hvor.
+#   Certifikatet i nøgleringen bestemmer, hvilket certifikat profilen laves til (fundet på indholdet, ikke på navnet) —
+#   derfor lægges nøgleringen nu FØR profilen. Eksport-indstillingerne får profilens faktiske navn.
 # v5 (24/9-2026) — NOTIFIKATIONER I APP-UDGAVEN. Nicolai: «Og den kan stadig ikke sende notifikationer. Det skal vi have fikset.»
 #   Web-push findes ikke i en WKWebView (målt 16/9) — appen får Apples egen kanal gennem @capacitor/push-notifications.
 #   ⭐ PORTEN STÅR FØR BYGGET (princip 95): App Store-profilen læses FØRST. Bærer den Push (aps-environment), installeres
@@ -40,6 +46,7 @@
 #   DIST_P12_BASE64     · Apple Distribution-certifikatet med privat nøgle (.p12/.pfx), base64-kodet — se LÆSMIG trin 2b
 #   DIST_P12_PASSWORD   · kodeordet, .p12'en blev pakket med
 #   DIST_PROFILE_BASE64 · App Store-profilen «StreakTennis App Store» (.mobileprovision), base64-kodet — se LÆSMIG trin 2c
+#                         v6: kun RESERVEN — bruges, når API'et ikke må lave profilen selv
 name: ios-testflight
 on:
   workflow_dispatch:
@@ -61,21 +68,55 @@ jobs:
         with: { node-version: "20" }
       - name: Xcode-version (maskinens standard — vi vælger ikke selv)
         run: xcodebuild -version
-      - name: Bærer App Store-profilen Push? (v5 · porten står FØR bygget)
+      - name: Distributionscertifikatet ind i en midlertidig nøglering
         env:
-          DIST_PROFILE_BASE64: ${{ secrets.DIST_PROFILE_BASE64 }}
+          DIST_P12_BASE64: ${{ secrets.DIST_P12_BASE64 }}
+          DIST_P12_PASSWORD: ${{ secrets.DIST_P12_PASSWORD }}
         run: |
-          echo "$DIST_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/tjek.mobileprovision"
-          test -s "$RUNNER_TEMP/tjek.mobileprovision" || { echo "⛔ DIST_PROFILE_BASE64 er tom"; exit 1; }
-          if security cms -D -i "$RUNNER_TEMP/tjek.mobileprovision" | grep -q "<key>aps-environment</key>"; then
+          KC="$RUNNER_TEMP/byg.keychain-db"; KCPW=$(uuidgen)
+          security create-keychain -p "$KCPW" "$KC"
+          security set-keychain-settings -lut 21600 "$KC"
+          security unlock-keychain -p "$KCPW" "$KC"
+          echo "$DIST_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security import "$RUNNER_TEMP/dist.p12" -P "$DIST_P12_PASSWORD" -A -t cert -f pkcs12 -k "$KC"
+          # Apples mellemled (WWDR G3) — .p12'en fra Windows bærer kun selve certifikatet, kæden skal kunne bygges her
+          curl -sSfL -o "$RUNNER_TEMP/wwdr.cer" https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer
+          if ! security import "$RUNNER_TEMP/wwdr.cer" -t cert -k "$KC" 2>&1 | tee "$RUNNER_TEMP/wwdr.txt"; then
+            grep -q "already exists" "$RUNNER_TEMP/wwdr.txt" && echo "WWDR G3 ligger der allerede (macOS 26) — fint" || { echo "⛔ WWDR G3 kunne ikke importeres"; exit 1; }
+          fi
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" > /dev/null
+          security list-keychain -d user -s "$KC" login.keychain-db
+          rm -f "$RUNNER_TEMP/dist.p12"
+          echo "Identiteter i nøgleringen:"; security find-identity -v -p codesigning "$KC"
+          security find-identity -v -p codesigning "$KC" | grep -q "Apple Distribution" || { echo "⛔ intet Apple Distribution-certifikat i .p12'en"; exit 1; }
+          # v6 · certifikatet (kun den offentlige del) til profil-push.mjs, der finder det hos Apple på indholdet
+          security find-certificate -a -c "Apple Distribution" -p "$KC" > "$RUNNER_TEMP/dist-cert.pem"
+          grep -q "BEGIN CERTIFICATE" "$RUNNER_TEMP/dist-cert.pem" || { echo "⛔ certifikatet kunne ikke læses ud af nøgleringen"; exit 1; }
+      - name: Profilen · Push via App Store Connect API'et (v6 · porten står FØR bygget)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          DIST_PROFILE_BASE64: ${{ secrets.DIST_PROFILE_BASE64 }}
+          CERT_PEM: ${{ runner.temp }}/dist-cert.pem
+          UD_PROFIL: ${{ runner.temp }}/profil.mobileprovision
+          KOERSEL: ${{ github.run_number }}
+        run: |
+          if node ios-byg/profil-push.mjs > "$RUNNER_TEMP/pp.txt" 2>&1; then
+            cat "$RUNNER_TEMP/pp.txt"; echo "PROFIL_KILDE=api" >> $GITHUB_ENV
+          else
+            cat "$RUNNER_TEMP/pp.txt"
+            echo "⚠️ API'et kunne ikke levere profilen (linjen med ⛔ ovenfor siger hvor). Reserven bruges: DIST_PROFILE_BASE64."
+            echo "PROFIL_KILDE=hemmelighed" >> $GITHUB_ENV
+            echo "$DIST_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/profil.mobileprovision"
+          fi
+          test -s "$RUNNER_TEMP/profil.mobileprovision" || { echo "⛔ ingen profil — hverken fra API'et eller fra DIST_PROFILE_BASE64"; exit 1; }
+          if security cms -D -i "$RUNNER_TEMP/profil.mobileprovision" | grep -q "<key>aps-environment</key>"; then
             echo "PUSH=ja" >> $GITHUB_ENV; echo "⭐ Profilen bærer Push — appen bygges MED notifikationer (Apples kanal)."
           else
             echo "PUSH=nej" >> $GITHUB_ENV
             echo "⚠️ Profilen bærer IKKE Push. Appen bygges som før, UDEN notifikationer."
-            echo "   Det, der skal til: developer.apple.com → Identifiers → com.sportsainalytics.streaktennis → Push Notifications ✓ → Save,"
-            echo "   derefter Profiles → «StreakTennis App Store» → Edit → Save → Download → ny DIST_PROFILE_BASE64."
           fi
-          rm -f "$RUNNER_TEMP/tjek.mobileprovision"
       - name: Capacitor · skallen
         run: |
           npm install --no-audit --no-fund
@@ -154,39 +195,25 @@ jobs:
           mkdir -p ~/private_keys
           echo "${{ secrets.ASC_KEY_P8_BASE64 }}" | base64 --decode > ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
           test -s ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
-      - name: Distributionscertifikatet ind i en midlertidig nøglering
-        env:
-          DIST_P12_BASE64: ${{ secrets.DIST_P12_BASE64 }}
-          DIST_P12_PASSWORD: ${{ secrets.DIST_P12_PASSWORD }}
-        run: |
-          KC="$RUNNER_TEMP/byg.keychain-db"; KCPW=$(uuidgen)
-          security create-keychain -p "$KCPW" "$KC"
-          security set-keychain-settings -lut 21600 "$KC"
-          security unlock-keychain -p "$KCPW" "$KC"
-          echo "$DIST_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
-          security import "$RUNNER_TEMP/dist.p12" -P "$DIST_P12_PASSWORD" -A -t cert -f pkcs12 -k "$KC"
-          # Apples mellemled (WWDR G3) — .p12'en fra Windows bærer kun selve certifikatet, kæden skal kunne bygges her
-          curl -sSfL -o "$RUNNER_TEMP/wwdr.cer" https://www.apple.com/certificateauthority/AppleWWDRCAG3.cer
-          if ! security import "$RUNNER_TEMP/wwdr.cer" -t cert -k "$KC" 2>&1 | tee "$RUNNER_TEMP/wwdr.txt"; then
-            grep -q "already exists" "$RUNNER_TEMP/wwdr.txt" && echo "WWDR G3 ligger der allerede (macOS 26) — fint" || { echo "⛔ WWDR G3 kunne ikke importeres"; exit 1; }
-          fi
-          security set-key-partition-list -S apple-tool:,apple: -s -k "$KCPW" "$KC" > /dev/null
-          security list-keychain -d user -s "$KC" login.keychain-db
-          rm -f "$RUNNER_TEMP/dist.p12"
-          echo "Identiteter i nøgleringen:"; security find-identity -v -p codesigning "$KC"
-          security find-identity -v -p codesigning "$KC" | grep -q "Apple Distribution" || { echo "⛔ intet Apple Distribution-certifikat i .p12'en"; exit 1; }
-      - name: App Store-profilen lægges, hvor Xcode leder
-        env:
-          DIST_PROFILE_BASE64: ${{ secrets.DIST_PROFILE_BASE64 }}
+      - name: App Store-profilen lægges, hvor Xcode leder (v6 · den profil, porten valgte)
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "$DIST_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/profil.mobileprovision"
-          test -s "$RUNNER_TEMP/profil.mobileprovision" || { echo "⛔ DIST_PROFILE_BASE64 er tom"; exit 1; }
+          test -s "$RUNNER_TEMP/profil.mobileprovision" || { echo "⛔ porten efterlod ingen profil"; exit 1; }
           UUID=$(security cms -D -i "$RUNNER_TEMP/profil.mobileprovision" | plutil -extract UUID raw -)
           NAVN=$(security cms -D -i "$RUNNER_TEMP/profil.mobileprovision" | plutil -extract Name raw -)
           cp "$RUNNER_TEMP/profil.mobileprovision" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
-          echo "Profil: «$NAVN» ($UUID)"
-          test "$NAVN" = "StreakTennis App Store" || { echo "⛔ profilen hedder «$NAVN» — eksport-indstillingerne venter «StreakTennis App Store»"; exit 1; }
+          echo "Profil: «$NAVN» ($UUID) · kilde: $PROFIL_KILDE · Push: $PUSH"
+          test -n "$NAVN" || { echo "⛔ profilen har intet navn"; exit 1; }
+          # v6 · eksporten skal pege på DEN profil, der ligger her — ikke på et navn, der stod fast i filen
+          #   (plistlib, ikke PlistBuddy: navnet har mellemrum, og en værdi med mellemrum er ikke målt i PlistBuddy)
+          python3 - "$NAVN" <<'PY'
+          import plistlib, sys
+          p = "ios-byg/ExportOptions.plist"; d = plistlib.load(open(p, "rb"))
+          d["provisioningProfiles"]["com.sportsainalytics.streaktennis"] = sys.argv[1]
+          plistlib.dump(d, open(p, "wb"))
+          assert plistlib.load(open(p, "rb"))["provisioningProfiles"]["com.sportsainalytics.streaktennis"] == sys.argv[1]
+          print("Eksporten peger på «%s»" % sys.argv[1])
+          PY
       - name: Team-id ind i eksport-indstillingerne
         run: /usr/libexec/PlistBuddy -c "Add :teamID string ${{ secrets.APPLE_TEAM_ID }}" ios-byg/ExportOptions.plist
       - name: Arkiv (ad hoc-signeret — ingen profil, ingen enhed; som Xcode Cloud)

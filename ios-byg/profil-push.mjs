@@ -1,5 +1,7 @@
 // StreakTennis · App Store-profilen MED Push, lavet gennem App Store Connect API'et — så ingen skal hente en profilfil i hånden.
 // v1 (25/9-2026) · kaldes af ios.yml v6. Bruger den API-nøgle, der allerede ligger i repoets hemmeligheder.
+// v1.1 (25/9-2026) · kørsel #13: Apple svarede 400 på «limit» på relationen bundleIdCapabilities (PARAMETER_ERROR.ILLEGAL),
+//   selv om Apples egen API-beskrivelse tillader den. Kun lister på topniveau får «limit» nu.
 //
 //   1. appens id (bundleId) findes hos Apple
 //   2. Push Notifications slås til på id'et, hvis det ikke allerede er det
@@ -71,7 +73,7 @@ if (!bid) stop("appens id " + BUNDLE + " findes ikke hos Apple");
 console.log("App-id hos Apple: " + BUNDLE + " (" + (bid.attributes.platform || "?") + ")");
 
 // ── 2. Push på id'et
-const kap = kraev(await kald("GET", "/v1/bundleIds/" + bid.id + "/bundleIdCapabilities?limit=200"), [200], "bundleIdCapabilities");
+const kap = kraev(await kald("GET", "/v1/bundleIds/" + bid.id + "/bundleIdCapabilities"), [200], "bundleIdCapabilities");
 const harPush = (kap.data || []).some((c) => c.attributes && c.attributes.capabilityType === "PUSH_NOTIFICATIONS");
 if (harPush) console.log("Push Notifications: var allerede slået til på id'et");
 else {

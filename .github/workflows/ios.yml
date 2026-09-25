@@ -1,6 +1,7 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v6.1 (25/9-2026) — to logbeskeder: «$NAVN» blev til et ulæseligt tegn (bash 3.2 på macOS) → ${NAVN}. Ingen adfærd ændret.
 # v6 (25/9-2026) — PROFILEN LAVES AF API'ET. Nicolai: «Jeg vil virkeligt gerne der over.»
 #   Ingen skal længere hente en profilfil i hånden: ios-byg/profil-push.mjs bruger den API-nøgle, der allerede ligger her,
 #   til at slå Push til på appens id og lave (eller genbruge) en App Store-profil, der bærer det. Siger Apple nej — fx fordi
@@ -202,7 +203,7 @@ jobs:
           UUID=$(security cms -D -i "$RUNNER_TEMP/profil.mobileprovision" | plutil -extract UUID raw -)
           NAVN=$(security cms -D -i "$RUNNER_TEMP/profil.mobileprovision" | plutil -extract Name raw -)
           cp "$RUNNER_TEMP/profil.mobileprovision" ~/Library/MobileDevice/Provisioning\ Profiles/"$UUID".mobileprovision
-          echo "Profil: «$NAVN» ($UUID) · kilde: $PROFIL_KILDE · Push: $PUSH"
+          echo "Profil: «${NAVN}» (${UUID}) · kilde: ${PROFIL_KILDE} · Push: ${PUSH}"
           test -n "$NAVN" || { echo "⛔ profilen har intet navn"; exit 1; }
           # v6 · eksporten skal pege på DEN profil, der ligger her — ikke på et navn, der stod fast i filen
           #   (plistlib, ikke PlistBuddy: navnet har mellemrum, og en værdi med mellemrum er ikke målt i PlistBuddy)
@@ -227,7 +228,7 @@ jobs:
           # der også ramte Capacitor.framework/Cordova.framework og fik eksporten til at kræve profilen på dem (byg #4)
           ID=$(/usr/libexec/PlistBuddy -c "Print :ApplicationProperties:CFBundleIdentifier" build/App.xcarchive/Info.plist)
           echo "Arkivets app: $ID"
-          test "$ID" = "com.sportsainalytics.streaktennis" || { echo "⛔ arkivets bundle-id er «$ID»"; exit 1; }
+          test "$ID" = "com.sportsainalytics.streaktennis" || { echo "⛔ arkivets bundle-id er «${ID}»"; exit 1; }
           # v5 · vagt: med Push skal arkivets app BÆRE aps-environment — ellers er knappen en løgn
           if [ "$PUSH" = "ja" ]; then
             codesign -d --entitlements :- build/App.xcarchive/Products/Applications/App.app 2>/dev/null | grep -q "aps-environment" \

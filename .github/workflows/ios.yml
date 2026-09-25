@@ -122,7 +122,7 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           # v5 · pluginet KUN, når profilen bærer Push — ellers ville appen tilbyde en knap, der ikke kan virke
-          if [ "$PUSH" = "ja" ]; then npm install --no-audit --no-fund --no-save "@capacitor/push-notifications@^6"; fi
+          if [ "$PUSH" = "ja" ]; then npm install --no-audit --no-fund "@capacitor/push-notifications@^6"; fi   # v6.2 · pakken skrives i package.json, hvor Capacitor finder plugins
           npx cap add ios
           npx cap sync ios
           if [ "$PUSH" = "ja" ]; then

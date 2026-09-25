@@ -1,6 +1,8 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v6.3 (25/9-2026) — PÅMINDELSERNE FRA MIN UGE. @capacitor/local-notifications@^6 installeres altid (ingen profil, intet
+#   entitlement); en vagt stopper kørslen, hvis LocalNotifications ikke står i Podfile efter cap sync.
 # v6.1 (25/9-2026) — to logbeskeder: «$NAVN» blev til et ulæseligt tegn (bash 3.2 på macOS) → ${NAVN}. Ingen adfærd ændret.
 # v6 (25/9-2026) — PROFILEN LAVES AF API'ET. Nicolai: «Jeg vil virkeligt gerne der over.»
 #   Ingen skal længere hente en profilfil i hånden: ios-byg/profil-push.mjs bruger den API-nøgle, der allerede ligger her,
@@ -123,6 +125,7 @@ jobs:
           npm install --no-audit --no-fund
           # v5 · pluginet KUN, når profilen bærer Push — ellers ville appen tilbyde en knap, der ikke kan virke
           if [ "$PUSH" = "ja" ]; then npm install --no-audit --no-fund "@capacitor/push-notifications@^6"; fi   # v6.2 · pakken skrives i package.json, hvor Capacitor finder plugins
+          npm install --no-audit --no-fund "@capacitor/local-notifications@^6"   # v6.3 · påmindelserne fra Min uge — altid, skrevet i package.json
           npx cap add ios
           npx cap sync ios
           if [ "$PUSH" = "ja" ]; then
@@ -130,6 +133,7 @@ jobs:
           else
             ! grep -q "PushNotifications" ios/App/Podfile || { echo "⛔ pluginet er med, selv om profilen ikke bærer Push"; exit 1; }
           fi
+          grep -q "LocalNotifications" ios/App/Podfile || { echo "⛔ påmindelses-pluginet (LocalNotifications) kom ikke med i Podfile"; exit 1; }   # v6.3
       - name: Push · AppDelegate + entitlements (v5 · kun når profilen bærer Push)
         if: env.PUSH == 'ja'
         run: |

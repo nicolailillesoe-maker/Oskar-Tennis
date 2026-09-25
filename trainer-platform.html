@@ -804,6 +804,7 @@ let S = {
   doerFaerdig: false, logUdSpoerg: false, forfraBekraeft: false,
   // v5.1.0 · boksen
   boksStatus: null, boksKode: "", boksTaender: false,
+  boksGlemt: false, boksNy: "", boksNy2: "", boksGammel: null, boksPortVis: false,   /* v6.9.0 · glemt / skift kodeord */
 };
 
 // Traenerens eget navn overlever et reload.
@@ -990,7 +991,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.8.0 \u00b7 21. september 2026";
+const VERSION = "v6.9.0 \u00b7 25. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1539,6 +1540,42 @@ Object.assign(EN, {
   "Skyen ovenfor har en l\u00e5st kopi. Sikkerhedskopien her er din egen fil ved siden af \u2014 til dig selv, ikke til os.": "The cloud above holds a locked copy. The backup here is your own file alongside it \u2014 for you, not for us.",
   "\u2601\ufe0f Din trup og dine vurderinger f\u00f8lger din konto gennem skyen (\u2699\ufe0f FORBINDELSE). Log ind p\u00e5 en ny telefon med dit kodeord, s\u00e5 kommer de med.": "\u2601\ufe0f Your squad and your ratings follow your account through the cloud (\u2699\ufe0f CONNECTION). Log in on a new phone with your password and they come along."
 });
+Object.assign(EN, {   /* v6.9.0 · automatisk backup */
+  "Automatisk backup": "Automatic backup",
+  "Din trup, dine grupper, vurderinger og evalueringer gemmes automatisk i skyen — låst med dit kodeord, så heller ikke vi kan læse dem. Denne telefon mangler kun dit kodeord én gang.": "Your squad, groups, ratings and evaluations are backed up to the cloud automatically — locked with your password, so not even we can read them. This phone just needs your password once.",
+  "dit kodeord": "your password", "Start backup": "Start backup", "Glemt kodeord? Vælg et nyt": "Forgot your password? Choose a new one",
+  "Vælg et nyt kodeord": "Choose a new password", "Telefonen beviser, at det er dig, med den klubnøgle, den allerede har.": "The phone proves it is you with the club key it already holds.",
+  "Der ligger en backup fra {x}, som kun dit gamle kodeord kan åbne. Med et nyt kodeord bliver det, der står på denne telefon, din backup.": "There is a backup from {x} that only your old password can open. With a new password, what is on this phone becomes your backup.",
+  "nyt kodeord (mindst 8 tegn)": "new password (at least 8 characters)", "gentag det nye kodeord": "repeat the new password",
+  "Gem nyt kodeord og start backup": "Save new password and start backup", "← Jeg kan huske det": "← I remember it",
+  "Kodeordet passer ikke.": "The password is not right.", "Ingen forbindelse — prøv igen.": "No connection — try again.",
+  "For mange forsøg i dag — prøv igen i morgen, eller vælg et nyt kodeord.": "Too many attempts today — try again tomorrow, or choose a new password.",
+  "For mange forsøg i dag — prøv igen i morgen.": "Too many attempts today — try again tomorrow.",
+  "Nøglen på denne telefon hører ikke til din konto — log ud og ind med den rigtige.": "The key on this phone does not belong to your account — log out and in with the right one.",
+  "Klubnøglen på telefonen gælder ikke længere — tal med klubbens administrator.": "The club key on this phone is no longer valid — talk to the club's administrator.",
+  "Kodeordet skal være mindst 8 tegn.": "The password must be at least 8 characters.", "Vælg et andet kodeord — det er for nemt at gætte.": "Choose another password — it is too easy to guess.",
+  "Serveren svarede ikke som ventet — prøv igen.": "The server did not answer as expected — try again.",
+  "De to kodeord er ikke ens.": "The two passwords are not the same.", "Der er ingen konto på denne telefon.": "There is no account on this phone.",
+  "Backup kræver en konto. Log ud under 👤 DIN KONTO, og opret dig med din nøgle — så kører den automatisk.": "Backup needs an account. Log out under 👤 YOUR ACCOUNT and sign up with your key — then it runs automatically.",
+  "✓ Nyt kodeord · backup startet": "✓ New password · backup started", "✓ Automatisk backup · gemt {x}": "✓ Automatic backup · saved {x}",
+  "✓ Automatisk backup · gemt {x} · ændringer på vej": "✓ Automatic backup · saved {x} · changes on their way",
+  "BACKUP KRÆVER EN KONTO": "BACKUP NEEDS AN ACCOUNT", "Din trup og dine vurderinger ligger kun på denne telefon": "Your squad and your ratings are only on this phone",
+  "backup står stille — kræver en konto": "backup is idle — needs an account", "automatisk backup ✓": "automatic backup ✓",
+  "automatisk backup ✓ · ændringer på vej": "automatic backup ✓ · changes on their way",
+  "🔑 Skift kodeord": "🔑 Change password", "Vælg et nyt kodeord til din konto.": "Choose a new password for your account.",
+  "Log ind igen": "Log in again", "Skift kodeord": "Change password", "Log ind": "Log in", "Gem nyt kodeord": "Save new password",
+  "Tast dit kodeord én gang på denne telefon, så følger din trup og dine vurderinger din konto — også hvis du skifter telefon.": "Enter your password once on this phone, and your squad and ratings follow your account — even if you change phones.",
+  "Denne telefon er allerede koblet til din klub, så du kan vælge et nyt kodeord her.": "This phone is already connected to your club, so you can choose a new password here.",
+  "Det, du gemte {x}, kan kun åbnes med dit gamle kodeord. Med et nyt kodeord gælder det, der står på denne telefon.": "What you saved {x} can only be opened with your old password. With a new password, what is on this phone is what counts.",
+  "OPRET EN KONTO": "CREATE AN ACCOUNT", "Din trup og dine vurderinger ligger kun på denne telefon — med en konto følger de med": "Your squad and ratings are only on this phone — with an account they come along",
+  "noget skal ordnes — åbn": "something needs sorting — open",
+  "Din trup og dine vurderinger følger din konto. Log ind på en ny telefon med dit kodeord, så kommer de med.": "Your squad and ratings follow your account. Log in on a new phone with your password, and they come along.",
+  "⚠️ Din konto har nyere data fra en anden telefon ({x}). Vælg, hvad der skal gælde.": "⚠️ Your account has newer data from another phone ({x}). Choose which should count.",
+  "⬇️ Brug kontoens": "⬇️ Use the account's", "📱 Brug denne telefons": "📱 Use this phone's", "↻ Prøv igen": "↻ Try again",
+  "⚠️ Ingen forbindelse — det gemmes på din konto ved næste ændring.": "⚠️ No connection — it is saved to your account at the next change.",
+  "⚠️ Din trup kunne ikke hentes eller gemmes på din konto — log ud og ind igen, hvis det bliver ved.": "⚠️ Your squad could not be fetched or saved to your account — log out and in again if it keeps happening.",
+  "Din konto har en låst kopi. Sikkerhedskopien her er din egen fil ved siden af — til dig selv, ikke til os.": "Your account holds a locked copy. The backup here is your own file alongside it — for you, not for us."
+});
 var _ENr = {}, _ENx = [];
 (function(){
   Object.keys(EN).forEach(function(k){
@@ -1609,6 +1646,13 @@ function render(){
       'StreakCoach · ' + VERSION + '</p>';
     oversaetAlt();   // v5.0.0
     return;
+  }
+  /* ⭐⭐⭐ v6.9.0 · BACKUPPEN ER ALTID TÆNDT (Nicolai 25/9: «Skyen skal altid være tændt. Det er ikke et spørgsmål.
+     Alle vil forvente det er automatisk backup»). En telefon med konto og klubnøgle, men uden boksens nøgle, kommer ikke
+     forbi her — ellers ligger truppen kun på telefonen, og ingen opdager det (målt 25/9: Carstens konto har aldrig haft en boks). */
+  if (!paaRejse && boksPortLukket()) {
+    el("app").innerHTML = renderBoksPort() + '<p class="fod">StreakCoach \u00b7 SportsAInalytics \u00b7 ' + VERSION + '</p>';
+    oversaetAlt(); return;
   }
   el("app").innerHTML = (paaRejse ? renderRejse() : renderTraener()) +
     '<p class="fod">StreakCoach \u00b7 SportsAInalytics \u00b7 ' + VERSION + '</p>';   /* v6.1.0 · foden som StreakTennis' */
@@ -1824,6 +1868,58 @@ function skiftKlubKort(k){
   if (S.skiftBesked) {
     h += '<p class="lille" style="margin:8px 2px 0;line-height:1.5;color:' +
       (S.skiftBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skiftBesked.t) + '</p>';
+  }
+  return h + '</div>';
+}
+
+/* ⭐⭐⭐ v6.9.0 · PORTEN TIL BACKUPPEN. Boksen låses med en nøgle udledt af kodeordet (PBKDF2 → AES-GCM), så den ene
+   ting, telefonen ikke selv kan skaffe, er kodeordet. Resten sker af sig selv: 2 sekunder efter hver ændring (boksRoert). */
+function boksPortLukket(){
+  var k = S.konto || lager.hent("konto", null);
+  if (S.boksPortVis && k && k.brugernavn && lager.hent("klubkode", "")) return true;   // «🔑 Skift kodeord» fra kortet
+  return !!(k && k.brugernavn && lager.hent("klubkode", "") && !lager.hent("boksnoegle", ""));
+}
+function boksTid(iso){ try { var d = new Date(iso); if (isNaN(d)) return ""; return d.getDate() + "/" + (d.getMonth()+1) + " " + String(d.getHours()).padStart(2,"0") + "." + String(d.getMinutes()).padStart(2,"0"); } catch (_e) { return ""; } }
+// Hvert udfald sin sætning (princip 75). `r.fejl` er motorens `kode` (kontoKald).
+function boksFejlTekst(r, login){
+  var f = r && r.fejl;
+  if (f === "netvaerk") return "Ingen forbindelse — prøv igen.";
+  if (f === "forkert") return "Kodeordet passer ikke.";
+  if (f === "loft") return login ? "For mange forsøg i dag — prøv igen i morgen, eller vælg et nyt kodeord." : "For mange forsøg i dag — prøv igen i morgen.";
+  if (f === "ikke-din") return "Nøglen på denne telefon hører ikke til din konto — log ud og ind med den rigtige.";
+  if (f === "adgang") return "Klubnøglen på telefonen gælder ikke længere — tal med klubbens administrator.";
+  if (f === "kort") return "Kodeordet skal være mindst 8 tegn.";
+  if (f === "nemt") return "Vælg et andet kodeord — det er for nemt at gætte.";
+  return "Serveren svarede ikke som ventet — prøv igen.";
+}
+function renderBoksPort(){
+  var k = S.konto || lager.hent("konto", null) || {}, bs = S.boksStatus || {};
+  var h = '<div class="rejse"><div style="text-align:center">' +
+    '<div class="sc-op" style="font-size:46px;line-height:1">🔑</div>' +
+    '<h1 class="sc-op" style="animation-delay:.04s;margin-top:10px">' + (S.boksPortVis ? 'Skift kodeord' : 'Log ind igen') + '</h1>' +
+    '<p class="und sc-op" style="animation-delay:.08s">' + (S.boksPortVis ? 'Vælg et nyt kodeord til din konto.' : 'Tast dit kodeord én gang på denne telefon, så følger din trup og dine vurderinger din konto — også hvis du skifter telefon.') + '</p>' +
+    '</div>';
+  var fejl = bs.fejl ? '<p class="lille" style="margin:8px 0 0;color:var(--tabt)">⚠️ ' + esc(bs.fejl) + '</p>' : '';
+  var felt = function(f, ph, ac){ return '<input class="felt" style="width:100%;margin-top:7px" type="password" data-felt="' + f + '" value="' + esc(S[f] || "") + '" placeholder="' + ph + '" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="' + ac + '">'; };
+  if (!S.boksGlemt) {
+    h += '<div class="kort sc-op" style="animation-delay:.12s;text-align:left">' +
+      '<p class="lille" style="margin:0;color:var(--daempet)">Logget ind som <b>' + esc(k.brugernavn || "") + '</b></p>' +
+      felt("boksKode", "dit kodeord", "current-password") +
+      '<button class="knap" style="margin-top:9px;width:100%;min-height:50px;background:var(--grus)"' + (S.boksTaender ? ' disabled' : '') + ' data-act="boks-taend">' +
+      (S.boksTaender ? '⏳ …' : 'Log ind') + '</button>' + fejl +
+      '<button class="knap valg" style="margin-top:10px;width:100%;min-height:44px" data-act="boks-glemt">Glemt kodeord? Vælg et nyt</button>' +
+      '</div>';
+  } else {
+    h += '<div class="kort sc-op" style="animation-delay:.12s;text-align:left">' +
+      '<b style="display:block;margin-bottom:4px">Vælg et nyt kodeord</b>' +
+      '<p class="lille" style="margin:0 0 4px;line-height:1.55">Denne telefon er allerede koblet til din klub, så du kan vælge et nyt kodeord her.</p>' +
+      (S.boksGammel ? '<p class="lille" style="margin:6px 0 2px;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0;line-height:1.55">Det, du gemte ' + esc(boksTid(S.boksGammel)) + ', kan kun åbnes med dit gamle kodeord. Med et nyt kodeord gælder det, der står på denne telefon.</p>' : '') +
+      felt("boksNy", "nyt kodeord (mindst 8 tegn)", "new-password") +
+      felt("boksNy2", "gentag det nye kodeord", "new-password") +
+      '<button class="knap" style="margin-top:9px;width:100%;min-height:50px;background:var(--grus)"' + (S.boksTaender ? ' disabled' : '') + ' data-act="boks-nykode">' +
+      (S.boksTaender ? '⏳ …' : 'Gem nyt kodeord') + '</button>' + fejl +
+      '<button class="knap valg" style="margin-top:10px;width:100%;min-height:44px" data-act="boks-glemt-luk">← Jeg kan huske det</button>' +
+      '</div>';
   }
   return h + '</div>';
 }
@@ -3087,7 +3183,7 @@ function indstForbindelse(){   /* v6.8.0 · ⚙️ forbindelse: klubkoden + (bag
     // ── SIKKERHEDSKOPI
     h += '<div style="border-top:1px solid var(--kant);margin-top:12px;padding-top:10px">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udcbe SIKKERHEDSKOPI</div>' +
-      '<p class="lille" style="margin:6px 0 8px">Skyen (kortet nedenfor) har en l\u00e5st kopi. Sikkerhedskopien her er din egen fil ved siden af \u2014 til dig selv, ikke til os.</p>' +
+      '<p class="lille" style="margin:6px 0 8px">Din konto har en l\u00e5st kopi. Sikkerhedskopien her er din egen fil ved siden af \u2014 til dig selv, ikke til os.</p>' +
       '<div class="raekke"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-lav">\ud83d\udcbe Lav kopi</button>' +
       '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="bk-gendan-aabn">\u267b\ufe0f Gendan</button></div>';
     if (S.bkTekst) {
@@ -3116,26 +3212,40 @@ function indstSkyen(){   /* v6.8.0 · ☁️ skyen — trænerens boks, låst me
         '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\u2601\ufe0f SKYEN</div>' +
         '<p class="lille" style="margin:6px 0 8px">Din trup, dine grupper, vurderinger og evalueringer gemmes i skyen \u2014 l\u00e5st med dit kodeord. Mister du telefonen, logger du bare ind p\u00e5 en ny. Heller ikke vi kan l\u00e6se boksen.</p>';
       if (!_bn) {
+        if (!(S.konto || lager.hent("konto", null))) { h += '<p class="lille" style="margin:0;color:var(--guld)">Backup kræver en konto. Log ud under 👤 DIN KONTO, og opret dig med din nøgle — så kører den automatisk.</p></div>'; return h; }   /* v6.9.0 */
         h += '<p class="lille" style="margin:0 0 6px;color:var(--guld)">Skyen er ikke t\u00e6ndt p\u00e5 denne telefon endnu \u2014 tast dit kodeord \u00e9n gang.</p>' +
           (_bs.fejl ? '<p class="lille" style="margin:0 0 6px;color:var(--tabt)">\u26a0\ufe0f ' + esc(_bs.fejl) + '</p>' : '') +
           '<div style="display:flex;gap:6px"><input class="felt" style="flex:1;min-width:0" type="password" data-felt="boksKode" value="' + esc(S.boksKode || "") + '" placeholder="dit kodeord" autocapitalize="off" spellcheck="false" autocomplete="current-password">' +
           '<button class="knap" style="flex:none;padding:8px 12px;background:var(--grus)"' + (S.boksTaender ? ' disabled' : '') + ' data-act="boks-taend">' + (S.boksTaender ? '\u23f3' : 'T\u00e6nd skyen') + '</button></div>';
       } else {
-        var _linje = _bs.sender ? '\u23f3 Sender\u2026'
+        var _linje = _bs.ny ? '✓ Nyt kodeord · backup startet'   /* v6.9.0 */
+          : _bs.sender ? '\u23f3 Sender\u2026'
           : _bs.konflikt ? '\u26a0\ufe0f Skyen har en nyere tilstand (' + _tid(_bs.skyen) + ') end denne telefon. V\u00e6lg, hvad der skal g\u00e6lde.'
           : _bs.fejl ? '\u26a0\ufe0f ' + _bs.fejl
           : _bs.hentet ? '\u2713 Hentet fra skyen ' + _tid(_bs.tid)
-          : (_st.sendt ? '\u2713 Gemt i skyen ' + _tid(_st.sendt) + (boksUsendt() ? ' \u00b7 \u00e6ndringer p\u00e5 vej' : '') : (_st.lokal ? '\u00c6ndringer p\u00e5 vej til skyen\u2026' : 'Intet at gemme endnu.'));
+          : (_st.sendt ? '✓ Automatisk backup · gemt ' + _tid(_st.sendt) + (boksUsendt() ? ' \u00b7 \u00e6ndringer p\u00e5 vej' : '') :   /* v6.9.0 */ (_st.lokal ? '\u00c6ndringer p\u00e5 vej til skyen\u2026' : 'Intet at gemme endnu.'));
         h += '<p class="lille" style="margin:0 0 6px;color:' + (_bs.fejl || _bs.konflikt ? 'var(--guld)' : 'var(--vundet)') + '">' + _linje + '</p>' +
-          '<div class="raekke">' +
+          ((_bs.fejl || _bs.konflikt) ? '<div class="raekke">' +   /* v6.9.0 · knapperne kun, når noget er galt — resten er automatisk */
           '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="boks-send">\u2601\ufe0f Send nu</button>' +
-          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="boks-hent">\u2b07\ufe0f Hent fra skyen</button></div>' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="boks-hent">\u2b07\ufe0f Hent fra skyen</button></div>' : '') +
           (_bs.konflikt ? '<p class="lille" style="margin:6px 0 0;font-style:italic">«Hent fra skyen» erstatter det, der ligger p\u00e5 denne telefon. «Send nu» erstatter skyen med telefonen.</p>' : '');
       }
       h += '</div>';
     }
 
   // ══════════════════════════════════════════════════════════════════
+  return h;
+}
+/* v6.9.0 · DIN KONTO siger det KUN, når noget er galt — ellers sker det af sig selv. Hvert udfald sin sætning (75). */
+function kontoGemStatus(){
+  var k = S.konto || lager.hent("konto", null); if (!k) return '';
+  var bs = S.boksStatus || {}, h = '';
+  if (bs.konflikt) h += '<p class="lille" style="margin:8px 0 0;color:var(--guld)">⚠️ Din konto har nyere data fra en anden telefon (' + esc(boksTid(bs.skyen)) + '). Vælg, hvad der skal gælde.</p>' +
+    '<div class="raekke" style="margin-top:6px;gap:6px;flex-wrap:wrap"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="boks-hent">⬇️ Brug kontoens</button>' +
+    '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="boks-send">📱 Brug denne telefons</button></div>';
+  else if (bs.fejl) h += '<p class="lille" style="margin:8px 0 0;color:var(--guld)">⚠️ ' + (/forbindelse/i.test(bs.fejl) ? 'Ingen forbindelse — det gemmes på din konto ved næste ændring.' : 'Din trup kunne ikke hentes eller gemmes på din konto — log ud og ind igen, hvis det bliver ved.') + '</p>' +
+    '<div class="raekke" style="margin-top:6px"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="boks-send">↻ Prøv igen</button></div>';
+  h += '<div class="raekke" style="margin-top:9px"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="boks-skift">🔑 Skift kodeord</button></div>';
   return h;
 }
 function indstKonto(){   /* v6.8.0 · 👤 din konto — log ud · skift klub · start forfra */
@@ -3169,7 +3279,8 @@ function indstKonto(){   /* v6.8.0 · 👤 din konto — log ud · skift klub ·
     }
     // ⚠️ Den ærlige linje: truppen og vurderingerne følger IKKE kontoen.
     h += '<p class="lille" style="margin:10px 0 0;padding-top:9px;border-top:1px dashed var(--kant);opacity:.8">' +
-      '\u2601\ufe0f Din trup og dine vurderinger f\u00f8lger din konto gennem skyen (\u2699\ufe0f FORBINDELSE). Log ind p\u00e5 en ny telefon med dit kodeord, s\u00e5 kommer de med.</p>' +
+      'Din trup og dine vurderinger f\u00f8lger din konto. Log ind p\u00e5 en ny telefon med dit kodeord, s\u00e5 kommer de med.</p>' +   /* v6.9.0 · uden «skyen» */
+      kontoGemStatus() +
       '<div class="raekke" style="margin-top:9px"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px;' +
       (S.forfraBekraeft ? 'background:var(--tabt);border-color:var(--tabt);color:#fff' : 'color:var(--tabt);border-color:rgba(210,72,78,.5)') +
       '" data-act="start-forfra">' +
@@ -3309,8 +3420,8 @@ function indstOversigt(){   /* v6.8.0 · fliserne — hver bærer sin status, s�
   var _stige = (S.stigeHold || []).length;
   var h = '';
   /* ⭐⭐⭐ HELTEN: det, der kræver en hånd NU. En flise alene ville skjule det igen — og det var præcis fejlen i går (traener_boks: 0 rækker). */
-  if (_k && !_bn) {
-    h += '<button class="dev-hero dev-kant dev-kant-guld" data-act="indst-vis" data-v="sky"><span style="font-size:30px">☁️</span><span><b>TÆND SKYEN</b><br><small>Din trup og dine vurderinger ligger kun på denne telefon — tast dit kodeord én gang</small></span><span class="dev-pil">→</span></button>';
+  if (!_k && _kk) {   /* v6.9.0 · med konto fanger porten det; her står kun telefonen uden konto */
+    h += '<button class="dev-hero dev-kant dev-kant-guld" data-act="indst-vis" data-v="konto"><span style="font-size:30px">👤</span><span><b>OPRET EN KONTO</b><br><small>Din trup og dine vurderinger ligger kun på denne telefon — med en konto følger de med</small></span><span class="dev-pil">→</span></button>';
   } else if (_ialt) {
     h += '<button class="dev-hero dev-kant dev-kant-guld" data-act="indst-vis" data-v="nye"><span style="font-size:30px">📥</span><span><b>' + _ialt + (_ialt === 1 ? ' NY SPILLER' : ' NYE SPILLERE') + '</b><br><small>' + (_ny.venter.length ? _ny.venter.length + (_ny.venter.length === 1 ? ' venter på jeres ja' : ' venter på jeres ja') : 'kommet ind med en nøgle — mangler i truppen') + '</small></span><span class="dev-pil">→</span></button>';
   }
@@ -3320,12 +3431,6 @@ function indstOversigt(){   /* v6.8.0 · fliserne — hver bærer sin status, s�
     prgFlise("tab", "noegler", "🔑", "Nøgler og invitationer",
       _ialt ? '<span style="color:var(--guld);font-weight:800">' + _ialt + (_ialt === 1 ? ' ny spiller venter' : ' nye spillere venter') + '</span>' : 'familier og trænere — via brugernavn eller QR',
       _ialt ? "dev-kant-guld" : "dev-kant-staal") +
-    prgFlise("indst-vis", "sky", "☁️", "Skyen",
-      !_bn ? '<span style="color:var(--guld);font-weight:800">ikke tændt på denne telefon</span>'
-           : (_bs.konflikt ? '<span style="color:var(--guld);font-weight:800">skyen er nyere end telefonen</span>'
-           : (_bs.fejl ? '<span style="color:#ff8a8f;font-weight:800">' + esc(_bs.fejl) + '</span>'
-           : (_st.sendt ? 'gemt i skyen ✓' + (boksUsendt() ? ' · ændringer på vej' : '') : 'intet at gemme endnu'))),
-      !_bn ? "dev-kant-guld" : "dev-kant-gron") +
     prgFlise("indst-vis", "nye", "📥", "Nye spillere",
       !S.tilmHentet ? 'ikke tjekket endnu — åbn for at se'
         : (_ialt ? '<span style="color:var(--guld);font-weight:800">' + _ialt + (_ialt === 1 ? ' venter' : ' venter') + '</span>' : 'alle klubbens spillere er i din trup ✓'),
@@ -3337,8 +3442,8 @@ function indstOversigt(){   /* v6.8.0 · fliserne — hver bærer sin status, s�
       _egen ? _egen + (_egen === 1 ? ' spiller' : ' spillere') + ' · ' + _antG + (_antG === 1 ? ' gruppe' : ' grupper') : 'tom — læg den første spiller ind',
       "dev-kant-staal") +
     prgFlise("indst-vis", "konto", "👤", "Din konto",
-      _k ? 'logget ind som ' + esc(_k.brugernavn) : '<span style="color:var(--guld);font-weight:800">ikke logget ind</span>',
-      _k ? "dev-kant-staal" : "dev-kant-guld") +
+      _k ? ((_bs.fejl || _bs.konflikt) ? '<span style="color:var(--guld);font-weight:800">noget skal ordnes — åbn</span>' : 'logget ind som ' + esc(_k.brugernavn)) : '<span style="color:var(--guld);font-weight:800">ikke logget ind</span>',
+      (_k && !(_bs.fejl || _bs.konflikt)) ? "dev-kant-staal" : "dev-kant-guld") +   /* v6.9.0 */
     prgFlise("indst-vis", "sprog", "🌐", "Sprog",
       'skærmen: ' + (SPROG === "en" ? "engelsk" : "dansk") + ' · evalueringer: ' + (EVALSPROG === "en" ? "engelsk" : "dansk"), "dev-kant-staal") +
     prgFlise("indst-vis", "streak", "🔥", "Streak",
@@ -3814,13 +3919,35 @@ document.addEventListener("click", function(e){
     // kodeordet bevises hos serveren (login), FØR nøglen udledes — et forkert
     // kodeord ville ellers låse en boks, ingen kan åbne
     kontoKald("login", { navn: _kt.brugernavn, kode: _bk }, "").then(function(r){
-      if (!r || r.fejl) { S.boksTaender = false; S.boksStatus = { fejl: r && r.fejl === "netvaerk" ? "Ingen forbindelse \u2014 pr\u00f8v igen." : "Kodeordet passer ikke." }; render(); return; }
+      if (!r || r.fejl) { S.boksTaender = false; S.boksStatus = { fejl: boksFejlTekst(r, true) }; render(); return; }   /* v6.9.0 · hvert udfald sin sætning */
       return boksNoegleUdled(_kt.brugernavn, _bk).then(function(bn){
         lager.gem("boksnoegle", bn); S.boksKode = ""; S.boksTaender = false; S.boksStatus = null;
         if (lager.hent("boks-lokal", "")) boksRoert(); else if (S.truppen && S.truppen.length) boksRoert();
         render(); return boksHent(false);
       });
     }).catch(function(){ S.boksTaender = false; S.boksStatus = { fejl: "Ingen forbindelse \u2014 pr\u00f8v igen." }; render(); }); }
+  else if (act==="boks-glemt" || act==="boks-skift"){   /* v6.9.0 · den gamle boks siges FØR trykket */
+    if (act==="boks-skift") S.boksPortVis = true;
+    S.boksGlemt = true; S.boksStatus = null; S.boksGammel = null; render();
+    kontoKald("boks-hent", {}).then(function(r){ S.boksGammel = (r && !r.fejl && r.boks) ? (r.stempel || null) : null; render(); }).catch(function(){}); }
+  else if (act==="boks-glemt-luk"){ S.boksGlemt = false; S.boksPortVis = false; S.boksStatus = null; S.boksNy = ""; S.boksNy2 = ""; render(); }
+  else if (act==="boks-nykode"){
+    if (S.boksTaender) return;
+    var _kt2 = S.konto || lager.hent("konto", null), _n1 = String(S.boksNy || ""), _n2 = String(S.boksNy2 || "");
+    if (!_kt2 || !_kt2.brugernavn) { S.boksStatus = { fejl: "Der er ingen konto på denne telefon." }; render(); return; }
+    if (_n1.length < 8) { S.boksStatus = { fejl: "Kodeordet skal være mindst 8 tegn." }; render(); return; }
+    if (_n1 !== _n2) { S.boksStatus = { fejl: "De to kodeord er ikke ens." }; render(); return; }
+    S.boksTaender = true; S.boksStatus = null; render();
+    kontoKald("ny-kode", { brugernavn: _kt2.brugernavn, ny: _n1 }).then(function(r){
+      if (!r || r.fejl) { S.boksTaender = false; S.boksStatus = { fejl: boksFejlTekst(r, false) }; render(); return; }
+      return boksNoegleUdled(_kt2.brugernavn, _n1).then(function(bn){
+        lager.gem("boksnoegle", bn);
+        S.boksNy = ""; S.boksNy2 = ""; S.boksGlemt = false; S.boksGammel = null; S.boksTaender = false; S.boksPortVis = false;
+        // telefonen ER nu backuppen — et nyt stempel, så den gamle (som intet kodeord længere åbner) skrives over
+        clearTimeout(_boksUr); boksRoert();
+        S.boksStatus = { ny: true }; render();
+      });
+    }).catch(function(){ S.boksTaender = false; S.boksStatus = { fejl: "Ingen forbindelse — prøv igen." }; render(); }); }
   else if (act==="boks-send"){ if (!lager.hent("boks-lokal", "")) boksRoert(); else { clearTimeout(_boksUr); S.boksStatus = null; boksSend(); } }
   else if (act==="boks-hent"){ S.boksStatus = null; render(); boksHent(true); }
   else if (act==="ops-gem"){

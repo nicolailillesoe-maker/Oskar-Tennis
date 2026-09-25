@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.5.0 · 25. september 2026";
+const VERSION = "v5.6.0 · 25. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -1159,6 +1159,26 @@ function ugeMaal(fysLog) {
     if (streak > 260) break;
   }
   return { denneUge, MAAL, streak };
+}
+// ⭐ v5.6.0 · UGENS MÅL ER DIN UGE (Nicolai 25/9: «Ugens mål skal være i forhold til hvad der ligger i min uge»).
+//   Med faste pas i Min uge er målet antallet af dem, og hvert logget pas — tennis eller fysisk — tæller.
+//   Uden en uge: det gamle mål. ⛔ ugeMaal() ovenfor regner streaken, synken sender til træneren — den røres ikke.
+function ugeMaalVis() {
+  const plan = S.ugeplan || [];
+  if (!plan.length) { const m0 = ugeMaal(S.fysLog || []); m0.minUge = false; return m0; }
+  const MAAL = plan.length, taelling = {};
+  (S.ttLog || []).concat(S.fysLog || []).forEach(function(e){ if (e && e.d) { const k = ugeNoegle(String(e.d).slice(0, 10)); taelling[k] = (taelling[k] || 0) + 1; } });
+  const nuISO = dkDato(0), denneUge = taelling[ugeNoegle(nuISO)] || 0;
+  let streak = denneUge >= MAAL ? 1 : 0;
+  const d = new Date(nuISO + "T12:00:00");   // middag: en mandag glider ikke over i ugen før
+  for (let i = 0; i < 260; i++) {
+    d.setDate(d.getDate() - 7);
+    const iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    if ((taelling[ugeNoegle(iso)] || 0) >= MAAL) streak += 1; else break;
+  }
+  const dage = [];
+  ugeplanSorter(plan.slice()).forEach(function(p){ if (dage.indexOf(p.dag) < 0) dage.push(p.dag); });
+  return { denneUge, MAAL, streak, minUge: true, dage };
 }
 
 // Træningsresumé til trænerlaget (19/8, Nicolais beslutning): OMFANGET pr. uge
@@ -13117,7 +13137,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       // ══════════════════════════════════════════════════════════════
       var _tp = S.traenPanel;
       var _nFys = (S.fysLog || []).length, _nTt = (S.ttLog || []).length;
-      var _uM = ugeMaal(S.fysLog);
+      var _uM = ugeMaalVis();   /* ⭐ v5.6.0 · din uge */
       var _tflise = function(v, ik, titel, tal, kant) {
         return '<button class="dev-flise dev-kant' + (_tp === v ? ' dev-kant-is' : (kant ? ' ' + kant : '')) + '"'
           + ' style="min-height:92px' + (_tp === v ? ';border-color:var(--is)' : '') + '"'
@@ -13213,7 +13233,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       if (_tp === "uge") {
       h += _minUgeKort(EN);   /* ⭐ v5.4.0 · min uge */
       (function(){
-        const m = ugeMaal(S.fysLog);
+        const m = ugeMaalVis();   /* ⭐ v5.6.0 · din uge */
         const naaet = m.denneUge >= m.MAAL;
         const pct = Math.min(100, Math.round(m.denneUge / m.MAAL * 100));
         h += '<div class="kort" style="border:1.5px solid '+(naaet?'var(--vundet)':'var(--kant)')+'">' +
@@ -13222,7 +13242,10 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           (m.streak > 0 ? '<span style="font-size:11px;font-weight:800;color:var(--guld)">🔥 '+m.streak+' '+(EN?(m.streak===1?"week":"weeks")+" in a row":(m.streak===1?"uge":"uger")+" i træk")+'</span>' : '') + '</div>' +
           '<div style="font-size:16px;font-weight:800;margin:5px 0 7px">'+(naaet ? '🎉 '+(EN?"Goal reached — "+m.denneUge+"/"+m.MAAL+" sessions!":"Ugens mål nået — "+m.denneUge+"/"+m.MAAL+" pas!") : m.denneUge+'/'+m.MAAL+' '+(EN?"sessions this week":"pas denne uge"))+'</div>' +
           '<div style="position:relative;background:var(--dyb);border-radius:5px;height:10px"><div style="background:'+(naaet?'var(--vundet)':'var(--is)')+';height:100%;width:'+pct+'%;border-radius:5px"></div></div>' +
-          (naaet ? '' : '<p class="lille" style="margin-top:6px">'+(EN?"Goal: 3 sessions a week — running, strength or footwork. Every logged session counts.":"Målet er 3 pas om ugen — løb, styrke eller benarbejde. Hvert registreret pas tæller.")+'</p>') + '</div>';
+          (naaet ? '' : '<p class="lille" style="margin-top:6px">'+(m.minUge
+            ? (EN ? "Goal: your week — " + m.MAAL + (m.MAAL === 1 ? " session" : " sessions") + " (" + m.dage.map(function(x){ return UG_DAG.en[x]; }).join(", ") + "). Every session you log counts — tennis or fitness."
+                  : "Målet er din uge: " + m.MAAL + " pas (" + m.dage.map(function(x){ return UG_DAG.da[x].toLowerCase(); }).join(", ").replace(/, ([^,]*)$/, " og $1") + "). Hvert pas, du logger — tennis eller fysisk — tæller.")
+            : (EN?"Goal: 3 sessions a week — running, strength or footwork. Every logged session counts.":"Målet er 3 pas om ugen — løb, styrke eller benarbejde. Hvert registreret pas tæller."))+'</p>') + '</div>';
       })();
       // ══ TRÆNING · SENESTE UGER · spejlet af trænerens kort (1:1) ═════
       // Regnet af traeningsResume() — SAMME funktion som synken sender af.

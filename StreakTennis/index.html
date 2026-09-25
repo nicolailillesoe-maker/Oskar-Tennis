@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.3.8 · 24. september 2026";
+const VERSION = "v5.4.0 · 25. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -944,6 +944,68 @@ function sikrePasId(liste) {
 }
 
 // ══════════════════════════════════════════════════════════════════════
+// ⭐⭐ v5.4.0 · MIN UGE — spillerens egne faste pas. Nicolai 25/9: «Måske der skal bygges noget nyt…
+//   Det lyder rigtigt. Lad os gøre det.» Spilleren lægger sin uge ind én gang; dagens pas står øverst i
+//   TRÆN, og ét tryk lægger det i loggen med de rigtige minutter. Postens id er udledt af passet og
+//   datoen (u-<pas>-<ååååmmdd>) — to tryk giver én post, aldrig to.
+//   Princip 79: tennis, læsbart. Stedet er et kort felt (højst 30 tegn), ingen noter.
+//   Ugen bor på telefonen og rejser i den låste sikkerhedskopi (SKY_INDSTILLINGER).
+// ══════════════════════════════════════════════════════════════════════
+const UGEPLAN_MAKS = 14;
+const UG_TID = /^([01]\d|2[0-3]):[0-5]\d$/;
+const UG_DAG = { da: ["", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag", "Søndag"],
+                 en: ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"] };
+function minAf(t) { return Number(String(t).slice(0, 2)) * 60 + Number(String(t).slice(3, 5)); }
+function ugeplanGyldig(p) {
+  return !!p && typeof p === "object" && /^u[0-9a-z]{4,24}$/.test(String(p.id || "")) &&
+    Number.isInteger(p.dag) && p.dag >= 1 && p.dag <= 7 && UG_TID.test(String(p.start || "")) &&
+    UG_TID.test(String(p.slut || "")) && minAf(p.slut) > minAf(p.start) && (p.type === "tennis" || p.type === "fysisk");
+}
+function ugeplanSorter(l) { return l.sort(function(a, b){ return a.dag - b.dag || minAf(a.start) - minAf(b.start); }); }
+function ugeplanLaes() {
+  try { const u = JSON.parse(lager.hent("sai-ugeplan") || "[]");
+    return Array.isArray(u) ? ugeplanSorter(u.filter(ugeplanGyldig).slice(0, UGEPLAN_MAKS)) : []; }
+  catch (_e) { return []; }
+}
+function ugeplanGem() { try { lager.gem("sai-ugeplan", JSON.stringify(S.ugeplan || [])); } catch (_e) {} }
+// Dansk dato og klokkeslæt — telefonens ur kan stå i en anden zone, klubbens gør ikke.
+function dkDato(forskydDage) {
+  return new Date(Date.now() + (forskydDage || 0) * 86400000).toLocaleDateString("sv-SE", { timeZone: "Europe/Copenhagen" });
+}
+function dkNuMin() {
+  return minAf(new Date().toLocaleTimeString("sv-SE", { timeZone: "Europe/Copenhagen", hour12: false }));
+}
+function isoUgedagAf(dato) { const d = new Date(dato + "T12:00:00Z").getUTCDay(); return d === 0 ? 7 : d; }
+function ugeplanPostId(p, dato) { return "u-" + p.id + "-" + String(dato).replace(/-/g, ""); }
+function ugeplanLogget(p, dato) {
+  const id = ugeplanPostId(p, dato);
+  return ((p.type === "fysisk" ? S.fysLog : S.ttLog) || []).some(function(e){ return e && e.id === id; });
+}
+// Dagens pas, der er begyndt, og gårsdagens — som ikke er i loggen endnu.
+function ugeplanVenter() {
+  const ud = [], nu = dkNuMin();
+  [[0, dkDato(0)], [1, dkDato(-1)]].forEach(function(x){
+    const dag = isoUgedagAf(x[1]);
+    (S.ugeplan || []).forEach(function(p){
+      if (p.dag !== dag) return;
+      if (x[0] === 0 && minAf(p.start) > nu) return;
+      if (ugeplanLogget(p, x[1])) return;
+      ud.push({ p: p, dato: x[1], igaar: x[0] === 1 });
+    });
+  });
+  return ud.slice(0, 3);
+}
+function ugeplanSenere() {
+  const nu = dkNuMin(), dag = isoUgedagAf(dkDato(0));
+  return (S.ugeplan || []).filter(function(p){ return p.dag === dag && minAf(p.start) > nu; });
+}
+function ugTid(t, EN) { return EN ? String(t) : String(t).replace(":", "."); }
+function ugLinje(p, EN) {
+  return ugTid(p.start, EN) + "–" + ugTid(p.slut, EN) + " · " + (p.type === "fysisk" ? "💪 " + (EN ? "Fitness" : "Fysisk") : "🎾 Tennis") +
+    (p.med ? " · " + (EN ? "with coach" : "med træner") : "") + (p.sted ? " · " + esc(p.sted) : "");
+}
+
+// ══════════════════════════════════════════════════════════════════════
 // STREAK v2.8 · pas i traek, ikke uger i traek
 // Samme algoritme som spiller-sync v2.8.1 koerer server-side. Den staar
 // begge steder MED VILJE: serveren ejer tallet for holdet, appen regner
@@ -1227,6 +1289,82 @@ function _dinTraener(EN){
     // ══════════════════════════════════════════════════════════════
 
       return h;
+}
+
+// ══ v5.4.0 · MIN UGE · to kroppe: dagens pas øverst i TRÆN, og ugen under UGEN ═════════════════
+//   Registrering er spillerens (v4.5.0) — teamets visning ser ugen, men trykker ikke.
+function _minUgeHero(EN) {
+  if (S.rolle === "familie") return "";
+  let h = "";
+  if (S.ugKvalId) {
+    h += '<div class="kort" style="border:1.5px solid var(--vundet)">' +
+      '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--vundet)">✅ ' + (EN ? "IN YOUR LOG" : "I DIN LOG") + '</div>' +
+      '<p style="margin:6px 0 8px;font-size:13px">' + (EN ? "How did it go? Your own rating — the coaches' scale." : "Hvordan gik det? Din egen bedømmelse — trænernes skala.") + '</p>' +
+      skalaKnapper(0, "ugKval") + skalaLegende(EN) +
+      '<button class="knap valg" style="min-height:40px;font-size:12px" data-a="ugKvalSpring">' + (EN ? "Skip" : "Spring over") + '</button></div>';
+    return h;
+  }
+  const v = ugeplanVenter();
+  v.forEach(function(x){
+    const min = Math.max(10, Math.min(300, minAf(x.p.slut) - minAf(x.p.start)));
+    h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
+      '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--guld)">📅 ' + (x.igaar ? (EN ? "YESTERDAY" : "I GÅR") : (EN ? "TODAY" : "I DAG")) +
+        ' · ' + UG_DAG[EN ? "en" : "da"][x.p.dag].toUpperCase() + '</div>' +
+      '<p style="margin:6px 0 8px;font-size:14px;font-weight:700">' + ugLinje(x.p, EN) + '</p>' +
+      '<button class="knap" style="background:var(--grus);min-height:46px" data-a="ugLog" data-v="' + esc(x.p.id + "|" + x.dato) + '">✓ ' +
+        (EN ? "I was there · " : "Jeg var der · ") + min + ' min</button></div>';
+  });
+  if (!v.length) {
+    const sen = ugeplanSenere();
+    if (sen.length) h += '<p class="lille" style="margin:0 2px 10px">📅 ' + (EN ? "Later today: " : "Senere i dag: ") + sen.map(function(p){ return ugLinje(p, EN); }).join(" · ") + '</p>';
+  }
+  if (S.ugLogBesked) h += '<p class="lille" style="margin:0 2px 10px;color:' + (S.ugLogBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.ugLogBesked.t) + '</p>';
+  return h;
+}
+function _minUgeKort(EN) {
+  const fam = S.rolle === "familie";
+  const DAG = UG_DAG[EN ? "en" : "da"];
+  const l = S.ugeplan || [];
+  let h = '<div class="kort" style="border-left:3px solid var(--guld)">' +
+    '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--guld)">📅 ' + (EN ? "MY WEEK" : "MIN UGE") + '</div>';
+  if (!l.length) {
+    h += '<p style="margin:6px 0 4px;font-size:13px">' + (EN
+      ? "Add your regular sessions once. Then today's session sits at the top of TRAIN, and one tap puts it in your log — with the right minutes."
+      : "Læg dine faste træninger ind én gang. Så står dagens pas øverst i TRÆN, og ét tryk lægger det i loggen — med de rigtige minutter.") + '</p>';
+  } else {
+    h += '<div style="margin-top:6px">' + l.map(function(p){
+      const spg = S.ugSletB === p.id;
+      return '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:7px 0">' +
+        '<span style="flex:none;width:72px;font-size:12px;font-weight:700">' + DAG[p.dag] + '</span>' +
+        '<span style="flex:1;font-size:12.5px">' + ugLinje(p, EN) + '</span>' +
+        (fam ? '' : spg
+          ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="ugSlet" data-v="' + esc(p.id) + '">' + (EN ? "Remove" : "Fjern") + '</button>' +
+            '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);font-size:11px" data-a="ugSletSpoerg" data-v="' + esc(p.id) + '">' + (EN ? "Keep" : "Behold") + '</button>'
+          : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="ugSletSpoerg" data-v="' + esc(p.id) + '">🗑</button>') +
+        '</div>';
+    }).join("") + '</div>';
+  }
+  if (!fam) {
+    if (!S.ugForm) {
+      if (l.length < UGEPLAN_MAKS) h += '<button class="knap" style="margin-top:8px;background:var(--grus)" data-a="ugNy">+ ' + (EN ? "Add a regular session" : "Tilføj et fast pas") + '</button>';
+    } else {
+      const chip = function(akt, v, til, tekst){ return '<button class="knap valg ' + (til ? "til" : "") + '" style="padding:9px 2px;font-size:12px" data-a="' + akt + '" data-v="' + v + '">' + tekst + '</button>'; };
+      h += '<div style="border-top:1px solid var(--kant);margin-top:8px;padding-top:8px">' +
+        '<p class="lille" style="margin:0 0 5px">' + (EN ? "Day" : "Dag") + '</p>' +
+        '<div class="raekke">' + [1, 2, 3, 4].map(function(d){ return chip("ugDag", d, S.ugDag === d, DAG[d].slice(0, 3)); }).join("") + '</div>' +
+        '<div class="raekke" style="margin-top:4px">' + [5, 6, 7].map(function(d){ return chip("ugDag", d, S.ugDag === d, DAG[d].slice(0, 3)); }).join("") + '</div>' +
+        '<div class="raekke" style="margin-top:8px">' +
+          '<label style="flex:1;font-size:12px">' + (EN ? "From" : "Fra") + '<input type="time" step="300" value="' + esc(S.ugStart || "") + '" data-felt="ugStart" style="margin-top:3px"></label>' +
+          '<label style="flex:1;font-size:12px">' + (EN ? "To" : "Til") + '<input type="time" step="300" value="' + esc(S.ugSlut || "") + '" data-felt="ugSlut" style="margin-top:3px"></label></div>' +
+        '<div class="raekke" style="margin-top:8px">' + chip("ugType", "tennis", S.ugType === "tennis", "🎾 Tennis") + chip("ugType", "fysisk", S.ugType === "fysisk", "💪 " + (EN ? "Fitness" : "Fysisk")) + '</div>' +
+        '<div class="raekke" style="margin-top:4px">' + chip("ugMed", "1", S.ugMed === true, "🧑‍🏫 " + (EN ? "With coach" : "Med træner")) + chip("ugMed", "0", S.ugMed === false, "🙋 " + (EN ? "On my own" : "Selv-træning")) + '</div>' +
+        '<input maxlength="30" placeholder="' + (EN ? "Where (optional — e.g. the club)" : "Hvor (valgfri — fx klubben)") + '" value="' + esc(S.ugSted || "") + '" data-felt="ugSted" style="margin-top:8px">' +
+        '<div class="raekke" style="margin-top:8px"><button class="knap" style="background:var(--grus)" data-a="ugGem">💾 ' + (EN ? "Save in my week" : "Gem i min uge") + '</button>' +
+        '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="ugFortryd">' + (EN ? "Cancel" : "Fortryd") + '</button></div></div>';
+    }
+  }
+  if (S.ugBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.ugBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.ugBesked.t) + '</p>';
+  return h + '</div>';
 }
 
 function traeningsResume() {
@@ -1655,6 +1793,7 @@ try { if (lager.hent("sai-sky-laast") === "1") S.skyLaast = true; } catch(e) {}
 try { const fl = JSON.parse(lager.hent("sai-fysisk-log") || "[]"); if (Array.isArray(fl)) S.fysLog = sikrePasId(sorterNyestFoerst(fl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d")); } catch(e) {}
 try { const tl = JSON.parse(lager.hent("sai-tennis-log") || "[]"); if (Array.isArray(tl)) S.ttLog = sikrePasId(sorterNyestFoerst(tl.map(function(e){ if (e && typeof e.n === "string") e.n = e.n.trim(); return e; }), "d")); } catch(e) {}
 try { S.stigeTilvalgt = lager.hent("sai-stige-tilvalgt") === "1"; } catch(e) {}
+try { S.ugeplan = ugeplanLaes(); } catch(e) { S.ugeplan = []; }   /* ⭐ v5.4.0 · min uge */
 try { if (lager.hent("sai-skala10") !== "1") { if (S.ttLog.length) { S.ttLog.forEach((e) => { if (e.k >= 1 && e.k <= 5) e.k = e.k * 2; }); lager.gem("sai-tennis-log", JSON.stringify(S.ttLog)); } lager.gem("sai-skala10", "1"); } } catch(e) {}
 // ⛔⭐⭐⭐ v4.84.0 · DEN TAVSE KASSERING VED OPSTART — princip 75.
 //   DEN TOMME EKSPORT, 30/8: Nicolais backup-tekst sagde «"kampe":[]»,
@@ -2280,7 +2419,7 @@ async function teamBudKald(handling, krop, noegle) {
 }
 // ⭐ v4.84.0 · Nøglerne, skyggekopien bærer ud over kampe og logs.
 //   ⚠️ "skadet" er en JURIDISK linje, ikke en teknisk — se A.skyKrop.
-const SKY_INDSTILLINGER = ["haand", "benchmark", "skala10", "zoner", "side", "stige-tilvalgt", "sprog", "navn-oenske", "skadet"];   // ⭐ v4.99.0 · side
+const SKY_INDSTILLINGER = ["haand", "benchmark", "skala10", "zoner", "side", "stige-tilvalgt", "sprog", "navn-oenske", "skadet", "ugeplan"];   /* ⭐ v5.4.0 · min uge */   // ⭐ v4.99.0 · side
 const SKY_RUNDER = 210000;
 
 const _b64 = (u) => btoa(String.fromCharCode.apply(null, Array.from(u)));
@@ -3675,6 +3814,79 @@ const A = {
     S.passBesked = { fejl: false, t: S.sprog === "en" ? "Session saved \u2705" : "Passet er gemt \u2705" };
     render();
   },
+  // ══ v5.4.0 · MIN UGE ════════════════════════════════════════════════
+  ugNy: () => { S.ugForm = true; S.ugBesked = null; S.ugDag = isoUgedagAf(dkDato(0)); S.ugStart = "16:00"; S.ugSlut = "17:30"; S.ugType = "tennis"; S.ugMed = true; S.ugSted = ""; render(); },
+  ugFortryd: () => { S.ugForm = false; S.ugBesked = null; render(); },
+  ugDag: (v) => { S.ugDag = +v; render(); },
+  ugType: (v) => { S.ugType = v === "fysisk" ? "fysisk" : "tennis"; render(); },
+  ugMed: (v) => { S.ugMed = v === "1"; render(); },
+  ugGem: () => {
+    const EN = S.sprog === "en";
+    const fejl = function(t){ S.ugBesked = { fejl: true, t: t }; render(); };
+    const st = String(S.ugStart || "").slice(0, 5), sl = String(S.ugSlut || "").slice(0, 5);
+    if (!(S.ugDag >= 1 && S.ugDag <= 7)) return fejl(EN ? "Choose a day." : "Vælg en dag.");
+    if (!UG_TID.test(st) || !UG_TID.test(sl)) return fejl(EN ? "Set both times — from and to." : "Sæt begge tider — fra og til.");
+    if (minAf(sl) <= minAf(st)) return fejl(EN ? "The session must end after it starts." : "Passet skal slutte, efter det begynder.");
+    if (minAf(sl) - minAf(st) > 300) return fejl(EN ? "A session can last at most 5 hours." : "Et pas kan højst vare 5 timer.");
+    const l = S.ugeplan || [];
+    if (l.length >= UGEPLAN_MAKS) return fejl(EN ? "Your week is full (14 sessions)." : "Din uge er fuld (14 pas).");
+    const dag = UG_DAG[EN ? "en" : "da"][S.ugDag];
+    if (l.some(function(p){ return p.dag === S.ugDag && minAf(p.start) < minAf(sl) && minAf(st) < minAf(p.slut); }))
+      return fejl(EN ? "You already have a session on " + dag + " at that time." : "Du har allerede et pas " + dag.toLowerCase() + " i det tidsrum.");
+    const p = { id: "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), dag: S.ugDag, start: st, slut: sl,
+      type: S.ugType === "fysisk" ? "fysisk" : "tennis", med: S.ugMed !== false,
+      sted: String(S.ugSted || "").replace(/[\u0000-\u001F\u007F<>]/g, "").trim().slice(0, 30) };
+    S.ugeplan = ugeplanSorter(l.concat([p]));
+    ugeplanGem();
+    S.ugForm = false;
+    S.ugBesked = { fejl: false, t: dag + " " + ugTid(st, EN) + "–" + ugTid(sl, EN) + (EN ? " is in your week ✅" : " er lagt i din uge ✅") };
+    render();
+  },
+  ugSletSpoerg: (id) => { S.ugSletB = S.ugSletB === id ? null : id; render(); },
+  ugSlet: (id) => {
+    const EN = S.sprog === "en";
+    S.ugeplan = (S.ugeplan || []).filter(function(p){ return p.id !== id; });
+    ugeplanGem(); S.ugSletB = null;
+    S.ugBesked = { fejl: false, t: EN ? "Removed from your week — what you have logged stays in your log." : "Fjernet fra din uge — det, du har logget, står stadig i loggen." };
+    render();
+  },
+  // «✓ Jeg var der» — posten får et id udledt af passet og datoen: to tryk giver én post.
+  ugLog: (v) => {
+    const EN = S.sprog === "en";
+    const d = String(v || "").split("|"), pid = d[0], dato = d[1] || "";
+    const p = (S.ugeplan || []).find(function(x){ return x.id === pid; });
+    if (!p || !/^\d{4}-\d{2}-\d{2}$/.test(dato)) { S.ugLogBesked = { fejl: true, t: EN ? "That session is no longer in your week." : "Det pas står ikke længere i din uge." }; render(); return; }
+    const id = ugeplanPostId(p, dato), fys = p.type === "fysisk";
+    const log = fys ? S.fysLog : S.ttLog;
+    if (!log.some(function(e){ return e && e.id === id; })) {
+      log.unshift({ id: id, d: dato, m: Math.max(10, Math.min(300, minAf(p.slut) - minAf(p.start))), k: 0, t: p.med ? 2 : 1, n: "" });
+      if (fys) { S.fysLog = sorterNyestFoerst(S.fysLog, "d"); lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog)); }
+      else { S.ttLog = sorterNyestFoerst(S.ttLog, "d"); lager.gem("sai-tennis-log", JSON.stringify(S.ttLog)); }
+      if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);   // som «Gem træningen»
+    }
+    S.ugKvalId = { id: id, fys: fys }; S.ugLogBesked = null;
+    render();
+  },
+  ugKval: (v) => {
+    const EN = S.sprog === "en", k = +v, q = S.ugKvalId;
+    if (!q || !(k >= 1 && k <= 10)) return;
+    const log = q.fys ? S.fysLog : S.ttLog;
+    const e = log.find(function(x){ return x && x.id === q.id; });
+    if (e) {
+      e.k = k; lager.gem(q.fys ? "sai-fysisk-log" : "sai-tennis-log", JSON.stringify(log));
+      if (S.klubKode && S.spillerNoegle) setTimeout(function(){ A.synkroniser(); }, 400);
+    }
+    S.ugKvalId = null;
+    S.ugLogBesked = e ? { fejl: false, t: (EN ? "Logged ✅ — " : "Logget ✅ — ") + e.m + " min · " + k + "/10" }
+                      : { fejl: true, t: EN ? "The session is no longer in your log." : "Passet står ikke længere i loggen." };
+    render();
+  },
+  ugKvalSpring: () => {
+    const EN = S.sprog === "en";
+    S.ugKvalId = null;
+    S.ugLogBesked = { fejl: false, t: EN ? "Logged ✅ — without a rating." : "Logget ✅ — uden bedømmelse." };
+    render();
+  },
   ttSletSpoerg: (i) => { S.ttSletB = +i; render(); },
   ttSletFortryd: () => { S.ttSletB = null; render(); },
   ttSlet: (i) => { S.ttLog.splice(+i, 1); S.ttSletB = null; lager.gem("sai-tennis-log", JSON.stringify(S.ttLog)); render(); },
@@ -3881,6 +4093,7 @@ const A = {
           if (_n) {
             // Sæt dem i kraft med det samme — ellers ville de først virke
             // ved næste opstart, og skærmen ville lyve om, hvad der kom med.
+            try { S.ugeplan = ugeplanLaes(); } catch (_e) {}   /* ⭐ v5.4.0 · min uge */
             try {
               const _sp = lager.hent("sai-sprog"); if (_sp === "en" || _sp === "da") S.sprog = _sp;
               const _hd = lager.hent("sai-haand"); if (_hd === "venstre" || _hd === "hoejre") S.haand = _hd;
@@ -12789,6 +13002,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       })();
 
       h += _skadetKort(EN);
+      h += _minUgeHero(EN);   /* ⭐ v5.4.0 · dagens pas øverst — ét tryk til loggen */
       // ══════════════════════════════════════════════════════════════
       // ⭐⭐⭐ v4.83.0 · TRÆNINGS-FLISERNE.
       //   Bestilt 23/7 ("ALT om til tiles"), gentaget 30/8 — og bekræftet
@@ -12825,7 +13039,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
 
       if (_tp === "tennis") {
       const ttTot = S.ttLog.reduce(function(a, e){ return a + e.m; }, 0);
-      const ttGk = S.ttLog.length ? (S.ttLog.reduce(function(a, e){ return a + e.k; }, 0) / S.ttLog.length).toFixed(1) : null;
+      const _ttK = S.ttLog.filter(function(e){ return e && e.k > 0; });   /* v5.4.0 · et pas uden bedømmelse er 0 — og 0 er ikke en score */
+      const ttGk = _ttK.length ? (_ttK.reduce(function(a, e){ return a + e.k; }, 0) / _ttK.length).toFixed(1) : null;
       // ⭐ v4.5.0 · som fys: registrering er spillerens, ikke teamets.
       if (S.rolle !== "familie") {
       h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">🎾 '+(EN?"Tennis training log":"Tennistræning — registrering")+'</h2>';
@@ -12843,7 +13058,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           (S.passBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.passBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.passBesked.t) + '</p>' : '') + '</div>';
       }
       if (S.ttLog.length) {
-        h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(ttTot/60).toFixed(1)+' '+(EN?"hours":"timer")+' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+ttGk+'/10</h3>' +
+        h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(ttTot/60).toFixed(1)+' '+(EN?"hours":"timer")+(ttGk ? ' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+ttGk+'/10' : '')+'</h3>' +
           S.ttLog.slice(0,8).map(function(e, i){
             return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+e.m+' min · '+(e.t===1?'🎾 ':e.t===2?'🧑‍🏫 ':'')+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span>' +
               (S.ttSletB === i
@@ -12895,6 +13110,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       }
 
       if (_tp === "uge") {
+      h += _minUgeKort(EN);   /* ⭐ v5.4.0 · min uge */
       (function(){
         const m = ugeMaal(S.fysLog);
         const naaet = m.denneUge >= m.MAAL;

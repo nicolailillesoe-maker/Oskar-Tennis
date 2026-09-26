@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.7.3 · 25. september 2026";
+const VERSION = "v5.7.4 · 25. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -5640,6 +5640,75 @@ const A = {
     S.ejerHenter = false;
     if (!r.fejl) S.ejerKoe = r;
     render();
+    A.anmHent();   /* ⭐ v5.7.4 · anmeldelserne hentes sammen med køen */
+  },
+  // ⭐⭐ v5.7.4 · ⚑ ANMELDELSERNE (Apple 1.2 · Nicolai 25/9: «Dig i ejerpanelet»). ejer-port v12.
+  anmHent: async () => {
+    if (S.anmHenter) return;
+    S.anmHenter = true;
+    const r = await A.portKald("anmeldelser", {});
+    S.anmHenter = false;
+    if (!r.fejl) S.anmListe = r.anmeldelser || [];
+    render();
+  },
+  anmAfgoer: async (v) => {
+    const EN = S.sprog === "en";
+    const d = String(v || "").split("|"); const id = Number(d[0]); const udfald = d[1];
+    if (!id || (udfald !== "afvis" && udfald !== "spaer")) return;
+    if (udfald === "spaer" && S.anmSpaerId !== id) { S.anmSpaerId = id; S.anmBesked = null; render(); return; }   /* to tryk */
+    S.anmSender = id; S.anmBesked = null; render();
+    const r = await A.portKald("anmeldelse-afgoer", { id: id, udfald: udfald });
+    S.anmSender = null; S.anmSpaerId = null;
+    if (r.fejl) {
+      S.anmBesked = { fejl: true, t: r.fejl === "ejer" ? (EN ? "The owner cannot be blocked." : "Ejeren kan ikke spærres.")
+        : r.fejl === "ukendt" ? (EN ? "The case is already closed." : "Sagen er allerede afgjort.")
+        : r.fejl === "netvaerk" ? (EN ? "No connection — nothing changed." : "Ingen forbindelse — intet er ændret.")
+        : (EN ? "It did not go through — try again." : "Det gik ikke igennem — prøv igen.") };
+    } else {
+      S.anmBesked = { fejl: false, t: udfald === "afvis"
+        ? (EN ? "Dismissed — the message stays hidden." : "Afvist — beskeden forbliver skjult.")
+        : (EN ? "The sender is blocked from the app." : "Afsenderen er spærret ude af appen.") };
+    }
+    A.anmHent();
+  },
+  // ⭐⭐ v5.7.4 · BLOKÉR (Apple 1.2 · Nicolai 25/9: «Venskab væk + tavshed»). venne-bud v17.
+  blokSpoerg: (v) => {
+    const d = String(v || "").split("|");
+    S.blokId = d[0] || null; S.blokNavn = d[1] || ""; S.blokFraChat = d[2] === "chat"; S.blokBesked = null;
+    render();
+  },
+  blokNej: () => { S.blokId = null; S.blokNavn = ""; S.blokFraChat = false; render(); },
+  blokJa: async () => {
+    const EN = S.sprog === "en";
+    const id = S.blokId, navn = S.blokNavn || (EN ? "your friend" : "din ven"), fraChat = S.blokFraChat;
+    if (!id || S.blokSender) return;
+    S.blokSender = true; render();
+    const r = await A.budKald("bloker", { ven: id });
+    S.blokSender = false; S.blokId = null; S.blokNavn = ""; S.blokFraChat = false;
+    const t = r.fejl
+      ? (r.fejl === "netvaerk" ? (EN ? "No connection — nothing changed." : "Ingen forbindelse — intet er ændret.")
+        : r.fejl === "ikke-ven" ? (EN ? "You are no longer friends." : "I er ikke venner længere.")
+        : (EN ? "Could not block — try again." : "Kunne ikke blokere — prøv igen."))
+      : (EN ? navn + " is blocked. You no longer see each other." : navn + " er blokeret. I ser ikke længere hinanden.");
+    S.vennerBesked = { fejl: !!r.fejl, t: t };
+    if (!r.fejl) { S.blokListe = null; if (fraChat) A.chatLuk(); A.venneHent(); } else { S.chatBesked = fraChat ? { t: t } : S.chatBesked; }
+    render();
+  },
+  blokVis: async () => {
+    if (S.blokHenter) return;
+    S.blokHenter = true; render();
+    const r = await A.budKald("blokerede", {});
+    S.blokHenter = false;
+    S.blokListe = r.fejl ? { fejl: r.fejl } : (r.blokerede || []);
+    render();
+  },
+  blokFjern: async (v) => {
+    const EN = S.sprog === "en";
+    const r = await A.budKald("afbloker", { id: String(v || "") });
+    S.vennerBesked = { fejl: !!r.fejl, t: r.fejl
+      ? (r.fejl === "netvaerk" ? (EN ? "No connection — nothing changed." : "Ingen forbindelse — intet er ændret.") : (EN ? "Could not remove the block." : "Kunne ikke fjerne blokeringen."))
+      : (EN ? "The block is removed. You can add each other as friends again." : "Blokeringen er fjernet. I kan tilføje hinanden som venner igen.") };
+    S.blokListe = null; A.blokVis();
   },
   // ══════════════════════════════════════════════════════════════════
   // ⭐⭐⭐ v4.86.0 · EJERENS TO KNAPPER.
@@ -5900,7 +5969,7 @@ const A = {
     S.snakUdkast = ""; S.snakBesked = null; render();
     const r = await A.snakKald("skriv", { art: "t", tekst: t.slice(0, 140) });
     if (r.fejl) {
-      S.snakBesked = { t: r.fejl === "link"
+      S.snakBesked = { t: r.fejl === "ord" ? (S.sprog === "en" ? "We don't use that word here." : "Det ord bruger vi ikke her.") : r.fejl === "link"
         ? (S.sprog === "en" ? "Links are not allowed in the room." : "Links er ikke tilladt i rummet.")
         : (S.sprog === "en" ? "The message did not go through — try again." : "Beskeden kom ikke afsted — prøv igen.") };
       render();
@@ -5942,7 +6011,7 @@ const A = {
     if (!id || !t) return;
     const r = await A.snakKald("ret", { id: id, tekst: t.slice(0, 140) });
     if (r.fejl) {
-      S.snakBesked = { t: r.fejl === "link"
+      S.snakBesked = { t: r.fejl === "ord" ? (S.sprog === "en" ? "We don't use that word here." : "Det ord bruger vi ikke her.") : r.fejl === "link"
         ? (S.sprog === "en" ? "Links are not allowed in the room." : "Links er ikke tilladt i rummet.")
         : r.fejl === "anmeldt"
           ? (S.sprog === "en" ? "A reported message cannot be edited." : "En anmeldt besked kan ikke rettes.")
@@ -7656,7 +7725,7 @@ const A = {
     S.chatUdkast = ""; S.chatBesked = null; render();
     const r = await A.chatKald("skriv", { art: "t", tekst: t.slice(0, 140) });
     if (r.fejl) {
-      S.chatBesked = { t: r.fejl === "link"
+      S.chatBesked = { t: r.fejl === "ord" ? (S.sprog === "en" ? "We don't use that word here." : "Det ord bruger vi ikke her.") : r.fejl === "link"
         ? (S.sprog === "en" ? "Links are not allowed in the chat." : "Links er ikke tilladt i chatten.")
         : (S.sprog === "en" ? "The message did not go through — try again." : "Beskeden kom ikke afsted — prøv igen.") };
       render();
@@ -7684,7 +7753,7 @@ const A = {
     S.chatRetId = null; S.chatRetUdkast = ""; render();
     const r = await A.chatKald("ret", { id: id, tekst: tekst.slice(0, 140) });
     if (r.fejl) {
-      S.chatBesked = { t: r.fejl === "link"
+      S.chatBesked = { t: r.fejl === "ord" ? (S.sprog === "en" ? "We don't use that word here." : "Det ord bruger vi ikke her.") : r.fejl === "link"
         ? (S.sprog === "en" ? "Links are not allowed in the chat." : "Links er ikke tilladt i chatten.")
         : (S.sprog === "en" ? "The change did not go through." : "Rettelsen kom ikke afsted.") };
       render();
@@ -11089,7 +11158,17 @@ function _tegn() {
       h += '<div id="snak-flade" style="display:flex;flex-direction:column">';
       h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px;flex:none">' +
         '<button class="knap valg" style="flex:none;width:auto;min-height:44px;padding:0 16px" data-a="chatLuk">←</button>' +
-        '<b style="font-size:16px">💬 ' + esc(S.chatNavn || (EN?"Friend":"Ven")) + '</b></div>';
+        '<b style="flex:1;min-width:0;font-size:16px">💬 ' + esc(S.chatNavn || (EN?"Friend":"Ven")) + '</b>' +
+        /* ⭐ v5.7.4 · Blokér står dér, hvor ordene er */
+        '<button class="knap valg" style="flex:none;width:auto;min-height:40px;padding:0 12px;font-size:12px;color:var(--tabt);border-color:var(--tabt)" data-a="blokSpoerg" data-v="' + esc(String(S.chatVen || "") + "|" + (S.chatNavn || "") + "|chat") + '">🚫 ' + (EN ? "Block" : "Blokér") + '</button></div>';
+      if (S.blokId && S.blokFraChat) h += (function(EN){
+        return '<div class="kort dev-kant dev-kant-staal" style="padding:10px 12px;margin:2px 0 8px;border-color:var(--tabt)">' +
+          '<p class="lille" style="margin:0 0 8px">' + (EN
+            ? "Block <b>" + esc(S.blokNavn) + "</b>? Your friendship disappears, and " + esc(S.blokNavn) + " can no longer find you, write to you or invite you to a room. No message is sent. You can remove the block again under Friends."
+            : "Blokér <b>" + esc(S.blokNavn) + "</b>? Venskabet forsvinder, og " + esc(S.blokNavn) + " kan hverken finde dig, skrive til dig eller invitere dig i et rum. Der sendes ingen besked. Du kan fjerne blokeringen igen under Venner.") + '</p>' +
+          '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="blokJa">' + (S.blokSender ? "⏳ …" : (EN ? "Block" : "Blokér")) + '</button>' +
+          '<button class="knap valg" style="min-height:44px" data-a="blokNej">' + (EN ? "Cancel" : "Fortryd") + '</button></div></div>';
+      })(EN);
       // ⭐ v4.103.0 · SPILLER VENNEN LIVE, STÅR KAMPEN ØVERST I CHATTEN — samme
       //   kort og samme dør som i rummet (rumAabn → tavlen). Tavlen er ÉN
       //   tråd pr. kamp, så en kommentar dér ses af alle, der følger med.
@@ -11634,9 +11713,19 @@ function _tegn() {
                 (!v.live && v.seneste
                   ? '<button class="knap valg" style="flex:none;min-height:44px;padding:0 13px;font-size:12.5px" data-a="rumAabn" data-v="' + esc(v.seneste.foelgekode + "|" + v.fornavn) + '">\ud83c\udfdf ' + (EN?"Open the match":"Se kampen") + '</button>'
                   : '') +
+                '<button class="knap valg" style="flex:none;min-height:44px;padding:0 13px;font-size:12.5px;color:var(--tabt);border-color:var(--tabt)" data-a="blokSpoerg" data-v="' + esc((v.id || "") + "|" + v.fornavn) + '">🚫 ' + (EN?"Block":"Blokér") + '</button>' +
                 '<button class="knap valg" style="flex:none;min-height:44px;padding:0 13px;font-size:12.5px;color:var(--tabt);border-color:var(--tabt)" data-a="venneFjernSpoerg" data-v="' + esc((v.id || "") + "|" + v.fornavn) + '">\ud83d\uddd1 ' + (EN?"Remove friend":"Fjern ven") + '</button>' +
                 '</div>';
             }
+            // ⭐ v5.7.4 · blokér-boksen står under vennen, som fjern-boksen
+            if (S.blokId && !S.blokFraChat && S.blokId === (v.id || "")) h += (function(EN){
+        return '<div class="kort dev-kant dev-kant-staal" style="padding:10px 12px;margin:2px 0 8px;border-color:var(--tabt)">' +
+          '<p class="lille" style="margin:0 0 8px">' + (EN
+            ? "Block <b>" + esc(S.blokNavn) + "</b>? Your friendship disappears, and " + esc(S.blokNavn) + " can no longer find you, write to you or invite you to a room. No message is sent. You can remove the block again under Friends."
+            : "Blokér <b>" + esc(S.blokNavn) + "</b>? Venskabet forsvinder, og " + esc(S.blokNavn) + " kan hverken finde dig, skrive til dig eller invitere dig i et rum. Der sendes ingen besked. Du kan fjerne blokeringen igen under Venner.") + '</p>' +
+          '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--tabt)" data-a="blokJa">' + (S.blokSender ? "⏳ …" : (EN ? "Block" : "Blokér")) + '</button>' +
+          '<button class="knap valg" style="min-height:44px" data-a="blokNej">' + (EN ? "Cancel" : "Fortryd") + '</button></div></div>';
+      })(EN);
             // Inline-bekraeftelsen paa fjern — ingen modal, ingen alert.
             if (S.venneFjernId && S.venneFjernNavn === v.fornavn) {
               h += '<div class="kort dev-kant dev-kant-staal" style="padding:10px 12px;margin:2px 0 8px">' +
@@ -11647,6 +11736,25 @@ function _tegn() {
                 '<button class="knap valg" style="min-height:44px" data-a="venneFjernNej">' + (EN?"Cancel":"Fortryd") + '</button></div></div>';
             }
           });
+        }
+        // ⭐ v5.7.4 · BLOKEREDE — vejen tilbage fra en blokering (princip 64: ingen blyant foran)
+        if (S.rolle !== "familie") {
+          h += '<div style="margin-top:10px;padding-top:9px;border-top:1px solid var(--linje)">';
+          if (!S.blokListe) {
+            h += '<button class="knap valg" style="min-height:40px;padding:6px 14px;font-size:12px;color:var(--daempet)" data-a="blokVis">' + (S.blokHenter ? "⏳ …" : "🚫 " + (EN ? "Blocked" : "Blokerede")) + '</button>';
+          } else if (S.blokListe.fejl) {
+            h += '<p class="lille" style="margin:0;color:var(--tabt)">' + (S.blokListe.fejl === "netvaerk" ? (EN ? "No connection." : "Ingen forbindelse.") : (EN ? "Could not load the list." : "Listen kunne ikke hentes.")) + '</p>';
+          } else if (!S.blokListe.length) {
+            h += '<p class="lille" style="margin:0;opacity:.7">🚫 ' + (EN ? "You have not blocked anyone." : "Du har ikke blokeret nogen.") + '</p>';
+          } else {
+            h += '<p class="lille" style="margin:0 0 6px;font-weight:800;letter-spacing:1.2px;color:var(--grus)">🚫 ' + (EN ? "BLOCKED" : "BLOKEREDE") + '</p>';
+            S.blokListe.forEach(function(b){
+              h += '<div style="display:flex;align-items:center;gap:8px;margin:4px 0">' +
+                '<span style="flex:1;min-width:0" class="lille">' + esc(b.navn || (EN ? "a player" : "en spiller")) + '</span>' +
+                '<button class="knap valg" style="flex:none;min-height:40px;padding:0 12px;font-size:12px" data-a="blokFjern" data-v="' + esc(b.id) + '">' + (EN ? "Remove block" : "Fjern blokering") + '</button></div>';
+            });
+          }
+          h += '</div>';
         }
         h += '</div>';   // ⭐ v4.42.0 · KORT 1 SLUTTER HER. Før løb det videre.
 
@@ -12157,6 +12265,34 @@ function _tegn() {
         h += _opsKort("ejer", "\ud83d\udc65", (EN?"PLAYERS":"SPILLERE"),
           (_venter.length ? _venter.length + " " + (EN?"waiting":"venter") : (_k ? (_k.inde || 0) + " " + (EN?"inside":"inde") : "\u2014")),
           _venter.length ? "var(--guld)" : "var(--daempet)", _ekrop);
+        // ⭐⭐ v5.7.4 · ⚑ ANMELDELSER (Apple 1.2 · Nicolai 25/9: «Dig i ejerpanelet»). Ordene står her, til du har
+        //   afgjort sagen — senest 30 dage. Et billede er slettet ved ⚑; sagen siger kun, AT det var et billede.
+        var _akrop = '';
+        const _al = S.anmListe;
+        if (!_al) {
+          _akrop = '<p class="lille" style="margin:0">' + (S.anmHenter ? "⏳ …" : (EN ? "Not loaded." : "Ikke hentet.")) + '</p>';
+        } else if (!_al.length) {
+          _akrop = '<p class="lille" style="margin:0 0 9px">' + (EN ? "No reports. When someone taps ⚑ on a message, it lands here." : "Ingen anmeldelser. Når nogen trykker ⚑ på en besked, lander den her.") + '</p>';
+        } else {
+          _al.forEach(function(a){
+            _akrop += '<div style="padding:8px 0;border-top:1px solid var(--linje)">' +
+              '<div class="lille" style="opacity:.75">' + (a.kilde === "rum" ? (EN ? "room" : "rum") : (EN ? "chat" : "chat")) + ' · ' + _ventet(a.tid) +
+                (a.gange > 1 ? ' · <b style="color:var(--tabt)">' + a.gange + (EN ? " reports on this sender" : " sager på samme afsender") + '</b>' : '') + '</div>' +
+              '<b style="font-size:14px">' + esc(a.navn || (EN ? "a player" : "en spiller")) + '</b>' +
+              '<p class="lille" style="margin:5px 0 0;padding:7px 9px;background:var(--flade);border-left:2px solid var(--tabt);border-radius:0 8px 8px 0;line-height:1.45">' +
+                (a.art === "b" ? (EN ? "📷 a picture (deleted when it was reported)" : "📷 et billede (slettet, da det blev anmeldt)") : "“" + esc(a.tekst || "") + "”") + '</p>' +
+              '<div class="raekke" style="margin-top:7px">' +
+              '<button class="knap valg" style="min-height:44px" data-a="anmAfgoer" data-v="' + a.id + '|afvis">' + (S.anmSender === a.id ? "⏳ …" : (EN ? "Dismiss" : "Afvis")) + '</button>' +
+              '<button class="knap" style="min-height:44px;background:var(--tabt)" data-a="anmAfgoer" data-v="' + a.id + '|spaer">' +
+                (S.anmSpaerId === a.id ? (EN ? "Tap again — block the sender" : "Tryk igen — spær afsenderen") : (EN ? "Block the sender" : "Spær afsenderen")) + '</button>' +
+              '</div></div>';
+          });
+        }
+        if (S.anmBesked) _akrop += '<p class="lille" style="margin:8px 0 0;font-weight:700;color:' + (S.anmBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.anmBesked.t) + '</p>';
+        _akrop += '<button class="knap valg" style="min-height:40px;margin-top:8px" data-a="anmHent">' + (S.anmHenter ? "⏳ …" : (EN ? "Refresh" : "Hent igen")) + '</button>';
+        h += _opsKort("anmeld", "⚑", (EN ? "REPORTS" : "ANMELDELSER"),
+          (_al ? (_al.length ? _al.length + " " + (EN ? "open" : "åbne") : (EN ? "none" : "ingen")) : "—"),
+          (_al && _al.length) ? "var(--tabt)" : "var(--daempet)", _akrop);
       }
       // ⭐⭐ v4.24.0 · BESKEDER. Nicolai 25/8: "Det må være muligt at lave
       // push beskeder via Safari?" Ja — men på iPhone KUN når appen ligger

@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.8.2 · 26. september 2026";
+const VERSION = "v5.8.3 · 26. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -2340,10 +2340,18 @@ try {
     const _kr = String(_kq.get("ref") || "");
     history.replaceState(null, "", location.pathname);
     let _kv = null; try { _kv = JSON.parse(lager.hent("sai-koeb-venter") || "null"); } catch (_e) {}
-    if (/^st-[kl]-[0-9a-f]{24}$/.test(_kr) && (!_kv || _kv.ref !== _kr)) {
-      try { lager.gem("sai-koeb-venter", JSON.stringify({ ref: _kr, type: _kr.charAt(3) === "l" ? "live" : "kamp", t: Date.now(), hvor: "" })); } catch (_e) {}
+    const _mit = !!(_kv && _kv.ref === _kr);
+    if (!_mit && !(I_SKALLEN || paaHjemmeskaerm())) {
+      /* ⭐ v5.8.3 · MobilePay sender tilbage til standardbrowseren — ikke til appen på hjemmeskærmen (målt 25/9 og 26/9:
+         Chrome med en anden profil). Købet blev startet et andet sted; det lander dér, når appen bliver synlig igen. */
+      S.tab = "kamp"; S.wiz = 3;
+      S.nyBesked = { fejl: false, t: S.sprog === "en" ? "Go back to StreakTennis on your home screen — the purchase lands there." : "Gå tilbage til StreakTennis på hjemmeskærmen — købet lander dér." };
+    } else {
+      if (/^st-[kl]-[0-9a-f]{24}$/.test(_kr) && !_mit) {
+        try { lager.gem("sai-koeb-venter", JSON.stringify({ ref: _kr, type: _kr.charAt(3) === "l" ? "live" : "kamp", t: Date.now(), hvor: "" })); } catch (_e) {}
+      }
+      setTimeout(function () { try { A.koebVent(true); } catch (_e) {} }, 0);
     }
-    setTimeout(function () { try { A.koebVent(true); } catch (_e) {} }, 0);
   } else setTimeout(function () { try { A.koebVent(false); } catch (_e) {} }, 1200);
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === "visible") { try { A.koebVent(false); } catch (_e) {} }
@@ -3248,6 +3256,13 @@ function liveTalTekst(EN) {
   const rest = Math.max(0, l.af - l.brugt);
   if (l.gratis) return EN ? rest + " of " + l.af + " free left" : rest + " af " + l.af + " gratis tilbage";
   return EN ? rest + " of " + l.af + " left this month" : rest + " af " + l.af + " tilbage denne måned";
+}
+/* ⭐ v5.8.3 · betalte, ubrugte køb, der giver live — samme regel som basens live_start */
+function koebKlarTekst(EN) {
+  const k = S.koebKlar; if (!k || S.minPlan === "fri") return "";
+  const n = (S.minPlan === "fuld" || S.minPlan === "klub") ? k.live + k.kamp : k.kamp;
+  if (!n) return "";
+  return EN ? n + (n === 1 ? " paid match ready" : " paid matches ready") : n + (n === 1 ? " købt kamp klar" : " købte kampe klar");
 }
 /* prisen, der står på «Del kampen live», når kampen startes — planen afgør den (live_start i basen) */
 function livePrisTekst(EN) {
@@ -4416,7 +4431,7 @@ const A = {
     S.wiz = 1; S._doneVist = false;
     S.aktiv = { modstander: (S.nyMod || "").trim() || "Ukendt modstander", turnering: (S.nyTur || "").trim(),
       dato: new Date().toISOString().slice(0,10), oskarFirst: S.nyFirst, mtb: S.nyMtb, saetTil: S.nyFormat === 4 ? 4 : 6, noAd: S.nyFormat === 4 && S.nyNoAd, point: [], justeringer: [] };
-    S.afventer = null; S.serv = 1; S.liveKoeb = null; gemAktiv(); render();
+    S.afventer = null; S.serv = 1; S.liveKoeb = null; S.nyBesked = null; S.koebKlar = null; gemAktiv(); render();
     if (S.nyLive) { S.delAaben = true; A.liveStart(); }   /* ⭐ v5.8.0 */
   },
   nyLiveToggle: () => { S.nyLive = !S.nyLive; render(); },   /* ⭐ v5.8.0 */
@@ -8379,10 +8394,11 @@ const A = {
       const ny = !!(d && d.abonnement && d.abonnement.afvist_grund === "alder");
       if (ny !== !!S.betalAfvist) { S.betalAfvist = ny; render(); }
       /* ⭐ v5.7.5 · hele svaret — {status, plan, udloeber, naade_til, afvist_grund} (betaling-start v3) */
-      const gl = JSON.stringify([S.mpAftale || null, S.liveTal || null]);
+      const gl = JSON.stringify([S.mpAftale || null, S.liveTal || null, S.koebKlar || null]);
       S.mpAftale = (d && d.abonnement) ? d.abonnement : null;
       S.liveTal = (d && d.live && typeof d.live.brugt === "number") ? { brugt: d.live.brugt, af: +d.live.af || 3, gratis: !!d.live.gratis } : null;   /* ⭐ v5.8.2 */
-      if (JSON.stringify([S.mpAftale, S.liveTal]) !== gl) render();
+      S.koebKlar = (d && d.koeb) ? { kamp: +d.koeb.kamp || 0, live: +d.koeb.live || 0 } : null;   /* ⭐ v5.8.3 · betalte, ubrugte køb */
+      if (JSON.stringify([S.mpAftale, S.liveTal, S.koebKlar]) !== gl) render();
       return S.mpAftale;
     } catch (e) { clearTimeout(ur); }
   },
@@ -8430,6 +8446,7 @@ const A = {
     const EN = S.sprog === "en";
     const sig = (t) => {
       if (hvor.indexOf("a:") === 0) S.hentBesked = { i: _koebKampIndeks(hvor.slice(2)), fejl: true, t: t };
+      else if (hvor === "start") S.nyBesked = { fejl: true, t: t };   /* ⭐ v5.8.3 */
       else S.liveBesked = { fejl: true, t: t };
     };
     S.koebSender = type; render();
@@ -8494,16 +8511,16 @@ const A = {
         S.tab = "kamp"; S.liveKoeb = null; S.delAaben = true; render();
         A.liveStart(); return;
       }
-      S.tab = "historik"; S.statPanel = "kampe"; S.hentBesked = { i: -1, fejl: false, t: EN
-        ? "The purchase went through ✓ — it is used on your next live match or analysis."
-        : "Købet er gået igennem ✓ — det bruges på din næste live-kamp eller analyse." };
+      /* ⭐ v5.8.3 · ingen kamp i gang → Start kamp, live TIL, købet i basen venter på den næste kamp */
+      S.tab = "kamp"; S.wiz = 3; S.nyLive = true; S.liveKoeb = null; S.koebKlar = null; S.liveTal = null; S._liveTalSpurgt = false;
+      S.nyBesked = { fejl: false, t: EN ? "The purchase went through ✓ — live is included in your next match." : "Købet er gået igennem ✓ — live er med i den næste kamp." };
       render(); return;
     }
     const sig = (t, fejl) => {
       if (erA) { S.tab = "historik"; S.statPanel = "kampe"; if (n >= 0) S.kampAaben[n] = true; S.hentBesked = { i: n, fejl: fejl, t: t,
         koeb: fejl && n >= 0 ? { type: "kamp", pris: kv.type === "live" ? 15 : 20 } : null }; }
       else if (S.aktiv) { S.tab = "kamp"; S.delAaben = true; S.liveBesked = { fejl: fejl, t: t }; }
-      else { S.tab = "historik"; S.statPanel = "kampe"; S.hentBesked = { i: -1, fejl: fejl, t: t }; }
+      else { S.tab = "kamp"; S.wiz = 3; S.nyBesked = { fejl: fejl, t: t }; }   /* ⭐ v5.8.3 · tilbage til Start kamp */
     };
     if (status === "annulleret") sig(EN ? "The purchase was not completed — nothing was charged." : "Købet blev ikke gennemført — der er ikke trukket noget.", true);
     else if (status === "ukendt") sig(EN ? "We could not find that purchase — nothing was charged." : "Vi kunne ikke finde det køb — der er ikke trukket noget.", true);
@@ -13307,7 +13324,16 @@ function _tegn() {
         : "Siden (FH/BH) spørges på vinderslag, gratis fejl og returfejl; zonerne på fejl. Ét tryk, Spring over står der altid — med begge til er det ÉT gitter. Fra = færre tryk, og analysen mister den fordeling (fx «15 af 20 gratis fejl på forhånden»).")+'</p>';
       /* ⭐⭐ v5.8.0 · LIVE VÆLGES, HVOR KAMPEN STARTER — prisen står på knappen (planen afgør den) */
       if (S.spillerNoegle && !S.liveTal && !S._liveTalSpurgt) { S._liveTalSpurgt = true; setTimeout(function(){ try { A.betalStatus(); } catch (_e) {} }, 0); }   /* ⭐ v5.8.2 · én gang pr. start */
-      h += '<div class="raekke" style="margin:0 0 10px"><button class="knap valg '+(S.nyLive?"til":"")+'" data-a="nyLiveToggle" data-live-tal="1">📡 '+(EN?"Share the match live":"Del kampen live")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.nyLive?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+(liveTalTekst(EN)?' · '+liveTalTekst(EN):(livePrisTekst(EN)?' · '+livePrisTekst(EN):''))+'</span></button></div>';
+      if (S.nyBesked) h += '<p class="lille" data-ny-besked="1" style="margin:0 0 8px;text-align:center;color:'+(S.nyBesked.fejl?'var(--tabt)':'var(--vundet)')+'">'+esc(S.nyBesked.t)+'</p>';   /* ⭐ v5.8.3 */
+      /* ⭐⭐ v5.8.3 · KØBET TAGES FØR KAMPEN (Nicolai 26/9: «allerede inden man går i gang med kampen skal bestemme om man vil købe»).
+         De gratis er brugt, og intet køb er klar → knappen ER købet. Ellers: slå live til, som før. */
+      var _brugtOp = !!(S.liveTal && S.minPlan !== "fri" && S.liveTal.brugt >= S.liveTal.af) && !koebKlarTekst(EN);
+      if (_brugtOp) {
+        var _kt = (S.minPlan === "fuld" || S.minPlan === "klub") ? "live" : "kamp";
+        h += koebKnap(_kt, _kt === "live" ? 15 : 20, "start", EN) +
+          '<p class="lille" data-live-tal="1" style="margin:4px 0 10px;text-align:center;opacity:.8">' + (S.liveTal.gratis ? (EN ? "Your 3 free live matches are used." : "Dine 3 gratis live-kampe er brugt.") : (EN ? "This month's 3 live matches are used." : "Månedens 3 live-kampe er brugt.")) + '</p>';
+      } else
+      h += '<div class="raekke" style="margin:0 0 10px"><button class="knap valg '+(S.nyLive?"til":"")+'" data-a="nyLiveToggle" data-live-tal="1">📡 '+(EN?"Share the match live":"Del kampen live")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.nyLive?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+(koebKlarTekst(EN)?' · '+koebKlarTekst(EN):(liveTalTekst(EN)?' · '+liveTalTekst(EN):(livePrisTekst(EN)?' · '+livePrisTekst(EN):'')))+'</span></button></div>';
       h += '<div class="raekke"><button class="knap stor" style="background:var(--grus)" data-a="start">'+(EN?"Start match":"Start kamp")+'</button></div>';
         h += _wtilb(2);
       }

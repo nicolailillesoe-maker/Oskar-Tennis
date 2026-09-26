@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.7.1 · 25. september 2026";
+const VERSION = "v5.7.2 · 25. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -2801,6 +2801,10 @@ function browserNavn() {
 //   man aldrig mister sin plads i rejsen.
 const GUIDE_URL = "kom-i-gang.html";
 
+// ⭐ v5.7.2 · kopiens etiket: app og browser på samme iPhone skal kunne skelnes (25/9 kaldte begge sig «iPhone · Safari»)
+function skyEnhed() {
+  try { return (erIOS() ? "iPhone" : "Enhed") + " · " + (I_SKALLEN ? "app" : browserNavn()); } catch (_e) { return "Enhed"; }
+}
 function erIOS() {
   try {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -4771,6 +4775,25 @@ const A = {
   // sikringen kan køre uden at spørge om kodeordet hver gang.
   // ⭐ Saltet er ikke hemmeligt og skal FØLGE boksen — uden det kan
   //   nøglen ikke udledes igen på en anden telefon.
+  // ⭐⭐ v5.7.2 · NØGLEN LAVES AF KOPIENS EGEN OPSKRIFT (saltet, den står med).
+  //   Målt 25/9: en telefon med en nøgle af et ANDET salt kan aldrig åbne kopien — og før i dag gav den op i stilhed.
+  //   Nyt salt KUN når serveren svarer «ingen kopi». Fejler hentningen (nettet, porten), laves INGENTING.
+  //   Udfald: aaben · ny · laast · netvaerk
+  skyNoegleKonto: async (kode) => {
+    try {
+      const foer = await skyKald("hent", {});
+      if (!foer || foer.fejl) return "netvaerk";
+      if (foer.tom) { const r = await A.skyNoegleSaet(kode); return r ? "ny" : "netvaerk"; }
+      const bits = await skyUdled(String(kode), foer.salt);
+      const d = await skyAab(foer.krypt, bits);
+      if (!d) { S.skyLaast = true; try { lager.gem("sai-sky-laast", "1"); } catch (_e) {} return "laast"; }
+      S.skyLaast = false; try { lager.slet("sai-sky-laast"); } catch (_e) {}
+      lager.gem("sai-sky-salt", foer.salt); lager.gem("sai-sky-noegle", bits);
+      lager.gem("sai-sky-tid", foer.opdateret || "");
+      try { A.fletInd(d); } catch (_e) {}
+      return "aaben";
+    } catch (_e) { return "netvaerk"; }
+  },
   skyNoegleSaet: async (kode, saltB64) => {
     try {
       const salt = saltB64 || _b64(crypto.getRandomValues(new Uint8Array(16)));
@@ -5081,12 +5104,12 @@ const A = {
         //   Aldrig overskrive i stilhed; aldrig tabe det, den anden skrev.
         let krypt = await skyLaas(krop, bits);
         let r = await skyKald("gem", { krypt, salt, basis: lager.hent("sai-sky-tid") || null,
-          enhed: (erIOS() ? "iPhone" : "Enhed") + " \u00b7 " + browserNavn() });
+          enhed: skyEnhed() });
         if (r && r.fejl === "foraeldet") {
           const foer = await skyKald("hent", {});
           if (foer && !foer.fejl && !foer.tom) {
             const d = await skyAab(foer.krypt, bits);
-            if (!d) { S.skySender = false; if (straks) render(); return; }   // en boks, vi ikke kan åbne, røres ikke
+            if (!d) { S.skySender = false; S.skyLaast = true; try { lager.gem("sai-sky-laast", "1"); } catch (_e) {} S.skyBesked = null; render(); return; }   // en boks, vi ikke kan åbne, røres ikke — ⭐ v5.7.2 · men det SIGES (75)
             A.fletInd(d);
             lager.gem("sai-sky-tid", foer.opdateret || "");
             const krop2 = A.skyKrop(true);
@@ -5096,10 +5119,10 @@ const A = {
               String((krop2.navn || "").length) + ":" + String((krop2.kampAktiv || "").length) + ":" + String(JSON.stringify(krop2.teams || []).length); } catch (_e) {}   /* v5.7.0 */
             krypt = await skyLaas(krop2, bits);
             r = await skyKald("gem", { krypt, salt, basis: foer.opdateret || null,
-              enhed: (erIOS() ? "iPhone" : "Enhed") + " \u00b7 " + browserNavn() });
+              enhed: skyEnhed() });
           } else if (foer && !foer.fejl && foer.tom) {
             r = await skyKald("gem", { krypt, salt, basis: null,
-              enhed: (erIOS() ? "iPhone" : "Enhed") + " \u00b7 " + browserNavn() });
+              enhed: skyEnhed() });
           }
         }
         S.skySender = false;
@@ -5107,7 +5130,7 @@ const A = {
           lager.gem("sai-sky-aftryk", aftryk);
           lager.gem("sai-sky-tid", r.opdateret || new Date().toISOString());
           S.skyStatus = { har: true, bytes: r.bytes, opdateret: r.opdateret };
-          S.skyBesked = null;
+          if (S.skyBesked && S.skyBesked.fejl) S.skyBesked = null;   /* ⭐ v5.7.2 · 94: succes sletter fejlen, ikke kvitteringen */
         } else if (r && r.fejl && straks) {
           S.skyBesked = { fejl: true, t: r.fejl === "netvaerk"
             ? (S.sprog === "en" ? "No connection \u2014 try again." : "Ingen forbindelse \u2014 pr\u00f8v igen.")
@@ -5130,7 +5153,9 @@ const A = {
           ? (EN ? "The player has no backup yet — the mirror waits for it." : "Spilleren har ingen sikkerhedskopi endnu — spejlet venter på den.")
           : (foer && foer.fejl === "adgang" && teamKunStreaks())
             ? (EN ? "The team key is blocked or unknown — ask the player for a new link." : "Team-nøglen er spærret eller ukendt — bed spilleren om et nyt link.")
-            : (EN ? "No backup found." : "Der er ingen sikkerhedskopi.") };
+            : (foer && foer.fejl === "netvaerk")
+              ? (EN ? "No connection — try again." : "Ingen forbindelse — prøv igen.")   /* ⭐ v5.7.2 · 94 */
+              : (EN ? "No backup found." : "Der er ingen sikkerhedskopi.") };
         return 0;
       }
       if (foer.tom === false && teamKunStreaks() && !lager.hent("sai-sky-noegle") && !kode) {
@@ -5155,9 +5180,9 @@ const A = {
         if (teamKunStreaks()) { S.skyBesked = { fejl: true, t: EN
           ? "The mirror key no longer fits the player’s backup (the password was changed). It arrives again the next time the player opens the app — nothing has been overwritten."
           : "Spejl-nøglen passer ikke længere til spillerens sikkerhedskopi (kodeordet er skiftet). Den kommer igen, næste gang spilleren åbner sin app — der er ikke overskrevet noget." }; return 0; }
-        S.skyBesked = { fejl: true, t: EN
-          ? "There is a backup, but it cannot be opened with this password. Nothing has been overwritten \u2014 log in with the password it was made with, or delete it below."
-          : "Der ligger en sikkerhedskopi, men den kan ikke \u00e5bnes med dette kodeord. Der er ikke overskrevet noget \u2014 log ind med det kodeord, den blev lavet med, eller slet den nedenfor." };
+        S.skyBesked = kode ? { fejl: true, t: EN
+          ? "That password does not open it. Changed your password lately? Try the one you had before — nothing has been overwritten."
+          : "Det kodeord åbner den ikke. Har du skiftet kodeord for nylig, så prøv det, du havde før — der er ikke overskrevet noget." } : null;   /* ⭐ v5.7.2 · uden kodeord siger døren det — én gang */
         return 0;
       }
       // ⭐ Boksen ER åbnet — bremsen slippes, og nøglen står nu rigtigt.
@@ -5205,21 +5230,72 @@ const A = {
     const EN = S.sprog === "en";
     const kode = String(S.skyGammelKode || "");
     if (kode.length < 4) {
-      S.skyBesked = { fejl: true, t: EN ? "Type the password the backup was made with." : "Skriv det kodeord, kopien blev lavet med." };
+      S.skyBesked = { fejl: true, t: EN ? "Type your password." : "Skriv dit kodeord." };
       return render();
     }
     S.skySender = true; S.skyBesked = null; render();
     const n = await A.skyGendan(kode, false);   // sætter selv bremsen igen, hvis det slår fejl
+    if (S.skyLaast) { S.skySender = false; return render(); }
+    // ⭐⭐ v5.7.2 · ÅBNET. Var det dit NUVÆRENDE kodeord? Kontoen svarer — og hvert svar får sin egen sætning (75).
+    //   Nuværende → telefonen har nu den rigtige nøgle, og der gemmes igen herfra.
+    //   Et tidligere → kopien er stadig låst med det; skift kodeord, så låses den om.
+    let nu = "ukendt";
+    try {
+      const navn = String(S.mitNavn || lager.hent("sai-brugernavn") || "").trim();
+      if (navn) {
+        const r = await A.kontoKald("login", { navn: navn, kode: kode });
+        nu = !r.fejl ? "ja" : (r.fejl === "forkert" ? "nej" : "ukendt");
+      }
+    } catch (_e) {}
     S.skySender = false;
-    if (!S.skyLaast) {
-      S.skyGammelKode = ""; S.skyLaasOpAaben = false;
-      const ekstra = (S.fletEkstra || []).length
-        ? " " + (EN ? "Also back: " : "Med kom også: ") + S.fletEkstra.join(", ") + "." : "";
-      S.skyBesked = { fejl: false, t: (EN ? (n + " match" + (n === 1 ? "" : "es") + " came home.")
-                                          : (n + " kamp" + (n === 1 ? "" : "e") + " kom hjem.")) + ekstra + " " + (EN
-        ? "The backup is still locked with the OLD password — change your password under \u2699\ufe0f YOUR ACCOUNT and it is re-locked to the new one."
-        : "Kopien er stadig låst med det GAMLE kodeord — skift kodeord under \u2699\ufe0f DIN KONTO, så låses den om til det nye.") };
+    S.skyGammelKode = ""; S.skyLaasOpAaben = false;
+    const ekstra = (S.fletEkstra || []).length
+      ? " " + (EN ? "Also back: " : "Med kom også: ") + S.fletEkstra.join(", ") + "." : "";
+    const kom = n > 0
+      ? (EN ? (n + " match" + (n === 1 ? "" : "es") + " came home.") : (n + " kamp" + (n === 1 ? "" : "e") + " kom hjem."))
+      : (EN ? "Nothing was missing here." : "Intet manglede her.");
+    S.skyBesked = { fejl: false, t: "✓ " + kom + ekstra + " " + (nu === "ja"
+      ? (EN ? "This phone has the right key again — it saves on its own from now on."
+            : "Telefonen har den rigtige nøgle igen — den gemmer selv herfra.")
+      : nu === "nej"
+        ? (EN ? "It is still locked with your OLD password — change your password under ⚙️ YOUR ACCOUNT, and it is re-locked to the new one."
+              : "Den er stadig låst med dit GAMLE kodeord — skift kodeord under ⚙️ DIN KONTO, så låses den om til det nye.")
+        : (EN ? "Opened with the password you typed." : "Åbnet med det kodeord, du skrev.")) };
+    if (nu === "ja") { try { lager.slet("sai-sky-aftryk"); } catch (_e) {} A.skySik(true); }
+    render();
+  },
+  // ⭐⭐ v5.7.2 · SLET OG LAV EN NY — kun med det NUVÆRENDE kodeord (kontoen svarer), ellers bliver den nye lige så uåbnelig
+  //   på en anden telefon som den gamle. To tryk. Hvert udfald sin sætning (75).
+  skyLaasNy: async () => {
+    const EN = S.sprog === "en";
+    const kode = String(S.skyGammelKode || "");
+    if (kode.length < 4) { S.skyLaasNySpoerg = false; S.skyBesked = { fejl: true, t: EN ? "Type your current password in the field above first." : "Skriv dit nuværende kodeord i feltet ovenfor først." }; return render(); }
+    if (!S.skyLaasNySpoerg) { S.skyLaasNySpoerg = true; S.skyBesked = null; return render(); }
+    S.skyLaasNySpoerg = false; S.skySender = true; S.skyBesked = null; render();
+    const navn = String(S.mitNavn || lager.hent("sai-brugernavn") || "").trim();
+    const r = navn ? await A.kontoKald("login", { navn: navn, kode: kode }) : { fejl: "forkert" };
+    if (r.fejl) {
+      S.skySender = false;
+      S.skyBesked = { fejl: true, t: r.fejl === "forkert"
+        ? (EN ? "That is not your current password — a new one must be locked with it. Nothing was deleted." : "Det er ikke dit nuværende kodeord — en ny skal låses med det. Intet er slettet.")
+        : r.fejl === "netvaerk"
+          ? (EN ? "No connection — try again. Nothing was deleted." : "Ingen forbindelse — prøv igen. Intet er slettet.")
+          : (r.t || (EN ? "Could not check the password. Nothing was deleted." : "Kunne ikke tjekke kodeordet. Intet er slettet.")) };
+      return render();
     }
+    const d = await skyKald("slet", {});
+    if (!d || d.fejl) {
+      S.skySender = false;
+      S.skyBesked = { fejl: true, t: d && d.fejl === "netvaerk" ? (EN ? "No connection — try again. Nothing was deleted." : "Ingen forbindelse — prøv igen. Intet er slettet.") : (EN ? "Could not delete — nothing has changed." : "Kunne ikke slette — intet er ændret.") };
+      return render();
+    }
+    S.skyLaast = false;
+    try { lager.slet("sai-sky-laast"); lager.slet("sai-sky-aftryk"); lager.slet("sai-sky-tid"); } catch (_e) {}
+    await A.skyNoegleSaet(kode);   // nyt salt — med vilje: der står ingen kopi mere
+    S.skyGammelKode = ""; S.skyLaasOpAaben = false; S.skySender = false;
+    S.skyBesked = { fejl: false, t: EN ? "✓ The old one is deleted, and a new one is made from this phone with your password — everything on it came along."
+                                         : "✓ Den gamle er slettet, og en ny er lavet fra denne telefon med dit kodeord — alt på den kom med." };
+    A.skySik(true);
     render();
   },
   // ⭐ v4.84.0 · den låste KAMPLISTE (ikke boksen): her kan man få den rå
@@ -5320,7 +5396,7 @@ const A = {
         //   usynligt indtil den dag, den blev væk. Princip 70.
         // ⛔⭐ v4.84.0 · og IKKE, hvis der ligger en boks, vi ikke kunne åbne.
         //   Et nyt salt her ville gøre den gamle boks uåbnelig for altid.
-        if (!lager.hent("sai-sky-noegle") && !S.skyLaast) await A.skyNoegleSaet(_skyKode);
+        if (!lager.hent("sai-sky-noegle") && !S.skyLaast) await A.skyNoegleKonto(_skyKode);   /* ⭐ v5.7.2 · kopiens salt, aldrig et nyt oven i en kopi */
         A.skySik(true);
       }
     } catch (_e) {}
@@ -6498,7 +6574,7 @@ const A = {
       const _navn = String(S.mitNavn || lager.hent("sai-brugernavn") || "").trim();
       const _lr = await A.kontoKald("login", { navn: _navn, kode: _kode });
       if (_lr.fejl) { S.famHenter = false; S.famBesked = { t: EN ? "The password does not match." : "Kodeordet passer ikke." }; render(); return; }
-      try { await A.skyNoegleSaet(_kode); } catch (_e) {}
+      try { await A.skyNoegleKonto(_kode); } catch (_e) {}   /* ⭐ v5.7.2 · kopiens salt, aldrig et nyt oven i en kopi */
       S.famKode = ""; S.famKodeSpoerg = false;
       try { lager.slet("sai-sky-aftryk"); } catch (_e) {}
       A.skySik(true);
@@ -6658,7 +6734,7 @@ const A = {
       const _navn = String(S.mitNavn || lager.hent("sai-brugernavn") || "").trim();
       const _lr = await A.kontoKald("login", { navn: _navn, kode: _kode });
       if (_lr.fejl) { S.budSender = false; S.budBesked = { fejl: true, t: EN ? "The password does not match." : "Kodeordet passer ikke." }; render(); return; }
-      try { await A.skyNoegleSaet(_kode); } catch (_e) {}
+      try { await A.skyNoegleKonto(_kode); } catch (_e) {}   /* ⭐ v5.7.2 · kopiens salt, aldrig et nyt oven i en kopi */
       S.famKode = ""; S.famKodeSpoerg = false;
       try { lager.slet("sai-sky-aftryk"); } catch (_e) {}
       A.skySik(true);
@@ -13939,24 +14015,33 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       }
       // ⭐⭐⭐ v4.84.0 · DEN LÅSTE BOKS HAR NU EN DØR.
       if (S.skyLaast) {
+        // ⭐⭐ v5.7.2 · DØREN SIGER SANDHEDEN: det er telefonens nøgle, der ikke passer — og DIT kodeord åbner den.
         h += '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--kant)">' +
-          '<p class="lille" style="margin:0 0 7px;color:var(--guld);font-weight:700">\ud83d\udd12 ' + (EN
-            ? "This backup is locked with an EARLIER password. Nothing has been overwritten \u2014 and nothing new is being saved until it is opened."
-            : "Kopien her er låst med et TIDLIGERE kodeord. Der er ikke overskrevet noget \u2014 og der bliver ikke gemt nyt, før den er åbnet.") + '</p>';
+          '<p class="lille" style="margin:0 0 7px;color:var(--guld);font-weight:700">🔒 ' + (EN
+            ? "The key on this phone does not fit what your account has saved. Nothing has been overwritten — and nothing new is saved from here until it is opened."
+            : "Nøglen på denne telefon passer ikke til det, din konto har gemt. Der er ikke overskrevet noget — og der gemmes ikke nyt herfra, før den er åbnet.") + '</p>';
         if (!S.skyLaasOpAaben) {
-          h += '<button class="knap valg" style="width:100%;min-height:44px" data-a="skyLaasOpAabn">\ud83d\udd11 ' +
-            (EN ? "Open it with the old password" : "Åbn den med det gamle kodeord") + '</button>';
+          h += '<button class="knap valg" style="width:100%;min-height:44px" data-a="skyLaasOpAabn">🔑 ' +
+            (EN ? "Open it with your password" : "Åbn med dit kodeord") + '</button>';
         } else {
           h += '<div style="display:flex;gap:6px;align-items:stretch">' +
-            '<input type="password" class="felt" style="flex:1;min-width:0" autocomplete="off" data-felt="skyGammelKode" value="' + esc(S.skyGammelKode || "") +
-            '" placeholder="' + (EN ? "the password the backup was made with" : "kodeordet, kopien blev lavet med") + '"></div>' +
+            '<input type="password" class="felt" style="flex:1;min-width:0" autocomplete="current-password" data-felt="skyGammelKode" value="' + esc(S.skyGammelKode || "") +
+            '" placeholder="' + (EN ? "your password" : "dit kodeord") + '"></div>' +
             '<div class="raekke" style="margin-top:7px">' +
             '<button class="knap" style="min-height:44px;background:var(--grus)"' + (S.skySender ? ' disabled' : '') + ' data-a="skyLaasOp">' +
-              (S.skySender ? "\u23f3 \u2026" : (EN ? "Open" : "Åbn")) + '</button>' +
+              (S.skySender ? "⏳ …" : (EN ? "Open" : "Åbn")) + '</button>' +
             '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;font-size:12px" data-a="skyLaasOpAabn">' + (EN ? "Cancel" : "Annullér") + '</button></div>' +
             '<p class="lille" style="margin:6px 0 0">' + (EN
-              ? "Forgot it? Delete the backup below \u2014 then a new one is made from this phone right away. Everything on THIS phone stays."
-              : "Kan du ikke huske det? Slet kopien nedenfor \u2014 så laves en ny fra denne telefon med det samme. Alt på DENNE telefon bliver, hvor det er.") + '</p>';
+              ? "Your current password opens it. Changed it lately and it does not work? Try the one you had before."
+              : "Dit nuværende kodeord åbner den. Har du skiftet kodeord, og virker det ikke? Så prøv det, du havde før.") + '</p>' +
+            // ⭐ v5.7.2 · vejen, når INTET gammelt kodeord virker: slet den, og lav en ny herfra — låst med dit NUVÆRENDE kodeord (feltet ovenfor)
+            '<p class="lille" style="margin:10px 0 5px">' + (EN
+              ? "Remember none of them? Delete it and make a new one from this phone with your current password in the field above — everything on THIS phone comes along."
+              : "Kan du ingen af dem huske? Slet den, og lav en ny fra denne telefon med dit nuværende kodeord i feltet ovenfor — alt på DENNE telefon kommer med.") + '</p>' +
+            '<button class="knap valg" style="width:100%;min-height:44px;' + (S.skyLaasNySpoerg ? 'background:var(--tabt);border-color:var(--tabt);color:#fff' : 'color:var(--tabt);border-color:rgba(210,72,78,.5)') + '"' +
+              (S.skySender ? ' disabled' : '') + ' data-a="skyLaasNy">' + (S.skyLaasNySpoerg
+              ? (EN ? "⚠️ Tap again — the old one cannot be fetched afterwards" : "⚠️ Tryk igen — den gamle kan ikke hentes bagefter")
+              : (EN ? "🗑 Delete it and make a new one here" : "🗑 Slet den, og lav en ny herfra")) + '</button>';
         }
         h += '</div>';
       }

@@ -193,6 +193,20 @@ body{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .knap.stor{width:100%;padding:24px 8px;font-size:19px;letter-spacing:1.5px;text-transform:uppercase;border-radius:20px;box-shadow:0 10px 28px rgba(0,0,0,.35);min-height:72px}
 .knap.gron{background:var(--vundet);color:#fff}
 .knap.roed{background:var(--tabt);color:#fff}
+/* ⭐ v6.10.0 · KNAPPERNE SKINNER — gradueret farve + et glanslag, som helten på forsiden */
+.knap{position:relative;overflow:hidden;isolation:isolate;transition:transform .12s ease,box-shadow .2s ease,filter .2s ease;box-shadow:0 6px 16px -10px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12)}
+.knap::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;background:linear-gradient(180deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,.06) 46%,rgba(0,0,0,.14) 100%)}
+.knap.valg{background:linear-gradient(180deg,#232C42 0%,#161D2D 100%);border-color:rgba(159,216,232,.2);color:#C9D3E3;box-shadow:0 6px 16px -12px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.09)}
+.knap.valg::before{background:linear-gradient(180deg,rgba(255,255,255,.11) 0%,rgba(255,255,255,.02) 50%,rgba(0,0,0,.1) 100%)}
+.knap.valg.til{background:linear-gradient(180deg,rgba(159,216,232,.24) 0%,rgba(159,216,232,.08) 100%);box-shadow:0 0 16px -6px rgba(159,216,232,.55),inset 0 1px 0 rgba(255,255,255,.14)}
+.knap.valg[style*="color:var(--tabt)"]{background:linear-gradient(180deg,rgba(239,62,74,.2) 0%,rgba(239,62,74,.06) 100%)}
+.knap[style*="background:var(--grus)"]{background:linear-gradient(135deg,#3B78FF 0%,#2E56D6 45%,#4B17B6 100%) !important;box-shadow:0 8px 22px -10px rgba(75,23,182,.85),inset 0 1px 0 rgba(255,255,255,.25)}
+.knap[style*="background:var(--guld)"]{background:linear-gradient(135deg,#FFE08A 0%,#F0CF61 45%,#FB9B2A 100%) !important;box-shadow:0 8px 22px -10px rgba(251,155,42,.85),inset 0 1px 0 rgba(255,255,255,.4)}
+.knap[style*="background:var(--vundet)"],.knap.gron{background:linear-gradient(135deg,#3AD68A 0%,#22995A 55%,#157A45 100%) !important;box-shadow:0 8px 22px -10px rgba(34,153,90,.85),inset 0 1px 0 rgba(255,255,255,.25)}
+.knap[style*="background:var(--tabt)"],.knap.roed{background:linear-gradient(135deg,#FF7A7A 0%,#EF3E4A 50%,#A8303A 100%) !important;box-shadow:0 8px 22px -10px rgba(239,62,74,.85),inset 0 1px 0 rgba(255,255,255,.25)}
+.knap.til:not(.valg){background:linear-gradient(135deg,#D4F4FC 0%,#9FD8E8 55%,#6FB8D0 100%) !important}
+.knap:active{transform:translateY(1px) scale(.99);filter:brightness(1.06)}
+@media (prefers-reduced-motion: reduce){.knap{transition:none}}
 .dag-rk{display:flex;gap:5px;margin:10px 0 8px}
 .dag-rk button{flex:1;min-height:40px;padding:6px 0;border:1px solid var(--kant);border-radius:11px;background:transparent;color:var(--daempet);font-weight:800;font-size:11.5px;cursor:pointer;font-family:inherit;position:relative}
 .dag-rk button.aktiv{background:rgba(159,216,232,.12);color:var(--is);border-color:var(--is)}
@@ -719,10 +733,8 @@ function hentTilmeldinger(){
       // ⭐ v4.7.0 · tælles begge grupper. Før talte den kun 'afventer' og
       //   sagde «Ingen nye tilmeldinger ✓», mens en ny spiller stod i
       //   klubben og manglede i truppen.
-      var _t4 = nyeSpillere(); var _a4 = _t4.venter.length + _t4.nye.length;
-      S.syncBesked = { fejl:false, t: _a4 ? _a4 + " ny" + (_a4===1?"":"e") + " spiller" + (_a4===1?"":"e") + " \u2713"
-                                        : (S.tilmeldinger.length ? "Alle er i truppen \u2713"
-                                                                 : "Ingen har tastet en n\u00f8gle endnu \u2713") };
+      S.syncBesked = null;   /* v6.10.0 · tallet står på HJEM og under 👥 SPILLERE — en ✓ i hver skærm var støj (kortet 26/9) */
+      autoTrup();            /* v6.10.0 · #89 */
       render();
     }).catch(function(){ S.tilmHenter=false; S.syncBesked={fejl:true,t:"Ingen forbindelse."}; render(); });
 }
@@ -991,7 +1003,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.9.0 \u00b7 25. september 2026";
+const VERSION = "v6.10.0 \u00b7 26. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1575,6 +1587,19 @@ Object.assign(EN, {   /* v6.9.0 · automatisk backup */
   "⚠️ Ingen forbindelse — det gemmes på din konto ved næste ændring.": "⚠️ No connection — it is saved to your account at the next change.",
   "⚠️ Din trup kunne ikke hentes eller gemmes på din konto — log ud og ind igen, hvis det bliver ved.": "⚠️ Your squad could not be fetched or saved to your account — log out and in again if it keeps happening.",
   "Din konto har en låst kopi. Sikkerhedskopien her er din egen fil ved siden af — til dig selv, ikke til os.": "Your account holds a locked copy. The backup here is your own file alongside it — for you, not for us."
+});
+Object.assign(EN, {   /* v6.10.0 · kortet */
+  "SPILLERE": "PLAYERS", "👥 Spillere": "👥 Players", "Klubbens nøgler": "Club keys", "🔑 Klubbens nøgler": "🔑 Club keys",
+  "trænere og familier": "coaches and families", "konto, klubbens nøgler, sprog": "account, club keys, language",
+  "Invitér den første spiller under 👥 SPILLERE — når han siger ja, står han i din trup.": "Invite the first player under 👥 PLAYERS — when they say yes, they are in your squad.",
+  "1 NY SPILLER": "1 NEW PLAYER", "{n} NYE SPILLERE": "{n} NEW PLAYERS", "venter på jeres ja": "waiting for your yes", "mangler i truppen": "not in your squad yet",
+  "{x} sagde ja og står nu i din trup under «Uden gruppe».": "{x} said yes and is now in your squad under «No group».",
+  "sagde ja ✓ · i din trup": "said yes ✓ · in your squad",
+  "📲 INVITÉR SPILLER": "📲 INVITE PLAYER", "Invitationen er sendt til {x} ✓": "The invitation was sent to {x} ✓", "Venter på et ja.": "Waiting for a yes.",
+  "Ingen med det brugernavn.": "Nobody with that username.", "Nye i klubben": "New in the club", "✏️ RET TRUPPEN": "✏️ EDIT THE SQUAD",
+  "Åbn": "Open", "spillerens navn": "the player's name",
+  "{x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 SPILLERE.": "{x} calls their own group «{x}» — put {x} in a group under 👥 PLAYERS.",
+  "{x} er lagt i truppen ✓ · {x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 SPILLERE.": "{x} has been added to the squad ✓ · {x} calls their own group «{x}» — put {x} in a group under 👥 PLAYERS."
 });
 var _ENr = {}, _ENx = [];
 (function(){
@@ -2607,15 +2632,15 @@ function bundNav(){
     '<button data-act="tab" data-v="hjem"' + akt("hjem") + '><span>🏠</span>HJEM</button>' +
     '<button data-act="tab" data-v="program"' + akt("program") + '><span>📅</span>PROGRAM</button>' +
     '<button data-act="tab" data-v="vurder"' + akt("vurder") + '><span>⚡</span>VURDÉR</button>' +
-    '<button data-act="tab" data-v="grupper"' + akt("grupper") + '><span>👥</span>GRUPPER</button>' +
+    '<button data-act="tab" data-v="grupper"' + akt("grupper") + '><span>👥</span>SPILLERE</button>' +   /* v6.10.0 · kortet: alt om spillere ét sted */
     '</nav>';   /* v6.1.0 · fire knapper som StreakTennis — Indstillinger er en flise */
 }
 
 function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emoji som flisen på HJEM */
   if (tab === "indst" && S.indstVisning) return { nye: "\ud83d\udce5 Nye spillere", forbindelse: "\u2699\ufe0f Forbindelse", sky: "\u2601\ufe0f Skyen",
-    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
+    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", noegler: "\ud83d\udd11 Klubbens n\u00f8gler" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen", udstil: "\ud83c\udf10 Udstil" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
-  return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Grupper", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
+  return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Spillere", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
            kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen" }[tab] || "";
 }
 function renderTraener(){
@@ -2631,7 +2656,7 @@ function renderTraener(){
   // Prototype-banneret gaelder kun eksempeldata. Har traeneren skrevet sin egen
   // trup ind, er det hans rigtige spillere — og saa maa der ikke staa "fake data".
   if (!(S.truppen||[]).length) {
-    if (S.tab === "hjem") h += '<div class="proto-note">👋 <b>Truppen er tom endnu.</b> Find spilleren under 📲 INVITÉR SPILLER — siger familien ja i StreakTennis, dukker spilleren op under 📥 NYE SPILLERE, og et tryk på <b>Læg i trup</b> gør ham til din.</div>';
+    if (S.tab === "hjem") h += '<div class="proto-note">👋 <b>Truppen er tom endnu.</b> Invitér den første spiller under 👥 SPILLERE — når han siger ja, står han i din trup.</div>';
   }
   if (S.tab==="hjem") {
     // v6.1.0 · «Vælg, hvad du vil i gang med» og statuslinjen er ude — StreakTennis har dem ikke. Status om nye
@@ -2654,6 +2679,14 @@ function renderTraener(){
       /* v6.1.0 · StreakTennis' helt (.dev-hero) — samme markup som START KAMP, ordret */
       h += '<button class="dev-hero dev-kant dev-kant-grus" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + '><span style="font-size:30px">\u26a1</span><span><b>VURD\u00c9R TR\u00c6NINGEN</b><br><small>' + linje + '</small></span><span class="dev-pil">\u2192</span></button>';
     })();
+    /* ⭐ v6.10.0 · kortet (princip 100): nye spillere har ét rum — SPILLERE. HJEM viser dem kun, når de kræver en hånd nu. */
+    (function(){
+      var _t = { venter: [], nye: [] }; try { _t = nyeSpillere(); } catch (_e) {}
+      var _n = _t.venter.length + _t.nye.length;
+      if (S.autoTrupBesked) h += '<p class="lille" style="margin:2px 2px 10px;color:var(--vundet);font-weight:700">' + esc(S.autoTrupBesked) + '</p>';
+      if (!_n) return;
+      h += '<button class="dev-hero dev-kant dev-kant-guld" data-act="tab" data-v="grupper"><span style="font-size:30px">📥</span><span><b>' + (_n === 1 ? '1 NY SPILLER' : _n + ' NYE SPILLERE') + '</b><br><small>' + (_t.venter.length ? 'venter på jeres ja' : 'mangler i truppen') + '</small></span><span class="dev-pil">→</span></button>';
+    })();
     h += '<div class="dev-grid">' +
       // ⭐⭐⭐ v4.1.0 · AFTENENS VIGTIGSTE KNAP STÅR FORREST.
       //   ⚠️ FANGET FØR DEN BLEV BYGGET: første udkast skrev
@@ -2665,16 +2698,10 @@ function renderTraener(){
       //   spillernøgler (kun trænernøgler er admin-only, og det afsnit
       //   inde i kortet skjuler sig selv). Ingen rolle at spørge om.
       /* v6.1.0 · fliserne som StreakTennis: `dev-kant` + guld på de to øverste, stål på resten, «Streak Zone»-skrivemåde */
-      (function(){
-        var _ny = 0; try { var _t = nyeSpillere(); _ny = _t.venter.length + _t.nye.length; } catch (_e) {}
-        var _inv = _ny ? '<span style="color:var(--guld);font-weight:800">' + _ny + (_ny === 1 ? ' ny spiller venter' : ' nye spillere venter') + '</span>' : 'via brugernavn \u2014 eller QR til nye';
-        return '<button class="dev-flise dev-kant dev-kant-guld" data-act="tab" data-v="noegler"><span class="dev-ikon">\ud83d\udd11</span><b>Invit\u00e9r spiller</b><small>' + _inv + '</small></button>';
-      })() +
-      '<button class="dev-flise dev-kant dev-kant-guld" data-act="tab" data-v="program"><span class="dev-ikon">\ud83d\udcc5</span><b>Program</b><small>ugeskemaet \u2014 tid, bane, tr\u00e6ner, spillere</small></button>' +
-      '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="grupper"><span class="dev-ikon">\ud83d\udc65</span><b>Grupper</b><small>hold, spillere & udvikling</small></button>' +
+      /* v6.10.0 · Invitér · Program · Grupper er ude: de står i bundbaren og under 👥 SPILLERE (kortet, princip 100) */
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="kvartal"><span class="dev-ikon">\ud83d\udccb</span><b>Evaluering</b><small>AI-udkast \u2014 du godkender alt</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="rum"><span class="dev-ikon">\ud83d\udcac</span><b>Tr\u00e6nerrummet</b><small>klubbens tr\u00e6nere \u2014 samtalen bliver</small></button>' +
-      '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="indst"><span class="dev-ikon">\u2699\ufe0f</span><b>Indstillinger</b><small>klubkode, trup & kopi</small></button>' +
+      '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="indst" style="grid-column:1/-1"><span class="dev-ikon">\u2699\ufe0f</span><b>Indstillinger</b><small>konto, klubbens nøgler, sprog</small></button>' +
       '</div>';
   } else {
     /* v6.2.0 · StreakTennis' titelrække, ordret (linje 10425 i v5.3.1): ← og fanens navn i én række */
@@ -2933,7 +2960,7 @@ document.addEventListener("keydown", function (e) {
 // Siger spilleren ja i StreakTennis, udsteder serveren nøglen direkte til spillerens app.
 const KLUBBUD_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/klub-bud";
 const GUIDE_URL = "https://tennis.sportsainalytics.com/coach-guide.html";   /* v6.7.0 · guiden bor i ROD */
-S.budNavn = ""; S.budTraef = null; S.budHenter = false; S.budSender = false; S.budBesked = null; S.budSendte = null;
+S.budNavn = ""; S.budTraef = null; S.budHenter = false; S.budSender = false; S.budBesked = null; S.budSendte = null; S.autoTrupBesked = null;   /* v6.10.0 */
 async function budKald(handling, krop) {
   const klub = lager.hent("klubkode", "");
   if (!klub) return { fejl: "mangler-klubkode" };
@@ -2952,7 +2979,7 @@ function budFejltekst(r) {
   if (k === "mangler-klubkode" || k === "mangler-noegle") return "Skriv klubbens trænernøgle under ⚙️ Indstillinger først.";
   if (k === "kraever-traener") return "Kun klubbens trænere kan invitere — nøglen her er en spillernøgle.";
   if (k === "adgang") return "Nøglen blev afvist — den er spærret, udløbet eller ukendt.";
-  if (k === "ingen") return "Ingen med det brugernavn — eller spilleren har valgt ikke at kunne findes. Så virker QR-koden stadig.";
+  if (k === "ingen") return "Ingen med det brugernavn.";   /* v6.10.0 · princip 101 */
   if (k === "format") return "Skriv spillerens brugernavn (3-20 tegn).";
   if (k === "allerede-i-klubben") return "Spilleren er allerede i klubben.";
   if (k === "bud-findes") return "Spilleren har allerede en invitation fra jer — den venter på et ja.";
@@ -2975,7 +3002,7 @@ async function budInviter() {
   const r = await budKald("inviter", { brugernavn: S.budTraef.brugernavn, navn: String(S.traener || "").slice(0, 40) });
   S.budSender = false;
   if (r && r.bud) {
-    S.budBesked = { fejl: false, t: "Invitationen er sendt til " + r.bud.brugernavn + " ✓ — spilleren ser den i StreakTennis under ⚙️ → DIN KLUB og siger selv ja. Ingen kode at sende." };
+    S.budBesked = { fejl: false, t: "Invitationen er sendt til " + r.bud.brugernavn + " ✓" };   /* v6.10.0 · princip 101 */
     S.budTraef = null; S.budNavn = "";
     try { budSendteHent(); } catch (_e) {}
   } else { S.budBesked = { fejl: true, t: budFejltekst(r) }; }
@@ -2983,12 +3010,33 @@ async function budInviter() {
 }
 async function budSendteHent() {
   const r = await budKald("sendte", {});
-  if (r && Array.isArray(r.bud)) { S.budSendte = r.bud; render(); }
+  if (r && Array.isArray(r.bud)) { S.budSendte = r.bud; autoTrup(); render(); }
+}
+/* ⭐⭐⭐ v6.10.0 · #89 · ET JA LANDER I TRUPPEN (Nicolai 26/9: «Vi har jo selv sendt indbydelsen - så den skal bare lande
+   i truppen - ulategoriseret.»). klub-bud v4 `sendte`: `mine` = sendt med DENNE trænernøgle · `haandtag` kun på et taget
+   bud — samme håndtag som hent-hold. Spilleren lægges uden gruppe, præcis som «Læg i trup» gør det, og kun hvis han står i
+   klubben (hent-hold) og ikke allerede er i truppen. Ét tryk færre — og intet at godkende, for vi har selv inviteret. */
+function autoTrup(){
+  if (!Array.isArray(S.budSendte) || !Array.isArray(S.tilmeldinger)) return;
+  var nye = [];
+  S.budSendte.forEach(function(b){
+    if (!b || b.status !== "taget" || b.mine !== true || !b.haandtag) return;
+    var p = S.tilmeldinger.filter(function(x){ return x.haandtag === b.haandtag && x.status === "godkendt"; })[0];
+    if (!p || iTruppen(p)) return;
+    S.truppen = S.truppen || [];
+    S.truppen.push({ navn: p.fornavn || "Spiller", gruppe: "", noegle: p.haandtag });
+    S.noegler = S.noegler || {}; S.noegler[p.fornavn || "Spiller"] = p.haandtag;
+    nye.push(p.fornavn || "Spiller");
+  });
+  if (!nye.length) return;
+  lager.gem("truppen", S.truppen); lager.gem("noegler", S.noegler);
+  byggTrup();
+  S.autoTrupBesked = nye.join(", ") + " sagde ja og står nu i din trup under «Uden gruppe».";
 }
 function budKortet() {
   let h = '<div class="kort" style="border-left:3px solid var(--guld)">' +
-    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">📲 INVITÉR EN SPILLER, DER HAR STREAKTENNIS</div>' +
-    '<p class="lille" style="margin:6px 0 10px;color:var(--daempet)">Skriv spillerens brugernavn. Invitationen lander i spillerens app — siger spilleren ja, er han med i klubben. <b>Ingen kode at sende.</b> Har spilleren ikke StreakTennis endnu, er QR-koden nedenfor vejen.</p>' +
+    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">📲 INVITÉR SPILLER</div>' +
+    '<div style="height:10px"></div>' +   /* v6.10.0 · princip 101: ingen forklaring — feltet og knappen guider */
     '<div style="display:flex;gap:8px;align-items:center">' +
       '<input class="felt" data-felt="budNavn" placeholder="brugernavn" autocapitalize="none" autocomplete="off" value="' + esc(S.budNavn || '') + '" style="flex:1;min-width:0">' +
       '<button class="knap" style="flex:none;padding:12px 16px;background:var(--grus)" data-act="bud-soeg">' + (S.budHenter ? '…' : 'Find') + '</button></div>';
@@ -2998,7 +3046,7 @@ function budKortet() {
       '<div style="font-weight:800;font-size:15px">' + esc(f.brugernavn || '') + '</div>' +
       '<div class="lille" style="color:var(--daempet)">' + (f.klub ? esc(f.klub) : 'ingen klub') + (f.aargang ? ' · årgang ' + esc(f.aargang) : '') + '</div>' +
       (f.allerede ? '<p class="lille" style="margin:8px 0 0;color:var(--vundet)">Er allerede i klubben ✓</p>'
-        : f.bud ? '<p class="lille" style="margin:8px 0 0;color:var(--is)">Har allerede en invitation fra jer — den venter på et ja.</p>'
+        : f.bud ? '<p class="lille" style="margin:8px 0 0;color:var(--is)">Venter på et ja.</p>'
         : '<button class="knap" style="margin-top:10px;background:var(--guld);color:#12203a" data-act="bud-inviter">' + (S.budSender ? 'Sender…' : '✉️ Invitér ' + esc(f.brugernavn || '')) + '</button>') +
       '</div>';
   }
@@ -3009,7 +3057,7 @@ function budKortet() {
     for (const b of S.budSendte.slice(0, 20)) {
       h += '<div class="lille" style="display:flex;justify-content:space-between;gap:8px"><span>' + esc(b.brugernavn || '?') + '</span><span style="color:' +
         (b.status === "taget" ? 'var(--vundet)' : b.status === "afvist" ? 'var(--tabt)' : 'var(--daempet)') + '">' +
-        (b.status === "taget" ? 'sagde ja ✓' : b.status === "afvist" ? 'sagde nej' : 'venter') + '</span></div>';
+        (b.status === "taget" ? ((b.haandtag && (S.truppen || []).some(function(x){ return x.noegle === b.haandtag; })) ? 'sagde ja ✓ · i din trup' : 'sagde ja ✓') : b.status === "afvist" ? 'sagde nej' : 'venter') + '</span></div>';
     }
     h += (aabne.length ? '' : '') + '</div>';
   }
@@ -3020,7 +3068,7 @@ document.addEventListener("keydown", function (e) {
   if (e.key === "Enter" && e.target && e.target.dataset && e.target.dataset.felt === "budNavn") { e.preventDefault(); budSoeg(); }
 });
 function noegleKortet(){
-  let h = budKortet();   /* ⭐ v5.6.0 · invitationen først — koden er reserven */
+  let h = '';   /* v6.10.0 · invitationen bor under 👥 SPILLERE (kortet, princip 100) — her står kun klubbens nøgler */
   // ── FAMILIENØGLER (v3.2.0) · traeneren inviterer familierne SELV.
     // Noeglen dannes paa serveren, vises EEN gang og gemmes kun som hash.
     // Ingen mennesker administrerer hemmeligheder — heller ikke Nicolai.
@@ -3133,7 +3181,7 @@ function indstNye(){   /* v6.8.0 · 📥 nye spillere — familier, der har tast
       } else {
         // ── ① KOMMET IND MED EN NØGLE · mangler kun i truppen
         if (_ny.nye.length) {
-          h += '<p class="lille" style="margin:8px 0 2px;font-weight:700;color:var(--is)">Kommet ind med en n\u00f8gle</p>';
+          h += '<p class="lille" style="margin:8px 0 2px;font-weight:700;color:var(--is)">Nye i klubben</p>';
           _ny.nye.forEach(function(t2){
             h += '<div style="border-top:1px solid var(--kant);padding:9px 0">' +
               '<div style="font-size:13px;font-weight:700">'+esc(t2.fornavn||'Spiller')+'</div>' +
@@ -3152,10 +3200,6 @@ function indstNye(){   /* v6.8.0 · 📥 nye spillere — familier, der har tast
               '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-act="tilm-svar" data-v="'+esc(t2.haandtag||t2.spillernoegle)+'~~afvist">Afvis</button></div></div>';
           });
         }
-        h += '<p class="lille" style="margin:8px 0 0;font-style:italic">' +
-          (_ny.nye.length ? 'De \u00f8verste er allerede lukket ind af deres n\u00f8gle \u2014 de mangler kun at st\u00e5 i DIN trup. '
-                          : '') +
-          'Godkendte spillere l\u00e6gges i truppen med det samme.</p>';
       }
       h += '</div>';
     }
@@ -3422,25 +3466,11 @@ function indstOversigt(){   /* v6.8.0 · fliserne — hver bærer sin status, s�
   /* ⭐⭐⭐ HELTEN: det, der kræver en hånd NU. En flise alene ville skjule det igen — og det var præcis fejlen i går (traener_boks: 0 rækker). */
   if (!_k && _kk) {   /* v6.9.0 · med konto fanger porten det; her står kun telefonen uden konto */
     h += '<button class="dev-hero dev-kant dev-kant-guld" data-act="indst-vis" data-v="konto"><span style="font-size:30px">👤</span><span><b>OPRET EN KONTO</b><br><small>Din trup og dine vurderinger ligger kun på denne telefon — med en konto følger de med</small></span><span class="dev-pil">→</span></button>';
-  } else if (_ialt) {
-    h += '<button class="dev-hero dev-kant dev-kant-guld" data-act="indst-vis" data-v="nye"><span style="font-size:30px">📥</span><span><b>' + _ialt + (_ialt === 1 ? ' NY SPILLER' : ' NYE SPILLERE') + '</b><br><small>' + (_ny.venter.length ? _ny.venter.length + (_ny.venter.length === 1 ? ' venter på jeres ja' : ' venter på jeres ja') : 'kommet ind med en nøgle — mangler i truppen') + '</small></span><span class="dev-pil">→</span></button>';
-  }
+  }   /* v6.10.0 · nye spillere har ét rum: 👥 SPILLERE — helten står på HJEM */
   h += '<div class="dev-grid">' +
     /* guiden er et LINK, ikke en undervisning — den bor i ROD og åbner i en ny fane */
     '<a class="dev-flise dev-kant dev-kant-is" href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="text-decoration:none"><span class="dev-ikon">📖</span><b>Sådan virker StreakCoach</b><small>guide med billeder af hver skærm — åbner i en ny fane</small></a>' +
-    prgFlise("tab", "noegler", "🔑", "Nøgler og invitationer",
-      _ialt ? '<span style="color:var(--guld);font-weight:800">' + _ialt + (_ialt === 1 ? ' ny spiller venter' : ' nye spillere venter') + '</span>' : 'familier og trænere — via brugernavn eller QR',
-      _ialt ? "dev-kant-guld" : "dev-kant-staal") +
-    prgFlise("indst-vis", "nye", "📥", "Nye spillere",
-      !S.tilmHentet ? 'ikke tjekket endnu — åbn for at se'
-        : (_ialt ? '<span style="color:var(--guld);font-weight:800">' + _ialt + (_ialt === 1 ? ' venter' : ' venter') + '</span>' : 'alle klubbens spillere er i din trup ✓'),
-      _ialt ? "dev-kant-guld" : "dev-kant-staal") +
-    prgFlise("indst-vis", "forbindelse", "⚙️", "Forbindelse",
-      _kk ? 'klubkode gemt · ' + _antalN + (_antalN === 1 ? ' spiller koblet' : ' spillere koblet') : '<span style="color:var(--guld);font-weight:800">ingen klubkode — alt bliver på telefonen</span>',
-      _kk ? "dev-kant-gron" : "dev-kant-guld") +
-    prgFlise("indst-vis", "trup", "👥", "Min trup",
-      _egen ? _egen + (_egen === 1 ? ' spiller' : ' spillere') + ' · ' + _antG + (_antG === 1 ? ' gruppe' : ' grupper') : 'tom — læg den første spiller ind',
-      "dev-kant-staal") +
+    prgFlise("indst-vis", "noegler", "🔑", "Klubbens nøgler", "trænere og familier", "dev-kant-staal") +   /* v6.10.0 · kortet */
     prgFlise("indst-vis", "konto", "👤", "Din konto",
       _k ? ((_bs.fejl || _bs.konflikt) ? '<span style="color:var(--guld);font-weight:800">noget skal ordnes — åbn</span>' : 'logget ind som ' + esc(_k.brugernavn)) : '<span style="color:var(--guld);font-weight:800">ikke logget ind</span>',
       (_k && !(_bs.fejl || _bs.konflikt)) ? "dev-kant-staal" : "dev-kant-guld") +   /* v6.9.0 */
@@ -3457,7 +3487,8 @@ function traenerIndstillinger(){   /* v6.8.0 · fliser først, undervisningen ba
   if (S.indstVisning === "nye") return indstNye();
   if (S.indstVisning === "forbindelse") return indstForbindelse();
   if (S.indstVisning === "sky") return indstSkyen();
-  if (S.indstVisning === "konto") return indstKonto();
+  if (S.indstVisning === "konto") return indstKonto() + indstForbindelse();   /* v6.10.0 · forbindelsen bor under Din konto (kortet) */
+  if (S.indstVisning === "noegler") return noegleKortet();                    /* v6.10.0 · 🔑 Klubbens nøgler */
   if (S.indstVisning === "sprog") return indstSprog();
   if (S.indstVisning === "streak") return indstStreak();
   if (S.indstVisning === "trup") return indstTrup();
@@ -3469,6 +3500,12 @@ function traenerIndstillinger(){   /* v6.8.0 · fliser først, undervisningen ba
 function traenerGrupper(t){
   if (S.aabenSpiller) return spillerDetalje(S.aabenSpiller);
   let h = "";
+  /* ⭐⭐⭐ v6.10.0 · 👥 SPILLERE ER ÉT RUM (kortet 26/9, princip 100): invitér · nye/venter (kun når nogen) · grupperne
+     («Uden gruppe» = hvor et ja lander) · ret truppen nederst. Nicolai 26/9: «Det er VIRKELIGT mange veje ind til det samme steder.» */
+  if (S.autoTrupBesked) h += '<p class="lille" style="margin:0 2px 10px;color:var(--vundet);font-weight:700">' + esc(S.autoTrupBesked) + '</p>';
+  if (S.syncBesked && !S.syncBesked.hvor) h += '<p class="lille" style="margin:0 2px 10px;font-weight:700;color:' + (S.syncBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
+  h += budKortet();
+  try { var _nyS = nyeSpillere(); if (_nyS.venter.length + _nyS.nye.length) h += indstNye(); } catch (_e) {}
   const egenTrup = !!(S.truppen && S.truppen.length);
   // ⭐⭐ v5.0.0 · GRUPPERNE STYRES HER. Kun når truppen er trænerens egen —
   //   eksempeldataene er eksempler, ikke noget man omdøber.
@@ -3477,7 +3514,7 @@ function traenerGrupper(t){
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
         '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udc65 GRUPPER</div>' +
         '<span data-act="grp-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.grpAaben ? '\u2715' : '\u270f\ufe0f') + '</span></div>' +
-      '<p class="lille" style="margin:6px 0 0">Grupperne er dine: opret, omd\u00f8b, flyt spillere. Streaken og ugens fokus f\u00f8lger gruppen.</p>';
+      '';   /* v6.10.0 · princip 101: ✏️ er handlingen — ingen forklaring */
     if (S.grpAaben) {
       (S.grupper || []).forEach(function(g, i){
         var antal = (S.truppen || []).filter(function(p){ return p.gruppe === g.navn; }).length;
@@ -3507,7 +3544,7 @@ function traenerGrupper(t){
     h += '<div class="kort"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">' +
       '<h3>'+esc(gnavn)+'</h3>' + (g.aargang ? '<span style="font-size:11px;font-weight:800;background:var(--kant);color:var(--is);padding:3px 9px;border-radius:10px">'+esc(g.aargang)+'</span>' : '') + '</div>' +
       '<p class="lille">'+sp.length+(sp.length===1?' spiller':' spillere')+' · snit '+snit.toFixed(1)+'/10' + (g.aargang ? ' · fælles mål pr. '+esc(g.aargang) : '') + '</p>';
-    if (!sp.length) h += '<p class="lille" style="margin:6px 0 0;font-style:italic">Ingen spillere i gruppen endnu \u2014 flyt dem hertil fra en anden gruppe, eller l\u00e6g nye i truppen under \u2699\ufe0f INDSTILLINGER.</p>';
+    /* v6.10.0 · princip 101: en tom gruppe siger «0 spillere» — ingen forklaring */
     sp.forEach(function(s){
       const sn = snitVurd(s), b = skala(Math.round(sn));
       const kanFlyttes = egenTrup && (S.truppen||[]).some(function(p){ return p.navn === s.navn; });
@@ -3526,6 +3563,32 @@ function traenerGrupper(t){
     });
     h += '</div>';
   });
+  h += spillereRet();   /* v6.10.0 · ret truppen i hånden (spillere uden app) — nederst i SPILLERE */
+  return h;
+}
+/* ⭐ v6.10.0 · RET TRUPPEN — princip 101: samme handlinger som «Min trup» (trup-aabn · trup-ret · trup-ret-gem · trup-slet ·
+   trup-tilfoej), men uden forklaringer og uden nøglefelter. Et ja kobler spilleren selv; en hånd skriver kun navn og gruppe. */
+function spillereRet(){
+  var h = '<div class="kort"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">✏️ RET TRUPPEN</div>' +
+    '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="trup-aabn">' + (S.trupAaben ? 'Luk' : 'Åbn') + '</button></div>';
+  if (S.trupAaben) {
+    (S.truppen || []).forEach(function(p, i){
+      h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:8px 0">' +
+        '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">' + esc(p.navn) + '</div>' +
+        '<div class="lille">' + esc(p.gruppe || UDEN_GRUPPE) + '</div></div>' +
+        '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px" data-act="trup-ret" data-v="' + i + '">' + (S.trupRet === i ? 'Luk' : 'Ret') + '</button>' +
+        '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px;' + (S.trupSlet === i ? 'background:var(--tabt);color:#fff' : '') + '" data-act="trup-slet" data-v="' + i + '">' + (S.trupSlet === i ? 'Slet?' : '🗑') + '</button></div>';
+      if (S.trupRet === i) {
+        h += '<div style="padding:0 0 8px">' + gruppeSelect("retGruppe", (S.retGruppe !== undefined ? S.retGruppe : (p.gruppe || '')), '') +
+          '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="trup-ret-gem" data-v="' + i + '">Gem</button></div></div>';
+      }
+    });
+    h += '<input class="felt" style="margin-top:9px" data-felt="trupNavn" value="' + esc(S.trupNavn || '') + '" placeholder="spillerens navn" autocapitalize="words">' +
+      gruppeSelect("trupGruppe", S.trupGruppe || "", "margin-top:6px") +
+      '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="trup-tilfoej">+ Tilføj spiller</button></div>';
+  }
+  h += '</div>';
   return h;
 }
 
@@ -4117,7 +4180,7 @@ document.addEventListener("click", function(e){
       render(); nuHent(true); }); }
   else if (act==="reg-vurd-igen"){ if (!S.reg || S.reg.trin !== 3) return; regSendVurderinger(true); render(); }
   else if (act==="reg-igen"){ regNulstil(); render(); nuHent(false); }
-  if (act==="tab"){ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { try { snakHent(false); } catch (_e) {} } if (v === "noegler") { try { budSendteHent(); } catch (_e) {} } }
+  if (act==="tab"){ if (S.tab === "grupper" && v !== "grupper") S.autoTrupBesked = null;   /* v6.10.0 */ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { try { snakHent(false); } catch (_e) {} } if (v === "noegler" || v === "grupper") { try { budSendteHent(); } catch (_e) {} } if (v === "grupper" && lager.hent("klubkode", "") && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }   /* v6.10.0 */
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
   else if (act==="vurder-omraade"){ S.vurderOmraade=v; render(); }   /* v6.5.0 · kun UGENS FOKUS (__fokus) bruger den */
@@ -4544,7 +4607,7 @@ document.addEventListener("click", function(e){
       byggTrup();
     }
     S.syncBesked = { fejl:false, t: (_p4.fornavn || "Spilleren") + " er lagt i truppen \u2713" +
-      (_p4.hold && !gruppeFraHold(_p4.hold) ? " \u00b7 " + (_p4.fornavn || "Spilleren") + " kalder selv sit hold \u00ab" + _p4.hold + "\u00bb \u2014 l\u00e6g " + (_p4.fornavn || "spilleren") + " i en gruppe under \ud83d\udc65 GRUPPER." : "") };
+      (_p4.hold && !gruppeFraHold(_p4.hold) ? " \u00b7 " + (_p4.fornavn || "Spilleren") + " kalder selv sit hold \u00ab" + _p4.hold + "\u00bb \u2014 l\u00e6g " + (_p4.fornavn || "spilleren") + " i en gruppe under \ud83d\udc65 SPILLERE." : "") };
     render(); }
   else if (act==="tilm-svar"){
     var dele = String(v).split("~~"), noegle = dele[0], nyStatus = dele[1];
@@ -4745,6 +4808,7 @@ window.__oskarInit = function(){
   // hentes tilmeldinger og truppens tal af sig selv, én gang pr. sideindlæsning.
   setTimeout(function(){ try {
     if (lager.hent("klubkode","") && !S.tilmHentet) hentTilmeldinger();
+    if (lager.hent("klubkode","")) { try { budSendteHent(); } catch (_e3) {} }   /* v6.10.0 · #89: et ja lander i truppen */
     try { nuHent(false); } catch (_e2) {}   /* v6.0.0 · dagens pas */
   } catch (e) {} }, 500);
   // ⭐⭐⭐ v4.3.0 · LEVER NØGLEN STADIG? Spørges ved HVER åbning, fordi

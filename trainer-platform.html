@@ -1022,7 +1022,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.12.1 \u00b7 26. september 2026";
+const VERSION = "v6.13.0 \u00b7 26. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1606,6 +1606,10 @@ Object.assign(EN, {   /* v6.9.0 · automatisk backup */
   "⚠️ Ingen forbindelse — det gemmes på din konto ved næste ændring.": "⚠️ No connection — it is saved to your account at the next change.",
   "⚠️ Din trup kunne ikke hentes eller gemmes på din konto — log ud og ind igen, hvis det bliver ved.": "⚠️ Your squad could not be fetched or saved to your account — log out and in again if it keeps happening.",
   "Din konto har en låst kopi. Sikkerhedskopien her er din egen fil ved siden af — til dig selv, ikke til os.": "Your account holds a locked copy. The backup here is your own file alongside it — for you, not for us."
+});
+Object.assign(EN, {   /* v6.13.0 · Overblik */
+  "Overblik": "Overview", "📊 Overblik": "📊 Overview", "{n} pas i dag": "{n} sessions today", "1 pas i dag": "1 session today",
+  "fri i dag": "free today", "{n} vurderet": "{n} rated", "✓ {x} sagde ja": "✓ {x} said yes",
 });
 Object.assign(EN, {   /* v6.12.0 · dashboardet */
   "i truppen": "in your squad", "vurderet i ugen": "rated this week", "nye spillere": "new players", "I DAG": "TODAY", "Fri i dag 🎾": "Free today 🎾",
@@ -2668,18 +2672,34 @@ function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emo
     konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", noegler: "\ud83d\udd11 Klubbens n\u00f8gler" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen", udstil: "\ud83c\udf10 Udstil" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Spillere", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
-           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen" }[tab] || "";
+           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\ud83d\udcca Overblik" }[tab] || "";
 }
 // ⭐⭐ v6.12.0 · TRÆNERENS DASHBOARD (Nicolai 26/9: «de 3 tal og nyhed» + «hvad der skal ske i dag»). Står altid på HJEM.
 //   Tallene er det, telefonen VED: truppen (lager) · spillere vurderet siden mandag (S.vurderinger, dansk dato) · nye (hent-hold).
-function traenerDash(){
-  var trup = (lager.hent("truppen", []) || []).length;
+function dashVurderet(){   /* v6.13.0 · spillere vurderet siden mandag — ét sted, brugt af dashboardet og flisen */
   var man = (function(){ var d = new Date(); var u = (d.getDay() + 6) % 7; d.setDate(d.getDate() - u); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); })();
   var vurd = {}; (S.vurderinger || []).forEach(function(v){ if (v && v.dato && String(v.dato).slice(0, 10) >= man && v.spiller) vurd[v.spiller] = 1; });
+  return Object.keys(vurd).length;
+}
+// ⭐ v6.13.0 · FLISEN «📊 OVERBLIK» — dens status er et løfte (70): nyheden, ellers dagens pas + ugens vurderede
+function overblikFlise(){
+  var dele = [];
+  var m = S.autoTrupBesked ? /^(.*?) sagde ja/.exec(S.autoTrupBesked) : null;
+  if (m) dele.push('✓ ' + m[1] + ' sagde ja');
+  else {
+    if (S.nu && Array.isArray(S.nu.pas)) dele.push(S.nu.pas.length ? S.nu.pas.length + ' pas i dag' : 'fri i dag');
+    dele.push(dashVurderet() + ' vurderet');
+  }
+  return '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="overblik"><span class="dev-ikon">\ud83d\udcca</span><b>Overblik</b><small>' +
+    dele.map(function(x){ return '<span>' + esc(x) + '</span>'; }).join(' · ') + '</small></button>';
+}
+function traenerDash(){
+  var trup = (lager.hent("truppen", []) || []).length;
+  var vurd = dashVurderet();
   var nye = 0; try { var _t = nyeSpillere(); nye = _t.venter.length + _t.nye.length; } catch (_e) {}
   var h = '<div class="dash"><div class="dash-tal">' +
     '<div><b>' + trup + '</b><span>i truppen</span></div>' +
-    '<div><b>' + Object.keys(vurd).length + '</b><span>vurderet i ugen</span></div>' +
+    '<div><b>' + vurd + '</b><span>vurderet i ugen</span></div>' +
     '<div><b>' + nye + '</b><span>nye spillere</span></div></div>' +
     '<div class="dash-skil"></div><div class="dash-over">I DAG</div>';
   if (!lager.hent("klubkode", "")) h += '<div class="dash-fri">Forbind klubnøglen under ⚙️ — så kommer dagens pas frem her.</div>';
@@ -2762,8 +2782,8 @@ function renderTraener(){
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="kvartal"><span class="dev-ikon">\ud83d\udccb</span><b>Evaluering</b><small>AI-udkast \u2014 du godkender alt</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="rum"><span class="dev-ikon">\ud83d\udcac</span><b>Tr\u00e6nerrummet</b><small>klubbens tr\u00e6nere \u2014 samtalen bliver</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="indst" style="grid-column:auto"><span class="dev-ikon">\u2699\ufe0f</span><b>Indstillinger</b><small>konto, klubbens nøgler, sprog</small></button>' +
+      overblikFlise() +   /* v6.13.0 · dashboardet er en flise — HJEM skal kunne ses uden at rulle */
       '</div>';
-    h += traenerDash();   /* v6.12.1 · dashboardet nederst, under fliserne — som StreakTennis' HJEM */
   } else {
     /* v6.2.0 · StreakTennis' titelrække, ordret (linje 10425 i v5.3.1): ← og fanens navn i én række */
     var _tilbage = (S.tab === "indst" && S.indstVisning) ? 'data-act="indst-vis" data-v=""' :   /* v6.8.0 */
@@ -2774,6 +2794,7 @@ function renderTraener(){
     else if (S.tab==="vurder") h += traenerVurder(t);
     else if (S.tab==="kvartal") h += traenerKvartal(t);
     else if (S.tab==="rum") h += traenerRummet();
+    else if (S.tab==="overblik") h += traenerDash();   /* v6.13.0 · dashboardet har sit eget rum */
     else if (S.tab==="indst") h += traenerIndstillinger();
     else if (S.tab==="program") h += traenerProgram();      /* v6.0.0 */
     else if (S.tab==="registrer") h += traenerRegistrer(t);  /* v6.0.0 · v6.5.0: samme som VURDÉR */

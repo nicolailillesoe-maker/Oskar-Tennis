@@ -371,7 +371,7 @@ const GUIDE = [
   ["🤝 Venner og rummet","Find en ven på brugernavn; begge siger ja. Venner ser hinandens streaks og kan følge en kamp live. Et rum er en flok venner samme sted. Tryk på en besked for at rette den; træk den til venstre for at slette."],
   ["👪 Dit team","De mennesker, du selv inviterer ind — en forælder, en træner. De ser dine kampe, din træning og dine analyser."],
   ["📡 Live — sådan følger man med","Under kampen: tryk 'Følg fra sofaen' → 'Del kampen'. Du får en kode og et link; alle med linket ser kampen bold for bold, mens den spilles — og intet andet. Tryk 'Stop', og koden holder op med at virke."],
-  ["🏛 Klub og planer","En klubnøgle kobler dig til din træner i StreakCoach. Basis er gratis (streak, kampe, venner — og 3 AI-analyser at prøve). Fuld giver 40 analyser om måneden og live-deling. Hvad vi gemmer, og hvordan, står på betingelses-siden — ikke her."],
+  ["🏛 Klub og planer","En klubnøgle kobler dig til din træner i StreakCoach. Basis er gratis (streak, kampe, venner — og 3 AI-analyser og 3 live-kampe at prøve). Fuld giver 40 analyser om måneden og live-deling. Hvad vi gemmer, og hvordan, står på betingelses-siden — ikke her."],
   ["📲 Læg appen på hjemmeskærmen","iPhone: åbn StreakTennis i Safari → del-knappen → 'Føj til hjemmeskærm'. Så ligger den som en app — og notifikationer virker kun derfra."],
   ["🟠🧊 Hvorfor 'Grus & Is'?","Appens tema er hele filosofien i tre ord: GRUS er underlaget — sommergruset på klubbens baner og ved mesterskaberne, Nadal-mønstrenes hjemmebane, og kridtstregen i kampbilledet, hvor pointene sætter fodspor. IS er det kolde hoved — Sinners 'samme ansigt ved 40-0 og 0-40', rutinerne og 🧊-nulstillingen. Underlaget, der spilles på, og temperamentet, der vindes med."],
 ];
@@ -436,7 +436,7 @@ const GUIDE_EN = [
   ["🤝 Friends and the room","Find a friend by username; both say yes. Friends see each other's streaks and can follow a match live. A room is a bunch of friends in one place. Tap a message to edit it; swipe it left to delete."],
   ["👪 Your team","The people you invite in — a parent, a coach. They see your matches, training and analyses."],
   ["📡 Live — how to follow","During the match: tap 'Follow from the sofa' → 'Share the match'. You get a code and a link; everyone with the link sees the match ball by ball while it is played — and nothing else. Tap 'Stop', and the code stops working."],
-  ["🏛 Club and plans","A club key connects you to your coach in StreakCoach. Basic is free (streak, matches, friends — and 3 AI analyses to try). Full gives 40 analyses a month and live sharing. What we keep and how is written on the terms page — not here."],
+  ["🏛 Club and plans","A club key connects you to your coach in StreakCoach. Basic is free (streak, matches, friends — and 3 AI analyses and 3 live matches to try). Full gives 40 analyses a month and live sharing. What we keep and how is written on the terms page — not here."],
   ["📲 Put the app on your home screen","iPhone: open StreakTennis in Safari → share button → 'Add to Home Screen'. Then it sits there like an app — and notifications only work from there."],
   ["🟠🧊 Why 'Clay & Ice'?","The app's theme is the whole philosophy in three words: CLAY is the surface — the summer clay at the club and at championships, the home ground of Nadal's patterns, and the chalk line in the match view where the points leave footprints. ICE is the cool head — Sinner's 'same face at 40-0 and 0-40', the routines and the 🧊 reset. The surface you play on, and the temperament you win with."],
 ];
@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.8.0 · 26. september 2026";
+const VERSION = "v5.8.1 · 26. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -3230,7 +3230,7 @@ function livePrisTekst(EN) {
   const p = S.minPlan;
   if (p === "fri") return EN ? "no limit" : "uden loft";
   if (p === "fuld" || p === "klub") return EN ? "3 a month included · then 15 kr" : "3 om måneden er med · derefter 15 kr";
-  if (p === "gaest") return EN ? "20 kr · the analysis is included" : "20 kr · analysen følger med";
+  if (p === "gaest") return EN ? "3 free in total · then 20 kr" : "3 gratis i alt · derefter 20 kr";
   return "";
 }
 function analyseFejltekst(kode, status, EN) {
@@ -4534,7 +4534,7 @@ const A = {
       S.liveAktiv = false; lager.gem("sai-liveaktiv", "0"); S.delAaben = true;
       S.liveBesked = { fejl: true, t: S.liveKoeb.type === "live"
         ? (EN ? "This month's 3 live matches are used. An extra one costs " + S.liveKoeb.pris + " kr." : "Månedens 3 live-kampe er brugt. En ekstra koster " + S.liveKoeb.pris + " kr.")
-        : (EN ? "Sharing live costs " + S.liveKoeb.pris + " kr for the match — the analysis of the match is included." : "Live-deling koster " + S.liveKoeb.pris + " kr for kampen — analysen af kampen følger med.") };
+        : (EN ? "Your 3 free live matches are used. Sharing live costs " + S.liveKoeb.pris + " kr for the match — the analysis is included." : "Dine 3 gratis live-kampe er brugt. Live-deling koster " + S.liveKoeb.pris + " kr for kampen — analysen følger med.") };
       render(); return;
     }
     S.liveBesked = r.fejl
@@ -4545,7 +4545,9 @@ const A = {
           : r.fejl === "netvaerk" || !r.fejl ? (EN?"No connection — try again.":"Ingen forbindelse — prøv igen.")
           : (EN?"Sharing was refused: ":"Delingen blev afvist: ") + String(r.fejl) }
       : { fejl: false, t: (EN ? "The match is live ✓" : "Kampen er live ✓") +
-          (r.basis_live && +r.basis_live.af > 0 ? (EN ? " · " + r.basis_live.brugt + " of " + r.basis_live.af + " live matches used in 30 days" : " · " + r.basis_live.brugt + " af " + r.basis_live.af + " live-kampe brugt på 30 dage") : "") };   /* ⭐ v5.8.0 */
+          (r.basis_live && +r.basis_live.af > 0 ? (S.minPlan === "gaest"
+            ? (EN ? " · " + r.basis_live.brugt + " of " + r.basis_live.af + " free live matches used" : " · " + r.basis_live.brugt + " af " + r.basis_live.af + " gratis live-kampe brugt")
+            : (EN ? " · " + r.basis_live.brugt + " of " + r.basis_live.af + " live matches used in 30 days" : " · " + r.basis_live.brugt + " af " + r.basis_live.af + " live-kampe brugt på 30 dage")) : "") };   /* ⭐ v5.8.1 */   /* ⭐ v5.8.0 */
     if (r.fejl) { S.liveAktiv = false; lager.gem("sai-liveaktiv", "0"); }
     render();
   },
@@ -10652,8 +10654,8 @@ function _tegn() {
                 : "Alt i Fuld adgang — og <b>live uden loft</b>. Stream hver eneste kamp, hele sæsonen."), false) +
             _pkort("gaest", "🎟", "BASIS", (S.sprog === "en" ? "free" : "gratis"),
               (S.sprog === "en"
-                ? "Streak, training, matches and friends — and <b>3 AI analyses in total</b>, so you can see what they can do. Matches are not shared live."
-                : "Streak, træning, kampe og venner — og <b>3 AI-analyser i alt</b>, så du kan se, hvad de kan. Kampene deles ikke live."), false) +
+                ? "Streak, training, matches and friends — and <b>3 AI analyses and 3 live matches in total</b>, so you can see what they can do."
+                : "Streak, træning, kampe og venner — og <b>3 AI-analyser og 3 live-kampe i alt</b>, så du kan se, hvad de kan."), false) +
             '</div>' +
             // ⭐ v4.62.0 · wow'et FOER valget: eksemplet er ét tryk vaek.
             '<div class="raekke sai-op" style="animation-delay:.14s;margin-top:10px"><button class="knap valg" style="min-height:46px;border-color:var(--guld);color:var(--guld)" data-a="liveDemo">▶ ' +
@@ -12718,7 +12720,7 @@ function _tegn() {
             if (S.gaveInfo && S.gaveInfo.gave) {
               _kk += _gaveTekst(EN);   /* ⭐ v4.136.0 · gaven fremgår */
             } else if (_pl === "gaest") {
-              _kk += '<p class="lille" style="margin:2px 0 8px">🎟 ' + (EN ? "Basis — 3 AI analyses in total, matches are not shared live." : "Basis — 3 AI-analyser i alt, kampene deles ikke live.") + '</p>';
+              _kk += '<p class="lille" style="margin:2px 0 8px">🎟 ' + (EN ? "Basis — 3 AI analyses and 3 live matches in total." : "Basis — 3 AI-analyser og 3 live-kampe i alt.") + '</p>';
             } else if (_pl === "fri") {
               _kk += '<p class="lille" style="margin:2px 0 8px">🚀 ' + (EN ? "Full access + free streaming — live with no limit." : "Fuld adgang + fri streaming — live uden loft.") + _betaltTekst(EN) + '</p>';
             } else if (_pl === "fuld") {
@@ -12747,7 +12749,7 @@ function _tegn() {
                     '<span class="lille" style="opacity:.75">' + tekst + (v === _pl ? (EN ? " · your plan now" : " · jeres plan nu") : "") + '</span></button>';
                 };
                 _kk += '<div style="margin:4px 0 8px">' +
-                  _pv("gaest", "🎟", "BASIS", (EN ? "free" : "gratis"), (EN ? "3 AI analyses in total · no live" : "3 AI-analyser i alt · ingen live")) +
+                  _pv("gaest", "🎟", "BASIS", (EN ? "free" : "gratis"), (EN ? "3 AI analyses · 3 live matches in total" : "3 AI-analyser · 3 live-kampe i alt")) +
                   _pv("fuld", "⭐", (EN ? "FULL ACCESS" : "FULD ADGANG"), (EN ? "49 kr/mo" : "49 kr/md"), (EN ? "40 AI analyses a month · live, 3 matches a month included" : "40 AI-analyser om måneden · live, 3 kampe om måneden er med")) +
                   _pv("fri", "🚀", (EN ? "FULL + FREE STREAMING" : "FULD + FRI STREAMING"), (EN ? "98 kr/mo" : "98 kr/md"), (EN ? "live with no limit" : "live uden loft")) +
                   '<p class="lille" style="margin:8px 0 0;opacity:.7">' + (EN ? "Full and Free are paid with MobilePay right here. Basis is free and applies at once." : "Fuld og Fri betales med MobilePay lige her. Basis er gratis og gælder med det samme.") + '</p>' +

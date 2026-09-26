@@ -1022,7 +1022,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.12.0 \u00b7 26. september 2026";
+const VERSION = "v6.12.1 \u00b7 26. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2707,7 +2707,7 @@ function renderTraener(){
   /* v6.2.0 · hilsnen er HJEM's — inde på en fane står der ingen (målt i StreakTennis' TRÆN/Statistik/Indstillinger) */
   if (S.tab === "hjem") h += '<div style="margin:16px 2px 6px;display:flex;align-items:center;gap:12px">' + avat(t.navn, 46) +
       '<div><h2 style="margin:0;font-size:23px">Hej ' + esc(t.navn.split(" ")[0]) + '</h2></div></div>';
-  if (S.tab === "hjem") h += traenerDash();   /* v6.12.0 · dashboardet — altid, under hilsnen */
+  /* v6.12.1 · dashboardet står NEDERST på HJEM, under fliserne (Nicolai 26/9: «Skal på INGEN måde være øverst») */
   // Prototype-banneret gaelder kun eksempeldata. Har traeneren skrevet sin egen
   // trup ind, er det hans rigtige spillere — og saa maa der ikke staa "fake data".
   if (!(S.truppen||[]).length) {
@@ -2763,6 +2763,7 @@ function renderTraener(){
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="rum"><span class="dev-ikon">\ud83d\udcac</span><b>Tr\u00e6nerrummet</b><small>klubbens tr\u00e6nere \u2014 samtalen bliver</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="indst" style="grid-column:auto"><span class="dev-ikon">\u2699\ufe0f</span><b>Indstillinger</b><small>konto, klubbens nøgler, sprog</small></button>' +
       '</div>';
+    h += traenerDash();   /* v6.12.1 · dashboardet nederst, under fliserne — som StreakTennis' HJEM */
   } else {
     /* v6.2.0 · StreakTennis' titelrække, ordret (linje 10425 i v5.3.1): ← og fanens navn i én række */
     var _tilbage = (S.tab === "indst" && S.indstVisning) ? 'data-act="indst-vis" data-v=""' :   /* v6.8.0 */

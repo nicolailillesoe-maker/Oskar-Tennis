@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.7.2 · 25. september 2026";
+const VERSION = "v5.7.3 · 25. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -1880,6 +1880,8 @@ const rensKamp = (g) => {
     point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1, l: [1,2,3].indexOf(q.l) >= 0 ? q.l : 0, h: [1,2].indexOf(q.h) >= 0 ? q.h : 0, z: [1,2,3].indexOf(q.z) >= 0 ? q.z : 0, ...(q.g === 1 ? { g: 1 } : {}) })) };
 };
 try { const sp = lager.hent("sai-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
+/* ⭐ v5.7.3 · efter «Slet min konto»: fordøren siger det (flaget læses én gang og fjernes) */
+try { if (window.localStorage.getItem("sai-konto-slettet")) { window.localStorage.removeItem("sai-konto-slettet"); S.kontoSlettetVist = true; } } catch(e) {}
 try { if (lager.hent("sai-laas") === "op") S.laast = false; } catch(e) {}
 // v4.38.0: duel-laengde-togglen findes ikke mere. Noeglen "sai-tryk"
 // bliver liggende i lageret — den laeses bare aldrig igen.
@@ -2830,6 +2832,7 @@ function b64uTilBytes(s) {
 // bevist hvem man er. Alle andre funktioner kender stadig kun nøglen —
 // derfor er de urørte.
 const KONTO_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/konto";
+const KONTO_SLET_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/konto-slet";   /* ⭐ v5.7.3 · Slet min konto */
 /* ⭐ v5.3.7 · KUN DIREKTE BETALING — betaling-start opretter MobilePay-aftalen og svarer {url} */
 const BETAL_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/betaling-start";
 // ⭐ DOEREN UD (22/8 nat): en invitation begynder med en voksen, der
@@ -5517,6 +5520,54 @@ const A = {
   },
   logUdSpoerg: () => { S.logUdSpoerg = true; S.kontoBesked = null; render(); },
   logUdNej: () => { S.logUdSpoerg = false; render(); },
+  // ⭐⭐⭐ v5.7.3 · SLET MIN KONTO (Apple 5.1.1(v)). Nicolai 25/9: straks · MobilePay stoppes · også klubspillere.
+  //   To tryk + kodeordet. Motoren konto-slet efterprøver kodeordet, stopper aftalen og sletter alt i én transaktion.
+  //   ⛔ Ingen synk bagefter: en synk efter sletningen kunne skrive rækken igen.
+  kontoSletSpoerg: () => { S.kontoSletSpoerg = true; S.kontoSletBekraeft = false; S.kontoSletBesked = null; S.kontoSletKode = ""; render(); },
+  kontoSletNej: () => { S.kontoSletSpoerg = false; S.kontoSletBekraeft = false; S.kontoSletBesked = null; S.kontoSletKode = ""; render(); },
+  kontoSletJa: async () => {
+    const EN = S.sprog === "en";
+    if (S.kontoSletHenter) return;
+    if (S.minKonto && !String(S.kontoSletKode || "")) {
+      S.kontoSletBesked = EN ? "Write your password first." : "Skriv dit kodeord først."; render(); return;
+    }
+    if (!S.kontoSletBekraeft) { S.kontoSletBekraeft = true; S.kontoSletBesked = null; render(); return; }
+    S.kontoSletHenter = true; S.kontoSletBesked = null; render();
+    let r;
+    const st = new AbortController(); const ur = setTimeout(function(){ st.abort(); }, 30000);
+    try {
+      const x = await fetch(KONTO_SLET_URL, { method: "POST", signal: st.signal,
+        headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle || "" },
+        body: JSON.stringify({ handling: "slet", kode: String(S.kontoSletKode || "") }) });
+      clearTimeout(ur);
+      const d = await x.json().catch(function(){ return {}; });
+      r = (x.ok && d.slettet) ? { ok: true } : { fejl: d.kode || "ukendt", t: d.fejl || "" };
+    } catch (e) { clearTimeout(ur); r = { fejl: "netvaerk" }; }
+    S.kontoSletHenter = false;
+    if (r.ok) {
+      const BLIVER = ["sai-sprog", "sai-skala10", "sai-zoner", "sai-tryk", "sai-haand", "sai-benchmark"];
+      try {
+        const gem = {};
+        BLIVER.forEach(function(k){ try { const v = localStorage.getItem(k); if (v !== null) gem[k] = v; } catch (e) {} });
+        localStorage.clear();
+        Object.keys(gem).forEach(function(k){ try { localStorage.setItem(k, gem[k]); } catch (e) {} });
+        localStorage.setItem("sai-konto-slettet", "1");
+      } catch (e) {}
+      location.reload();
+      return;
+    }
+    S.kontoSletBekraeft = false;
+    S.kontoSletBesked = r.fejl === "netvaerk"
+      ? (EN ? "No connection — nothing was deleted." : "Ingen forbindelse — intet er slettet.")
+      : r.fejl === "forkert"
+      ? (EN ? "The password does not match — nothing was deleted." : "Kodeordet passer ikke — intet er slettet.")
+      : r.fejl === "loft"
+      ? (EN ? "Too many attempts today — try again tomorrow. Nothing was deleted." : "For mange forsøg i dag — prøv igen i morgen. Intet er slettet.")
+      : r.fejl === "mobilepay"
+      ? (EN ? "MobilePay did not answer — nothing was deleted. Try again in a moment." : "MobilePay svarede ikke — intet er slettet. Prøv igen om lidt.")
+      : (EN ? "It did not go through — nothing was deleted. Try again." : "Det gik ikke igennem — intet er slettet. Prøv igen.");
+    render();
+  },
   // ⭐⭐ LOG UD · SYNKRONISÉR FØRST, RYD BAGEFTER.
   // Rydder man før synk, er det, der ikke nåede frem, væk for altid.
   // Synkroniserer man uden at rydde, kan den næste, der låner telefonen,
@@ -10510,6 +10561,11 @@ function _tegn() {
                 ? "<b>Your access no longer exists on the server.</b> Log in, or create the player again \u2014 your matches are untouched."
                 : "<b>Din adgang findes ikke l\u00e6ngere p\u00e5 serveren.</b> Log ind, eller opret spilleren forfra \u2014 dine kampe er ur\u00f8rte.") + '</p>';
           })() +
+          // ⭐ v5.7.3 · efter «Slet min konto» siger døren det
+          (S.kontoSlettetVist ? '<p class="lille sai-op" style="animation-delay:.09s;margin:0 0 12px;padding:10px 12px;' +
+            'border-left:3px solid var(--vundet);background:rgba(94,196,120,.08);border-radius:0 9px 9px 0;text-align:left;line-height:1.5">' + (S.sprog === "en"
+              ? "<b>Your account is deleted.</b> Everything about you is gone — with us and on this phone."
+              : "<b>Din konto er slettet.</b> Alt om dig er væk — hos os og på denne telefon.") + '</p>' : '') +
           // ① LOG IND — det foerste, som han bad om.
           '<div class="sai-op" style="animation-delay:.12s;text-align:left">' + _loginKort(S.sprog === "en", true) + '</div>' +
           // ② «Ny her?» — ét skridt videre til INDFOERINGEN, ikke til en
@@ -12445,6 +12501,24 @@ function _tegn() {
           : "Dine kampe, hver bold, din tr\u00e6ningslog og dine analyser kopieres automatisk. <b>Boldene, resultaterne og analyserne gemmes l\u00e6sbart i arkivet</b>, s\u00e5 de kommer tilbage med din konto alene \u2014 ogs\u00e5 hvis du glemmer dit kodeord. <b>Modstandernes navne og dine noter l\u00e5ses p\u00e5 denne telefon, f\u00f8r de sendes</b>: serveren opbevarer en boks, den ikke kan \u00e5bne, og de kommer tilbage med dit kodeord. Log ind p\u00e5 en ny telefon, og det hele kommer tilbage.") + '</p>' +
         '<button class="knap" style="width:100%;min-height:48px;background:var(--grus)" data-a="gaaKopi">' +
         (EN?"Open backup \u2192":"\u00c5bn sikkerhedskopien \u2192") + '</button>' + '</div>';
+        /* ⭐⭐⭐ v5.7.3 · SLET MIN KONTO — nederst i kontoen, aldrig i team-visningen */
+        if (VISNING !== "team" && S.kontoAaben !== "log") {
+          if (S.kontoSletSpoerg) {
+            _kk += '<div style="margin-top:12px;padding:11px;border:1.5px solid var(--tabt);border-radius:10px">' +
+              '<p class="lille" style="margin:0 0 8px"><b>' + (EN ? "Delete your account?" : "Slet din konto?") + '</b> ' + (EN
+                ? "Everything about you is deleted at once — matches, every ball, training, streak, analyses, friends, messages, rooms, your team and your place in a club — and this phone is wiped. If you pay with MobilePay, the agreement stops and nothing more is charged. <b>It cannot be undone.</b>"
+                : "Alt om dig slettes med det samme — kampe, hver bold, træning, streak, analyser, venner, beskeder, rum, dit team og din plads i en klub — og denne telefon ryddes. Betaler du med MobilePay, stopper aftalen, og der trækkes ikke mere. <b>Det kan ikke fortrydes.</b>") + '</p>' +
+              (S.minKonto ? '<input type="password" placeholder="' + (EN ? "your password" : "dit kodeord") + '" value="' + esc(S.kontoSletKode || "") + '" data-felt="kontoSletKode" maxlength="200" autocomplete="current-password" style="margin-bottom:7px">' : '') +
+              '<div class="raekke">' +
+              '<button class="knap" style="min-height:44px;background:var(--tabt)" data-a="kontoSletJa">' + (S.kontoSletHenter ? "⏳ …"
+                : (S.kontoSletBekraeft ? (EN ? "Tap again — delete everything" : "Tryk igen — slet alt") : (EN ? "Delete my account" : "Slet min konto"))) + '</button>' +
+              '<button class="knap valg" style="min-height:44px" data-a="kontoSletNej">' + (EN ? "Keep it" : "Behold kontoen") + '</button></div>' +
+              (S.kontoSletBesked ? '<p class="lille" style="margin:8px 0 0;font-weight:700;color:var(--tabt)">' + esc(S.kontoSletBesked) + '</p>' : '') +
+              '</div>';
+          } else {
+            _kk += '<div style="margin-top:10px"><button class="knap valg" style="min-height:40px;padding:6px 14px;color:var(--daempet)" data-a="kontoSletSpoerg">' + (EN ? "Delete my account" : "Slet min konto") + '</button></div>';
+          }
+        }
         _kort.konto = _opsKort("konto", "\ud83d\udc64", (EN?"YOUR ACCOUNT":"DIN KONTO"),
           S.minKonto ? esc(S.minKonto) : (EN?"this phone only":"kun denne telefon"),
           S.minKonto ? "var(--vundet)" : "var(--daempet)", _kk);

@@ -117,6 +117,23 @@ input::placeholder{color:var(--daempet)}
 .knap.valg{background:transparent;border:1px solid var(--kant);color:var(--daempet)}
 .knap.valg.til{background:rgba(159,216,232,.1);border-color:var(--is);color:var(--is)}
 .knap.valg.gul{background:var(--guld-dyb);border-color:var(--guld);color:var(--kridt)}
+/* ⭐ v5.8.2 · KNAPPERNE SKINNER — gradueret farve + et glanslag, som i StreakCoach v6.10 */
+.knap{position:relative;overflow:hidden;isolation:isolate;transition:transform .12s ease,box-shadow .2s ease,filter .2s ease;box-shadow:0 6px 16px -10px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12)}
+.knap::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;background:linear-gradient(180deg,rgba(255,255,255,.22) 0%,rgba(255,255,255,.05) 46%,rgba(0,0,0,.14) 100%)}
+.knap.valg{background:linear-gradient(180deg,#1E2A44 0%,#131C2E 100%);border-color:rgba(159,216,232,.18);color:#C9D3E3;box-shadow:0 6px 16px -12px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.08)}
+.knap.valg::before{background:linear-gradient(180deg,rgba(255,255,255,.1) 0%,rgba(255,255,255,.02) 50%,rgba(0,0,0,.1) 100%)}
+.knap.valg.til{background:linear-gradient(180deg,rgba(159,216,232,.26) 0%,rgba(159,216,232,.08) 100%);border-color:var(--is);color:var(--is);box-shadow:0 0 16px -6px rgba(159,216,232,.55),inset 0 1px 0 rgba(255,255,255,.14)}
+.knap.valg.gul{background:linear-gradient(180deg,rgba(240,207,97,.28) 0%,rgba(240,207,97,.08) 100%);box-shadow:0 0 16px -6px rgba(240,207,97,.5),inset 0 1px 0 rgba(255,255,255,.14)}
+.knap.knap[style*="background:var(--grus)"],.knap.knap[style*="background:#5a78ff"]{background:linear-gradient(135deg,#4F7BFF 0%,#2E56D6 48%,#4B17B6 100%) !important;box-shadow:0 8px 22px -10px rgba(75,23,182,.85),inset 0 1px 0 rgba(255,255,255,.25)}
+.knap.knap[style*="background:var(--guld)"]{background:linear-gradient(135deg,#FFE08A 0%,#F0CF61 45%,#FB9B2A 100%) !important;box-shadow:0 8px 22px -10px rgba(251,155,42,.85),inset 0 1px 0 rgba(255,255,255,.4)}
+.knap.knap[style*="background:var(--vundet)"]{background:linear-gradient(135deg,#3AD68A 0%,#22995A 55%,#157A45 100%) !important;box-shadow:0 8px 22px -10px rgba(34,153,90,.85),inset 0 1px 0 rgba(255,255,255,.25)}
+.knap.knap[style*="background:var(--tabt)"]{background:linear-gradient(135deg,#F07A80 0%,#D2484E 50%,#963038 100%) !important;box-shadow:0 8px 22px -10px rgba(210,72,78,.85),inset 0 1px 0 rgba(255,255,255,.25)}
+.knap.knap[style*="background:var(--is)"]{background:linear-gradient(135deg,#D4F4FC 0%,#9FD8E8 55%,#6FB8D0 100%) !important;box-shadow:0 8px 22px -10px rgba(111,184,208,.85),inset 0 1px 0 rgba(255,255,255,.4)}
+.knap[style*="background:var(--flade)"]{background:linear-gradient(180deg,#233656 0%,#1B2A44 100%) !important}
+.knap[style*="background:transparent"],.knap[style*="background:none"]{box-shadow:none}
+.knap[style*="background:transparent"]::before,.knap[style*="background:none"]::before{content:none}
+.knap:active{transform:translateY(1px) scale(.99);filter:brightness(1.06)}
+@media (prefers-reduced-motion: reduce){.knap{transition:none}}
 .badge-ai{background:linear-gradient(90deg,var(--is),var(--gruslys));color:var(--dyb);font-size:10px;font-weight:800;padding:2px 7px;border-radius:7px;letter-spacing:.5px}
 .scoreboard{padding:16px 16px 12px;border:1px solid var(--kant) !important;background:linear-gradient(160deg,#16264C,#0E1830) !important;backdrop-filter:none}
 .score{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -474,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.8.1 · 26. september 2026";
+const VERSION = "v5.8.2 · 26. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -3225,6 +3242,13 @@ function _koebKampIndeks(noegle) {
   for (let i = 0; i < g.length; i++) if (_kampNoegle(g[i], i) === noegle) return i;
   return -1;
 }
+/* ⭐ v5.8.2 · tallet fra basen (betaling-start status → live): «2 af 3 gratis tilbage» · «1 af 3 tilbage denne måned» */
+function liveTalTekst(EN) {
+  const l = S.liveTal; if (!l || S.minPlan === "fri") return "";
+  const rest = Math.max(0, l.af - l.brugt);
+  if (l.gratis) return EN ? rest + " of " + l.af + " free left" : rest + " af " + l.af + " gratis tilbage";
+  return EN ? rest + " of " + l.af + " left this month" : rest + " af " + l.af + " tilbage denne måned";
+}
 /* prisen, der står på «Del kampen live», når kampen startes — planen afgør den (live_start i basen) */
 function livePrisTekst(EN) {
   const p = S.minPlan;
@@ -4529,6 +4553,7 @@ const A = {
       stilling: liveStilling(), forloeb: liveForloeb(),
     });
     /* ⭐⭐ v5.8.0 · LIVE KOSTER ET KØB, NÅR PLADSEN ER BRUGT (spiller-sync v52 → live_start i basen) */
+    S.liveTal = null; S._liveTalSpurgt = false;   /* ⭐ v5.8.2 · basen har talt igen */
     S.liveKoeb = r.fejl === "live-koeb" ? { type: r.koeb === "live" ? "live" : "kamp", pris: +r.pris || (r.koeb === "live" ? 15 : 20) } : null;
     if (S.liveKoeb) {
       S.liveAktiv = false; lager.gem("sai-liveaktiv", "0"); S.delAaben = true;
@@ -8354,9 +8379,10 @@ const A = {
       const ny = !!(d && d.abonnement && d.abonnement.afvist_grund === "alder");
       if (ny !== !!S.betalAfvist) { S.betalAfvist = ny; render(); }
       /* ⭐ v5.7.5 · hele svaret — {status, plan, udloeber, naade_til, afvist_grund} (betaling-start v3) */
-      const gl = JSON.stringify(S.mpAftale || null);
+      const gl = JSON.stringify([S.mpAftale || null, S.liveTal || null]);
       S.mpAftale = (d && d.abonnement) ? d.abonnement : null;
-      if (JSON.stringify(S.mpAftale) !== gl) render();
+      S.liveTal = (d && d.live && typeof d.live.brugt === "number") ? { brugt: d.live.brugt, af: +d.live.af || 3, gratis: !!d.live.gratis } : null;   /* ⭐ v5.8.2 */
+      if (JSON.stringify([S.mpAftale, S.liveTal]) !== gl) render();
       return S.mpAftale;
     } catch (e) { clearTimeout(ur); }
   },
@@ -12736,6 +12762,7 @@ function _tegn() {
             /* ⭐ v5.7.5 · AFTALEN, SOM DEN ER — kun på Fuld/Fri og lige efter et køb. Klubben betaler dér, hvor den gør. */
             var _aftaleTekst = _mpAftaleTekst(_pl, EN);
             if (_aftaleTekst) _kk += '<p class="lille" data-mp-aftale="1" style="margin:2px 0 8px">' + _aftaleTekst + '</p>';
+            if (liveTalTekst(EN)) _kk += '<p class="lille" data-live-tal="1" style="margin:2px 0 8px">📡 ' + (EN ? "Live matches: " : "Live-kampe: ") + liveTalTekst(EN) + '.</p>';   /* ⭐ v5.8.2 */
             if (_pl && _pl !== "klub") {
               if (S.planSkift && S.udtjek) {
                 /* ⭐ v5.3.6 · UDTJEKNINGEN — «Bekræft køb» står FØR planen skiftes. Alt, man køber, står her:
@@ -13279,7 +13306,8 @@ function _tegn() {
         ? "Side (FH/BH) is asked on winners, free errors and return errors; zones on errors. One tap, Skip is always there — with both on it is ONE grid. Off = fewer taps, and the analysis loses that split (e.g. «15 of 20 free errors on the forehand»)."
         : "Siden (FH/BH) spørges på vinderslag, gratis fejl og returfejl; zonerne på fejl. Ét tryk, Spring over står der altid — med begge til er det ÉT gitter. Fra = færre tryk, og analysen mister den fordeling (fx «15 af 20 gratis fejl på forhånden»).")+'</p>';
       /* ⭐⭐ v5.8.0 · LIVE VÆLGES, HVOR KAMPEN STARTER — prisen står på knappen (planen afgør den) */
-      h += '<div class="raekke" style="margin:0 0 10px"><button class="knap valg '+(S.nyLive?"til":"")+'" data-a="nyLiveToggle">📡 '+(EN?"Share the match live":"Del kampen live")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.nyLive?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+(livePrisTekst(EN)?' · '+livePrisTekst(EN):'')+'</span></button></div>';
+      if (S.spillerNoegle && !S.liveTal && !S._liveTalSpurgt) { S._liveTalSpurgt = true; setTimeout(function(){ try { A.betalStatus(); } catch (_e) {} }, 0); }   /* ⭐ v5.8.2 · én gang pr. start */
+      h += '<div class="raekke" style="margin:0 0 10px"><button class="knap valg '+(S.nyLive?"til":"")+'" data-a="nyLiveToggle" data-live-tal="1">📡 '+(EN?"Share the match live":"Del kampen live")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.nyLive?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+(liveTalTekst(EN)?' · '+liveTalTekst(EN):(livePrisTekst(EN)?' · '+livePrisTekst(EN):''))+'</span></button></div>';
       h += '<div class="raekke"><button class="knap stor" style="background:var(--grus)" data-a="start">'+(EN?"Start match":"Start kamp")+'</button></div>';
         h += _wtilb(2);
       }

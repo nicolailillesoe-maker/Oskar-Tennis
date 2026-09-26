@@ -1003,7 +1003,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.10.0 \u00b7 26. september 2026";
+const VERSION = "v6.11.0 \u00b7 26. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1587,6 +1587,9 @@ Object.assign(EN, {   /* v6.9.0 · automatisk backup */
   "⚠️ Ingen forbindelse — det gemmes på din konto ved næste ændring.": "⚠️ No connection — it is saved to your account at the next change.",
   "⚠️ Din trup kunne ikke hentes eller gemmes på din konto — log ud og ind igen, hvis det bliver ved.": "⚠️ Your squad could not be fetched or saved to your account — log out and in again if it keeps happening.",
   "Din konto har en låst kopi. Sikkerhedskopien her er din egen fil ved siden af — til dig selv, ikke til os.": "Your account holds a locked copy. The backup here is your own file alongside it — for you, not for us."
+});
+Object.assign(EN, {   /* v6.11.0 · HJEM er kortet */
+  "Spillere": "Players", "{n} i truppen": "{n} in your squad", "invitér den første": "invite the first", "ugeskemaet": "the weekly schedule",
 });
 Object.assign(EN, {   /* v6.10.0 · kortet */
   "SPILLERE": "PLAYERS", "👥 Spillere": "👥 Players", "Klubbens nøgler": "Club keys", "🔑 Klubbens nøgler": "🔑 Club keys",
@@ -2699,6 +2702,11 @@ function renderTraener(){
       //   inde i kortet skjuler sig selv). Ingen rolle at spørge om.
       /* v6.1.0 · fliserne som StreakTennis: `dev-kant` + guld på de to øverste, stål på resten, «Streak Zone»-skrivemåde */
       /* v6.10.0 · Invitér · Program · Grupper er ude: de står i bundbaren og under 👥 SPILLERE (kortet, princip 100) */
+      /* v6.11.0 · HJEM ER KORTET, BUNDBAREN ER GENVEJEN (Nicolai 26/9: «Således er forsiden fuldkommen - navigation i bunden har
+         det vigtigste»). Spillere og Program står igen forrest i guld — HJEM er den ene dør ud over bundbaren. */
+      (function(){ var _nt = (lager.hent("truppen", []) || []).length;
+        return '<button class="dev-flise dev-kant dev-kant-guld" data-act="tab" data-v="grupper"><span class="dev-ikon">\ud83d\udc65</span><b>Spillere</b><small>' + (_nt ? _nt + ' i truppen' : 'invitér den første') + '</small></button>'; })() +
+      '<button class="dev-flise dev-kant dev-kant-guld" data-act="tab" data-v="program"><span class="dev-ikon">\ud83d\udcc5</span><b>Program</b><small>ugeskemaet</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="kvartal"><span class="dev-ikon">\ud83d\udccb</span><b>Evaluering</b><small>AI-udkast \u2014 du godkender alt</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="rum"><span class="dev-ikon">\ud83d\udcac</span><b>Tr\u00e6nerrummet</b><small>klubbens tr\u00e6nere \u2014 samtalen bliver</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="indst" style="grid-column:1/-1"><span class="dev-ikon">\u2699\ufe0f</span><b>Indstillinger</b><small>konto, klubbens nøgler, sprog</small></button>' +

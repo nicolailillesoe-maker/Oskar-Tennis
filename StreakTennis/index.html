@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.8.3 · 26. september 2026";
+const VERSION = "v5.8.4 · 26. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -3484,10 +3484,12 @@ function _opsRaekke(navn, valg, handling) {
 //   uf · tvunget · returfejl → han tabte point med den fløj
 //   es og dobbeltfejl er serv og har ingen fløj; mod_vinder, mod_es,
 //   mod_uf og mod_dobbelt er modstanderens ketsjer.
-// ⭐ v5.3.0 · «presset til fejl» spørger IKKE om fløjen mere (Nicolai 19/9:
+// ⭐ v5.3.0 · «presset til fejl» spurgte IKKE om fløjen (Nicolai 19/9:
 //   «Der er man bare presset til fejl»). v4.119 satte den ind — fortrudt.
+// ⭐ v5.8.4 · vendt igen (Nicolai 26/9: «næste tryk efter man har registreret
+//   zonen, [skal] være forhånd eller baghånd» → «Og ja»): zone → fløj, to trin.
 //   `mod_tvunget` beholder hånden: det er hans eget slag, der pressede dem.
-const _HAAND_AARSAG = { vinder: 1, uf: 1, returfejl: 1, mod_tvunget: 1 };
+const _HAAND_AARSAG = { vinder: 1, uf: 1, tvunget: 1, returfejl: 1, mod_tvunget: 1 };
 const _ZONE_AARSAG  = { uf: 1, tvunget: 1, returfejl: 1 };
 function _efterSkaerm(id, vundet) {
   // ⭐ v4.99.0 · S.side · ⭐ v4.119.0 · side-reglen er væk: årsagerne står
@@ -13320,8 +13322,8 @@ function _tegn() {
         '</div></div>';
       // ⭐ v4.99.0 · prisen for FRA siges her, hvor valget tages.
       h += '<p class="lille" style="margin:2px 0 10px;opacity:.8">'+(EN
-        ? "Side (FH/BH) is asked on winners, free errors and return errors; zones on errors. One tap, Skip is always there — with both on it is ONE grid. Off = fewer taps, and the analysis loses that split (e.g. «15 of 20 free errors on the forehand»)."
-        : "Siden (FH/BH) spørges på vinderslag, gratis fejl og returfejl; zonerne på fejl. Ét tryk, Spring over står der altid — med begge til er det ÉT gitter. Fra = færre tryk, og analysen mister den fordeling (fx «15 af 20 gratis fejl på forhånden»).")+'</p>';
+        ? "Side (FH/BH) is asked on winners, free errors, forced errors and return errors; zones on errors. One tap, Skip is always there — with both on it is ONE grid. Off = fewer taps, and the analysis loses that split (e.g. «15 of 20 free errors on the forehand»)."
+        : "Siden (FH/BH) spørges på vinderslag, gratis fejl, pressede fejl og returfejl; zonerne på fejl. Ét tryk, Spring over står der altid — med begge til er det ÉT gitter. Fra = færre tryk, og analysen mister den fordeling (fx «15 af 20 gratis fejl på forhånden»).")+'</p>';
       /* ⭐⭐ v5.8.0 · LIVE VÆLGES, HVOR KAMPEN STARTER — prisen står på knappen (planen afgør den) */
       if (S.spillerNoegle && !S.liveTal && !S._liveTalSpurgt) { S._liveTalSpurgt = true; setTimeout(function(){ try { A.betalStatus(); } catch (_e) {} }, 0); }   /* ⭐ v5.8.2 · én gang pr. start */
       if (S.nyBesked) h += '<p class="lille" data-ny-besked="1" style="margin:0 0 8px;text-align:center;color:'+(S.nyBesked.fejl?'var(--tabt)':'var(--vundet)')+'">'+esc(S.nyBesked.t)+'</p>';   /* ⭐ v5.8.3 */

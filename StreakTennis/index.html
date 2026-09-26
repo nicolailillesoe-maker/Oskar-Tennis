@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.7.5 · 26. september 2026";
+const VERSION = "v5.8.0 · 26. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -2315,6 +2315,23 @@ try {
   });
   setTimeout(function () { try { A.betalVent(false); } catch (_e) {} }, 900);
 } catch(e) {}
+/* ⭐⭐ v5.8.0 · HJEMKOMSTEN FRA ET KØB. MobilePay sender tilbage med ?koeb=retur&ref=… — kun ref'en (st-k-/st-l-
+   + 24 tegn) bruges, og kun sammen med spillerens egen nøgle. Uden et startet køb sker der intet. */
+try {
+  const _kq = new URLSearchParams(location.search);
+  if (_kq.get("koeb") === "retur") {
+    const _kr = String(_kq.get("ref") || "");
+    history.replaceState(null, "", location.pathname);
+    let _kv = null; try { _kv = JSON.parse(lager.hent("sai-koeb-venter") || "null"); } catch (_e) {}
+    if (/^st-[kl]-[0-9a-f]{24}$/.test(_kr) && (!_kv || _kv.ref !== _kr)) {
+      try { lager.gem("sai-koeb-venter", JSON.stringify({ ref: _kr, type: _kr.charAt(3) === "l" ? "live" : "kamp", t: Date.now(), hvor: "" })); } catch (_e) {}
+    }
+    setTimeout(function () { try { A.koebVent(true); } catch (_e) {} }, 0);
+  } else setTimeout(function () { try { A.koebVent(false); } catch (_e) {} }, 1200);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") { try { A.koebVent(false); } catch (_e) {} }
+  });
+} catch(e) {}
 
 // ⭐⭐ EN APP, DER ALLEREDE ER AABEN, GENSTARTER IKKE. Trykker man paa et
 // #ven=-link, mens StreakTennis staar aabent — eller browseren svarer fra
@@ -3055,7 +3072,7 @@ async function sync(handling, krop) {
       body: JSON.stringify({ handling, ...krop }) });
     clearTimeout(ur);
     const d = await r.json().catch(function(){ return {}; });
-    return r.ok ? d : { fejl: d.kode || "netvaerk", status: r.status, detaljer: d.detaljer };
+    return r.ok ? d : { fejl: d.kode || "netvaerk", status: r.status, detaljer: d.detaljer, pris: d.pris, koeb: d.koeb, brugt: d.brugt, af: d.af };   /* ⭐ v5.8.0 */
   } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
 }
 
@@ -3125,7 +3142,7 @@ async function analyseAdgang(nyttelast, signal) {
       headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
       body: JSON.stringify({ aftryk: aftryk }) });
     const d = await r.json().catch(function(){ return {}; });
-    if (!r.ok || !d.token) return { fejl: d.kode || "netvaerk", status: r.status };
+    if (!r.ok || !d.token) return { fejl: d.kode || "netvaerk", status: r.status, koeb: d.koeb, pris: d.pris };   /* ⭐ v5.8.0 */
     S.analyseBasis = (d.basis && typeof d.basis.brugt === "number") ? { brugt: d.basis.brugt, loft: d.basis.loft || 3 } : null;   /* ⭐ v4.144.0 */
     return { hoveder: { "x-analyse-token": d.token } };
   } catch (e) { return { fejl: "netvaerk" }; }
@@ -3193,6 +3210,29 @@ function udviklingAuto() {
   } catch (_e) {}
 }
 
+/* ⭐⭐ v5.8.0 · BUTIKKEN. Ét køb ad gangen, betalt med MobilePay (betaling-start v4). Knappen siger prisen;
+   hvor den står (live-panelet eller kampen), står i data-v: "type|hvor" — hvor = "live" eller "a:<kampens nøgle>". */
+function koebKnap(type, pris, hvor, EN) {
+  const p = (+pris || (type === "live" ? 15 : 20));
+  const t = type === "live" ? (EN ? "Buy an extra live match" : "Køb en ekstra live-kamp")
+    : String(hvor).indexOf("a:") === 0 ? (EN ? "Buy the analysis" : "Køb analysen") : (EN ? "Buy the match" : "Køb kampen");
+  return '<div class="raekke" style="margin-top:8px"><button class="knap" data-koeb="1" style="width:100%;min-height:48px;background:#5a78ff" data-a="koebStart" data-v="' +
+    esc(type + "|" + hvor) + '">' + (S.koebSender ? "⏳ " : "💳 ") + t + ' · ' + p + ' kr</button></div>' +
+    '<p class="lille" style="margin:4px 0 0;opacity:.75;text-align:center">' + (EN ? "MobilePay · one purchase, no subscription" : "MobilePay · ét køb, intet abonnement") + '</p>';
+}
+function _koebKampIndeks(noegle) {
+  const g = S.gemte || [];
+  for (let i = 0; i < g.length; i++) if (_kampNoegle(g[i], i) === noegle) return i;
+  return -1;
+}
+/* prisen, der står på «Del kampen live», når kampen startes — planen afgør den (live_start i basen) */
+function livePrisTekst(EN) {
+  const p = S.minPlan;
+  if (p === "fri") return EN ? "no limit" : "uden loft";
+  if (p === "fuld" || p === "klub") return EN ? "3 a month included · then 15 kr" : "3 om måneden er med · derefter 15 kr";
+  if (p === "gaest") return EN ? "20 kr · the analysis is included" : "20 kr · analysen følger med";
+  return "";
+}
 function analyseFejltekst(kode, status, EN) {
   // ⭐ v4.7.9 · doerens egne svar, i menneskesprog
   if (kode === "brugt") return EN
@@ -3203,8 +3243,8 @@ function analyseFejltekst(kode, status, EN) {
     : "M\u00e5nedens analyser er brugt op. De fornyes om 30 dage.";
   // ⭐ v4.144.0 · BASIS: tre analyser i alt (analyse-lov v5). Vejen videre står i sætningen.
   if (kode === "basis-brugt" || status === 402) return EN
-    ? "Your 3 free analyses are used. Full access gives 40 a month \u2014 choose it under \u2699 Your account."
-    : "Dine 3 gratis analyser er brugt. Fuld adgang giver 40 om m\u00e5neden \u2014 v\u00e6lg den under \u2699 DIN KONTO.";
+    ? "Your 3 free analyses are used. Buy this one for 20 kr — or get 40 a month with Full access under ⚙ Your account."
+    : "Dine 3 gratis analyser er brugt. Køb denne for 20 kr — eller få 40 om måneden med Fuld adgang under ⚙ DIN KONTO.";
   if (kode === "mangler-adgang") return EN
     ? "You need a player code before you can fetch an analysis."
     : "Du skal have en spiller-kode, f\u00f8r du kan hente en analyse.";
@@ -4352,8 +4392,10 @@ const A = {
     S.wiz = 1; S._doneVist = false;
     S.aktiv = { modstander: (S.nyMod || "").trim() || "Ukendt modstander", turnering: (S.nyTur || "").trim(),
       dato: new Date().toISOString().slice(0,10), oskarFirst: S.nyFirst, mtb: S.nyMtb, saetTil: S.nyFormat === 4 ? 4 : 6, noAd: S.nyFormat === 4 && S.nyNoAd, point: [], justeringer: [] };
-    S.afventer = null; S.serv = 1; gemAktiv(); render();
+    S.afventer = null; S.serv = 1; S.liveKoeb = null; gemAktiv(); render();
+    if (S.nyLive) { S.delAaben = true; A.liveStart(); }   /* ⭐ v5.8.0 */
   },
+  nyLiveToggle: () => { S.nyLive = !S.nyLive; render(); },   /* ⭐ v5.8.0 */
   serv: (v) => { S.serv = +v; render(); },
   udfald: (v) => { S.afventer = v; render(); },
   aarsag: (id) => {
@@ -4486,6 +4528,15 @@ const A = {
       turnering: S.aktiv && S.aktiv.turnering || null,
       stilling: liveStilling(), forloeb: liveForloeb(),
     });
+    /* ⭐⭐ v5.8.0 · LIVE KOSTER ET KØB, NÅR PLADSEN ER BRUGT (spiller-sync v52 → live_start i basen) */
+    S.liveKoeb = r.fejl === "live-koeb" ? { type: r.koeb === "live" ? "live" : "kamp", pris: +r.pris || (r.koeb === "live" ? 15 : 20) } : null;
+    if (S.liveKoeb) {
+      S.liveAktiv = false; lager.gem("sai-liveaktiv", "0"); S.delAaben = true;
+      S.liveBesked = { fejl: true, t: S.liveKoeb.type === "live"
+        ? (EN ? "This month's 3 live matches are used. An extra one costs " + S.liveKoeb.pris + " kr." : "Månedens 3 live-kampe er brugt. En ekstra koster " + S.liveKoeb.pris + " kr.")
+        : (EN ? "Sharing live costs " + S.liveKoeb.pris + " kr for the match — the analysis of the match is included." : "Live-deling koster " + S.liveKoeb.pris + " kr for kampen — analysen af kampen følger med.") };
+      render(); return;
+    }
     S.liveBesked = r.fejl
       ? { fejl: true, t: r.fejl === "mangler-spillernoegle" ? (EN?"Player key missing.":"Spillernøgle mangler.")
           : r.fejl === "adgang" ? (EN?"The key was rejected.":"Nøglen blev afvist.")
@@ -4493,7 +4544,8 @@ const A = {
           : r.fejl === "kraever-fuld-adgang" ? (EN?"Live sharing needs full access — see Your account under ⚙️.":"Live-deling kræver fuld adgang — se Din konto under ⚙️.")
           : r.fejl === "netvaerk" || !r.fejl ? (EN?"No connection — try again.":"Ingen forbindelse — prøv igen.")
           : (EN?"Sharing was refused: ":"Delingen blev afvist: ") + String(r.fejl) }
-      : { fejl: false, t: EN ? "The match is live ✓" : "Kampen er live ✓" };
+      : { fejl: false, t: (EN ? "The match is live ✓" : "Kampen er live ✓") +
+          (r.basis_live && +r.basis_live.af > 0 ? (EN ? " · " + r.basis_live.brugt + " of " + r.basis_live.af + " live matches used in 30 days" : " · " + r.basis_live.brugt + " af " + r.basis_live.af + " live-kampe brugt på 30 dage") : "") };   /* ⭐ v5.8.0 */
     if (r.fejl) { S.liveAktiv = false; lager.gem("sai-liveaktiv", "0"); }
     render();
   },
@@ -8342,6 +8394,94 @@ const A = {
     S.betalVenter = false;
     render();
   },
+  /* ⭐⭐ v5.8.0 · ET ENGANGSKØB. Hvert udfald får sin EGEN sætning (75). Telefonen husker ref, type, tid og hvor
+     købet blev startet (sai-koeb-venter) — ikke beløb, ikke telefonnummer. */
+  koebStart: async (v) => {
+    if (S.koebSender) return;
+    const del = String(v || "").split("|"); const type = del[0] === "live" ? "live" : "kamp"; const hvor = String(del[1] || "");
+    const EN = S.sprog === "en";
+    const sig = (t) => {
+      if (hvor.indexOf("a:") === 0) S.hentBesked = { i: _koebKampIndeks(hvor.slice(2)), fejl: true, t: t };
+      else S.liveBesked = { fejl: true, t: t };
+    };
+    S.koebSender = type; render();
+    let r = {};
+    const st = new AbortController(); const ur = setTimeout(function(){ st.abort(); }, 20000);
+    try {
+      const x = await fetch(BETAL_URL, { method: "POST", signal: st.signal,
+        headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle || "" },
+        body: JSON.stringify({ handling: "koeb", type: type }) });
+      clearTimeout(ur);
+      const d = await x.json().catch(function(){ return {}; });
+      r = x.ok ? d : { fejl: d.kode || "ukendt", t: d.fejl || "" };
+    } catch (e) { clearTimeout(ur); r = { fejl: "netvaerk", ingenSvar: true }; }
+    if (!r.fejl && r.url && /^https:\/\//.test(r.url) && /^st-[kl]-[0-9a-f]{24}$/.test(String(r.ref || ""))) {
+      try { lager.gem("sai-koeb-venter", JSON.stringify({ ref: r.ref, type: type, t: Date.now(), hvor: hvor })); } catch (_e) {}
+      location.href = r.url; return;
+    }
+    S.koebSender = null;
+    if (r.fejl === "betaling-ikke-klar") sig(EN ? "Buying with MobilePay opens soon." : "Køb med MobilePay åbner snart.");
+    else if (r.fejl === "fri-har-alt") sig(EN ? "You have live without a limit — there is nothing to buy." : "Du har live uden loft — der er intet at købe.");
+    else if (r.fejl === "forkert-plan") sig(EN ? "That purchase belongs to another plan — see Your account under ⚙️." : "Det køb hører til en anden plan — se Din konto under ⚙️.");
+    else if (r.fejl === "afventer-godkendelse") sig(EN ? "Your access is waiting for a yes — you can buy once you are let in." : "Din adgang venter på et ja — du kan købe, når du er lukket ind.");
+    else if (r.fejl === "udbyder") sig(EN ? "MobilePay did not answer — try again in a moment." : "MobilePay svarede ikke — prøv igen om lidt.");
+    else if (r.ingenSvar) sig(EN ? "No connection — try again." : "Ingen forbindelse — prøv igen.");
+    else sig(r.t || (EN ? "Could not start the purchase — try again." : "Kunne ikke starte købet — prøv igen."));
+    render();
+  },
+  /* ⭐⭐ v5.8.0 · VENT PÅ KØBET. koeb-status henter betalingen hjem hos MobilePay (og trækker den). Ved hjemkomsten
+     op til 10 forsøg med 3 s imellem; når appen bliver synlig igen, 4. Inden for 30 min — derefter glemmes det.
+     Betalt: live starter selv på den aktive kamp · analysen hentes selv på kampen, den blev købt til. */
+  koebVent: async (tvang) => {
+    if (S.koebVenter || !S.spillerNoegle) return;
+    let kv = null; try { kv = JSON.parse(lager.hent("sai-koeb-venter") || "null"); } catch (_e) {}
+    if (!kv || !/^st-[kl]-[0-9a-f]{24}$/.test(String(kv.ref || ""))) return;
+    if (Date.now() - (+kv.t || 0) > 1800000) { try { lager.slet("sai-koeb-venter"); } catch (_e) {} return; }
+    S.koebVenter = true; S.koebSender = null;
+    const EN = S.sprog === "en";
+    let status = "";
+    for (let i = 0; i < (tvang ? 10 : 4); i++) {
+      if (i) await new Promise(function (ok) { setTimeout(ok, 3000); });
+      const st = new AbortController(); const ur = setTimeout(function(){ st.abort(); }, 15000);
+      try {
+        const x = await fetch(BETAL_URL, { method: "POST", signal: st.signal,
+          headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+          body: JSON.stringify({ handling: "koeb-status", ref: kv.ref }) });
+        clearTimeout(ur);
+        if (x.status === 404) status = "ukendt";
+        else if (x.ok) { const d = await x.json().catch(function(){ return {}; }); status = String(d.status || ""); }
+      } catch (_e) { clearTimeout(ur); }
+      if (status === "betalt" || status === "annulleret" || status === "ukendt") break;
+    }
+    S.koebVenter = false;
+    const hvor = String(kv.hvor || ""); const erA = hvor.indexOf("a:") === 0;
+    const n = erA ? _koebKampIndeks(hvor.slice(2)) : -1;
+    if (status === "betalt" || status === "annulleret" || status === "ukendt") { try { lager.slet("sai-koeb-venter"); } catch (_e) {} }
+    if (status === "betalt") {
+      if (erA && n >= 0 && S.gemte[n] && !S.gemte[n].analyse) {
+        S.tab = "historik"; S.statPanel = "kampe"; S.kampAaben[n] = true; S.hentBesked = null; render();
+        A.hentAnalyse(n); return;
+      }
+      if (S.aktiv && !_aktivGammel()) {
+        S.tab = "kamp"; S.liveKoeb = null; S.delAaben = true; render();
+        A.liveStart(); return;
+      }
+      S.tab = "historik"; S.statPanel = "kampe"; S.hentBesked = { i: -1, fejl: false, t: EN
+        ? "The purchase went through ✓ — it is used on your next live match or analysis."
+        : "Købet er gået igennem ✓ — det bruges på din næste live-kamp eller analyse." };
+      render(); return;
+    }
+    const sig = (t, fejl) => {
+      if (erA) { S.tab = "historik"; S.statPanel = "kampe"; if (n >= 0) S.kampAaben[n] = true; S.hentBesked = { i: n, fejl: fejl, t: t,
+        koeb: fejl && n >= 0 ? { type: "kamp", pris: kv.type === "live" ? 15 : 20 } : null }; }
+      else if (S.aktiv) { S.tab = "kamp"; S.delAaben = true; S.liveBesked = { fejl: fejl, t: t }; }
+      else { S.tab = "historik"; S.statPanel = "kampe"; S.hentBesked = { i: -1, fejl: fejl, t: t }; }
+    };
+    if (status === "annulleret") sig(EN ? "The purchase was not completed — nothing was charged." : "Købet blev ikke gennemført — der er ikke trukket noget.", true);
+    else if (status === "ukendt") sig(EN ? "We could not find that purchase — nothing was charged." : "Vi kunne ikke finde det køb — der er ikke trukket noget.", true);
+    else if (tvang) sig(EN ? "MobilePay is still handling the purchase — we ask again when you open the app." : "MobilePay behandler stadig købet — vi spørger igen, når du åbner appen.", false);
+    render();
+  },
   // ⭐ v4.59.0 · rejsens beskeder-tryk  // ⭐ v4.59.0 · rejsens beskeder-tryk: samme motor som BESKEDER-kortet
   // (pushTil), men svaret vises i rejsen, og et ja gaar selv videre.
   indPush: async () => {
@@ -8471,7 +8611,7 @@ const A = {
     const ur = setTimeout(function(){ styring.abort(); }, 120000);
     let _medToken = false;   /* ⭐ v4.145.0 */
     analyseAdgang(nyttelast, styring.signal).then(function(ad) {
-      if (ad.fejl) return { s: ad.status || 0, ok: false, d: { kode: ad.fejl } };
+      if (ad.fejl) return { s: ad.status || 0, ok: false, d: { kode: ad.fejl, koeb: ad.koeb, pris: ad.pris } };   /* ⭐ v5.8.0 */
       _medToken = !!(ad.hoveder && ad.hoveder["x-analyse-token"]);
       return fetch(ANALYSE_URL, {
         method: "POST",
@@ -8499,7 +8639,8 @@ const A = {
           (S.analyseBasis ? (EN ? " " + S.analyseBasis.brugt + " of " + S.analyseBasis.loft + " free analyses used." : " " + S.analyseBasis.brugt + " af " + S.analyseBasis.loft + " gratis analyser brugt.") : "") };   /* ⭐ v4.144.0 */
       } else {
         S.henter = null; analysePulsStop(); S._sf = S._sf || {}; S._sf["1"] = true;
-        S.hentBesked = { i: n, fejl: true, t: analyseFejltekst(sv.d && sv.d.kode, sv.s, EN) };
+        S.hentBesked = { i: n, fejl: true, t: analyseFejltekst(sv.d && sv.d.kode, sv.s, EN),
+          koeb: (sv.d && sv.d.koeb === "kamp") ? { type: "kamp", pris: +sv.d.pris || 20 } : null };   /* ⭐ v5.8.0 */
       }
       render();
     }).catch(function() {
@@ -13135,6 +13276,8 @@ function _tegn() {
       h += '<p class="lille" style="margin:2px 0 10px;opacity:.8">'+(EN
         ? "Side (FH/BH) is asked on winners, free errors and return errors; zones on errors. One tap, Skip is always there — with both on it is ONE grid. Off = fewer taps, and the analysis loses that split (e.g. «15 of 20 free errors on the forehand»)."
         : "Siden (FH/BH) spørges på vinderslag, gratis fejl og returfejl; zonerne på fejl. Ét tryk, Spring over står der altid — med begge til er det ÉT gitter. Fra = færre tryk, og analysen mister den fordeling (fx «15 af 20 gratis fejl på forhånden»).")+'</p>';
+      /* ⭐⭐ v5.8.0 · LIVE VÆLGES, HVOR KAMPEN STARTER — prisen står på knappen (planen afgør den) */
+      h += '<div class="raekke" style="margin:0 0 10px"><button class="knap valg '+(S.nyLive?"til":"")+'" data-a="nyLiveToggle">📡 '+(EN?"Share the match live":"Del kampen live")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.nyLive?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+(livePrisTekst(EN)?' · '+livePrisTekst(EN):'')+'</span></button></div>';
       h += '<div class="raekke"><button class="knap stor" style="background:var(--grus)" data-a="start">'+(EN?"Start match":"Start kamp")+'</button></div>';
         h += _wtilb(2);
       }
@@ -13290,8 +13433,9 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         h += '<p class="lille" style="margin:6px 0 8px">' + (EN
           ? "Share a code so your team can follow live. The code only opens this match, and it dies when you stop."
           : "Del en kode, så dit team kan følge med live. Koden åbner kun denne kamp, og den dør, når du stopper.") + '</p>' +
+          (S.liveKoeb ? koebKnap(S.liveKoeb.type, S.liveKoeb.pris, "live", EN) :   /* ⭐ v5.8.0 */
           '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="liveStart">📡 ' +
-          (EN?"Share the match":"Del kampen") + '</button></div>';
+          (EN?"Share the match":"Del kampen") + '</button></div>');
       }
       if (S.liveBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
         (S.liveBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.liveBesked.t) + '</p>';
@@ -14169,7 +14313,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         // Derfor: det GEMTE ja gaelder, til serveren siger andet. Serveren
         // er alligevel den, der afgoer det — `lov` siger nej til resten.
         (_maaBillede() ? _bilStrimmel("kamp", _kampNoegle(k, i), EN) : '') +
-        (S.hentBesked && S.hentBesked.i === i ? '<p class="lille" style="margin:8px 0 0;color:'+(S.hentBesked.fejl?'var(--tabt)':'var(--vundet)')+'">'+esc(S.hentBesked.t)+'</p>' : '') +
+        (S.hentBesked && S.hentBesked.i === i ? '<p class="lille" style="margin:8px 0 0;color:'+(S.hentBesked.fejl?'var(--tabt)':'var(--vundet)')+'">'+esc(S.hentBesked.t)+'</p>' +
+          (S.hentBesked.koeb ? koebKnap("kamp", S.hentBesked.koeb.pris, "a:" + _kampNoegle(k, i), EN) : '') : '') +   /* ⭐ v5.8.0 */
         '</div>';
     }).join("") + '</div>';
     if (S.redigerA !== null && S.gemte[S.redigerA]) {

@@ -193,6 +193,25 @@ body{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .knap.stor{width:100%;padding:24px 8px;font-size:19px;letter-spacing:1.5px;text-transform:uppercase;border-radius:20px;box-shadow:0 10px 28px rgba(0,0,0,.35);min-height:72px}
 .knap.gron{background:var(--vundet);color:#fff}
 .knap.roed{background:var(--tabt);color:#fff}
+/* v6.12.0 · TRÆNERENS DASHBOARD — samme glas som helten, en roligere kant (is → guld), tallene med gradient */
+.dash{position:relative;border-radius:20px;padding:16px 16px 14px;margin:6px 0 14px;border:1.5px solid transparent;background:radial-gradient(120% 90% at 0% 0%,rgba(123,155,255,.16),transparent 55%) padding-box,linear-gradient(160deg,#122347,#0C1526) padding-box,linear-gradient(135deg,rgba(159,216,232,.75),rgba(75,23,182,.55) 45%,rgba(251,155,42,.8)) border-box;box-shadow:0 14px 34px -18px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.07)}
+.dash-tal{display:grid;grid-template-columns:repeat(3,1fr);text-align:center}
+.dash-tal>div+div{border-left:1px solid rgba(159,216,232,.14)}
+.dash-tal b{display:block;font-size:31px;line-height:1.05;font-weight:800;letter-spacing:-.5px;background:linear-gradient(180deg,#FFFFFF,#9FD8E8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.dash-tal>div:nth-child(2) b{background-image:linear-gradient(180deg,#FFE08A,#FB9B2A)}
+.dash-tal>div:nth-child(3) b{background-image:linear-gradient(180deg,#9CF2C4,#22995A)}
+.dash-tal span{display:block;margin-top:4px;font-size:10px;letter-spacing:.7px;text-transform:uppercase;color:var(--daempet);white-space:nowrap}
+.dash-skil{height:1px;margin:14px -2px 12px;background:linear-gradient(90deg,transparent,rgba(159,216,232,.28),transparent)}
+.dash-over{font-size:10.5px;letter-spacing:1.6px;font-weight:800;color:var(--is);margin:0 0 8px}
+.dash-pas{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-top:6px;border-radius:12px;background:rgba(255,255,255,.035)}
+.dash-hvad{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.dash-hvad b{font-size:14.5px;font-variant-numeric:tabular-nums}
+.dash-hvad small{color:var(--daempet);font-size:12.5px;line-height:1.35}
+.dash-maerke{flex:none;font-size:10.5px;font-weight:800;letter-spacing:.4px;padding:3px 8px;border-radius:999px;background:rgba(159,216,232,.12);color:var(--is)}
+.dash-maerke.ok{background:rgba(58,214,138,.14);color:#6EE7A8}
+.dash-maerke.nu{background:rgba(251,155,42,.16);color:#FFB866}
+.dash-fri{color:var(--daempet);font-size:13.5px;margin:2px 0 0}
+.dash-nyt{display:flex;gap:8px;align-items:flex-start;margin-top:12px;padding-top:11px;border-top:1px solid rgba(159,216,232,.12);color:#6EE7A8;font-weight:700;font-size:13px}
 /* ⭐ v6.10.0 · KNAPPERNE SKINNER — gradueret farve + et glanslag, som helten på forsiden */
 .knap{position:relative;overflow:hidden;isolation:isolate;transition:transform .12s ease,box-shadow .2s ease,filter .2s ease;box-shadow:0 6px 16px -10px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.12)}
 .knap::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;background:linear-gradient(180deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,.06) 46%,rgba(0,0,0,.14) 100%)}
@@ -1003,7 +1022,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.11.0 \u00b7 26. september 2026";
+const VERSION = "v6.12.0 \u00b7 26. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1587,6 +1606,11 @@ Object.assign(EN, {   /* v6.9.0 · automatisk backup */
   "⚠️ Ingen forbindelse — det gemmes på din konto ved næste ændring.": "⚠️ No connection — it is saved to your account at the next change.",
   "⚠️ Din trup kunne ikke hentes eller gemmes på din konto — log ud og ind igen, hvis det bliver ved.": "⚠️ Your squad could not be fetched or saved to your account — log out and in again if it keeps happening.",
   "Din konto har en låst kopi. Sikkerhedskopien her er din egen fil ved siden af — til dig selv, ikke til os.": "Your account holds a locked copy. The backup here is your own file alongside it — for you, not for us."
+});
+Object.assign(EN, {   /* v6.12.0 · dashboardet */
+  "i truppen": "in your squad", "vurderet i ugen": "rated this week", "nye spillere": "new players", "I DAG": "TODAY", "Fri i dag 🎾": "Free today 🎾",
+  "dit pas": "your session", "bane {x}": "court {x}", "1 spiller": "1 player", "Træning": "Training",
+  "Forbind klubnøglen under ⚙️ — så kommer dagens pas frem her.": "Connect the club key under ⚙️ — then today's sessions show up here.",
 });
 Object.assign(EN, {   /* v6.11.0 · HJEM er kortet */
   "Spillere": "Players", "{n} i truppen": "{n} in your squad", "invitér den første": "invite the first", "ugeskemaet": "the weekly schedule",
@@ -2646,6 +2670,33 @@ function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emo
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Spillere", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
            kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen" }[tab] || "";
 }
+// ⭐⭐ v6.12.0 · TRÆNERENS DASHBOARD (Nicolai 26/9: «de 3 tal og nyhed» + «hvad der skal ske i dag»). Står altid på HJEM.
+//   Tallene er det, telefonen VED: truppen (lager) · spillere vurderet siden mandag (S.vurderinger, dansk dato) · nye (hent-hold).
+function traenerDash(){
+  var trup = (lager.hent("truppen", []) || []).length;
+  var man = (function(){ var d = new Date(); var u = (d.getDay() + 6) % 7; d.setDate(d.getDate() - u); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); })();
+  var vurd = {}; (S.vurderinger || []).forEach(function(v){ if (v && v.dato && String(v.dato).slice(0, 10) >= man && v.spiller) vurd[v.spiller] = 1; });
+  var nye = 0; try { var _t = nyeSpillere(); nye = _t.venter.length + _t.nye.length; } catch (_e) {}
+  var h = '<div class="dash"><div class="dash-tal">' +
+    '<div><b>' + trup + '</b><span>i truppen</span></div>' +
+    '<div><b>' + Object.keys(vurd).length + '</b><span>vurderet i ugen</span></div>' +
+    '<div><b>' + nye + '</b><span>nye spillere</span></div></div>' +
+    '<div class="dash-skil"></div><div class="dash-over">I DAG</div>';
+  if (!lager.hent("klubkode", "")) h += '<div class="dash-fri">Forbind klubnøglen under ⚙️ — så kommer dagens pas frem her.</div>';
+  else if (S.nuFejl) h += '<div class="dash-fri">' + esc(S.nuFejl) + '</div>';
+  else if (!S.nu) h += '<div class="dash-fri">Henter dagens pas …</div>';
+  else if (!(S.nu.pas || []).length) h += '<div class="dash-fri">Fri i dag 🎾</div>';
+  else (S.nu.pas || []).slice(0, 4).forEach(function(p){
+    var m = p.registreret ? '<span class="dash-maerke ok">registreret ✓</span>' : p.lige_slut ? '<span class="dash-maerke nu">lige slut</span>' : p.mine ? '<span class="dash-maerke">dit pas</span>' : '';
+    var n = (p.deltagere || []).length;
+    /* hver del sin egen tekstnode — så oversættes de hver for sig (ordbogen tager hele tekstnoder) */
+    var dele = [p.titel || 'Træning', 'bane ' + p.bane, n + (n === 1 ? ' spiller' : ' spillere')];
+    if (!p.mine && p.traener) dele.push(p.traener);
+    h += '<div class="dash-pas"><span class="dash-hvad"><b>' + esc(tidTekst(p)) + '</b><small>' + dele.map(function(x){ return '<span>' + esc(x) + '</span>'; }).join(' · ') + '</small></span>' + m + '</div>';
+  });
+  if (S.autoTrupBesked) h += '<div class="dash-nyt"><span>✓</span><span>' + esc(S.autoTrupBesked) + '</span></div>';
+  return h + '</div>';
+}
 function renderTraener(){
   const t = DATA.traenere.find(x=>x.navn===S.traener);
   // ⭐⭐⭐ v6.1.0 · HILSNEN SOM STREAKTENNIS (Nicolai 20/9: «identisk»): den dæmpede linje ovenover, avat(46), «Hej Navn».
@@ -2656,6 +2707,7 @@ function renderTraener(){
   /* v6.2.0 · hilsnen er HJEM's — inde på en fane står der ingen (målt i StreakTennis' TRÆN/Statistik/Indstillinger) */
   if (S.tab === "hjem") h += '<div style="margin:16px 2px 6px;display:flex;align-items:center;gap:12px">' + avat(t.navn, 46) +
       '<div><h2 style="margin:0;font-size:23px">Hej ' + esc(t.navn.split(" ")[0]) + '</h2></div></div>';
+  if (S.tab === "hjem") h += traenerDash();   /* v6.12.0 · dashboardet — altid, under hilsnen */
   // Prototype-banneret gaelder kun eksempeldata. Har traeneren skrevet sin egen
   // trup ind, er det hans rigtige spillere — og saa maa der ikke staa "fake data".
   if (!(S.truppen||[]).length) {
@@ -2686,7 +2738,7 @@ function renderTraener(){
     (function(){
       var _t = { venter: [], nye: [] }; try { _t = nyeSpillere(); } catch (_e) {}
       var _n = _t.venter.length + _t.nye.length;
-      if (S.autoTrupBesked) h += '<p class="lille" style="margin:2px 2px 10px;color:var(--vundet);font-weight:700">' + esc(S.autoTrupBesked) + '</p>';
+      /* v6.12.0 · nyheden («… sagde ja …») står i dashboardet nu — ikke løst midt mellem heltene */
       if (!_n) return;
       h += '<button class="dev-hero dev-kant dev-kant-guld" data-act="tab" data-v="grupper"><span style="font-size:30px">📥</span><span><b>' + (_n === 1 ? '1 NY SPILLER' : _n + ' NYE SPILLERE') + '</b><br><small>' + (_t.venter.length ? 'venter på jeres ja' : 'mangler i truppen') + '</small></span><span class="dev-pil">→</span></button>';
     })();
@@ -2709,7 +2761,7 @@ function renderTraener(){
       '<button class="dev-flise dev-kant dev-kant-guld" data-act="tab" data-v="program"><span class="dev-ikon">\ud83d\udcc5</span><b>Program</b><small>ugeskemaet</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="kvartal"><span class="dev-ikon">\ud83d\udccb</span><b>Evaluering</b><small>AI-udkast \u2014 du godkender alt</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="rum"><span class="dev-ikon">\ud83d\udcac</span><b>Tr\u00e6nerrummet</b><small>klubbens tr\u00e6nere \u2014 samtalen bliver</small></button>' +
-      '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="indst" style="grid-column:1/-1"><span class="dev-ikon">\u2699\ufe0f</span><b>Indstillinger</b><small>konto, klubbens nøgler, sprog</small></button>' +
+      '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="indst" style="grid-column:auto"><span class="dev-ikon">\u2699\ufe0f</span><b>Indstillinger</b><small>konto, klubbens nøgler, sprog</small></button>' +
       '</div>';
   } else {
     /* v6.2.0 · StreakTennis' titelrække, ordret (linje 10425 i v5.3.1): ← og fanens navn i én række */

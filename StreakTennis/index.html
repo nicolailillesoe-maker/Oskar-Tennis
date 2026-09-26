@@ -474,7 +474,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.7.4 · 25. september 2026";
+const VERSION = "v5.7.5 · 26. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -2294,12 +2294,26 @@ try {
 try {
   if (new URLSearchParams(location.search).get("betaling") === "retur") {
     S.tab = "opsaet"; S.opsAaben = "konto";
+    /* ⭐ v5.7.5 · MobilePay sender tilbage til en BROWSER — ikke til appen på hjemmeskærmen. Målt 25/9 på
+       Nicolais telefon: «den genlæste på Chrome efter betalingen og opdaterede ikke i Web-appen». */
+    const _hj = I_SKALLEN || paaHjemmeskaerm();
     S.kontoBesked = { fejl: false, t: S.sprog === "en"
-      ? "Thanks! MobilePay is handling the payment — your plan changes as soon as it has gone through."
-      : "Tak! MobilePay behandler betalingen — jeres plan skifter, så snart den er gået igennem." };
+      ? (_hj ? "Thanks! MobilePay is handling the payment — your plan changes as soon as it has gone through."
+             : "Thanks! MobilePay is handling the payment. If you use StreakTennis from your home screen, go back there — your plan changes as soon as the payment has gone through.")
+      : (_hj ? "Tak! MobilePay behandler betalingen — din plan skifter, så snart den er gået igennem."
+             : "Tak! MobilePay behandler betalingen. Bruger du StreakTennis fra hjemmeskærmen, så gå tilbage dertil — din plan skifter, så snart betalingen er gået igennem.") };
     history.replaceState(null, "", location.pathname);
-    setTimeout(function () { try { A.betalStatus(); } catch (_e) {} }, 0);
+    setTimeout(function () { try { A.betalVent(true); } catch (_e) {} }, 0);   /* ⭐ v5.7.5 */
   }
+} catch(e) {}
+/* ⭐⭐ v5.7.5 · APPEN, DER VAR VÆK, MENS MAN BETALTE. Web-appen på hjemmeskærmen genstarter ikke, når man
+   kommer tilbage fra MobilePay — den bliver bare synlig igen. Derfor spørger den selv, hvis et køb er startet
+   inden for 30 min (A.betalVent). Uden et startet køb sker der intet — ingen ekstra kald for alle andre. */
+try {
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") { try { A.betalVent(false); } catch (_e) {} }
+  });
+  setTimeout(function () { try { A.betalVent(false); } catch (_e) {} }, 900);
 } catch(e) {}
 
 // ⭐⭐ EN APP, DER ALLEREDE ER AABEN, GENSTARTER IKKE. Trykker man paa et
@@ -8257,7 +8271,10 @@ const A = {
     const sig = (t) => { if (ind) S.indBesked = { fejl: true, t: t }; else S.kontoBesked = { fejl: true, t: t }; };
     S.betalSender = true; S.indBesked = null; S.kontoBesked = null; render();
     const r = await A.betalKald(plan);
-    if (!r.fejl && r.url && /^https:\/\//.test(r.url)) { location.href = r.url; return; }   /* videre til MobilePay */
+    if (!r.fejl && r.url && /^https:\/\//.test(r.url)) {
+      try { lager.gem("sai-betal-startet", String(Date.now())); } catch (_e) {}   /* ⭐ v5.7.5 · kun et tidsstempel */
+      location.href = r.url; return;
+    }   /* videre til MobilePay */
     S.betalSender = false;
     if (r.fejl === "betaling-ikke-klar") sig(EN ? "MobilePay opens soon — we are waiting for the final approval. Basis is free until then." : "MobilePay åbner snart — vi venter på den sidste godkendelse. Indtil da er Basis gratis.");
     else if (r.fejl === "aftale-findes") sig(EN ? "You already have an agreement. To change plan, cancel it in MobilePay first." : "I har allerede en aftale. Vil I skifte plan, så opsig den i MobilePay først.");
@@ -8282,7 +8299,48 @@ const A = {
       const d = await r.json().catch(function(){ return {}; });
       const ny = !!(d && d.abonnement && d.abonnement.afvist_grund === "alder");
       if (ny !== !!S.betalAfvist) { S.betalAfvist = ny; render(); }
+      /* ⭐ v5.7.5 · hele svaret — {status, plan, udloeber, naade_til, afvist_grund} (betaling-start v3) */
+      const gl = JSON.stringify(S.mpAftale || null);
+      S.mpAftale = (d && d.abonnement) ? d.abonnement : null;
+      if (JSON.stringify(S.mpAftale) !== gl) render();
+      return S.mpAftale;
     } catch (e) { clearTimeout(ur); }
+  },
+  /* ⭐⭐ v5.7.5 · VENT PÅ BETALINGEN. Aftalen bliver «aktiv» hos os, når MobilePay melder tilbage (webhooken);
+     planen følger, når beløbet er trukket. Derfor to ting: aftalen skal stå aktiv, OG planen fra ejer-port skal
+     være den købte. Op til 10 forsøg med 3 s imellem — derefter står «venter på MobilePay» i Din konto, og næste
+     gang appen bliver synlig, spørges der igen (inden for 30 min). */
+  betalVent: async (tvang) => {
+    if (S.betalVenter || !S.spillerNoegle) return;
+    let t0 = 0; try { t0 = parseInt(lager.hent("sai-betal-startet") || "0", 10) || 0; } catch (_e) {}
+    const frisk = !!t0 && (Date.now() - t0) < 1800000;
+    if (t0 && !frisk) { try { lager.slet("sai-betal-startet"); } catch (_e) {} }
+    if (!frisk && !tvang) return;
+    S.betalVenter = true;
+    /* appen er synlig igen efter et køb: udtjekningen lukkes (ingen ⏳, der hænger — og intet andet køb oveni
+       det, MobilePay stadig behandler). «Få fuld adgang» står der stadig, hvis man sprang fra i MobilePay. */
+    if (frisk) { S.betalSender = false; S.udtjek = null; S.planSkift = false; }
+    const EN = S.sprog === "en";
+    const forsoeg = frisk ? 10 : 1;
+    for (let i = 0; i < forsoeg; i++) {
+      if (i) await new Promise(function (ok) { setTimeout(ok, 3000); });
+      const a = await A.betalStatus();
+      if (!a) continue;
+      if (a.afvist_grund) { try { lager.slet("sai-betal-startet"); } catch (_e) {} break; }
+      if (a.status === "aktiv" && frisk) {
+        try { await inviteretTjek(); } catch (_e) {}
+        if (S.minPlan === a.plan || S.minPlan === "klub") {
+          try { lager.slet("sai-betal-startet"); } catch (_e) {}
+          const nv = a.plan === "fri" ? (EN ? "Full + free streaming" : "Fuld + fri streaming") : (EN ? "Full access" : "Fuld adgang");
+          S.tab = "opsaet"; S.opsAaben = "konto"; S.planSkift = false; S.udtjek = null;   /* udtjekningen er brugt */
+          S.kontoBesked = { fejl: false, t: EN ? "The payment went through — you have " + nv + " now." : "Betalingen er gået igennem — du har " + nv + " nu." };
+          render();
+          break;
+        }
+      }
+    }
+    S.betalVenter = false;
+    render();
   },
   // ⭐ v4.59.0 · rejsens beskeder-tryk  // ⭐ v4.59.0 · rejsens beskeder-tryk: samme motor som BESKEDER-kortet
   // (pushTil), men svaret vises i rejsen, og et ja gaar selv videre.
@@ -8735,6 +8793,25 @@ function _betaltTekst(EN) {
   if (!S.betaltTil) return "";
   const d = String(S.betaltTil).slice(0, 10).split("-");
   return ' 💳 ' + (EN ? "Paid until " : "Betalt til ") + (d.length === 3 ? d[2] + "/" + d[1] + "-" + d[0] : S.betaltTil) + '.';
+}
+/* ⭐ v5.7.5 · aftalens tilstand i én sætning (betaling-start v3 status). Tom = intet at sige. */
+function _mpAftaleTekst(pl, EN) {
+  const a = S.mpAftale;
+  const dato = function (iso) { const d = String(iso || "").slice(0, 10).split("-"); return d.length === 3 ? d[2] + "/" + d[1] + "-" + d[0] : ""; };
+  let t0 = 0; try { t0 = parseInt(lager.hent("sai-betal-startet") || "0", 10) || 0; } catch (_e) {}
+  const frisk = !!t0 && (Date.now() - t0) < 1800000;
+  if (pl === "klub") return "";
+  if (frisk && (!a || a.status === "proeve" || (a.status === "aktiv" && pl !== a.plan)))
+    return "⏳ " + (EN ? "Waiting for MobilePay — your plan changes as soon as the payment has gone through." : "Venter på MobilePay — din plan skifter, så snart betalingen er gået igennem.");
+  if (!a || (pl !== "fuld" && pl !== "fri")) return "";
+  const nu = Date.now();
+  if (a.status === "aktiv" && a.udloeber && Date.parse(a.udloeber) > nu)
+    return "🔁 " + (EN ? "Paid with MobilePay — renews " + dato(a.udloeber) + ". Cancel any time in MobilePay." : "Betales med MobilePay — fornyes " + dato(a.udloeber) + ". Opsig når som helst i MobilePay.");
+  if (a.status === "slukket" && a.udloeber && Date.parse(a.udloeber) > nu)
+    return "⏹ " + (EN ? "The agreement in MobilePay is stopped — " + _planNavn(pl, EN) + " lasts until " + dato(a.udloeber) + ", then Basic." : "Aftalen i MobilePay er stoppet — " + _planNavn(pl, EN) + " gælder til " + dato(a.udloeber) + ", derefter Basis.");
+  if (a.status === "naade")
+    return "⚠️ " + (EN ? "MobilePay could not take the payment. Your access lasts until " + dato(a.naade_til || a.udloeber) + " — check the agreement in MobilePay." : "MobilePay kunne ikke trække betalingen. Din adgang gælder til " + dato(a.naade_til || a.udloeber) + " — tjek aftalen i MobilePay.");
+  return "";
 }
 function _planNavn(p, EN) {
   return p === "gaest" ? (EN ? "Basic" : "Basis")
@@ -12513,6 +12590,9 @@ function _tegn() {
             if (S.betalAfvist) {
               _kk += '<p class="lille" style="margin:2px 0 8px;font-weight:700;color:var(--tabt)">' + (EN ? "The agreement was not created: the person paying with MobilePay must be 18 or over." : "Aftalen blev ikke oprettet: den, der betaler med MobilePay, skal være fyldt 18.") + '</p>';
             }
+            /* ⭐ v5.7.5 · AFTALEN, SOM DEN ER — kun på Fuld/Fri og lige efter et køb. Klubben betaler dér, hvor den gør. */
+            var _aftaleTekst = _mpAftaleTekst(_pl, EN);
+            if (_aftaleTekst) _kk += '<p class="lille" data-mp-aftale="1" style="margin:2px 0 8px">' + _aftaleTekst + '</p>';
             if (_pl && _pl !== "klub") {
               if (S.planSkift && S.udtjek) {
                 /* ⭐ v5.3.6 · UDTJEKNINGEN — «Bekræft køb» står FØR planen skiftes. Alt, man køber, står her:

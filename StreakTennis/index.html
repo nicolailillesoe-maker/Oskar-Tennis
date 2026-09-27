@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.8.7 · 27. september 2026";
+const VERSION = "v5.8.8 · 27. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -501,11 +501,13 @@ const HANDEL = { url: "https://tennis.sportsainalytics.com/handelsbetingelser.ht
    «Betal med MobilePay» → betaling-start → MobilePay. Nicolai 24/9: «Det skal bare være direkte betaling.» */
 function _udtjekBoks(plan, kilde, EN) {
   var p = plan === "fri" ? 98 : 49;
-  var navn = plan === "fri" ? (EN ? "🚀 FULL + FREE STREAMING" : "🚀 FULD + FRI STREAMING") : (EN ? "⭐ FULL ACCESS" : "⭐ FULD ADGANG");
+  /* ⭐ v5.8.8 · klubfri = fri streaming oven på klubbens plan (betaling-start v6) */
+  var navn = plan === "fri" ? (EN ? "🚀 FULL + FREE STREAMING" : "🚀 FULD + FRI STREAMING") : plan === "klubfri" ? (EN ? "🚀 FREE STREAMING" : "🚀 FRI STREAMING") : (EN ? "⭐ FULL ACCESS" : "⭐ FULD ADGANG");
   return '<div style="margin:4px 0 8px;padding:12px;border:1px solid var(--guld);border-radius:12px;text-align:left">' +
     '<div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">🧾 ' + (EN ? "CONFIRM PURCHASE" : "BEKRÆFT KØB") + '</div>' +
     '<div style="margin:6px 0 2px"><b>' + navn + '</b><span style="float:right;font-weight:800;color:var(--guld)">' + p + (EN ? " kr/mo" : " kr./md.") + '</span></div>' +
     '<ul class="lille" style="margin:6px 0 8px;padding-left:18px;line-height:1.5">' +
+      (plan === "klubfri" ? '<li>' + (EN ? "On top of what your club pays — live streaming with no limit." : "Oven på det, din klub betaler — live-deling uden loft.") + '</li>' : '') +
       '<li>' + (EN ? "Renews every month until you cancel. No commitment." : "Fornyes hver måned, til I opsiger. Ingen binding.") + '</li>' +
       '<li>' + (EN ? "Cancel any time in MobilePay — access lasts the month you paid for." : "Opsig når som helst i MobilePay — adgangen gælder den måned, I har betalt for.") + '</li>' +
       '<li>' + (EN ? "14-day right of withdrawal — full refund." : "14 dages fortrydelsesret — hele beløbet tilbage.") + '</li>' +
@@ -3277,16 +3279,23 @@ function _koebKampIndeks(noegle) {
   for (let i = 0; i < g.length; i++) if (_kampNoegle(g[i], i) === noegle) return i;
   return -1;
 }
+/* ⭐ v5.8.8 · KLUB + FRI STREAMING: en klubfri-aftale, der løber (den betalte måned eller nåden) = live uden loft.
+   Samme regel som betaling-start v6 (status → live: null) og basens live_start v3. */
+function _friLoeber() {
+  const a = S.mpAftale; if (!a || a.plan !== "klubfri" || a.status === "proeve") return false;
+  const nu = Date.now();
+  return !!((a.udloeber && Date.parse(a.udloeber) > nu) || (a.naade_til && Date.parse(a.naade_til) > nu));
+}
 /* ⭐ v5.8.2 · tallet fra basen (betaling-start status → live): «2 af 3 gratis tilbage» · «1 af 3 tilbage denne måned» */
 function liveTalTekst(EN) {
-  const l = S.liveTal; if (!l || S.minPlan === "fri") return "";
+  const l = S.liveTal; if (!l || S.minPlan === "fri" || _friLoeber()) return "";
   const rest = Math.max(0, l.af - l.brugt);
   if (l.gratis) return EN ? rest + " of " + l.af + " free left" : rest + " af " + l.af + " gratis tilbage";
   return EN ? rest + " of " + l.af + " left this month" : rest + " af " + l.af + " tilbage denne måned";
 }
 /* ⭐ v5.8.3 · betalte, ubrugte køb, der giver live — samme regel som basens live_start */
 function koebKlarTekst(EN) {
-  const k = S.koebKlar; if (!k || S.minPlan === "fri") return "";
+  const k = S.koebKlar; if (!k || S.minPlan === "fri" || _friLoeber()) return "";
   const n = (S.minPlan === "fuld" || S.minPlan === "klub") ? k.live + k.kamp : k.kamp;
   if (!n) return "";
   return EN ? n + (n === 1 ? " paid match ready" : " paid matches ready") : n + (n === 1 ? " købt kamp klar" : " købte kampe klar");
@@ -3294,7 +3303,7 @@ function koebKlarTekst(EN) {
 /* prisen, der står på «Del kampen live», når kampen startes — planen afgør den (live_start i basen) */
 function livePrisTekst(EN) {
   const p = S.minPlan;
-  if (p === "fri") return EN ? "no limit" : "uden loft";
+  if (p === "fri" || _friLoeber()) return EN ? "no limit" : "uden loft";   /* ⭐ v5.8.8 · også klub + fri */
   if (p === "fuld" || p === "klub") return EN ? "3 a month included · then 15 kr" : "3 om måneden er med · derefter 15 kr";
   if (p === "gaest") return EN ? "3 free in total · then 20 kr" : "3 gratis i alt · derefter 20 kr";
   return "";
@@ -8359,7 +8368,7 @@ const A = {
   planVaelg: async (v) => {
     if (S.indPlanSender) return;
     /* ⭐ v5.3.7 · Fuld/Fri KØBES — de vælges ikke. Et tryk åbner «Bekræft køb»; kun Basis går til plan-saet. */
-    if (v === "fuld" || v === "fri") { S.udtjek = v; S.kontoBesked = null; render(); return; }
+    if (v === "fuld" || v === "fri" || v === "klubfri") { S.udtjek = v; S.kontoBesked = null; render(); return; }   /* ⭐ v5.8.8 */
     S.indPlanSender = true; S.kontoBesked = null; render();
     const r = await A.kontoKald("plan-saet", { plan: "gaest" });
     S.indPlanSender = false;
@@ -8391,7 +8400,7 @@ const A = {
   },
   betalMP: async (v) => {
     if (S.betalSender) return;
-    const del = String(v || "").split("|"); const plan = del[0] === "fri" ? "fri" : "fuld"; const ind = del[1] === "ind";
+    const del = String(v || "").split("|"); const plan = del[0] === "fri" ? "fri" : del[0] === "klubfri" ? "klubfri" : "fuld"; const ind = del[1] === "ind";   /* ⭐ v5.8.8 */
     const EN = S.sprog === "en";
     const sig = (t) => { if (ind) S.indBesked = { fejl: true, t: t }; else S.kontoBesked = { fejl: true, t: t }; };
     S.betalSender = true; S.indBesked = null; S.kontoBesked = null; render();
@@ -8404,6 +8413,7 @@ const A = {
     if (r.fejl === "betaling-ikke-klar") sig(EN ? "MobilePay opens soon — we are waiting for the final approval. Basis is free until then." : "MobilePay åbner snart — vi venter på den sidste godkendelse. Indtil da er Basis gratis.");
     else if (r.fejl === "aftale-findes") sig(EN ? "You already have an agreement. To change plan, cancel it in MobilePay first." : "I har allerede en aftale. Vil I skifte plan, så opsig den i MobilePay først.");
     else if (r.fejl === "klub-betaler") sig(EN ? "Your club pays — you already have full access." : "Jeres klub betaler — I har allerede fuld adgang.");
+    else if (r.fejl === "ikke-klub") sig(EN ? "Free streaming on top of a club plan needs a club plan — choose Full + free streaming instead." : "Fri streaming oven på klubben kræver en klubplan — vælg Fuld + fri streaming i stedet.");   /* ⭐ v5.8.8 */
     else if (r.fejl === "udbyder") sig(EN ? "MobilePay did not answer — try again in a moment." : "MobilePay svarede ikke — prøv igen om lidt.");
     else if (r.ingenSvar) sig(EN ? "No connection — try again." : "Ingen forbindelse — prøv igen.");
     else sig(r.t || (EN ? "Could not start the payment — try again." : "Kunne ikke starte betalingen — prøv igen."));
@@ -8458,7 +8468,7 @@ const A = {
         try { await inviteretTjek(); } catch (_e) {}
         if (S.minPlan === a.plan || S.minPlan === "klub") {
           try { lager.slet("sai-betal-startet"); } catch (_e) {}
-          const nv = a.plan === "fri" ? (EN ? "Full + free streaming" : "Fuld + fri streaming") : (EN ? "Full access" : "Fuld adgang");
+          const nv = a.plan === "fri" ? (EN ? "Full + free streaming" : "Fuld + fri streaming") : a.plan === "klubfri" ? (EN ? "free streaming" : "fri streaming") : (EN ? "Full access" : "Fuld adgang");   /* ⭐ v5.8.8 */
           S.tab = "opsaet"; S.opsAaben = "konto"; S.planSkift = false; S.udtjek = null;   /* udtjekningen er brugt */
           S.kontoBesked = { fejl: false, t: EN ? "The payment went through — you have " + nv + " now." : "Betalingen er gået igennem — du har " + nv + " nu." };
           render();
@@ -9017,15 +9027,21 @@ function _mpAftaleTekst(pl, EN) {
   const dato = function (iso) { const d = String(iso || "").slice(0, 10).split("-"); return d.length === 3 ? d[2] + "/" + d[1] + "-" + d[0] : ""; };
   let t0 = 0; try { t0 = parseInt(lager.hent("sai-betal-startet") || "0", 10) || 0; } catch (_e) {}
   const frisk = !!t0 && (Date.now() - t0) < 1800000;
-  if (pl === "klub") return "";
-  if (frisk && (!a || a.status === "proeve" || (a.status === "aktiv" && pl !== a.plan)))
-    return "⏳ " + (EN ? "Waiting for MobilePay — your plan changes as soon as the payment has gone through." : "Venter på MobilePay — din plan skifter, så snart betalingen er gået igennem.");
-  if (!a || (pl !== "fuld" && pl !== "fri")) return "";
+  /* ⭐ v5.8.8 · klub + fri streaming: aftalen med plan klubfri hører til klubspilleren */
+  const kf = pl === "klub" && !!(a && a.plan === "klubfri");
+  if (pl === "klub" && !kf && !frisk) return "";
+  if (frisk && (!a || a.status === "proeve" || (a.status === "aktiv" && pl !== a.plan && !kf)))
+    return "⏳ " + (pl === "klub"
+      ? (EN ? "Waiting for MobilePay — free streaming is on as soon as the payment has gone through." : "Venter på MobilePay — fri streaming er med, så snart betalingen er gået igennem.")
+      : (EN ? "Waiting for MobilePay — your plan changes as soon as the payment has gone through." : "Venter på MobilePay — din plan skifter, så snart betalingen er gået igennem."));
+  if (!a || (pl !== "fuld" && pl !== "fri" && !kf)) return "";
   const nu = Date.now();
   if (a.status === "aktiv" && a.udloeber && Date.parse(a.udloeber) > nu)
     return "🔁 " + (EN ? "Paid with MobilePay — renews " + dato(a.udloeber) + ". Cancel any time in MobilePay." : "Betales med MobilePay — fornyes " + dato(a.udloeber) + ". Opsig når som helst i MobilePay.");
   if (a.status === "slukket" && a.udloeber && Date.parse(a.udloeber) > nu)
-    return "⏹ " + (EN ? "The agreement in MobilePay is stopped — " + _planNavn(pl, EN) + " lasts until " + dato(a.udloeber) + ", then Basic." : "Aftalen i MobilePay er stoppet — " + _planNavn(pl, EN) + " gælder til " + dato(a.udloeber) + ", derefter Basis.");
+    return "⏹ " + (kf
+      ? (EN ? "The agreement in MobilePay is stopped — free streaming lasts until " + dato(a.udloeber) + ", then 3 live matches a month." : "Aftalen i MobilePay er stoppet — fri streaming gælder til " + dato(a.udloeber) + ", derefter 3 live-kampe om måneden.")
+      : (EN ? "The agreement in MobilePay is stopped — " + _planNavn(pl, EN) + " lasts until " + dato(a.udloeber) + ", then Basic." : "Aftalen i MobilePay er stoppet — " + _planNavn(pl, EN) + " gælder til " + dato(a.udloeber) + ", derefter Basis."));
   if (a.status === "naade")
     return "⚠️ " + (EN ? "MobilePay could not take the payment. Your access lasts until " + dato(a.naade_til || a.udloeber) + " — check the agreement in MobilePay." : "MobilePay kunne ikke trække betalingen. Din adgang gælder til " + dato(a.naade_til || a.udloeber) + " — tjek aftalen i MobilePay.");
   return "";
@@ -9035,6 +9051,7 @@ function _planNavn(p, EN) {
        : p === "fuld"  ? (EN ? "Full" : "Fuld")
        : p === "fri"   ? (EN ? "Free streaming" : "Fri streaming")
        : p === "klub"  ? (EN ? "Club" : "Klub")
+       : p === "klubfri" ? (EN ? "Free streaming" : "Fri streaming")   /* ⭐ v5.8.8 */
        : (p || "—");
 }
 
@@ -10552,7 +10569,7 @@ function _tegn() {
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
               _b("Search", "Approved players can find you by searching your username — the result shows username, club and birth year. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
               _b("Messages", "A message disappears a day after your friend has read it — never before. At most 200 per conversation, and after 30 days at the latest. Delete removes it for both of you. Notifications show a name and a place — never content.") +
-              _b("Price", "With a club key the club pays. Basic is free and includes 3 AI analyses in total. Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month. Full + free streaming is 98 kr/month with live and no limit. Watching is always free. You pay with MobilePay right in the app: the first month is charged when you buy, then every month. You cancel in MobilePay. The buyer must be 18 or over.") +
+              _b("Price", "With a club key the club pays — and free streaming can be added on top for 49 kr/month. Basic is free and includes 3 AI analyses in total. Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month. Full + free streaming is 98 kr/month with live and no limit. Watching is always free. You pay with MobilePay right in the app: the first month is charged when you buy, then every month. You cancel in MobilePay. The buyer must be 18 or over.") +
               _b("Leaving", "Log out wipes the phone. Ask us and the account and everything with it is deleted — for good.")
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
               _b("Sikkerhedskopien", "Jeres kampe (hver bold, resultatet, analysen) og udviklingsbrevet gemmes læsbart hos os — uden modstandernes navne og uden jeres noter — så de kommer tilbage med kontoen alene. Navne og noter gemmes kun i en boks, der er låst med jeres kodeord; den kan vi ikke åbne.") +
@@ -10561,7 +10578,7 @@ function _tegn() {
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
               _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises brugernavn, klub og årgang. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
               _b("Beskeder", "En besked forsvinder et døgn efter, din ven har læst den — aldrig før. Højst 200 pr. samtale, og senest efter 30 dage. Slet fjerner for jer begge. Notifikationer viser navn og sted — aldrig indhold.") +
-              _b("Prisen", "Med klubnøgle betaler klubben. Basis er gratis og rummer 3 AI-analyser i alt. Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned. Fuld + fri streaming koster 98 kr/md med live uden loft. At se med er altid gratis. I betaler med MobilePay direkte i appen: første måned trækkes, når I køber, og derefter hver måned. I opsiger i MobilePay. Den, der køber, skal være fyldt 18.") +
+              _b("Prisen", "Med klubnøgle betaler klubben — og fri streaming kan lægges oven på for 49 kr/md. Basis er gratis og rummer 3 AI-analyser i alt. Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned. Fuld + fri streaming koster 98 kr/md med live uden loft. At se med er altid gratis. I betaler med MobilePay direkte i appen: første måned trækkes, når I køber, og derefter hver måned. I opsiger i MobilePay. Den, der køber, skal være fyldt 18.") +
               _b("Vejen ud", "Log ud rydder telefonen. Skriv til os, og kontoen med alt i slettes — helt.")) +
           '<p class="lille" style="margin:4px 0 0;opacity:.6">StreakTennis · SportsAInalytics · CVR 40524002<br>' + HANDEL.mail + ' \u00b7 ' + HANDEL.tlf + '</p>' +
           '<p class="lille" style="margin:8px 0 0"><a href="' + HANDEL.url + '" target="_blank" rel="noopener" data-handelsbetingelser="2" style="color:var(--is)">' + (S.sprog === "en" ? "Terms of sale for subscriptions \u2192" : "Handelsbetingelser for abonnementer \u2192") + '</a></p>' +
@@ -12800,7 +12817,8 @@ function _tegn() {
             } else if (_pl === "fuld") {
               _kk += '<p class="lille" style="margin:2px 0 8px">⭐ ' + (EN ? "Full access — incl. live streaming (49 kr/mo)." : "Fuld adgang — inkl. live-streaming (49 kr/md).") + _betaltTekst(EN) + '</p>';
             } else if (_pl === "klub") {
-              _kk += '<p class="lille" style="margin:2px 0 8px">🏛 ' + (EN ? "Your club pays — full access." : "Klubben betaler — fuld adgang.") + '</p>';
+              _kk += '<p class="lille" style="margin:2px 0 8px">🏛 ' + (EN ? "Your club pays — full access." : "Klubben betaler — fuld adgang.") +
+                (_friLoeber() ? ' 🚀 ' + (EN ? "Free streaming — live with no limit." : "Fri streaming — live uden loft.") : '') + '</p>';   /* ⭐ v5.8.8 */
             }
             /* ⭐ v5.3.7 · ET ÆRLIGT NEJ: aldersporten afviste betaleren — sig hvorfor, som et faktum.
                Nicolai 24/9: «Vi skal ikke skrive bed en voksen om det.» (en 17-årig føler sig også voksen) */
@@ -12832,6 +12850,17 @@ function _tegn() {
               } else {
                 _kk += '<button class="knap' + (_pl === "gaest" ? '' : ' valg') + '" style="min-height:40px;margin:0 0 8px;padding:6px 14px' + (_pl === "gaest" ? ';background:var(--grus)' : '') + '" data-a="planSkiftAabn">' +
                   (S.indPlanSender ? "⏳" : (_pl === "gaest" ? (EN ? "Full access" : "Få fuld adgang") : (EN ? "Change plan" : "Skift plan"))) + '</button>';
+              }
+            } else if (_pl === "klub") {
+              /* ⭐ v5.8.8 · KLUB + FRI STREAMING. Nicolai 27/9: «Jeg ser det som man har Fuld med i klub. Så de følger det samme.»
+                 Klubben betaler Fuld; fri streaming lægges oven på for 49 kr/md — Bekræft køb → Betal med MobilePay (betaling-start v6, plan klubfri).
+                 Løber aftalen, står der ingen knap: tilstanden står i aftalens sætning ovenfor. */
+              if (S.udtjek === "klubfri") {
+                _kk += _udtjekBoks("klubfri", "konto", EN);
+              } else if (!_friLoeber() && !(S.mpAftale && S.mpAftale.plan === "klubfri" && S.mpAftale.status === "aktiv")) {
+                _kk += '<button class="knap valg" data-klubfri="1" style="width:100%;text-align:left;min-height:52px;margin:0 0 8px;padding:9px 12px" data-a="planVaelg" data-v="klubfri">' +
+                  '<b>🚀 ' + (EN ? "Add free streaming" : "Tilføj fri streaming") + '</b><span style="float:right;font-weight:800;color:var(--guld)">' + (EN ? "49 kr/mo" : "49 kr/md") + '</span><br>' +
+                  '<span class="lille" style="opacity:.75">' + (EN ? "live with no limit — on top of what your club pays" : "live uden loft — oven på det, klubben betaler") + '</span></button>';
               }
             }
           }

@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.8.10 · 27. september 2026";
+const VERSION = "v5.9.0 · 27. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -1894,6 +1894,7 @@ const rensKamp = (g) => {
   return { modstander: _trim(g.modstander) || "Ukendt modstander", turnering: _trim(g.turnering) || "",
     dato: g.dato || new Date().toISOString().slice(0,10),
     oskarFirst: typeof g.oskarFirst === "boolean" ? g.oskarFirst : true,
+    ...(g.serverValgt === false ? { serverValgt: false } : {}),   /* ⭐ v5.9.0 · «ikke valgt» overlever en genindlæsning */
     mtb: typeof g.mtb === "boolean" ? g.mtb : true, saetTil: g.saetTil === 4 ? 4 : 6, noAd: g.noAd === true, afsluttet: g.afsluttet === true, facitVandt: typeof g.facitVandt === "boolean" ? g.facitVandt : vandtIflgResultat(g.resultat), resultat: g.resultat || "", analyse: g.analyse || "", tre: Array.isArray(g.tre) ? g.tre.slice(0, 3) : null, aSprog: (g.aSprog === "en" || g.aSprog === "da") ? g.aSprog : undefined, justeringer: Array.isArray(g.justeringer) ? g.justeringer : [],
     id: (typeof g.id === "string" && /^[a-z0-9][a-z0-9-]{3,39}$/.test(g.id)) ? g.id : undefined, navnLaas: g.navnLaas === true,   // ⭐ v4.113.0 · arkivet
     point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1, l: [1,2,3].indexOf(q.l) >= 0 ? q.l : 0, h: [1,2].indexOf(q.h) >= 0 ? q.h : 0, z: [1,2,3].indexOf(q.z) >= 0 ? q.z : 0, ...(q.g === 1 ? { g: 1 } : {}) })) };
@@ -3289,6 +3290,25 @@ function _friLoeber() {
   const nu = Date.now();
   return !!((a.udloeber && Date.parse(a.udloeber) > nu) || (a.naade_til && Date.parse(a.naade_til) > nu));
 }
+/* ⭐⭐ v5.9.0 · LIVE-KAMPE KØBES HJEMMEFRA (Nicolai 27/9: «man skal kunne købe et antal live kampe et sted - jo nok der hvor
+   man opgraderer»). Priserne står ÉT sted og skal matche betaling-start v7 (KOEB.pakker) og priserne.md. */
+const KOEB_PAKKER = { kamp: { 1: 20, 3: 54, 5: 85 }, live: { 1: 15, 3: 40, 5: 65 } };
+function _livekoebKort(pl, EN) {
+  const type = pl === "gaest" ? "kamp" : "live";
+  const P = KOEB_PAKKER[type];
+  const k = S.koebKlar || { kamp: 0, live: 0 }; const klar = (k.kamp || 0) + (k.live || 0);
+  const knap = function (n) {
+    return '<button class="knap" data-livekoeb="' + n + '" style="flex:1;min-height:56px;background:#5a78ff;padding:6px 4px" data-a="koebStart" data-v="' + type + '|konto|' + n + '">' +
+      (S.koebSender ? "⏳" : '<b>' + n + (EN ? (n === 1 ? " match" : " matches") : (n === 1 ? " kamp" : " kampe")) + '</b><br><span style="font-size:11px">' + P[n] + " kr" + (n > 1 ? " · " + Math.round(P[n] / n) + (EN ? "/each" : "/stk") : "") + '</span>') + '</button>';
+  };
+  return '<div class="kort" style="padding:12px;margin:2px 0 10px;border:1px solid var(--guld);border-radius:12px;text-align:left">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--guld)">📡 ' + (EN ? "LIVE MATCHES" : "LIVE-KAMPE") + '</div><span class="lille" data-livekoeb-klar="1" style="margin:0">' + klar + (EN ? " ready" : " klar") + '</span></div>' +
+    '<p class="lille" style="margin:6px 0 8px">' + (type === "kamp"
+      ? (EN ? "Buy ahead — so you are not on the court with MobilePay. A bought match is ready for your next one, and the AI analysis comes with it." : "Køb på forhånd — så står du ikke med MobilePay på banen. En købt kamp ligger klar til din næste, og AI-analysen følger med.")
+      : (EN ? "Buy ahead — extra live matches for when the month's 3 are used. A bought match is ready for your next one." : "Køb på forhånd — ekstra live-kampe til når månedens 3 er brugt. En købt kamp ligger klar til din næste.")) + '</p>' +
+    '<div class="raekke" style="gap:6px">' + knap(1) + knap(3) + knap(5) + '</div>' +
+    '<p class="lille" style="margin:6px 0 0;opacity:.7;text-align:center">' + (EN ? "MobilePay · one purchase, no subscription · bought matches do not expire" : "MobilePay · ét køb, intet abonnement · købte kampe udløber ikke") + '</p></div>';
+}
 /* ⭐ v5.8.2 · tallet fra basen (betaling-start status → live): «2 af 3 gratis tilbage» · «1 af 3 tilbage denne måned» */
 function liveTalTekst(EN) {
   const l = S.liveTal; if (!l || S.minPlan === "fri" || _friLoeber()) return "";
@@ -4471,13 +4491,15 @@ const A = {
   start: () => {
     S.wiz = 1; S._doneVist = false;
     S.aktiv = { modstander: (S.nyMod || "").trim() || "Ukendt modstander", turnering: (S.nyTur || "").trim(),
-      dato: new Date().toISOString().slice(0,10), oskarFirst: S.nyFirst, mtb: S.nyMtb, saetTil: S.nyFormat === 4 ? 4 : 6, noAd: S.nyFormat === 4 && S.nyNoAd, point: [], justeringer: [] };
+      dato: new Date().toISOString().slice(0,10), oskarFirst: true, serverValgt: false, mtb: S.nyMtb, saetTil: S.nyFormat === 4 ? 4 : 6, noAd: S.nyFormat === 4 && S.nyNoAd, point: [], justeringer: [] };   /* ⭐ v5.9.0 · serveren vælges på banen */
     S.afventer = null; S.serv = 1; S.liveKoeb = null; S.nyBesked = null; S.koebKlar = null; gemAktiv(); render();
     if (S.nyLive) { S.delAaben = true; A.liveStart(); }   /* ⭐ v5.8.0 */
   },
   nyLiveToggle: () => { S.nyLive = !S.nyLive; render(); },   /* ⭐ v5.8.0 */
   serv: (v) => { S.serv = +v; render(); },
-  udfald: (v) => { S.afventer = v; render(); },
+  udfald: (v) => { if (S.aktiv && S.aktiv.serverValgt === false) return; S.afventer = v; render(); },   /* ⭐ v5.9.0 · ingen bold, før serveren er valgt */
+  /* ⭐ v5.9.0 · HVEM SERVER FØRST — første tryk på banen (Nicolai: «man ved først meget meget sent hvem der server») */
+  serverFoerst: (v) => { if (!S.aktiv) return; S.aktiv.oskarFirst = v === "1"; S.aktiv.serverValgt = true; gemAktiv(); render(); },
   aarsag: (id) => {
     if (!S.aktiv || !S.afventer) return;
     // ⭐ v4.131.0 · ANGREBSFEJLEN (Nicolai 12/9): langt tryk på «gratis fejl».
@@ -8487,10 +8509,12 @@ const A = {
   koebStart: async (v) => {
     if (S.koebSender) return;
     const del = String(v || "").split("|"); const type = del[0] === "live" ? "live" : "kamp"; const hvor = String(del[1] || "");
+    const antal = [1, 3, 5].indexOf(+del[2]) >= 0 ? +del[2] : 1;   /* ⭐ v5.9.0 · pakken */
     const EN = S.sprog === "en";
     const sig = (t) => {
       if (hvor.indexOf("a:") === 0) S.hentBesked = { i: _koebKampIndeks(hvor.slice(2)), fejl: true, t: t };
       else if (hvor === "start") S.nyBesked = { fejl: true, t: t };   /* ⭐ v5.8.3 */
+      else if (hvor === "konto") S.kontoBesked = { fejl: true, t: t };   /* ⭐ v5.9.0 */
       else S.liveBesked = { fejl: true, t: t };
     };
     S.koebSender = type; render();
@@ -8499,13 +8523,13 @@ const A = {
     try {
       const x = await fetch(BETAL_URL, { method: "POST", signal: st.signal,
         headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle || "" },
-        body: JSON.stringify({ handling: "koeb", type: type }) });
+        body: JSON.stringify({ handling: "koeb", type: type, antal: antal }) });   /* ⭐ v5.9.0 */
       clearTimeout(ur);
       const d = await x.json().catch(function(){ return {}; });
       r = x.ok ? d : { fejl: d.kode || "ukendt", t: d.fejl || "" };
     } catch (e) { clearTimeout(ur); r = { fejl: "netvaerk", ingenSvar: true }; }
     if (!r.fejl && r.url && /^https:\/\//.test(r.url) && /^st-[kl]-[0-9a-f]{24}$/.test(String(r.ref || ""))) {
-      try { lager.gem("sai-koeb-venter", JSON.stringify({ ref: r.ref, type: type, t: Date.now(), hvor: hvor })); } catch (_e) {}
+      try { lager.gem("sai-koeb-venter", JSON.stringify({ ref: r.ref, type: type, t: Date.now(), hvor: hvor, antal: antal })); } catch (_e) {}   /* ⭐ v5.9.0 · antal med */
       location.href = r.url; return;
     }
     S.koebSender = null;
@@ -8547,6 +8571,15 @@ const A = {
     const n = erA ? _koebKampIndeks(hvor.slice(2)) : -1;
     if (status === "betalt" || status === "annulleret" || status === "ukendt") { try { lager.slet("sai-koeb-venter"); } catch (_e) {} }
     if (status === "betalt") {
+      if (hvor === "konto") {
+        /* ⭐ v5.9.0 · købt hjemmefra: tilbage til Din konto, tallet hentes igen */
+        const _an = [1, 3, 5].indexOf(+kv.antal) >= 0 ? +kv.antal : 1;
+        S.tab = "opsaet"; S.opsAaben = "konto"; S.koebKlar = null; S.liveTal = null; S._liveTalSpurgt = false;
+        S.kontoBesked = { fejl: false, t: _an > 1
+          ? (EN ? "The purchase went through ✓ — " + _an + " matches are ready for your next ones." : "Købet er gået igennem ✓ — " + _an + " kampe ligger klar til dine næste.")
+          : (EN ? "The purchase went through ✓ — the match is ready for your next one." : "Købet er gået igennem ✓ — kampen ligger klar til din næste.") };
+        render(); try { A.betalStatus(); } catch (_e) {} return;
+      }
       if (erA && n >= 0 && S.gemte[n] && !S.gemte[n].analyse) {
         S.tab = "historik"; S.statPanel = "kampe"; S.kampAaben[n] = true; S.hentBesked = null; render();
         A.hentAnalyse(n); return;
@@ -12832,6 +12865,8 @@ function _tegn() {
             var _aftaleTekst = _mpAftaleTekst(_pl, EN);
             if (_aftaleTekst) _kk += '<p class="lille" data-mp-aftale="1" style="margin:2px 0 8px">' + _aftaleTekst + '</p>';
             if (liveTalTekst(EN)) _kk += '<p class="lille" data-live-tal="1" style="margin:2px 0 8px">📡 ' + (EN ? "Live matches: " : "Live-kampe: ") + liveTalTekst(EN) + '.</p>';   /* ⭐ v5.8.2 */
+            /* ⭐ v5.9.0 · live-kampe købes her — Basis, Fuld og Klub (ikke Fri, ikke Klub + fri) */
+            if ((_pl === "gaest" || _pl === "fuld" || _pl === "klub") && !_friLoeber() && !S.udtjek) _kk += _livekoebKort(_pl, EN);
             if (_pl && _pl !== "klub") {
               if (S.planSkift && S.udtjek) {
                 /* ⭐ v5.3.6 · UDTJEKNINGEN — «Bekræft køb» står FØR planen skiftes. Alt, man køber, står her:
@@ -13343,7 +13378,8 @@ function _tegn() {
   } else if (S.tab === "kamp") {
     if (!S.aktiv) {
       if (S.wiz === undefined) S.wiz = 1;
-      const _wp = function(n){ return '<div style="display:flex;gap:6px;justify-content:center;margin:2px 0 12px">' + [1,2,3].map(function(i){ return '<span style="width:8px;height:8px;border-radius:50%;background:' + (i<=n?"var(--guld)":"var(--kant2)") + '"></span>'; }).join("") + '</div>'; };
+      /* ⭐ v5.9.0 · to trin: trin 2 (hvem server) er flyttet til banen — prikkerne tæller 1 og 3 som 1 og 2 */
+      const _wp = function(n){ const _n = n === 3 ? 2 : n; return '<div style="display:flex;gap:6px;justify-content:center;margin:2px 0 12px">' + [1,2].map(function(i){ return '<span style="width:8px;height:8px;border-radius:50%;background:' + (i<=_n?"var(--guld)":"var(--kant2)") + '"></span>'; }).join("") + '</div>'; };
       const _wtitel = function(t){ return '<h2 style="margin:2px 0 10px;font-size:19px;text-align:center">' + t + '</h2>'; };
       const _wfrem = function(n,t){ return '<div class="raekke" style="margin-top:12px"><button class="knap stor" style="background:var(--grus)" data-a="wiz" data-v="' + n + '">' + t + ' →</button></div>'; };
       const _wtilb = function(n){ return '<div style="text-align:center;margin-top:8px"><button class="knap" style="width:auto;padding:7px 16px;background:transparent;border:1px dashed var(--kant);color:var(--daempet);font-size:11.5px" data-a="wiz" data-v="' + n + '">← ' + (EN?"back":"tilbage") + '</button></div>'; };
@@ -13364,7 +13400,7 @@ function _tegn() {
           if (!S.gemte.some(function(k){ return k.modstander === S.nyMod; }) && scoutPlan(S.nyMod).length)
             h += '<div class="kort dev-kant dev-kant-guld" style="padding:10px 12px"><b style="color:var(--guld)">🎯 ' + (EN?"Match plan":"Kampplan") + '</b><p class="lille" style="margin:3px 0 0">' + scoutPlan(S.nyMod)[0] + '</p></div>';
         }
-        h += _wfrem(2, EN?"Next":"Videre");
+        h += _wfrem(3, EN?"Next":"Videre");   /* ⭐ v5.9.0 · direkte til formatet — serveren vælges på banen */
       } else if (S.wiz === 2) {
         h += _wp(2) + _wtitel(EN?"Who serves first?":"Hvem server først?");
       h += '<div class="raekke"><button class="knap valg '+(S.nyFirst?"til":"")+'" data-a="first" data-v="1">'+(EN?(SPILLER+" serves first"):(SPILLER+" server først"))+'</button><button class="knap valg '+(!S.nyFirst?"til":"")+'" data-a="first" data-v="0">'+(EN?"Opponent serves first":"Modstander server først")+'</button></div>';
@@ -13398,7 +13434,7 @@ function _tegn() {
       } else
       h += '<div class="raekke" style="margin:0 0 10px"><button class="knap valg '+(S.nyLive?"til":"")+'" data-a="nyLiveToggle" data-live-tal="1">📡 '+(EN?"Share the match live":"Del kampen live")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.nyLive?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+(koebKlarTekst(EN)?' · '+koebKlarTekst(EN):(liveTalTekst(EN)?' · '+liveTalTekst(EN):(livePrisTekst(EN)?' · '+livePrisTekst(EN):'')))+'</span></button></div>';
       h += '<div class="raekke"><button class="knap stor" style="background:var(--grus)" data-a="start">'+(EN?"Start match":"Start kamp")+'</button></div>';
-        h += _wtilb(2);
+        h += _wtilb(1);   /* ⭐ v5.9.0 */
       }
     } else {
       const s = statistik(S.aktiv), st = s.st;
@@ -13414,9 +13450,10 @@ function _tegn() {
       }
 const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===y) return "40"; return x>y?"AD":"\u2013"; } return PVIS[Math.min(x,3)]; };
       h += '<div class="kort scoreboard"><div class="sb-top"><b>vs '+esc(S.aktiv.modstander)+'</b><span>'+esc(S.aktiv.turnering)+'</span></div>';
-      h += ('<div class="sb-grid"><div class="sb-navn">'+SPILLER)+(!st.done&&st.server?' <span class="sb-serv"></span>':'')+'</div><div class="sb-tal">'+st.setsO+'</div><div class="sb-tal">'+st.gO+'</div><div class="sb-pt sb-akt">'+_pv(st.pO,st.pM)+'</div>';
-      h += '<div class="sb-navn sb-dim">'+esc(S.aktiv.modstander)+(!st.done&&!st.server?' <span class="sb-serv"></span>':'')+'</div><div class="sb-tal">'+st.setsM+'</div><div class="sb-tal">'+st.gM+'</div><div class="sb-pt sb-dim">'+_pv(st.pM,st.pO)+'</div></div>';
-      h += '<div class="sb-fod"><span>'+(st.tb?(st.tbTo===10?(EN?'MATCH TIEBREAK':'MATCH-TIEBREAK'):'TIEBREAK'):(EN?'SETS \u00b7 GAMES \u00b7 POINTS':'S\u00c6T \u00b7 PARTI \u00b7 POINT'))+(saetVis?' \u00b7 '+saetVis:'')+'</span><span>'+(st.done?(st.vinderOskar?'\u{1F3C6} '+(EN?'MATCH WON':'KAMP VUNDET'):(EN?'Match over':'Kamp slut')):(st.server?(EN?(SPILLER+' serving'):(SPILLER+' server')):(EN?'Opponent serving':'Modstander server')))+'</span></div></div>';
+      const _sv = S.aktiv.serverValgt !== false;   /* ⭐ v5.9.0 · ingen prik, før serveren er valgt */
+      h += ('<div class="sb-grid"><div class="sb-navn">'+SPILLER)+(!st.done&&st.server&&_sv?' <span class="sb-serv"></span>':'')+'</div><div class="sb-tal">'+st.setsO+'</div><div class="sb-tal">'+st.gO+'</div><div class="sb-pt sb-akt">'+_pv(st.pO,st.pM)+'</div>';
+      h += '<div class="sb-navn sb-dim">'+esc(S.aktiv.modstander)+(!st.done&&!st.server&&_sv?' <span class="sb-serv"></span>':'')+'</div><div class="sb-tal">'+st.setsM+'</div><div class="sb-tal">'+st.gM+'</div><div class="sb-pt sb-dim">'+_pv(st.pM,st.pO)+'</div></div>';
+      h += '<div class="sb-fod"><span>'+(st.tb?(st.tbTo===10?(EN?'MATCH TIEBREAK':'MATCH-TIEBREAK'):'TIEBREAK'):(EN?'SETS \u00b7 GAMES \u00b7 POINTS':'S\u00c6T \u00b7 PARTI \u00b7 POINT'))+(saetVis?' \u00b7 '+saetVis:'')+'</span><span>'+(st.done?(st.vinderOskar?'\u{1F3C6} '+(EN?'MATCH WON':'KAMP VUNDET'):(EN?'Match over':'Kamp slut')):(!_sv?(EN?'SERVER: NOT CHOSEN':'SERVER: IKKE VALGT'):st.server?(EN?(SPILLER+' serving'):(SPILLER+' server')):(EN?'Opponent serving':'Modstander server')))+'</span></div></div>';
 
       if (!st.done) {
         const naeste = beregnStilling(S.aktiv.point.concat([{r:"V",å:"x",f:1}]), S.aktiv.oskarFirst, S.aktiv.mtb, S.aktiv.justeringer, S.aktiv.saetTil, S.aktiv.noAd).flags[S.aktiv.point.length];
@@ -13439,9 +13476,17 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         h += '<div class="raekke" style="margin-bottom:6px">' +
           '<button class="knap valg'+(S.side?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="sideToggle"title="'+(EN?"Asks which wing on winners, forced errors and your own errors":"Spørger om fløjen på vinderslag, pressede fejl og egne fejl")+'">🎾 '+(S.side?(EN?"FH/BH ON":"FH/BH TIL"):(EN?"FH/BH OFF":"FH/BH FRA"))+'</button>' +
           '<button class="knap valg'+(S.zoner?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="zonerToggle">🗺 '+(S.zoner?(EN?"Zones ON":"Zoner TIL"):(EN?"Zones OFF":"Zoner FRA"))+'</button></div>';
-        h += '<div class="raekke"><button class="knap valg '+(S.serv===1?"til":"")+'" data-a="serv" data-v="1">'+(EN?"1st serve":"1. serv")+'</button><button class="knap valg '+(S.serv===2?"gul":"")+'" data-a="serv" data-v="2">'+(EN?"2nd serve (first serve missed)":"2. serv (førsteserv fejlet)")+'</button></div>';
+        if (!_sv) {
+          /* ⭐ v5.9.0 · HVEM SERVER FØRST? — vælges, når lodtrækningen er taget. Erstatter 1./2. serv, til det er valgt. */
+          h += '<div class="kort dev-kant dev-kant-guld" data-server-valg="1" style="padding:12px 12px 10px;margin:0 0 8px;border-left:3px solid var(--guld)">' +
+            '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--guld);margin-bottom:8px">🎾 ' + (EN ? "WHO SERVES FIRST?" : "HVEM SERVER FØRST?") + '</div>' +
+            '<div class="raekke"><button class="knap valg" style="min-height:52px" data-a="serverFoerst" data-v="1">' + (EN ? (SPILLER + " serves") : (SPILLER + " server")) + '</button><button class="knap valg" style="min-height:52px" data-a="serverFoerst" data-v="0">' + esc(S.aktiv.modstander) + (EN ? " serves" : " server") + '</button></div>' +
+            '<p class="lille" style="margin:8px 0 0;opacity:.75">' + (EN ? "Choose when the toss is done — then the board opens. Can be corrected on the first ball." : "Vælg, når lodtrækningen er taget — så åbner tavlen. Kan rettes på første bold.") + '</p></div>';
+        } else {
+          h += '<div class="raekke"><button class="knap valg '+(S.serv===1?"til":"")+'" data-a="serv" data-v="1">'+(EN?"1st serve":"1. serv")+'</button><button class="knap valg '+(S.serv===2?"gul":"")+'" data-a="serv" data-v="2">'+(EN?"2nd serve (first serve missed)":"2. serv (førsteserv fejlet)")+'</button></div>';
+        }
         if (!S.afventer) {
-          h += '<div class="raekke"><button class="knap stor" style="background:var(--vundet)" data-a="udfald" data-v="vundet">'+(EN?(SPILLER+" won"):(SPILLER+" vandt"))+'</button><button class="knap stor" style="background:var(--tabt)" data-a="udfald" data-v="tabt">'+(EN?"Lost":"Tabt")+'</button></div>';
+          h += '<div class="raekke"><button class="knap stor" style="background:var(--vundet)' + (_sv ? '' : ';opacity:.35;filter:grayscale(.6)') + '" data-a="udfald" data-v="vundet"' + (_sv ? '' : ' disabled') + '>'+(EN?(SPILLER+" won"):(SPILLER+" vandt"))+'</button><button class="knap stor" style="background:var(--tabt)' + (_sv ? '' : ';opacity:.35;filter:grayscale(.6)') + '" data-a="udfald" data-v="tabt"' + (_sv ? '' : ' disabled') + '>'+(EN?"Lost":"Tabt")+'</button></div>';
         } else {
           const vundet = S.afventer === "vundet";
           const liste = vundet

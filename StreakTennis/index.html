@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.8.8 · 27. september 2026";
+const VERSION = "v5.8.9 · 27. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -3183,7 +3183,10 @@ function _analyseFrigiv(k) {
 // Har man en klubkode, sker PRAECIS det samme som foer — ingen ekstra
 // netvaerkstur, ingen aendring. Ellers hentes en tilladelse foerst.
 async function analyseAdgang(nyttelast, signal) {
-  if (S.klubKode) return { hoveder: { "x-klub-noegle": S.klubKode } };
+  /* ⭐⭐ v5.8.9 · KLUBKODE-DØREN. Har spilleren sin egen nøgle, går analysen gennem analyse-lov (plan klub = 40 pr.
+     30 dage, talt i basen). Klubnøglen alene er kun døren for en telefon UDEN spillernøgle (87: et loft i motoren er
+     intet loft, hvis kalderen har en genvej). */
+  if (S.klubKode && !S.spillerNoegle) return { hoveder: { "x-klub-noegle": S.klubKode } };
   if (!S.spillerNoegle) return { fejl: "mangler-adgang" };
   try {
     const aftryk = await kampAftryk(nyttelast);
@@ -3234,7 +3237,7 @@ async function udvAftryk(liste) {
   return Array.from(new Uint8Array(h)).map(function(b){ return b.toString(16).padStart(2, "0"); }).join("");
 }
 async function udvAdgang(aftryk, signal) {
-  if (S.klubKode) return { hoveder: { "x-klub-noegle": S.klubKode } };
+  if (S.klubKode && !S.spillerNoegle) return { hoveder: { "x-klub-noegle": S.klubKode } };   /* ⭐ v5.8.9 · samme dør som analyseAdgang */
   if (!S.spillerNoegle) return { fejl: "mangler-adgang" };
   try {
     const r = await fetch(LOV_URL, { method: "POST", signal: signal,
@@ -10569,8 +10572,8 @@ function _tegn() {
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
               _b("Search", "Approved players can find you by searching your username — the result shows username, club and birth year. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
               _b("Messages", "A message disappears a day after your friend has read it — never before. At most 200 per conversation, and after 30 days at the latest. Delete removes it for both of you. Notifications show a name and a place — never content.") +
-              _b("Price", "With a club key the club pays — and free streaming can be added on top for 49 kr/month. Basic is free and includes 3 AI analyses in total. Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month. Full + free streaming is 98 kr/month with live and no limit. Watching is always free. You pay with MobilePay right in the app: the first month is charged when you buy, then every month. You cancel in MobilePay. The buyer must be 18 or over.") +
-              _b("Leaving", "Log out wipes the phone. Ask us and the account and everything with it is deleted — for good.")
+              _b("Price", "With a club key the club pays — and free streaming can be added on top for 49 kr/month. Basic is free and includes 3 AI analyses and 3 live-streamed matches in total; after that one match can be bought for 20 kr (live + AI analysis). Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month — an extra live match is 15 kr. Full + free streaming is 98 kr/month with live and no limit. Watching is always free. You pay with MobilePay right in the app: the first month is charged when you buy, then every month. You cancel in MobilePay. The buyer must be 18 or over.") +
+              _b("Leaving", "Log out wipes the phone. Under Your account you can delete the account yourself — everything is deleted at once, including a subscription in MobilePay. It cannot be undone.")
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
               _b("Sikkerhedskopien", "Jeres kampe (hver bold, resultatet, analysen) og udviklingsbrevet gemmes læsbart hos os — uden modstandernes navne og uden jeres noter — så de kommer tilbage med kontoen alene. Navne og noter gemmes kun i en boks, der er låst med jeres kodeord; den kan vi ikke åbne.") +
               _b("Hvad klubben ser", "Med en klubnøgle ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig.") +
@@ -10578,10 +10581,10 @@ function _tegn() {
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
               _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises brugernavn, klub og årgang. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
               _b("Beskeder", "En besked forsvinder et døgn efter, din ven har læst den — aldrig før. Højst 200 pr. samtale, og senest efter 30 dage. Slet fjerner for jer begge. Notifikationer viser navn og sted — aldrig indhold.") +
-              _b("Prisen", "Med klubnøgle betaler klubben — og fri streaming kan lægges oven på for 49 kr/md. Basis er gratis og rummer 3 AI-analyser i alt. Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned. Fuld + fri streaming koster 98 kr/md med live uden loft. At se med er altid gratis. I betaler med MobilePay direkte i appen: første måned trækkes, når I køber, og derefter hver måned. I opsiger i MobilePay. Den, der køber, skal være fyldt 18.") +
-              _b("Vejen ud", "Log ud rydder telefonen. Skriv til os, og kontoen med alt i slettes — helt.")) +
+              _b("Prisen", "Med klubnøgle betaler klubben — og fri streaming kan lægges oven på for 49 kr/md. Basis er gratis og rummer 3 AI-analyser og 3 live-delte kampe i alt; derefter kan én kamp købes for 20 kr (live + AI-analyse). Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — en ekstra live-kamp koster 15 kr. Fuld + fri streaming koster 98 kr/md med live uden loft. At se med er altid gratis. I betaler med MobilePay direkte i appen: første måned trækkes, når I køber, og derefter hver måned. I opsiger i MobilePay. Den, der køber, skal være fyldt 18.") +
+              _b("Vejen ud", "Log ud rydder telefonen. Under Din konto kan du slette kontoen selv — alt slettes med det samme, også et abonnement i MobilePay. Det kan ikke fortrydes.")) +
           '<p class="lille" style="margin:4px 0 0;opacity:.6">StreakTennis · SportsAInalytics · CVR 40524002<br>' + HANDEL.mail + ' \u00b7 ' + HANDEL.tlf + '</p>' +
-          '<p class="lille" style="margin:8px 0 0"><a href="' + HANDEL.url + '" target="_blank" rel="noopener" data-handelsbetingelser="2" style="color:var(--is)">' + (S.sprog === "en" ? "Terms of sale for subscriptions \u2192" : "Handelsbetingelser for abonnementer \u2192") + '</a></p>' +
+          '<p class="lille" style="margin:8px 0 0"><a href="' + HANDEL.url + '" target="_blank" rel="noopener" data-handelsbetingelser="2" style="color:var(--is)">' + (S.sprog === "en" ? "Terms of sale \u2192" : "Handelsbetingelser \u2192") + '</a></p>' +
           '</div>' +
           '<div class="raekke" style="margin-top:14px"><button class="knap stor" style="background:var(--grus)" data-a="betingelser">' + (S.sprog === "en" ? "Back" : "Tilbage") + '</button></div>' +
         '</div>';
@@ -14059,7 +14062,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
               : !lager.hent("sai-sky-noegle") ? (EN?"waiting for the player":"venter på spilleren")
               : (S.skyStatus && S.skyStatus.har) ? (EN?"\u2713 fetched":"\u2713 hentet") : (EN?"tap to fetch":"tryk for at hente")),
             S.skyLaast ? "dev-kant-roed" : "")
-        : _stflise("backup", "\ud83d\udcbe", (EN?"BACKUP":"BACKUP"),
+        : _stflise("backup", "\ud83d\udcbe", (EN?"BACKUP":"SIKKERHEDSKOPI"),
           (S.skyLaast ? (EN?"\u26a0\ufe0f locked \u2014 open it":"\u26a0\ufe0f låst — åbn den") : (EN?"save & move":"gem & flyt")),
           S.skyLaast ? "dev-kant-roed" : ""))
       + '</div>';
@@ -14501,7 +14504,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         (S.skyLaast ? 'var(--tabt)' : (_sk && _sk.har) ? 'var(--vundet)' : 'var(--guld)') + '">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
           '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\u2601\ufe0f ' +
-          (EN ? "AUTOMATIC BACKUP" : "AUTOMATISK KOPI") + '</div>' +
+          (EN ? "AUTOMATIC BACKUP" : "AUTOMATISK SIKKERHEDSKOPI") + '</div>' +
           '<span class="lille" style="color:' + (S.skyLaast ? 'var(--tabt)' : (_sk && _sk.har) ? 'var(--vundet)' : 'var(--daempet)') + '">' +
           (S.skySender ? '\u23f3 \u2026' : S.skyLaast ? '\ud83d\udd12 ' + (EN ? "locked" : "låst")
             : (_sk && _sk.har) ? '\u2713 ' + _naar : (EN ? "not yet" : "ikke endnu")) + '</span></div>';

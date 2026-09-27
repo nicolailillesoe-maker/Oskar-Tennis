@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.8.6 · 26. september 2026";
+const VERSION = "v5.8.7 · 27. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -2306,57 +2306,79 @@ try {
   }
 } catch(e) {}
 
-/* ⭐ v5.3.7 · HJEMKOMSTEN FRA MOBILEPAY (?betaling=retur). Appen ved ikke, om trækket er gået igennem —
-   det afgør webhooken. Derfor siger den kun det, der er sandt, og viser vej til Din konto. */
+/* ⭐⭐ v5.8.7 · HJEMKOMSTEN — ÉN FUNKTION, TO INDGANGE. Ved opstart (linket i adressen) og fra Capacitors
+   `appUrlOpen` (universal link ind i den native app: appen genstarter ikke, den får linket som en hændelse).
+   ?betaling=retur (v5.3.7/v5.7.5) · ?koeb=retur&ref=… (v5.8.0/v5.8.3). Returnerer true, når linket var en hjemkomst. */
+function hjemkomstFraLink(sp, fraHaendelse) {
+  let ramt = false;
+  try {
+    if (sp.get("betaling") === "retur") {
+      ramt = true;
+      S.tab = "opsaet"; S.opsAaben = "konto";
+      /* ⭐ v5.7.5 · MobilePay sender tilbage til en BROWSER — ikke til appen på hjemmeskærmen. Målt 25/9 på
+         Nicolais telefon: «den genlæste på Chrome efter betalingen og opdaterede ikke i Web-appen». */
+      const _hj = I_SKALLEN || paaHjemmeskaerm();
+      S.kontoBesked = { fejl: false, t: S.sprog === "en"
+        ? (_hj ? "Thanks! MobilePay is handling the payment — your plan changes as soon as it has gone through."
+               : "Thanks! MobilePay is handling the payment. If you use StreakTennis from your home screen, go back there — your plan changes as soon as the payment has gone through.")
+        : (_hj ? "Tak! MobilePay behandler betalingen — din plan skifter, så snart den er gået igennem."
+               : "Tak! MobilePay behandler betalingen. Bruger du StreakTennis fra hjemmeskærmen, så gå tilbage dertil — din plan skifter, så snart betalingen er gået igennem.") };
+      setTimeout(function () { try { A.betalVent(true); } catch (_e) {} }, 0);   /* ⭐ v5.7.5 */
+    }
+  } catch(e) {}
+  try {
+    if (sp.get("koeb") === "retur") {
+      ramt = true;
+      const _kr = String(sp.get("ref") || "");
+      let _kv = null; try { _kv = JSON.parse(lager.hent("sai-koeb-venter") || "null"); } catch (_e) {}
+      const _mit = !!(_kv && _kv.ref === _kr);
+      if (!_mit && !(I_SKALLEN || paaHjemmeskaerm())) {
+        /* ⭐ v5.8.3 · MobilePay sender tilbage til standardbrowseren — ikke til appen på hjemmeskærmen (målt 25/9 og 26/9:
+           Chrome med en anden profil). Købet blev startet et andet sted; det lander dér, når appen bliver synlig igen. */
+        S.tab = "kamp"; S.wiz = 3;
+        S.nyBesked = { fejl: false, t: S.sprog === "en" ? "Go back to StreakTennis on your home screen — the purchase lands there." : "Gå tilbage til StreakTennis på hjemmeskærmen — købet lander dér." };
+      } else {
+        if (/^st-[kl]-[0-9a-f]{24}$/.test(_kr) && !_mit) {
+          try { lager.gem("sai-koeb-venter", JSON.stringify({ ref: _kr, type: _kr.charAt(3) === "l" ? "live" : "kamp", t: Date.now(), hvor: "" })); } catch (_e) {}
+        }
+        setTimeout(function () { try { A.koebVent(true); } catch (_e) {} }, 0);
+      }
+    }
+  } catch(e) {}
+  if (ramt && fraHaendelse) { try { render(); } catch (_e) {} }
+  return ramt;
+}
 try {
-  if (new URLSearchParams(location.search).get("betaling") === "retur") {
-    S.tab = "opsaet"; S.opsAaben = "konto";
-    /* ⭐ v5.7.5 · MobilePay sender tilbage til en BROWSER — ikke til appen på hjemmeskærmen. Målt 25/9 på
-       Nicolais telefon: «den genlæste på Chrome efter betalingen og opdaterede ikke i Web-appen». */
-    const _hj = I_SKALLEN || paaHjemmeskaerm();
-    S.kontoBesked = { fejl: false, t: S.sprog === "en"
-      ? (_hj ? "Thanks! MobilePay is handling the payment — your plan changes as soon as it has gone through."
-             : "Thanks! MobilePay is handling the payment. If you use StreakTennis from your home screen, go back there — your plan changes as soon as the payment has gone through.")
-      : (_hj ? "Tak! MobilePay behandler betalingen — din plan skifter, så snart den er gået igennem."
-             : "Tak! MobilePay behandler betalingen. Bruger du StreakTennis fra hjemmeskærmen, så gå tilbage dertil — din plan skifter, så snart betalingen er gået igennem.") };
-    history.replaceState(null, "", location.pathname);
-    setTimeout(function () { try { A.betalVent(true); } catch (_e) {} }, 0);   /* ⭐ v5.7.5 */
-  }
+  const _sp0 = new URLSearchParams(location.search);
+  if (hjemkomstFraLink(_sp0, false)) history.replaceState(null, "", location.pathname);
+  else setTimeout(function () { try { A.koebVent(false); } catch (_e) {} }, 1200);
 } catch(e) {}
 /* ⭐⭐ v5.7.5 · APPEN, DER VAR VÆK, MENS MAN BETALTE. Web-appen på hjemmeskærmen genstarter ikke, når man
    kommer tilbage fra MobilePay — den bliver bare synlig igen. Derfor spørger den selv, hvis et køb er startet
-   inden for 30 min (A.betalVent). Uden et startet køb sker der intet — ingen ekstra kald for alle andre. */
+   inden for 30 min (A.betalVent / A.koebVent). Uden et startet køb sker der intet — ingen ekstra kald for alle andre. */
 try {
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible") { try { A.betalVent(false); } catch (_e) {} }
+    if (document.visibilityState === "visible") { try { A.betalVent(false); } catch (_e) {} try { A.koebVent(false); } catch (_e) {} }
   });
   setTimeout(function () { try { A.betalVent(false); } catch (_e) {} }, 900);
 } catch(e) {}
-/* ⭐⭐ v5.8.0 · HJEMKOMSTEN FRA ET KØB. MobilePay sender tilbage med ?koeb=retur&ref=… — kun ref'en (st-k-/st-l-
-   + 24 tegn) bruges, og kun sammen med spillerens egen nøgle. Uden et startet køb sker der intet. */
-try {
-  const _kq = new URLSearchParams(location.search);
-  if (_kq.get("koeb") === "retur") {
-    const _kr = String(_kq.get("ref") || "");
-    history.replaceState(null, "", location.pathname);
-    let _kv = null; try { _kv = JSON.parse(lager.hent("sai-koeb-venter") || "null"); } catch (_e) {}
-    const _mit = !!(_kv && _kv.ref === _kr);
-    if (!_mit && !(I_SKALLEN || paaHjemmeskaerm())) {
-      /* ⭐ v5.8.3 · MobilePay sender tilbage til standardbrowseren — ikke til appen på hjemmeskærmen (målt 25/9 og 26/9:
-         Chrome med en anden profil). Købet blev startet et andet sted; det lander dér, når appen bliver synlig igen. */
-      S.tab = "kamp"; S.wiz = 3;
-      S.nyBesked = { fejl: false, t: S.sprog === "en" ? "Go back to StreakTennis on your home screen — the purchase lands there." : "Gå tilbage til StreakTennis på hjemmeskærmen — købet lander dér." };
-    } else {
-      if (/^st-[kl]-[0-9a-f]{24}$/.test(_kr) && !_mit) {
-        try { lager.gem("sai-koeb-venter", JSON.stringify({ ref: _kr, type: _kr.charAt(3) === "l" ? "live" : "kamp", t: Date.now(), hvor: "" })); } catch (_e) {}
-      }
-      setTimeout(function () { try { A.koebVent(true); } catch (_e) {} }, 0);
-    }
-  } else setTimeout(function () { try { A.koebVent(false); } catch (_e) {} }, 1200);
-  document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible") { try { A.koebVent(false); } catch (_e) {} }
-  });
-} catch(e) {}
+/* ⭐⭐⭐ v5.8.7 · UNIVERSAL LINK IND I DEN NATIVE APP. iOS åbner tennis.sportsainalytics.com/StreakTennis/… i appen
+   (apple-app-site-association + Associated Domains), og Capacitor melder linket som `appUrlOpen` — appen genstarter
+   ikke. Hjemkomsten køres på linkets parametre; et #ven=-link lægges i adressen, så den lytter, der findes, tager det. */
+function _hjemLyt() {
+  try {
+    const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+    if (!P || typeof P.addListener !== "function") return false;
+    P.addListener("appUrlOpen", function (e) {
+      try {
+        const u = new URL(String((e && e.url) || ""));
+        if (!hjemkomstFraLink(u.searchParams, true) && u.hash && /(?:^|[#&])ven=/.test(u.hash)) location.hash = u.hash;
+      } catch (_e) {}
+    });
+    return true;
+  } catch (_e) { return false; }
+}
+if (I_SKALLEN) { if (!_hjemLyt()) window.addEventListener("load", function () { _hjemLyt(); }); }
 
 // ⭐⭐ EN APP, DER ALLEREDE ER AABEN, GENSTARTER IKKE. Trykker man paa et
 // #ven=-link, mens StreakTennis staar aabent — eller browseren svarer fra

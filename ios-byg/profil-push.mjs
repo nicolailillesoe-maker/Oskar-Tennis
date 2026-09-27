@@ -2,11 +2,16 @@
 // v1 (25/9-2026) · kaldes af ios.yml v6. Bruger den API-nøgle, der allerede ligger i repoets hemmeligheder.
 // v1.1 (25/9-2026) · kørsel #13: Apple svarede 400 på «limit» på relationen bundleIdCapabilities (PARAMETER_ERROR.ILLEGAL),
 //   selv om Apples egen API-beskrivelse tillader den. Kun lister på topniveau får «limit» nu.
+// v2 (27/9-2026) · universal link (StreakTennis v5.8.7): ud over Push sikres ASSOCIATED_DOMAINS på id'et, og en profil
+//   genbruges kun, hvis den bærer BEGGE (aps-environment + com.apple.developer.associated-domains) — ellers laves en ny.
+//   seedId (= Team ID, prefikset i AASA-filens appID) MÅLES her og skrives ud tegn for tegn: GitHub skjuler værdien, når den
+//   er lig hemmeligheden APPLE_TEAM_ID, men Team ID er ikke hemmeligt — den står i den offentlige apple-app-site-association.
 //
 //   1. appens id (bundleId) findes hos Apple
-//   2. Push Notifications slås til på id'et, hvis det ikke allerede er det
+//   2. Push Notifications og Associated Domains slås til på id'et, hvis de ikke allerede er det
 //   3. distributionscertifikatet fra .p12'en findes hos Apple — på sit INDHOLD (sha256), ikke på navnet
-//   4. en aktiv App Store-profil for id'et + certifikatet, der bærer Push og lever mindst 14 dage, genbruges — ellers laves en ny
+//   4. en aktiv App Store-profil for id'et + certifikatet, der bærer Push + Associated Domains og lever mindst 14 dage,
+//      genbruges — ellers laves en ny
 //
 // Lykkes det, skrives profilen til UD_PROFIL, og der skrives én linje: «PROFIL_NAVN=…».
 // Lykkes det IKKE, afsluttes med kode 3 og en sætning, der siger præcis hvor — så falder workflowet tilbage til profilen i
@@ -71,6 +76,16 @@ const ids = kraev(await kald("GET", "/v1/bundleIds?filter[identifier]=" + encode
 const bid = (ids.data || []).find((d) => d.attributes && d.attributes.identifier === BUNDLE);
 if (!bid) stop("appens id " + BUNDLE + " findes ikke hos Apple");
 console.log("App-id hos Apple: " + BUNDLE + " (" + (bid.attributes.platform || "?") + ")");
+// v2 · seedId = Team ID = prefikset i AASA-filens appID. Målt, ikke tastet.
+const seed = String(bid.attributes.seedId || "");
+if (!/^[A-Z0-9]{10}$/.test(seed)) stop("appens id bærer intet seedId på 10 tegn");
+console.log("seedId (Team ID), tegn for tegn: " + seed.split("").join(" "));
+if (E.APPLE_TEAM_ID) console.log("seedId = APPLE_TEAM_ID: " + (seed === E.APPLE_TEAM_ID ? "ja" : "NEJ"));
+try {
+  const aasa = JSON.parse(fs.readFileSync(".well-known/apple-app-site-association", "utf8"));
+  const appID = aasa.applinks.details[0].appID;
+  console.log("AASA-filens appID passer til seedId: " + (appID === seed + "." + BUNDLE ? "ja" : "NEJ"));
+} catch (e) { console.log("AASA-filen: ikke i dette checkout (endnu)"); }
 
 // ── 2. Push på id'et
 const kap = kraev(await kald("GET", "/v1/bundleIds/" + bid.id + "/bundleIdCapabilities"), [200], "bundleIdCapabilities");
@@ -86,6 +101,20 @@ else {
   }), [201], "at slå Push til på id'et");
   console.log("⭐ Push Notifications: slået til på id'et NU (ældre profiler for id'et kan blive ugyldige hos Apple)");
 }
+// v2 · Associated Domains på id'et (universal link: MobilePays retur-link åbner appen, ikke Chrome)
+const harAD = (kap.data || []).some((c) => c.attributes && c.attributes.capabilityType === "ASSOCIATED_DOMAINS");
+if (harAD) console.log("Associated Domains: var allerede slået til på id'et");
+else {
+  kraev(await kald("POST", "/v1/bundleIdCapabilities", {
+    data: {
+      type: "bundleIdCapabilities",
+      attributes: { capabilityType: "ASSOCIATED_DOMAINS" },
+      relationships: { bundleId: { data: { type: "bundleIds", id: bid.id } } },
+    },
+  }), [201], "at slå Associated Domains til på id'et");
+  console.log("⭐ Associated Domains: slået til på id'et NU (ældre profiler for id'et kan blive ugyldige hos Apple)");
+}
+const AD_NOEGLE = "<key>com.apple.developer.associated-domains</key>";
 
 // ── 3b. certifikatet hos Apple, fundet på indholdet
 const cer = kraev(await kald("GET", "/v1/certificates?filter[certificateType]=DISTRIBUTION,IOS_DISTRIBUTION&limit=200"), [200], "certificates");
@@ -105,6 +134,7 @@ const bruger = (p) => {
     && rel.bundleId && rel.bundleId.data && rel.bundleId.data.id === bid.id
     && rel.certificates && (rel.certificates.data || []).some((c) => c.id === cert.id)
     && indhold.includes("<key>aps-environment</key>")
+    && indhold.includes(AD_NOEGLE)
     && Date.parse(a.expirationDate || 0) > graense;
 };
 let profil = (pr.data || []).filter(bruger).sort((x, y) => Date.parse(y.attributes.createdDate || 0) - Date.parse(x.attributes.createdDate || 0))[0];
@@ -128,5 +158,7 @@ else {
 if (!profil.attributes.profileContent) stop("profilen kom uden indhold");
 const bytes = Buffer.from(profil.attributes.profileContent, "base64");
 if (!bytes.toString("latin1").includes("<key>aps-environment</key>")) stop("profilen «" + profil.attributes.name + "» bærer ikke aps-environment");
+if (!bytes.toString("latin1").includes(AD_NOEGLE)) stop("profilen «" + profil.attributes.name + "» bærer ikke com.apple.developer.associated-domains");
+console.log("⭐ Profilens kapabiliteter: Push (aps-environment) + Associated Domains (com.apple.developer.associated-domains)");
 fs.writeFileSync(E.UD_PROFIL, bytes);
 console.log("PROFIL_NAVN=" + profil.attributes.name);

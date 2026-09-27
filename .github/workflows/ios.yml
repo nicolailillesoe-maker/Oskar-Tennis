@@ -1,6 +1,13 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v7 (27/9-2026) — HJEMKOMSTEN LANDER I APPEN (StreakTennis v5.8.7 · universal link). Nicolai: «lad os gøre allerede nu så man
+#   ryger tilbage hvor man kommer fra.» MobilePay åbner retur-linket som et almindeligt link → Chrome. Med Associated Domains
+#   åbner iOS https://tennis.sportsainalytics.com/StreakTennis/… i appen. Samme greb som Push (v5/v6): profil-push.mjs v2 slår
+#   ASSOCIATED_DOMAINS til på id'et, og profilen skal bære den. Bærer profilen den IKKE, stopper kørslen (en entitlement uden
+#   profil afviser Apple). @capacitor/app@^6 installeres altid (appUrlOpen). Entitlements-filen får applinks:-domænet.
+#   AppDelegate: Capacitors standard videresender «continue userActivity» — målt og skrevet i loggen.
+#
 # v6.3 (25/9-2026) — PÅMINDELSERNE FRA MIN UGE. @capacitor/local-notifications@^6 installeres altid (ingen profil, intet
 #   entitlement); en vagt stopper kørslen, hvis LocalNotifications ikke står i Podfile efter cap sync.
 # v6.1 (25/9-2026) — to logbeskeder: «$NAVN» blev til et ulæseligt tegn (bash 3.2 på macOS) → ${NAVN}. Ingen adfærd ændret.
@@ -100,6 +107,7 @@ jobs:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           DIST_PROFILE_BASE64: ${{ secrets.DIST_PROFILE_BASE64 }}
           CERT_PEM: ${{ runner.temp }}/dist-cert.pem
           UD_PROFIL: ${{ runner.temp }}/profil.mobileprovision
@@ -120,12 +128,19 @@ jobs:
             echo "PUSH=nej" >> $GITHUB_ENV
             echo "⚠️ Profilen bærer IKKE Push. Appen bygges som før, UDEN notifikationer."
           fi
+          # v7 · universal link: profilen SKAL bære Associated Domains — ellers afviser Apple arkivet (entitlement uden profil)
+          if security cms -D -i "$RUNNER_TEMP/profil.mobileprovision" | grep -q "<key>com.apple.developer.associated-domains</key>"; then
+            echo "⭐ Profilen bærer Associated Domains — appen bygges MED universal link (applinks:tennis.sportsainalytics.com)."
+          else
+            echo "⛔ Profilen bærer IKKE Associated Domains (se linjen med ⛔ fra API'et ovenfor) — bygges ikke uden."; exit 1
+          fi
       - name: Capacitor · skallen
         run: |
           npm install --no-audit --no-fund
           # v5 · pluginet KUN, når profilen bærer Push — ellers ville appen tilbyde en knap, der ikke kan virke
           if [ "$PUSH" = "ja" ]; then npm install --no-audit --no-fund "@capacitor/push-notifications@^6"; fi   # v6.2 · pakken skrives i package.json, hvor Capacitor finder plugins
           npm install --no-audit --no-fund "@capacitor/local-notifications@^6"   # v6.3 · påmindelserne fra Min uge — altid, skrevet i package.json
+          npm install --no-audit --no-fund "@capacitor/app@^6"   # v7 · appUrlOpen (universal link ind i en app, der kører) — altid
           npx cap add ios
           npx cap sync ios
           if [ "$PUSH" = "ja" ]; then
@@ -134,6 +149,7 @@ jobs:
             ! grep -q "PushNotifications" ios/App/Podfile || { echo "⛔ pluginet er med, selv om profilen ikke bærer Push"; exit 1; }
           fi
           grep -q "LocalNotifications" ios/App/Podfile || { echo "⛔ påmindelses-pluginet (LocalNotifications) kom ikke med i Podfile"; exit 1; }   # v6.3
+          grep -q "CapacitorApp" ios/App/Podfile || { echo "⛔ app-pluginet (CapacitorApp) kom ikke med i Podfile"; exit 1; }   # v7
       - name: Push · AppDelegate + entitlements (v5 · kun når profilen bærer Push)
         if: env.PUSH == 'ja'
         run: |
@@ -172,6 +188,21 @@ jobs:
           # KUN app-targetet får filen — en global tilsidesættelse ramte engang Capacitor.framework (byg #4, v4.1)
           ruby -e 'require "xcodeproj"; pr = Xcodeproj::Project.open("ios/App/App.xcodeproj"); t = pr.targets.find { |x| x.name == "App" } or abort("⛔ intet App-target"); t.build_configurations.each { |c| c.build_settings["CODE_SIGN_ENTITLEMENTS"] = "App/App.entitlements" }; pr.save; puts "entitlements sat på " + t.name'
           grep -q "CODE_SIGN_ENTITLEMENTS = App/App.entitlements" ios/App/App.xcodeproj/project.pbxproj || { echo "⛔ CODE_SIGN_ENTITLEMENTS står ikke i projektet"; exit 1; }
+      - name: Universal link · Associated Domains i entitlements + AppDelegate målt (v7)
+        run: |
+          EN=ios/App/App/App.entitlements
+          if [ ! -f "$EN" ]; then
+            printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' '<plist version="1.0">' '<dict>' '</dict>' '</plist>' > "$EN"
+            ruby -e 'require "xcodeproj"; pr = Xcodeproj::Project.open("ios/App/App.xcodeproj"); t = pr.targets.find { |x| x.name == "App" } or abort("⛔ intet App-target"); t.build_configurations.each { |c| c.build_settings["CODE_SIGN_ENTITLEMENTS"] = "App/App.entitlements" }; pr.save; puts "entitlements sat på " + t.name'
+          fi
+          /usr/libexec/PlistBuddy -c "Add :com.apple.developer.associated-domains array" \
+            -c "Add :com.apple.developer.associated-domains:0 string applinks:tennis.sportsainalytics.com" "$EN"
+          plutil -lint "$EN"
+          grep -q "applinks:tennis.sportsainalytics.com" "$EN" || { echo "⛔ entitlements-filen bærer ikke applinks:-domænet"; exit 1; }
+          grep -q "CODE_SIGN_ENTITLEMENTS = App/App.entitlements" ios/App/App.xcodeproj/project.pbxproj || { echo "⛔ CODE_SIGN_ENTITLEMENTS står ikke i projektet"; exit 1; }
+          echo "⭐ Entitlements: $(grep -c '<key>' "$EN") nøgler · applinks:tennis.sportsainalytics.com"
+          # Capacitors standard fra cap add ios videresender universal links til ApplicationDelegateProxy — målt, ikke antaget
+          grep -n "continue userActivity" ios/App/App/AppDelegate.swift | sed 's/^/AppDelegate: /' || { echo "⛔ AppDelegate videresender ikke continue userActivity"; exit 1; }
       - name: Byggenummer + version fra appen
         env:
           BYG_IND: ${{ github.event.inputs.byg_nr }}
@@ -238,6 +269,9 @@ jobs:
             codesign -d --entitlements :- build/App.xcarchive/Products/Applications/App.app 2>/dev/null | grep -q "aps-environment" \
               && echo "⭐ arkivets app bærer aps-environment" || { echo "⛔ arkivets app bærer IKKE aps-environment"; exit 1; }
           fi
+          # v7 · vagt: arkivets app skal BÆRE applinks:-domænet — ellers åbner linket stadig Chrome
+          codesign -d --entitlements :- build/App.xcarchive/Products/Applications/App.app 2>/dev/null | grep -q "applinks:tennis.sportsainalytics.com" \
+            && echo "⭐ arkivets app bærer applinks:tennis.sportsainalytics.com" || { echo "⛔ arkivets app bærer IKKE applinks:-domænet"; exit 1; }
       - name: Send til App Store Connect (manuel signering med profilen; API-nøglen bruges kun til uploaden)
         run: |
           xcodebuild -exportArchive -archivePath build/App.xcarchive \

@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.8.9 · 27. september 2026";
+const VERSION = "v5.8.10 · 27. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -3306,7 +3306,7 @@ function koebKlarTekst(EN) {
 /* prisen, der står på «Del kampen live», når kampen startes — planen afgør den (live_start i basen) */
 function livePrisTekst(EN) {
   const p = S.minPlan;
-  if (p === "fri" || _friLoeber()) return EN ? "no limit" : "uden loft";   /* ⭐ v5.8.8 · også klub + fri */
+  if (p === "fri" || _friLoeber()) return "";   /* ⭐ v5.8.10 · Nicolai: «Skriver vi ikke noget giver det sig selv» — Fri og Klub + fri (v5.8.8) siger intet */
   if (p === "fuld" || p === "klub") return EN ? "3 a month included · then 15 kr" : "3 om måneden er med · derefter 15 kr";
   if (p === "gaest") return EN ? "3 free in total · then 20 kr" : "3 gratis i alt · derefter 20 kr";
   return "";

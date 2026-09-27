@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.8.4 · 26. september 2026";
+const VERSION = "v5.8.5 · 26. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -3240,7 +3240,7 @@ function udviklingAuto() {
 function koebKnap(type, pris, hvor, EN) {
   const p = (+pris || (type === "live" ? 15 : 20));
   const t = type === "live" ? (EN ? "Buy an extra live match" : "Køb en ekstra live-kamp")
-    : String(hvor).indexOf("a:") === 0 ? (EN ? "Buy the analysis" : "Køb analysen") : (EN ? "Buy the match" : "Køb kampen");
+    : String(hvor).indexOf("a:") === 0 ? (EN ? "Buy the analysis" : "Køb analysen") : (EN ? "Buy live match + AI analysis" : "Køb live-kamp + AI-analyse");   /* ⭐ v5.8.5 */
   return '<div class="raekke" style="margin-top:8px"><button class="knap" data-koeb="1" style="width:100%;min-height:48px;background:#5a78ff" data-a="koebStart" data-v="' +
     esc(type + "|" + hvor) + '">' + (S.koebSender ? "⏳ " : "💳 ") + t + ' · ' + p + ' kr</button></div>' +
     '<p class="lille" style="margin:4px 0 0;opacity:.75;text-align:center">' + (EN ? "MobilePay · one purchase, no subscription" : "MobilePay · ét køb, intet abonnement") + '</p>';

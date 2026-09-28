@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.9.0 · 27. september 2026";
+const VERSION = "v5.9.1 · 28. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -3806,7 +3806,7 @@ function _profilHtml(EN) {
         '<p class="lille" style="margin:0 0 8px">' + (EN
           ? "The name your club\u2019s coach sees. Letters, spaces and hyphens."
           : "Det navn, din tr\u00e6ner ser. Bogstaver, mellemrum og bindestreg.") + '</p>' +
-        '<input data-felt="fuldtUdkast" maxlength="60" placeholder="' + (EN ? "e.g. Oskar Lillesen" : "fx Oskar Lillesen") + '" value="' + esc(S.fuldtUdkast || "") + '" style="font-weight:600">' +
+        '<input data-felt="fuldtUdkast" maxlength="60" placeholder="' + (EN ? "e.g. Emma Kjær" : "fx Emma Kjær") + '" value="' + esc(S.fuldtUdkast || "") + '" style="font-weight:600">' +
         '<div class="raekke" style="margin-top:7px">' +
           '<button class="knap" style="min-height:44px" data-a="fuldtGem">' + (S.fuldtSender ? "\u23f3 \u2026" : (EN?"Save":"Gem")) + '</button>' +
           (S.mitFuldtNavn ? '<button class="knap valg" style="min-height:44px;color:var(--daempet)" data-a="fuldtGem" data-v="tom">' + (EN?"Remove":"Fjern") + '</button>' : '') +
@@ -3938,7 +3938,7 @@ function _profilHtml(EN) {
             '<p class="lille" style="margin:0 0 8px">' + (EN
               ? "It is what friends use to find you. Pick something you are happy for others to see \u2014 not your surname."
               : "Det er dét, venner finder dig p\u00e5. V\u00e6lg noget, du er glad for andre ser \u2014 ikke dit efternavn.") + '</p>' +
-            '<input placeholder="' + (EN?"e.g. oskar_b93":"fx oskar_b93") + '" value="' + esc(S.navnUdkast2) + '" data-felt="navnUdkast2" maxlength="20" style="letter-spacing:1px;font-weight:700">' +
+            '<input placeholder="' + (EN?"e.g. emma_tk":"fx emma_tk") + '" value="' + esc(S.navnUdkast2) + '" data-felt="navnUdkast2" maxlength="20" style="letter-spacing:1px;font-weight:700">' +
             (S.navnTjekker
               ? '<p class="lille" style="margin:6px 0 0;opacity:.7">\u23f3 ' + (EN?"checking\u2026":"tjekker\u2026") + '</p>'
               : (S.navnLedig
@@ -11048,14 +11048,14 @@ function _tegn() {
           // — en klubkode lukker ind i samme kald (motor v2.20.0).
           // O2-loeftet staar: INTET forlader telefonen foer trykket.
           '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin-bottom:5px">' + (S.sprog === "en" ? "YOUR FULL NAME" : "DIT FULDE NAVN") + '<span id="ok-navnUdkast" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
-          '<input data-felt="navnUdkast" maxlength="60" placeholder="' + (S.sprog === "en" ? "e.g. Oskar Lillesen" : "fx Oskar Lillesen") + '" value="' + esc(S.navnUdkast || "") + '">' +
+          '<input data-felt="navnUdkast" maxlength="60" placeholder="' + (S.sprog === "en" ? "e.g. Emma Kjær" : "fx Emma Kjær") + '" value="' + esc(S.navnUdkast || "") + '">' +
           // ⭐ v4.147.0 · tre navne, sagt \u00e6rligt her, hvor de tastes (Nicolai 12/9)
           '<p class="lille" style="margin:4px 0 0;opacity:.7">' + (S.sprog === "en"
-            ? "Only your club\u2019s coach ever sees the full name. Friends see your nickname \u2014 your first name to start with; change it under Your profile."
-            : "Det fulde navn ser kun klubbens tr\u00e6ner. Venner ser dit kaldenavn \u2014 dit fornavn til at starte med; ret det under Din profil.") + '</p>' +
+            ? "Only your coach sees it. Friends see your first name."
+            : "Kun din tr\u00e6ner ser det. Venner ser dit fornavn.") + '</p>' +   /* ⭐ v5.9.1 · én linje (Nicolai 28/9: «alt for rodet») */
 
           '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (S.sprog === "en" ? "USERNAME" : "BRUGERNAVN") + '<span id="ok-navnUdkast2" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
-          '<input data-felt="navnUdkast2" maxlength="20" style="letter-spacing:1px;font-weight:700" placeholder="' + (S.sprog === "en" ? "e.g. oskar_b93" : "fx oskar_b93") + '" value="' + esc(S.navnUdkast2 || "") + '" autocapitalize="off" spellcheck="false">' +
+          '<input data-felt="navnUdkast2" maxlength="20" style="letter-spacing:1px;font-weight:700" placeholder="' + (S.sprog === "en" ? "e.g. emma_tk" : "fx emma_tk") + '" value="' + esc(S.navnUdkast2 || "") + '" autocapitalize="off" spellcheck="false">' +
 
 
           '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (S.sprog === "en" ? "PASSWORD" : "KODEORD") + '<span id="ok-indKode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
@@ -11080,13 +11080,11 @@ function _tegn() {
             : (S.sprog === "en" ? "CLUB KEY OR FRIEND · OPTIONAL" : "KLUBNØGLE ELLER VEN · VALGFRIT")) + '<span id="ok-indKlubkode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
           '<input data-felt="indKlubkode" maxlength="40" style="letter-spacing:1px;font-weight:700" placeholder="' + (_invitVed()
             ? (S.sprog === "en" ? "only from your club" : "kun fra din klub")
-            : (S.sprog === "en" ? "club key — or a friend's username" : "klubnøgle — eller en vens brugernavn")) + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">' +
+            : (S.sprog === "en" ? "key or username" : "kode eller brugernavn")) + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">' +
           // ⭐ v4.72.0 · Tre saetninger blev til én. Etiketten siger selv
           //   «VALGFRIT», saa «ingen kode? gaa bare videre» var det samme
           //   sagt to gange paa 20 pixels afstand.
-          '<p class="lille" style="margin:4px 0 0;opacity:.72">' + (_invitVed()
-            ? (S.sprog === "en" ? "Your friend is already set \u2014 this field is for a club only." : "Din ven er allerede p\u00e5 plads \u2014 feltet her er kun til en klub.")
-            : (S.sprog === "en" ? "From your club or a friend — or just continue." : "Fra klubben eller en ven — ellers gå bare videre.")) + '</p>' +
+          '' +   /* ⭐ v5.9.1 · hjælpelinjen er ude — etiketten siger VALGFRIT, og chippen ovenfor siger resten, når en ven har inviteret */
 
           // ⭐⭐ v4.72.0 · PRISKASSEN (98px) ER UDE — den var en GENTAGELSE.
           //   Ordret det samme staar paa VALGET, TO skaerme senere i samme
@@ -11104,7 +11102,7 @@ function _tegn() {
           // gider laese det og det fylder for meget.» Linjen er lille,
           // knappen er aegte — og teksten bag den er hele sandheden.
           '<p class="lille" style="margin:9px 0 0;opacity:.7;text-align:center">' + (S.sprog === "en"
-            ? 'By creating you accept ' : 'Ved oprettelse accepterer I ') +
+            ? 'By creating you accept ' : 'Ved oprettelse accepterer du ') +   /* ⭐ v5.9.1 · tone-reglen */
             '<button data-a="betingelser" style="background:none;border:none;padding:0;color:var(--is);text-decoration:underline;font:inherit;cursor:pointer">' +
             (S.sprog === "en" ? "the terms" : "betingelserne") + '</button></p>' +
           // ⭐⭐ v4.21.0 · VEJEN TILBAGE. Uden den er en ny telefon en

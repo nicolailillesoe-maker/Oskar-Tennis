@@ -1129,7 +1129,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.14.1 \u00b7 29. september 2026";
+const VERSION = "v6.14.2 \u00b7 29. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1836,6 +1836,13 @@ Object.assign(EN, {   /* v6.14.1 · Gani — hele skærmen på engelsk */
   "👤 Din konto": "👤 Your account",
   "🌐 Sprog": "🌐 Language",
   "👥 Min trup": "👥 My squad"
+});
+Object.assign(EN, {   /* v6.14.2 · Gani II — de fem huller, skærmen fandt */
+  "Sendte invitationer": "Sent invitations",
+  "✓ Godkend": "✓ Approve",
+  "Afvis": "Reject",
+  "tir 17:00 18:00 10&11 Jonas Mette U14 Elite Alma Askholm; Bertil B (2) 2": "tue\t17:00\t18:00\t10&11\tJonas\tMette\tU14 Elite\tAlma Askholm; Bertil B (2)\t2",
+  "ugedagen (man, tir, ons, tor, fre, lør, søn)": "the weekday (mon, tue, wed, thu, fri, sat, sun)"
 });
 var _ENr = {}, _ENx = [];
 (function(){
@@ -2556,7 +2563,9 @@ var IMP_KOL = ["ugedag", "start", "slut", "bane", "traener", "traener2", "titel"
 function impUgedag(v){
   var t = String(v || "").trim().toLowerCase().replace(/\.$/, "");
   if (/^[1-7]$/.test(t)) return +t;
-  var m = { man: 1, mandag: 1, tir: 2, tirs: 2, tirsdag: 2, ons: 3, onsdag: 3, tor: 4, tors: 4, torsdag: 4, fre: 5, fredag: 5, "lør": 6, loer: 6, lor: 6, "lørdag": 6, loerdag: 6, "søn": 7, soen: 7, son: 7, "søndag": 7, soendag: 7 };
+  var m = { man: 1, mandag: 1, tir: 2, tirs: 2, tirsdag: 2, ons: 3, onsdag: 3, tor: 4, tors: 4, torsdag: 4, fre: 5, fredag: 5, "lør": 6, loer: 6, lor: 6, "lørdag": 6, loerdag: 6, "søn": 7, soen: 7, son: 7, "søndag": 7, soendag: 7,
+    mon: 1, monday: 1, tue: 2, tues: 2, tuesday: 2, wed: 3, wednesday: 3, thu: 4, thur: 4, thurs: 4, thursday: 4,   /* v6.14.2 · engelske ugedage */
+    fri: 5, friday: 5, sat: 6, saturday: 6, sun: 7, sunday: 7 };
   return m[t] || 0;
 }
 function impTid(v){
@@ -3340,7 +3349,7 @@ function budKortet() {
   if (S.budBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.budBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.budBesked.t) + '</p>';
   if (S.budSendte && S.budSendte.length) {
     const aabne = S.budSendte.filter(b => b.status === "afventer");
-    h += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--kant)"><div class="lille" style="color:var(--daempet);margin-bottom:4px">Sendte invitationer</div>';
+    h += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--kant)"><div class="lille" style="color:var(--daempet);margin-bottom:4px">' + T("Sendte invitationer") + '</div>';
     for (const b of S.budSendte.slice(0, 20)) {
       h += '<div class="lille" style="display:flex;justify-content:space-between;gap:8px"><span>' + esc(b.brugernavn || '?') + '</span><span style="color:' +
         (b.status === "taget" ? 'var(--vundet)' : b.status === "afvist" ? 'var(--tabt)' : 'var(--daempet)') + '">' +
@@ -3631,7 +3640,7 @@ function indstSprog(){   /* v6.8.0 · 🌐 sprog: skærmen og evalueringerne */
       '<p class="lille" style="margin:6px 0 8px">Sk\u00e6rmens sprog f\u00f8lger denne telefon. Evalueringerne skrives i det sprog, spillerne l\u00e6ser \u2014 det beh\u00f8ver ikke v\u00e6re dit.</p>' +
       '<div class="lille" style="font-weight:700;margin-bottom:4px">Sk\u00e6rmen</div>' + sprogVaelger(false) +
       '<div class="lille" style="font-weight:700;margin:10px 0 4px">Evalueringer til spillerne</div>' +
-      '<div style="display:flex;gap:6px">' + ev("da", "\ud83c\udde9\ud83c\uddf0 Dansk") + ev("en", "\ud83c\uddec\ud83c\udde7 Engelsk") + '</div></div>';
+      '<div style="display:flex;gap:6px">' + ev("da", "\ud83c\udde9\ud83c\uddf0 Dansk") + ev("en", "\ud83c\uddec\ud83c\udde7 English") + '</div></div>';
   }
   return h;
 }

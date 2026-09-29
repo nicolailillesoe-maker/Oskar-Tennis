@@ -6,6 +6,7 @@
 // Endepunkterne er målt i Apples dokumentation 29/9 (developer.apple.com/documentation/appstoreconnectapi).
 // Node 20, ingen pakker.
 import crypto from "node:crypto";
+import fs from "node:fs";
 
 const E = process.env;
 const BASE = "https://api.appstoreconnect.apple.com";
@@ -14,7 +15,11 @@ const HANDLING = (E.HANDLING || "").trim();
 const GRUPPE = (E.GRUPPE || "").trim();
 const BYG = (E.BYG || "").trim();
 const TEKST = (E.TEKST || "").trim();
-const TESTERE = E.TESTERE || "";
+// «testere» læses fra hændelsesfilen, ikke fra miljøet — miljøet vises i den offentlige log (ordre-290926-06)
+let TESTERE = "";
+try { TESTERE = (JSON.parse(fs.readFileSync(E.GITHUB_EVENT_PATH, "utf8")).inputs || {}).testere || ""; } catch (e) {}
+// en mail vises kun som første tegn + domæne: «o…@icloud.com»
+const skjul = (mail) => mail.slice(0, 1) + "…@" + mail.split("@")[1];
 
 // tekster fra ordre-290926-01
 const NOTER = "No login required to start. Tap ‹Opret konto› on the first screen to create a player account. Club features need a club invitation and are not part of this test.";
@@ -216,32 +221,40 @@ async function tilfoejTestere(app) {
   if (!g) stop("gruppen " + GRUPPE + " findes ikke — kør opret-gruppe først");
   const linjer = TESTERE.split(/\r?\n|;/).map((s) => s.trim()).filter(Boolean);
   if (!linjer.length) stop("input «testere» er tomt");
-  const folk = linjer.map((l) => {
-    const m = l.match(/^(.+?)\s+<([^<>\s]+@[^<>\s]+)>$/);
-    if (!m) stop("linjen passer ikke til «Fornavn Efternavn <mail>»: " + l.replace(/[^<]*</, "…<"));
-    const navn = m[1].trim().split(/\s+/);
-    return { fornavn: navn[0], efternavn: navn.slice(1).join(" ") || "-", mail: m[2].toLowerCase() };
+  // maskér alt, før noget kan skrives: hele linjen, mailen og hvert navn (GitHub erstatter dem med *** i loggen)
+  for (const l of linjer) for (const del of [l, ...l.split(/[\s<>]+/)]) if (del.length > 1) console.log("::add-mask::" + del);
+  const folk = linjer.map((l, n) => {
+    // «Fornavn Efternavn <mail>» eller kun «<mail>» — et navn, der ikke står der, opfindes ikke
+    const m = l.match(/^(?:(.+?)\s+)?<([^<>\s]+@[^<>\s]+\.[^<>\s]+)>$/);
+    if (!m) stop("linje " + (n + 1) + " passer ikke til «Fornavn Efternavn <mail>» eller «<mail>»");
+    const navn = (m[1] || "").trim().split(/\s+/).filter(Boolean);
+    return { fornavn: navn[0] || "", efternavn: navn.slice(1).join(" "), mail: m[2].toLowerCase() };
   });
   const i = await antalTestere(g.id);
   for (const p of folk) {
     const j = kraev(await kald("GET", "/v1/betaTesters?filter[email]=" + encodeURIComponent(p.mail) + "&limit=5"), [200], "GET /v1/betaTesters");
     const t = (j.data || [])[0];
-    if (t && i.ids.includes(t.id)) { console.log("tester " + p.fornavn + " er allerede i " + GRUPPE); continue; }
+    const hvem = "tester " + skjul(p.mail) + (p.fornavn ? " (med navn)" : " (kun mail)");
+    if (t && i.ids.includes(t.id)) { console.log(hvem + " · beta-tester-id " + t.id + " · er allerede i " + GRUPPE); continue; }
     if (t) {
       kraev(await kald("POST", "/v1/betaGroups/" + g.id + "/relationships/betaTesters", { data: [{ type: "betaTesters", id: t.id }] }),
         [204], "POST /v1/betaGroups/{id}/relationships/betaTesters");
-      console.log("tester " + p.fornavn + " fandtes og er lagt i " + GRUPPE);
+      console.log(hvem + " · beta-tester-id " + t.id + " · fandtes og er lagt i " + GRUPPE);
     } else {
-      kraev(await kald("POST", "/v1/betaTesters", {
+      const attr = { email: p.mail };
+      if (p.fornavn) attr.firstName = p.fornavn;
+      if (p.efternavn) attr.lastName = p.efternavn;
+      const nj = kraev(await kald("POST", "/v1/betaTesters", {
         data: {
           type: "betaTesters",
-          attributes: { email: p.mail, firstName: p.fornavn, lastName: p.efternavn },
+          attributes: attr,
           relationships: { betaGroups: { data: [{ type: "betaGroups", id: g.id }] } },
         },
       }), [201], "POST /v1/betaTesters");
-      console.log("tester " + p.fornavn + " er oprettet og lagt i " + GRUPPE + " (Apple sender invitationen)");
+      console.log(hvem + " · beta-tester-id " + nj.data.id + " · er oprettet og lagt i " + GRUPPE + " (Apple sender invitationen)");
     }
   }
+  console.log("testere i " + GRUPPE + " nu: " + (await antalTestere(g.id)).total);
 }
 
 const HANDLINGER = { "status": status, "opret-gruppe": opretGruppe, "oplysninger": oplysninger,

@@ -311,7 +311,7 @@ const LOGO = '<div class="topbar"><span class="brand"><img class="brandlogo" src
 // Alt gemmes lokalt under tp-*. Der findes ingen backend endnu; når Spor 2
 // kommer, skiftes disse fire kald ud — resten af appen skal ikke røres.
 // ⭐⭐ v5.1.0 · BOKS_TING er det, der følger træneren til skyen — låst.
-var BOKS_TING = ["truppen","grupper","vurderinger","fokuspunkter","evalueringer","ugefokus","stigehold","noegler","srvnavne","traenernavn"];
+var BOKS_TING = ["truppen","grupper","vurderinger","fokuspunkter","evalueringer","ugefokus","stigehold","noegler","srvnavne","traenernavn","spejlpriv"];   /* v6.14.0 · spejlets private nøgle bor i boksen */
 const lager = {
   hent: (n, standard) => { try { const v = localStorage.getItem("tp-" + n);
     return v === null ? standard : JSON.parse(v); } catch (e) { return standard; } },
@@ -358,6 +358,111 @@ async function boksAab(str){
     return JSON.parse(new TextDecoder().decode(kl));
   } catch (_e) { return null; }
 }
+// ═══════════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v6.14.0 · SPEJLET (vej A, valgt 21/9). Nicolai 29/9: «så skal vi have lavet spejlet til Carsten - asap.»
+//   Giveren pakker sin boks-nøgle ind til modtagerens OFFENTLIGE nøgle (ECDH P-256, flygtigt par, AES-GCM). Kun
+//   modtagerens PRIVATE nøgle — som bor i hans egen boks — kan pakke den ud. Serveren ser to chiffertekster.
+//   Modtageren ser giverens tilstand LÆS-KUN, i hukommelsen (S.spejl.aaben) — aldrig i tp-*, aldrig i S.truppen.
+// ═══════════════════════════════════════════════════════════════════════
+var _spejlKurve = { name: "ECDH", namedCurve: "P-256" };
+async function spejlNoeglepar(){
+  var priv = lager.hent("spejlpriv", null); if (priv && priv.d && priv.pub) return priv;
+  var kp = await crypto.subtle.generateKey(_spejlKurve, true, ["deriveKey"]);
+  var jwk = await crypto.subtle.exportKey("jwk", kp.privateKey);
+  var raa = new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey));
+  priv = { d: jwk.d, x: jwk.x, y: jwk.y, pub: tilB64(raa) };
+  lager.gem("spejlpriv", priv);   // BOKS_TING → boksen sendes igen om to sekunder
+  return priv;
+}
+async function spejlPakInd(pubB64){
+  var bn = lager.hent("boksnoegle", ""); if (!bn) return null;
+  var deres = await crypto.subtle.importKey("raw", fraB64(pubB64), _spejlKurve, false, []);
+  var eph = await crypto.subtle.generateKey(_spejlKurve, true, ["deriveKey"]);
+  var k = await crypto.subtle.deriveKey({ name: "ECDH", public: deres }, eph.privateKey, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
+  var iv = crypto.getRandomValues(new Uint8Array(12));
+  var ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, k, fraB64(bn));
+  var ephRaa = new Uint8Array(await crypto.subtle.exportKey("raw", eph.publicKey));
+  return "v1s." + tilB64(ephRaa) + "." + tilB64(iv) + "." + tilB64(new Uint8Array(ct));
+}
+async function spejlPakUd(konvolut, boks){
+  var priv = lager.hent("spejlpriv", null); if (!priv || !priv.d) return null;
+  var d = String(konvolut || "").split("."); if (d.length !== 4 || d[0] !== "v1s") return null;
+  var b = String(boks || "").split("."); if (b.length !== 3 || b[0] !== "v1t") return null;
+  try {
+    var min = await crypto.subtle.importKey("jwk", { kty: "EC", crv: "P-256", d: priv.d, x: priv.x, y: priv.y }, _spejlKurve, false, ["deriveKey"]);
+    var eph = await crypto.subtle.importKey("raw", fraB64(d[1]), _spejlKurve, false, []);
+    var k = await crypto.subtle.deriveKey({ name: "ECDH", public: eph }, min, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    var raa = await crypto.subtle.decrypt({ name: "AES-GCM", iv: fraB64(d[2]) }, k, fraB64(d[3]));
+    var bk = await crypto.subtle.importKey("raw", raa, { name: "AES-GCM" }, false, ["decrypt"]);
+    var kl = await crypto.subtle.decrypt({ name: "AES-GCM", iv: fraB64(b[1]) }, bk, fraB64(b[2]));
+    var t = JSON.parse(new TextDecoder().decode(kl));
+    return (t && t.format === "SAI-TRAENER-BOKS") ? t : null;
+  } catch (_e) { return null; }
+}
+// modtageren: den offentlige nøgle lægges på kontoen én gang (og igen, hvis parret er nyt)
+async function spejlSendPub(){
+  if (!lager.hent("boksnoegle", "") || !(S.konto || lager.hent("konto", null))) return false;
+  var priv = await spejlNoeglepar();
+  if (lager.hent("spejlpub-sendt", "") === priv.pub) return true;
+  var r = await kontoKald("spejl-pub", { pub: priv.pub });
+  if (r && !r.fejl && r.gemt) { lager.gem("spejlpub-sendt", priv.pub); return true; }
+  return false;
+}
+async function spejlHentListe(){
+  if (S.spejl.henter) return;
+  S.spejl.henter = true; S.spejl.fejl = null; try { render(); } catch (_e) {}
+  try { await spejlSendPub(); } catch (_e) {}
+  var r = await kontoKald("spejl-liste", {});
+  S.spejl.henter = false;
+  if (!r || r.fejl) { S.spejl.fejl = (r && r.fejl === "netvaerk") ? "Ingen forbindelse — prøv igen." : "Listen kunne ikke hentes."; }
+  else { S.spejl.liste = { modtaget: r.modtaget || [], givet: r.givet || [] }; }
+  try { render(); } catch (_e) {}
+}
+// giveren: «Del min skærm» — pakker boks-nøglen ind til modtageren og husker, hvem der deles med (til genpakning)
+async function spejlDel(til, stille){
+  til = String(til || "").trim().toLowerCase();
+  if (!til) { S.spejl.fejl = "Skriv brugernavnet på den, der skal se din skærm."; render(); return; }
+  if (!lager.hent("boksnoegle", "")) { S.spejl.fejl = "Tænd skyen først — så kan din skærm deles."; render(); return; }
+  S.spejl.henter = true; S.spejl.fejl = null; S.spejl.besked = null; if (!stille) render();
+  var m = await kontoKald("spejl-modtager", { brugernavn: til });
+  if (!m || m.fejl || !m.pub) { S.spejl.henter = false; S.spejl.fejl = (m && m.fejl === "ingen-modtager") ? "Vi kender ingen, der kan modtage et spejl på det brugernavn." : (m && m.fejl === "dig-selv") ? "Du kan ikke dele med dig selv." : "Ingen forbindelse — prøv igen."; render(); return; }
+  var konvolut = null; try { konvolut = await spejlPakInd(m.pub); } catch (_e) {}
+  if (!konvolut) { S.spejl.henter = false; S.spejl.fejl = "Konvolutten kunne ikke pakkes på denne telefon."; render(); return; }
+  var r = await kontoKald("spejl-giv", { til: til, konvolut: konvolut });
+  S.spejl.henter = false;
+  if (!r || r.fejl || !r.delt) { S.spejl.fejl = "Delingen kunne ikke gemmes — prøv igen."; render(); return; }
+  lager.gem("spejl-til", til); lager.gem("spejl-givet-med", lager.hent("boksnoegle", ""));
+  S.spejl.besked = "Din skærm deles nu med " + (m.navn || til) + ".";
+  S.spejl.liste = null; render(); spejlHentListe();
+}
+// efter et kodeordsskifte er boks-nøglen ny og konvolutten død — der pakkes ind igen af sig selv
+function spejlVedligehold(){
+  var til = lager.hent("spejl-til", ""); if (!til) return;
+  var bn = lager.hent("boksnoegle", ""); if (!bn || lager.hent("spejl-givet-med", "") === bn) return;
+  spejlDel(til, true).catch(function(){});
+}
+async function spejlStop(){
+  var til = lager.hent("spejl-til", ""); if (!til) return;
+  S.spejl.henter = true; S.spejl.fejl = null; render();
+  var r = await kontoKald("spejl-stop", { til: til });
+  S.spejl.henter = false;
+  if (!r || r.fejl) { S.spejl.fejl = "Delingen kunne ikke stoppes — prøv igen."; render(); return; }
+  lager.gem("spejl-til", ""); lager.gem("spejl-givet-med", "");
+  S.spejl.besked = "Delingen er stoppet."; S.spejl.liste = null; render(); spejlHentListe();
+}
+// modtageren: hent, pak ud, vis — kun i hukommelsen
+async function spejlAabn(fra){
+  if (S.spejl.aabner) return;
+  S.spejl.aabner = fra; S.spejl.fejl = null; render();
+  var r = await kontoKald("spejl-hent", { fra: fra });
+  if (!r || r.fejl) { S.spejl.aabner = null; S.spejl.fejl = (r && r.fejl === "ingen-deling") ? "Den træner deler ikke sin skærm med dig." : "Ingen forbindelse — prøv igen."; render(); return; }
+  if (!r.boks) { S.spejl.aabner = null; S.spejl.fejl = (r.navn || fra) + " har ikke sendt noget til skyen endnu."; render(); return; }
+  var t = await spejlPakUd(r.konvolut, r.boks);
+  S.spejl.aabner = null;
+  if (!t) { S.spejl.fejl = "Spejlet kunne ikke låses op på denne telefon — bed " + (r.navn || fra) + " dele igen."; render(); return; }
+  S.spejl.aaben = { fra: fra, navn: r.navn || fra, klub: r.klub || "", stempel: r.stempel, t: t };
+  render();
+}
 function boksTilstand(){
   var ud = { format: "SAI-TRAENER-BOKS", version: 1 };
   BOKS_TING.forEach(function(n){ ud[n] = lager.hent(n, null); });
@@ -383,6 +488,7 @@ async function boksSend(){
     _boksSender = false;
     if (r && !r.fejl && r.gemt) {
       lager.gem("boks-sendt", st.lokal); S.boksStatus = { ok: true, tid: st.lokal, bytes: r.bytes || laast.length };
+      try { spejlVedligehold(); } catch (_e) {}   /* v6.14.0 · et nyt kodeord → konvolutten pakkes ind igen */
     } else if (r && r.fejl === "nyere-i-skyen") {
       S.boksStatus = { konflikt: true, skyen: r.stempel || null };
     } else if (r && r.fejl === "ingen-konto") {
@@ -822,6 +928,7 @@ let S = {
   //   så ingen bliver smidt ud af en opdatering.
   doer: lager.hent("doer", null),
   konto: lager.hent("konto", null),
+  spejl: { liste: null, henter: false, fejl: null, besked: null, aaben: null, aabner: null },   /* v6.14.0 */
   adgangLukket: false, lukNyNoegle: "", lukKode: "", lukSender: false, lukBesked: null,
   lukVisKode: false,
   // ⭐ v4.4.0 · KLUBSKIFTET. `skiftFund` er serverens svar på den nye
@@ -1022,7 +1129,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.13.0 \u00b7 26. september 2026";
+const VERSION = "v6.14.0 \u00b7 29. september 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1631,6 +1738,29 @@ Object.assign(EN, {   /* v6.10.0 · kortet */
   "Åbn": "Open", "spillerens navn": "the player's name",
   "{x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 SPILLERE.": "{x} calls their own group «{x}» — put {x} in a group under 👥 PLAYERS.",
   "{x} er lagt i truppen ✓ · {x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 SPILLERE.": "{x} has been added to the squad ✓ · {x} calls their own group «{x}» — put {x} in a group under 👥 PLAYERS."
+});
+Object.assign(EN, {   /* v6.14.0 · Spejlet */
+  "Spejlet": "The mirror", "🪞 Spejlet": "🪞 The mirror", "din skærm deles med {x}": "your screen is shared with {x}",
+  "1 træner deler med dig": "1 coach shares with you", "{n} trænere deler med dig": "{n} coaches share with you", "del din skærm — eller se en andens": "share your screen — or see someone else's",
+  "🪞 DEL MIN SKÆRM": "🪞 SHARE MY SCREEN",
+  "Den, du deler med, kan se din trup, dine grupper, vurderinger og evalueringer — som på din egen skærm, men kan ikke ændre noget. Det låses op på modtagerens telefon — vi kan stadig ikke læse det.": "Whoever you share with can see your squad, groups, ratings and evaluations — as on your own screen, but cannot change anything. It is unlocked on their phone — we still cannot read it.",
+  "Deling kræver en konto — log ind under 👤 DIN KONTO.": "Sharing needs an account — log in under 👤 YOUR ACCOUNT.",
+  "Tænd skyen først under 👤 DIN KONTO — så kan din skærm deles.": "Turn on the cloud first under 👤 YOUR ACCOUNT — then your screen can be shared.",
+  "✓ Din skærm deles med {x}.": "✓ Your screen is shared with {x}.", "⏹ Stop delingen": "⏹ Stop sharing", "Del": "Share", "brugernavn": "username",
+  "Din skærm deles nu med {x}.": "Your screen is now shared with {x}.", "Delingen er stoppet.": "Sharing has stopped.",
+  "Skriv brugernavnet på den, der skal se din skærm.": "Type the username of the person who should see your screen.",
+  "Tænd skyen først — så kan din skærm deles.": "Turn on the cloud first — then your screen can be shared.",
+  "Vi kender ingen, der kan modtage et spejl på det brugernavn.": "Nobody with that username can receive a mirror.", "Du kan ikke dele med dig selv.": "You cannot share with yourself.",
+  "Konvolutten kunne ikke pakkes på denne telefon.": "The envelope could not be sealed on this phone.", "Delingen kunne ikke gemmes — prøv igen.": "Sharing could not be saved — try again.",
+  "Delingen kunne ikke stoppes — prøv igen.": "Sharing could not be stopped — try again.", "Listen kunne ikke hentes.": "The list could not be loaded.",
+  "👁 DELER MED DIG": "👁 SHARING WITH YOU", "Log ind og tænd skyen — din nøgle til spejlet bor i den.": "Log in and turn on the cloud — your mirror key lives in it.",
+  "Listen er ikke hentet.": "The list has not been loaded.", "↻ Hent": "↻ Load", "Ingen deler deres skærm med dig endnu.": "Nobody shares their screen with you yet.",
+  "{x} · delt {x}": "{x} · shared {x}", "Se spejlet": "See the mirror", "Den træner deler ikke sin skærm med dig.": "That coach does not share their screen with you.",
+  "{x} har ikke sendt noget til skyen endnu.": "{x} has not sent anything to the cloud yet.", "Spejlet kunne ikke låses op på denne telefon — bed {x} dele igen.": "The mirror could not be unlocked on this phone — ask {x} to share again.",
+  "🪞 SPEJL AF {x}": "🪞 MIRROR OF {x}", "{x} · gemt {x} · læs-kun": "{x} · saved {x} · read-only", "{x} · læs-kun": "{x} · read-only", "Luk spejlet": "Close the mirror",
+  "👥 TRUPPEN · {n}": "👥 THE SQUAD · {n}", "Truppen er tom.": "The squad is empty.", "· 🔥 stigen til": "· 🔥 ladder on",
+  "⚡ VURDERINGER · {n}": "⚡ RATINGS · {n}", "Ugens fokus: {x}": "Focus of the week: {x}", "Ugens fokus: —": "Focus of the week: —",
+  "📋 EVALUERINGER · {n}": "📋 EVALUATIONS · {n}", "Ingen evalueringer endnu.": "No evaluations yet."
 });
 var _ENr = {}, _ENx = [];
 (function(){
@@ -2669,7 +2799,7 @@ function bundNav(){
 
 function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emoji som flisen på HJEM */
   if (tab === "indst" && S.indstVisning) return { nye: "\ud83d\udce5 Nye spillere", forbindelse: "\u2699\ufe0f Forbindelse", sky: "\u2601\ufe0f Skyen",
-    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", noegler: "\ud83d\udd11 Klubbens n\u00f8gler" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
+    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", noegler: "\ud83d\udd11 Klubbens n\u00f8gler", spejl: "\ud83e\ude9e Spejlet" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen", udstil: "\ud83c\udf10 Udstil" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Spillere", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
            kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\ud83d\udcca Overblik" }[tab] || "";
@@ -3560,12 +3690,86 @@ function indstOversigt(){   /* v6.8.0 · fliserne — hver bærer sin status, s�
       'skærmen: ' + (SPROG === "en" ? "engelsk" : "dansk") + ' · evalueringer: ' + (EVALSPROG === "en" ? "engelsk" : "dansk"), "dev-kant-staal") +
     prgFlise("indst-vis", "streak", "🔥", "Streak",
       _stige ? _stige + (_stige === 1 ? ' gruppe har stigen til' : ' grupper har stigen til') : 'stigen er fra for alle grupper', "dev-kant-staal") +
+    prgFlise("indst-vis", "spejl", "\ud83e\ude9e", "Spejlet", spejlFliseStatus(), lager.hent("spejl-til", "") ? "dev-kant-is" : "dev-kant-staal") +   /* v6.14.0 */
     '</div>';
   if (S.syncBesked) h += '<p class="lille" style="margin:10px 0 0;color:' + (S.syncBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
   return h;
 }
+/* ⭐⭐⭐ v6.14.0 · 🪞 SPEJLET — rummet og læs-kun-visningen */
+function spejlFliseStatus(){
+  var til = lager.hent("spejl-til", "");
+  if (til) return 'din skærm deles med ' + esc(til);
+  var l = S.spejl && S.spejl.liste;
+  if (l && l.modtaget.length) return l.modtaget.length === 1 ? '1 træner deler med dig' : l.modtaget.length + ' trænere deler med dig';
+  return 'del din skærm — eller se en andens';
+}
+function indstSpejl(){
+  if (S.spejl.aaben) return spejlVisning(S.spejl.aaben);
+  var _bn = !!lager.hent("boksnoegle", ""), _k = S.konto || lager.hent("konto", null), _til = lager.hent("spejl-til", ""), l = S.spejl.liste;
+  var h = '<div class="kort" style="border-left:3px solid ' + (_til ? 'var(--is)' : 'var(--grus)') + '">' +
+    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🪞 DEL MIN SKÆRM</div>' +
+    '<p class="lille" style="margin:6px 0 8px">Den, du deler med, kan se din trup, dine grupper, vurderinger og evalueringer — som på din egen skærm, men kan ikke ændre noget. Det låses op på modtagerens telefon — vi kan stadig ikke læse det.</p>';
+  if (!_k) h += '<p class="lille" style="margin:0;color:var(--guld)">Deling kræver en konto — log ind under 👤 DIN KONTO.</p>';
+  else if (!_bn) h += '<p class="lille" style="margin:0;color:var(--guld)">Tænd skyen først under 👤 DIN KONTO — så kan din skærm deles.</p>';
+  else if (_til) h += '<p class="lille" style="margin:0 0 6px;color:var(--vundet)">✓ Din skærm deles med ' + esc(_til) + '.</p>' +
+    '<div class="raekke"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' + (S.spejl.henter ? ' disabled' : '') + ' data-act="spejl-stop">⏹ Stop delingen</button></div>';
+  else h += '<div style="display:flex;gap:6px"><input class="felt" style="flex:1;min-width:0" data-felt="spejlTil" value="' + esc(S.spejlTil || "") + '" placeholder="brugernavn" autocapitalize="off" spellcheck="false" autocomplete="off">' +
+    '<button class="knap" style="flex:none;padding:8px 12px;background:var(--grus)"' + (S.spejl.henter ? ' disabled' : '') + ' data-act="spejl-del">' + (S.spejl.henter ? '⏳' : 'Del') + '</button></div>';
+  if (S.spejl.besked) h += '<p class="lille" style="margin:6px 0 0;color:var(--vundet)">' + esc(S.spejl.besked) + '</p>';
+  if (S.spejl.fejl) h += '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">⚠️ ' + esc(S.spejl.fejl) + '</p>';
+  h += '</div>';
+  h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">👁 DELER MED DIG</div>';
+  if (!_k || !_bn) h += '<p class="lille" style="margin:6px 0 0;color:var(--guld)">Log ind og tænd skyen — din nøgle til spejlet bor i den.</p>';
+  else if (S.spejl.henter && !l) h += '<p class="lille" style="margin:6px 0 0">⏳ Henter…</p>';
+  else if (!l) h += '<p class="lille" style="margin:6px 0 0">Listen er ikke hentet.</p><div class="raekke" style="margin-top:6px"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="spejl-liste">↻ Hent</button></div>';
+  else if (!l.modtaget.length) h += '<p class="lille" style="margin:6px 0 0">Ingen deler deres skærm med dig endnu.</p>';
+  else l.modtaget.forEach(function(m){
+    var bn = String(m.brugernavn || "");
+    h += '<div class="raekke" style="margin-top:8px;align-items:center;gap:8px"><span style="flex:1;min-width:0"><b>' + esc(m.navn || bn) + '</b><br><span class="lille">' + esc(m.klub || "") + (m.stempel ? ' · delt ' + esc(boksTid(m.stempel)) : '') + '</span></span>' +
+      '<button class="knap" style="flex:none;padding:8px 12px;background:var(--grus)"' + (S.spejl.aabner ? ' disabled' : '') + ' data-act="spejl-aabn" data-v="' + esc(bn) + '">' + (S.spejl.aabner === bn ? '⏳' : 'Se spejlet') + '</button></div>';
+  });
+  h += '</div>';
+  return h;
+}
+function spejlVisning(a){
+  var t = a.t || {}, trup = t.truppen || [], grupper = t.grupper || [], vurd = t.vurderinger || [], fp = t.fokuspunkter || {}, ev = t.evalueringer || {}, uf = t.ugefokus || {}, stige = t.stigehold || [];
+  var punkt = {}; Object.keys(KATEGORIER).forEach(function(k){ (KATEGORIER[k] || []).forEach(function(p){ punkt[p.id] = p.navn; }); });
+  var uge = {}; UGEOMRAADER.forEach(function(u){ uge[u.id] = u; });
+  var raekke = [], gr = {};
+  grupper.forEach(function(g){ if (g && g.navn && !gr[g.navn]) { gr[g.navn] = { aargang: g.aargang || "", spillere: [] }; raekke.push(g.navn); } });
+  trup.forEach(function(p){ var g = String(p.gruppe || "").trim(); if (g === "Mit hold") g = ""; if (!g) g = UDEN_GRUPPE; if (!gr[g]) { gr[g] = { aargang: "", spillere: [] }; raekke.push(g); } gr[g].spillere.push(p.navn); });
+  raekke = raekke.filter(function(g){ return g !== UDEN_GRUPPE; }).concat(gr[UDEN_GRUPPE] ? [UDEN_GRUPPE] : []);
+  var senest = {}; vurd.forEach(function(v){ if (!v || !v.spiller || !OMRNAVN[v.omraade] || typeof v.score !== "number") return; var k = v.spiller + "|" + v.omraade; if (!senest[k] || String(senest[k].dato) < String(v.dato)) senest[k] = v; });
+  var h = '<div class="kort" style="border-left:3px solid var(--is)"><div style="display:flex;align-items:center;gap:8px">' +
+    '<span style="flex:1;min-width:0"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🪞 SPEJL AF ' + esc(String(a.navn || a.fra).toUpperCase()) + '</div>' +
+    '<span class="lille">' + esc(a.klub || "") + (a.stempel ? ' · gemt ' + esc(boksTid(a.stempel)) : '') + ' · læs-kun</span></span>' +
+    '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="spejl-luk">Luk spejlet</button></div></div>';
+  h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">👥 TRUPPEN · ' + trup.length + '</div>';
+  if (!trup.length) h += '<p class="lille" style="margin:6px 0 0">Truppen er tom.</p>';
+  raekke.forEach(function(g){ var x = gr[g]; h += '<p style="margin:8px 0 2px;font-weight:800">' + esc(g) + (x.aargang ? ' <span class="lille">· ' + esc(x.aargang) + '</span>' : '') + (stige.indexOf(g) >= 0 ? ' <span class="lille">· 🔥 stigen til</span>' : '') + '</p>' +
+    '<p class="lille" style="margin:0">' + (x.spillere.length ? x.spillere.map(esc).join(' · ') : '—') + '</p>'; });
+  h += '</div>';
+  var uk = ugeNoegle(), ufNu = uf[uk] ? uge[uf[uk]] : null;
+  h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">⚡ VURDERINGER · ' + vurd.length + '</div>' +
+    '<p class="lille" style="margin:6px 0 0">Ugens fokus: ' + (ufNu ? esc(ufNu.ikon + ' ' + ufNu.navn) : '—') + '</p>';
+  trup.forEach(function(p){
+    var dele = []; DATA.omraader.forEach(function(o){ var v = senest[p.navn + "|" + o.id]; if (v) dele.push(o.emoji + ' ' + v.score + ' <span class="lille">(' + esc(boksTid(v.dato).split(' ')[0] || String(v.dato).slice(0, 10)) + ')</span>'); });
+    var mine = (fp[p.navn] || []).map(function(id){ return punkt[id] || id; });
+    if (!dele.length && !mine.length) return;
+    h += '<p style="margin:8px 0 0;font-weight:800">' + esc(p.navn) + '</p>' + (dele.length ? '<p class="lille" style="margin:0">' + dele.join(' · ') + '</p>' : '') +
+      (mine.length ? '<p class="lille" style="margin:0">🎯 ' + mine.map(esc).join(' · ') + '</p>' : '');
+  });
+  h += '</div>';
+  var evNavne = Object.keys(ev).filter(function(k){ return ev[k] && ev[k].tekst; });
+  h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">📋 EVALUERINGER · ' + evNavne.length + '</div>';
+  if (!evNavne.length) h += '<p class="lille" style="margin:6px 0 0">Ingen evalueringer endnu.</p>';
+  evNavne.forEach(function(k){ h += '<p style="margin:8px 0 0;font-weight:800">' + esc(k) + ' <span class="lille">· ' + esc(String(ev[k].dato || "")) + '</span></p><p class="lille" style="margin:0;white-space:pre-wrap">' + esc(String(ev[k].tekst)) + '</p>'; });
+  h += '</div>';
+  return h;
+}
 function traenerIndstillinger(){   /* v6.8.0 · fliser først, undervisningen bagefter — som traenerProgram() */
   if (!S.indstVisning) return indstOversigt();
+  if (S.indstVisning === "spejl") return indstSpejl();   /* v6.14.0 */
   if (S.indstVisning === "nye") return indstNye();
   if (S.indstVisning === "forbindelse") return indstForbindelse();
   if (S.indstVisning === "sky") return indstSkyen();
@@ -4118,8 +4322,15 @@ document.addEventListener("click", function(e){
   // ══ v6.0.0 · PROGRAMMET ═══════════════════════════════════════════════
   // ══ v6.3.0 · PROGRAM SOM FLISER + IMPORTEN ═══════════════════════════════
   // ══ v6.8.0 · INDSTILLINGER SOM FLISER ═══════════════════════════════════
+  /* v6.14.0 · spejlet — ingen af disse rører tp-* ud over spejl-til / spejl-givet-med / spejlpub-sendt / spejlpriv */
+  if (act==="spejl-del"){ spejlDel(S.spejlTil || "").catch(function(){ S.spejl.henter = false; S.spejl.fejl = "Ingen forbindelse \u2014 pr\u00f8v igen."; render(); }); return; }
+  if (act==="spejl-stop"){ spejlStop().catch(function(){ S.spejl.henter = false; render(); }); return; }
+  if (act==="spejl-liste"){ spejlHentListe(); return; }
+  if (act==="spejl-aabn"){ spejlAabn(String(v || "")).catch(function(){ S.spejl.aabner = null; S.spejl.fejl = "Ingen forbindelse \u2014 pr\u00f8v igen."; render(); }); return; }
+  if (act==="spejl-luk"){ S.spejl.aaben = null; render(); return; }
   if (act==="indst-vis"){   /* v6.8.0 · tom v = tilbage til fliserne */
     S.indstVisning = v || null;
+    if (S.indstVisning === "spejl") { S.spejl.aaben = null; S.spejl.fejl = null; S.spejl.besked = null; render(); if (!S.spejl.liste) spejlHentListe(); return; }   /* v6.14.0 */
     if (S.indstVisning === "nye" && !S.tilmHentet && !S.tilmHenter) { render(); hentTilmeldinger(); return; }
     render(); }
   if (act==="prg-visning"){

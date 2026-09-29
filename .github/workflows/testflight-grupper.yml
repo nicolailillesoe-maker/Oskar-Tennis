@@ -1,0 +1,56 @@
+# StreakTennis · TestFlight-værktøjet (ordre-290926-03 · 29/9-2026)
+# Beta-grupper, beta-review-oplysninger, byg og testere gennem App Store Connect API'et — samme hemmeligheder som ios.yml, ingen nye.
+# Kør «status» FØRST, så intet oprettes to gange. Værktøjet kan ikke fjerne noget (ingen DELETE) — det gør Nicolai i App Store Connect.
+# Nøglen og token'et skrives aldrig i loggen: inputs og hemmeligheder går ind som miljøvariabler, ikke i kommandolinjen.
+# pull_request: når værktøjet selv ændres, kører KUN «status» (læser, ændrer intet) — så det er målt grønt før merge.
+name: testflight-grupper
+on:
+  workflow_dispatch:
+    inputs:
+      handling:
+        description: "Handling"
+        required: true
+        type: choice
+        options: [status, opret-gruppe, oplysninger, tilfoej-byg, send-review, tilfoej-testere]
+        default: status
+      gruppe:
+        description: "Gruppens navn (fx Piloten)"
+        required: false
+        default: "Piloten"
+      byg:
+        description: "Byggenummer (tilfoej-byg · send-review), fx 33"
+        required: false
+        default: ""
+      testere:
+        description: "tilfoej-testere: «Fornavn Efternavn <mail>», flere adskilt af ;"
+        required: false
+        default: ""
+      tekst:
+        description: "tilfoej-byg: What to Test (dansk)"
+        required: false
+        default: ""
+  pull_request:
+    paths:
+      - ".github/workflows/testflight-grupper.yml"
+      - ".github/scripts/testflight-grupper.mjs"
+permissions:
+  contents: read
+jobs:
+  koer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: TestFlight · ${{ github.event.inputs.handling || 'status' }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          HANDLING: ${{ github.event.inputs.handling || 'status' }}
+          GRUPPE: ${{ github.event.inputs.gruppe || 'Piloten' }}
+          BYG: ${{ github.event.inputs.byg }}
+          TESTERE: ${{ github.event.inputs.testere }}
+          TEKST: ${{ github.event.inputs.tekst }}
+        run: node .github/scripts/testflight-grupper.mjs

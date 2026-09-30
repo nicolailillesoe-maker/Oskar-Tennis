@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.9.2 · 28. september 2026";
+const VERSION = "v5.9.3 · 30. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -5817,7 +5817,7 @@ const A = {
   ejerHent: async () => {
     if (S.ejerHenter) return;
     S.ejerHenter = true; S.ejerBesked = null; render();
-    const r = await A.portKald("liste", {});
+    const r = await A.portKald("liste", S.gaveAaben ? { alle: true } : {});   /* ⭐ v5.9.3 · en åben gaveliste beholder sine spillere */
     S.ejerHenter = false;
     if (!r.fejl) S.ejerKoe = r;
     render();
@@ -6032,8 +6032,17 @@ const A = {
   // ⭐ GAVEN. Listen hentes med `alle:true` — uden den kan ejeren kun se
   //   dem, der VENTER, og ikke den spiller, gaven skal gives til.
   gaveTilbageSpoerg: (v) => { S.gaveTilbage = (S.gaveTilbage === v) ? null : (v || null); S.ejerBesked = null; render(); },   // ⭐ v4.121.0
+  // ⭐ v5.9.3 · «Ret» åbner ÉN række (en anden «Ret» lukker den første) · «mere…» viser BETALT i den åbne række
+  gaveRet: (v) => {
+    S.gaveRet = (S.gaveRet === v) ? null : (v || null); S.betaltVisH = null; S.gaveTilbage = null; render();
+    // den åbne række rulles helt ind på skærmen ÉN gang, her — så står den stille, mens man trykker i den (bundmenuen er regnet med)
+    if (S.gaveRet) { try { const _e = document.querySelector('[data-gaveraekke="' + String(S.gaveRet).replace(/[^a-z0-9]/gi, "") + '"]'); if (_e) _e.scrollIntoView({ block: "nearest" }); } catch (_e2) {} }
+  },
+  betaltVis: (v) => { S.betaltVisH = (S.betaltVisH === v) ? null : (v || null); render(); },
   gaveAabn: async () => {
-    S.gaveAaben = !S.gaveAaben; S.ejerBesked = null; S.gaveTilbage = null; render();
+    S.gaveAaben = !S.gaveAaben; S.ejerBesked = null; S.gaveTilbage = null;
+    S.gaveOrden = null; S.gaveRet = null; S.gaveKvit = null; S.betaltVisH = null;   /* ⭐ v5.9.3 · rækkefølgen fryses på ny, når kortet åbnes */
+    render();
     if (S.gaveAaben) { const r = await A.portKald("liste", { alle: true }); if (r && !r.fejl) S.ejerKoe = r; render(); }
   },
   // v er "haandtag|plan"
@@ -6045,12 +6054,12 @@ const A = {
     if (d.length !== 2) return;
     const EN = S.sprog === "en";
     const mdr = S.gaveMdr[d[0]] || 1;   /* «ubegrænset» findes ikke for en betaling — mindst 1 md */
-    S.betaltSender = d[0]; S.ejerBesked = null; render();
+    S.betaltSender = d[0]; S.ejerBesked = null; S.gaveKvit = null; render();
     const r = await A.portKald("betalt", { h: d[0], plan: d[1], maaneder: mdr });
     S.betaltSender = null;
-    S.ejerBesked = (r && r.fejl)
+    S.gaveKvit = Object.assign({ h: d[0] }, (r && r.fejl)
       ? { fejl: true, t: r.t || (EN ? "Could not be registered." : "Kunne ikke registreres.") }
-      : { fejl: false, t: (EN ? "Paid: " : "Betalt: ") + (r.fornavn || "") + " \u2192 " + _planNavn(d[1], EN) + (r.betalt_til ? (EN ? " · until " : " · til ") + String(r.betalt_til).slice(0, 10) : "") };
+      : { fejl: false, t: (EN ? "Paid: " : "Betalt: ") + (r.fornavn || "") + " \u2192 " + _planNavn(d[1], EN) + (r.betalt_til ? (EN ? " · until " : " · til ") + String(r.betalt_til).slice(0, 10) : "") });   /* ⭐ v5.9.3 · i rækken */
     const r2 = await A.portKald("liste", { alle: true });
     if (r2 && !r2.fejl) S.ejerKoe = r2;
     render();
@@ -6059,17 +6068,19 @@ const A = {
     const d = String(v || "").split("|");
     if (d.length !== 2) return;
     const EN = S.sprog === "en";
-    S.gaveSender = d[0]; S.ejerBesked = null; render();
+    S.gaveSender = d[0]; S.ejerBesked = null; S.gaveKvit = null; render();
     // ⭐ v4.136.0 · tidsbegrænset gave: 0 = ubegrænset, ellers 1/3/6/12 måneder (ejer-port v8)
     const r = await A.portKald("gave", { h: d[0], plan: d[1], maaneder: S.gaveMdr[d[0]] || 0 });
     S.gaveSender = null;
     // ⭐ v4.121.0 · kvitteringen skal sige DET, DER SKETE. «Givet: Signe →
     //   ingen» var vrøvl. Og planens navn skrives, som skærmen kalder den.
-    S.ejerBesked = (r && r.fejl)
+    // ⭐ v5.9.3 · kvitteringen står I rækken (S.gaveKvit) — ikke nederst i kortet. En gave, der er taget tilbage, lukker rækken.
+    S.gaveKvit = Object.assign({ h: d[0] }, (r && r.fejl)
       ? { fejl: true, t: r.t || (EN ? "Could not be changed." : "Kunne ikke ændres.") }
       : { fejl: false, t: (r && r.tilbage)
           ? (EN ? "Taken back: " : "Taget tilbage: ") + (r.fornavn || "") + " \u2192 " + _planNavn("gaest", EN)
-          : (EN ? "Given: " : "Givet: ") + (r.fornavn || "") + " \u2192 " + _planNavn(d[1], EN) + (r.gave_til ? (EN ? " · until " : " · til ") + String(r.gave_til).slice(0, 10) : "") };
+          : (EN ? "Given: " : "Givet: ") + (r.fornavn || "") + " \u2192 " + _planNavn(d[1], EN) + (r.gave_til ? (EN ? " · until " : " · til ") + String(r.gave_til).slice(0, 10) : "") });
+    if (r && !r.fejl && r.tilbage) S.gaveRet = null;
     S.gaveTilbage = null;
     const r2 = await A.portKald("liste", { alle: true });
     if (r2 && !r2.fejl) S.ejerKoe = r2;
@@ -12341,10 +12352,7 @@ function _tegn() {
         if (S.ejerHenter && !_k) {
           _ekrop = '<p class="lille" style="margin:0">\u23f3 ' + (EN?"loading\u2026":"henter\u2026") + '</p>';
         } else if (!_venter.length) {
-          _ekrop = '<p class="lille" style="margin:0 0 9px">' + (EN
-            ? "Nobody is waiting right now."
-            : "Der venter ingen lige nu.") + '</p>' +
-            '<button class="knap valg" style="min-height:44px" data-a="ejerHent">' + (EN?"Refresh":"Hent igen") + '</button>';
+          _ekrop = '';   /* ⭐ v5.9.3 · køen vises KUN, når nogen venter — ingen kø siden konto v10 */
         } else {
           _venter.forEach(function(v){
             _ekrop += '<div style="padding:8px 0;border-top:1px solid var(--linje)">' +
@@ -12382,6 +12390,24 @@ function _tegn() {
             '<div class="raekke" style="margin-top:9px">' +
             '<button class="knap valg" style="min-height:44px" data-a="ejerHent">' +
             (S.ejerHenter ? "\u23f3 \u2026" : (EN ? "Refresh the list" : "Hent listen igen")) + '</button></div>';
+        }
+        // ⭐⭐⭐ v5.9.3 · 👋 NYE SPILLERE ØVERST (Nicolai 30/9: «Hvordan tolker jeg dette?» → «Yes»). Beskeden «👋 Ny spiller»
+        //   åbner SPILLERE (?gaa=port) — og den nye stod nederst under gaverne, kun hvis GRATIS ADGANG var foldet ud.
+        //   ejer-port v13 `liste` bærer ALTID `nye` (godkendte, ikke ejeren, de sidste 14 dage, nyeste først) — rækkefølgen er motorens.
+        if (_k) {
+          const _nye = Array.isArray(_k.nye) ? _k.nye : [];
+          var _nyeKrop = '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">' +
+            '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">' + (EN ? "👋 NEW PLAYERS" : "👋 NYE SPILLERE") + '</div>' +
+            '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-a="ejerHent">' + (S.ejerHenter ? "\u23f3 \u2026" : (EN ? "Refresh" : "Hent igen")) + '</button></div>';
+          if (!_nye.length) {
+            _nyeKrop += '<p class="lille" style="margin:0">' + (EN ? "No new players in the last 14 days." : "Ingen nye spillere de sidste 14 dage.") + '</p>';
+          } else {
+            _nye.forEach(function(n){
+              _nyeKrop += '<div style="padding:6px 0;border-top:1px solid var(--linje);font-size:13px;line-height:1.35"><b>' + esc(n.fornavn || "") + '</b> \u00b7 ' +
+                esc(_planNavn(n.plan, EN)) + ' \u00b7 <span style="color:var(--daempet)">' + esc(_ventet(n.oprettet)) + '</span></div>';
+            });
+          }
+          _ekrop = '<div style="margin-bottom:10px">' + _nyeKrop + '</div>' + _ekrop;
         }
         // ══════════════════════════════════════════════════════════
         // ⭐⭐⭐ v4.91.0 · KLUBBERNE ER EN EGEN FLISE (Nicolai 1/9:
@@ -12543,64 +12569,76 @@ function _tegn() {
           //   det er motorens regel, og skærmen siger det samme.
           const _g = ((_k && _k.godkendte) || []).filter(function(x){ return (x.klub || "") === "Uden klub"; });
           const _q = String(S.gaveSoeg || "").trim().toLowerCase();
-          // ⭐⭐ v4.121.0 · TO GRUPPER I STEDET FOR ÉN LISTE MED ET FILTER.
-          //   FØR: uden søgning viste panelet KUN dem, ejeren allerede havde
-          //   givet noget. Den, man oftest vil handle på — én der LIGE har
-          //   meldt sig til — var usynlig, medmindre man kendte fornavnet.
-          //   ⛔ Og indtil `ejer-port` v7 (11/9) var `givet` falsk for alle
-          //     seks gamle gaver, så listen var TOM og skrev «du har ikke
-          //     givet nogen endnu» om seks familier, der havde fået adgang.
-          const _passer = function(x){ return _q.length < 2 || String(x.fornavn || "").toLowerCase().indexOf(_q) >= 0; };
-          const _givne = _g.filter(function(x){ return !!x.givet && _passer(x); });
-          const _ikke  = _g.filter(function(x){ return !x.givet && _passer(x); });
-          const _vis = _givne.concat(_ikke);
+          // ⭐⭐⭐ v5.9.3 · KUN DINE GAVER · ÉN LINJE HVER · INTET HOPPER. Nicolai 30/9: «Det hopper rundt når jeg ændrer det og
+          //   jeg har intet overblik. I virkeligheden - så skal jeg vel kun se dem jeg har givet noget gratis…?»
+          //   Målt på v5.9.2: kvitteringen stod 1955-2055 px nede, og en gave, der blev taget tilbage, sprang y 414 → 1559.
+          //   Nu: rækkefølgen fryses, når listen er hentet (S.gaveOrden), til kortet åbnes igen · «Ret» åbner ÉN række (S.gaveRet) ·
+          //   kvitteringen står I rækken (S.gaveKvit) · 💳 BETALT bag «mere…» (S.betaltVisH). Søgefeltet finder resten — også en NY gave.
+          const _perH = {}; _g.forEach(function(x){ _perH[x.h] = x; });
+          if (!S.gaveOrden && _k && _k.godkendte) {
+            S.gaveOrden = _g.filter(function(x){ return !!x.givet; })
+              .sort(function(a, b){ return String(a.fornavn || "").localeCompare(String(b.fornavn || ""), "da"); })
+              .map(function(x){ return x.h; });
+          }
+          const _orden = (S.gaveOrden || []).slice();
+          _g.forEach(function(x){ if (x.givet && _orden.indexOf(x.h) < 0) _orden.push(x.h); });   /* en ny gave lægges nederst — intet andet flytter sig */
+          const _soeger = _q.length >= 2;
+          const _vis = _soeger
+            ? _g.filter(function(x){ return String(x.fornavn || "").toLowerCase().indexOf(_q) >= 0; })
+            : _orden.map(function(h){ return _perH[h]; }).filter(Boolean);
           _ekrop += '<p class="lille" style="margin:0 0 8px;opacity:.75">' + (EN
-            ? "Everyone <b>without a club</b>: first the ones you have given a plan, then the ones on their own. A club\u2019s plan is paid for by the club."
-            : "Alle <b>uden klub</b>: f\u00f8rst dem, du har givet en plan, derefter dem, der st\u00e5r p\u00e5 deres egen. En klubs plan betales af klubben.") + '</p>' +
-            // ⭐ v4.121.0 · princip 75: siger motoren, at listen er afkortet,
-            //   siger skærmen det med. Ellers tror ejeren, det var alle.
+            ? "Your gifts to players <b>without a club</b>. Search to give a new one."
+            : "Dine gaver til spillere <b>uden klub</b>. S\u00f8g for at give en ny.") + '</p>' +
+            // ⭐ v4.121.0 · princip 75: siger motoren, at listen er afkortet, siger skærmen det med.
             ((_k && _k.afkortet) ? '<p class="lille" style="margin:0 0 8px;color:var(--guld)">\u26a0\ufe0f ' + (EN
               ? "The list was cut off — there are more players than it can show at once."
               : "Listen blev afkortet \u2014 der er flere spillere, end den kan vise p\u00e5 \u00e9n gang.") + '</p>' : '') +
             '<input class="felt" data-felt="gaveSoeg" maxlength="40" autocapitalize="off" autocomplete="off" spellcheck="false" value="' + esc(S.gaveSoeg || "") +
               '" placeholder="' + (EN ? "find a player without a club" : "find en spiller uden klub") + '">';
           if (!_vis.length) {
-            _ekrop += '<p class="lille" style="margin:8px 0 0">' + (_q.length >= 2
+            _ekrop += '<p class="lille" style="margin:8px 0 0">' + (_soeger
               ? (EN ? "Nobody without a club by that name." : "Ingen uden klub hedder s\u00e5dan.")
-              : (EN ? "No players without a club yet." : "Der er ingen spillere uden klub endnu.")) + '</p>';
+              : (!_k || !_k.godkendte ? "\u23f3 " + (EN ? "loading\u2026" : "henter\u2026") : (EN ? "You have not given anyone a gift yet." : "Du har ikke givet nogen en gave endnu."))) + '</p>';
           } else {
-            // ⭐⭐⭐ v4.121.0 · ÉN RÆKKE, TO HISTORIER. En gave fra dig og en
-            //   spillers egen plan så ens ud i går. Nu bærer rækken, hvilken
-            //   af de to den er — og gaven kan tages tilbage.
+            const _dato = function(iso){ const d = String(iso || "").slice(0, 10).split("-"); return d.length === 3 ? (+d[2]) + "/" + (+d[1]) : String(iso || "").slice(0, 10); };
             const _raekke = function(x){
-              const _erGave = !!x.givet;
-              let r = '<div style="padding:8px 0;border-top:1px solid var(--kant)">' +
-                '<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><b style="font-size:13.5px">' + esc(x.fornavn || "") + '</b>' +
-                '<span class="lille" style="margin:0;opacity:.7">' + (EN?"now: ":"nu: ") + esc(_planNavn(x.plan, EN)) + '</span>' +
-                '<span class="lille" style="margin:0;font-weight:700;color:' + (_erGave ? "var(--guld)" : "var(--daempet)") + '">' +
-                  (_erGave ? '\ud83c\udf81 ' + (EN ? "your gift" : "din gave") + (x.givet_tid ? ' \u00b7 ' + esc(String(x.givet_tid).slice(0, 10)) : '') + (x.gave_til ? ' \u00b7 ' + (EN ? "until " : "til ") + esc(String(x.gave_til).slice(0, 10)) : '')
-                           : (x.betalt_til && String(x.betalt_til) > new Date().toISOString()
-                             ? '💳 ' + (EN ? "paid until " : "betalt til ") + esc(String(x.betalt_til).slice(0, 10))
-                             : (EN ? "own plan" : "egen plan"))) + '</span></div>' +
-                // ⭐ v4.136.0 · varigheden vælges FØR planen trykkes: ubegrænset · 1 · 3 · 6 · 12 md
-                '<div class="raekke" style="margin-top:6px;gap:4px;flex-wrap:wrap">' + [0, 1, 3, 6, 12].map(function(m){
+              const _erGave = !!x.givet, _aaben = S.gaveRet === x.h;
+              const _tilbage = !_erGave && !_soeger;   /* i den frosne liste: en gave, der er taget tilbage — rækken bliver stående */
+              const _hvad = _erGave ? (x.gave_til ? (EN ? "until " : "til ") + _dato(x.gave_til) : (EN ? "unlimited" : "ubegr\u00e6nset"))
+                : _tilbage ? (EN ? "gift taken back" : "gaven er taget tilbage")
+                : (x.betalt_til && String(x.betalt_til) > new Date().toISOString()
+                  ? "\ud83d\udcb3 " + (EN ? "paid until " : "betalt til ") + _dato(x.betalt_til) : (EN ? "own plan" : "egen plan"));
+              let r = '<div data-gaveraekke="' + esc(x.h) + '" style="padding:7px 0;border-top:1px solid var(--kant);scroll-margin:70px 0 110px">' +
+                '<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;min-width:0;font-size:13px;line-height:1.35"><b>' + esc(x.fornavn || "") + '</b> \u00b7 ' +
+                  esc(_planNavn(x.plan, EN)) + ' \u00b7 <span style="color:' + (_erGave ? "var(--guld)" : "var(--daempet)") + '">' + esc(_hvad) + '</span></span>' +
+                (_tilbage ? '' : '<button class="knap valg" style="flex:none;min-height:32px;padding:0 12px;font-size:11.5px' + (_aaben ? ";border-color:var(--guld);color:var(--guld)" : "") +
+                  '" data-a="gaveRet" data-v="' + esc(x.h) + '">' + (EN ? "Edit" : "Ret") + '</button>') + '</div>';
+              // kvitteringen står I rækken, lige under navnelinjen — der, hvor man trykkede
+              const _kv = (S.gaveKvit && S.gaveKvit.h === x.h) ? S.gaveKvit : null;
+              if (_kv) r += '<p class="lille" style="margin:4px 0 0;color:' + (_kv.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(_kv.t) + '</p>';
+              if (!_aaben || _tilbage) return r + '</div>';
+              // ⭐ v4.136.0 · varigheden vælges FØR planen trykkes: ubegrænset · 1 · 3 · 6 · 12 md
+              r += '<div class="raekke" style="margin-top:6px;gap:4px;flex-wrap:wrap">' + [0, 1, 3, 6, 12].map(function(m){
                   const valgt = (S.gaveMdr[x.h] || 0) === m;
-                  return '<button class="knap valg" style="min-height:32px;padding:0 9px;font-size:11px' + (valgt ? ";border-color:var(--guld);color:var(--guld)" : "") + '" data-a="gaveMdr" data-v="' + esc(x.h + "|" + m) + '">' + (m === 0 ? (EN ? "no end" : "ubegrænset") : m + (EN ? " mo" : " md")) + '</button>';
+                  return '<button class="knap valg" style="min-height:32px;padding:0 9px;font-size:11px' + (valgt ? ";border-color:var(--guld);color:var(--guld)" : "") + '" data-a="gaveMdr" data-v="' + esc(x.h + "|" + m) + '">' + (m === 0 ? (EN ? "no end" : "ubegr\u00e6nset") : m + (EN ? " mo" : " md")) + '</button>';
                 }).join("") + '</div>' +
                 '<div class="raekke" style="margin-top:6px">' +
                 ["gaest", "fuld", "fri"].map(function(pl){
                   return '<button class="knap valg" style="min-height:40px;font-size:12px' + (x.plan === pl ? ";border-color:var(--vundet);color:var(--vundet)" : "") + '"' +
                     (S.gaveSender === x.h ? " disabled" : "") + ' data-a="gaveSaet" data-v="' + esc(x.h + "|" + pl) + '">' +
-                    (S.gaveSender === x.h ? "\u23f3" : (pl === "gaest" ? (EN?"Basic":"Basis") : pl === "fuld" ? (EN?"Full":"Fuld") : (EN?"Free streaming":"Fri streaming"))) + '</button>';
-                }).join("") + '</div>' +
-                /* ⭐ v5.3.0 · BETALT — pengene er kommet: planen og datoen (måneder = den valgte varighed, mindst 1). ejer-port v10 `betalt`. */
-                '<div class="raekke" style="margin-top:6px;align-items:center;gap:6px"><span class="lille" style="margin:0;flex:0 0 auto;opacity:.8">💳 ' + (EN ? "PAID:" : "BETALT:") + '</span>' +
-                ["fuld", "fri"].map(function(pl){
-                  return '<button class="knap valg" style="min-height:38px;font-size:12px;border-color:var(--guld);color:var(--guld)"' + (S.betaltSender === x.h ? " disabled" : "") +
-                    ' data-a="betaltSaet" data-v="' + esc(x.h + "|" + pl) + '">' + (S.betaltSender === x.h ? "\u23f3" : (pl === "fuld" ? (EN?"Full":"Fuld") : (EN?"Free streaming":"Fri streaming"))) + '</button>';
+                    (S.gaveSender === x.h ? "\u23f3" : _planNavn(pl, EN)) + '</button>';
                 }).join("") + '</div>';
-              // ⭐⭐ TAG GAVEN TILBAGE — to trin som Slet, og teksten siger,
-              //   hvad der IKKE sker. Kun på rækker, der ER en gave.
+              // ⭐ v5.3.0 · BETALT — nu bag «mere…» (guldkanten så valgt ud hele tiden)
+              if (S.betaltVisH === x.h) {
+                r += '<div class="raekke" style="margin-top:6px;align-items:center;gap:6px;flex-wrap:wrap"><span class="lille" style="margin:0;flex:0 0 100%;opacity:.8">\ud83d\udcb3 ' + (EN ? "PAID OUTSIDE THE APP:" : "BETALT UDEN FOR APPEN:") + '</span>' +
+                  ["fuld", "fri"].map(function(pl){
+                    return '<button class="knap valg" style="min-height:38px;font-size:12px"' + (S.betaltSender === x.h ? " disabled" : "") +
+                      ' data-a="betaltSaet" data-v="' + esc(x.h + "|" + pl) + '">' + (S.betaltSender === x.h ? "\u23f3" : _planNavn(pl, EN)) + '</button>';
+                  }).join("") + '</div>';
+              } else {
+                r += '<div class="raekke" style="margin-top:6px"><button class="knap valg" style="flex:none;min-height:34px;padding:0 12px;font-size:11.5px;color:var(--daempet)" data-a="betaltVis" data-v="' + esc(x.h) + '">' + (EN ? "more\u2026" : "mere\u2026") + '</button></div>';
+              }
+              // ⭐⭐ TAG GAVEN TILBAGE — to trin som Slet, og teksten siger, hvad der IKKE sker. Kun på rækker, der ER en gave.
               if (_erGave) {
                 r += (S.gaveTilbage === x.h
                   ? '<div style="margin-top:7px;padding:9px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0">' +
@@ -12615,12 +12653,7 @@ function _tegn() {
               }
               return r + '</div>';
             };
-            const _gruppe = function(ikon, navn, liste, tom){
-              if (!liste.length) return '<p class="lille" style="margin:10px 0 0;opacity:.6">' + ikon + ' ' + navn + ' \u2014 ' + tom + '</p>';
-              return '<p class="lille" style="margin:12px 0 2px;font-weight:800;letter-spacing:.5px;color:var(--grus)">' + ikon + ' ' + navn + ' \u00b7 ' + liste.length + '</p>' + liste.map(_raekke).join("");
-            };
-            _ekrop += _gruppe("\ud83c\udf81", (EN ? "GIVEN BY YOU" : "GIVET AF DIG"), _givne, (EN ? "none yet" : "ingen endnu")) +
-                      _gruppe("\ud83c\udd95", (EN ? "ON THEIR OWN PLAN" : "P\u00c5 DERES EGEN PLAN"), _ikke, (EN ? "nobody" : "ingen"));
+            _ekrop += _vis.map(_raekke).join("");
           }
         }
         _ekrop += '</div>';
@@ -12644,7 +12677,7 @@ function _tegn() {
           (_kl ? _klAktive + " " + (EN ? (_klAktive === 1 ? "club" : "clubs") : (_klAktive === 1 ? "klub" : "klubber")) : "\u2014"),
           "var(--daempet)", _kkrop);
         h += _opsKort("ejer", "\ud83d\udc65", (EN?"PLAYERS":"SPILLERE"),
-          (_venter.length ? _venter.length + " " + (EN?"waiting":"venter") : (_k ? (_k.inde || 0) + " " + (EN?"inside":"inde") : "\u2014")),
+          (_venter.length ? _venter.length + " " + (EN?"waiting":"venter") : (_k ? ((_k.nye || []).length ? _k.nye.length + " " + (EN?"new":"nye") + " \u00b7 " : "") + (_k.inde || 0) + " " + (EN?"inside":"inde") : "\u2014")),   /* ⭐ v5.9.3 · «N nye · M inde» */
           _venter.length ? "var(--guld)" : "var(--daempet)", _ekrop);
         // ⭐⭐ v5.7.4 · ⚑ ANMELDELSER (Apple 1.2 · Nicolai 25/9: «Dig i ejerpanelet»). Ordene står her, til du har
         //   afgjort sagen — senest 30 dage. Et billede er slettet ved ⚑; sagen siger kun, AT det var et billede.

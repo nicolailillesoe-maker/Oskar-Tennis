@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.9.1 · 28. september 2026";
+const VERSION = "v5.9.2 · 28. september 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -963,6 +963,14 @@ function navnMaskeret(tekst, navn) {
     t = t.replace(re, function(m, p, gen){ return p + "\u27e6M\u27e7" + (gen || ""); });
   });
   return t;
+}
+/* ⭐ v5.9.2 · henter oversættelsen af sig selv, når en åben analyse står på det forkerte sprog og ikke allerede er oversat */
+function _oversaetHvisFremmed(n) {
+  const k = S.gemte[n]; if (!k || !k.analyse || !k.id) return;
+  const til = S.sprog === "en" ? "en" : "da";
+  if (!(k.aSprog === "en" || k.aSprog === "da") || k.aSprog === til) return;
+  if (S.oversat[k.id] && S.oversat[k.id][til]) return;
+  A.oversaet(n);
 }
 function navnTilbage(tekst, navn) {
   var t = String(tekst || ""); if (t.indexOf("\u27e6M\u27e7") < 0) return t;
@@ -1791,7 +1799,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
 const OSKARFOKUS = {};
 
 let S = {
-  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, zoneValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, side: true, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, fletKasseret: 0, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenPanel: null, kampePanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, liveOvertag: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, ejerBesked: null, klubOpretAaben: false, klubNavnUdkast: "", klubNyNoegle: null, klubNyKlub: "", klubOpretSender: false, klubKopieret: false, gaveAaben: false, gaveSender: null, gaveSoeg: "", klubListe: null, klubHenter: false, klubSpaerSpoerg: null, klubSpaerSender: null, klubFjernSpoerg: null, klubFjernSender: null, klubFjernTal: null,   /* ⭐ v5.3.8 */ ejerKlubBesked: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null, teamLukket: false, teamForladSpoerg: false, teamInvUdkast: "", budInd: null, budUd: null, budSender: false, budBesked: null, spejlVenter: null, qrVis: false,   /* ⭐ v4.132.0 */ klubBud: null, klubBudHenter: false, klubBudSvarer: null, klubBudBesked: null, klubScannet: "",   /* ⭐ v5.1.0 · klub-bud */ planSkift: false,   /* ⭐ v5.2.0 · skift plan */ betaltTil: null, betaltSender: null,   /* ⭐ v5.3.0 · betalt */
+  verden: "udv", tab: "hjem", benchmark: "sinner", haand: "hoejre", sammenlign: [], gemte: [], aktiv: null, afventer: null, serv: 1, eksport: null, sletBekraeft: null, redigerA: null, aTekst: "", sprog: "da", laast: false, kodeInput: "", kodeFejl: false, justAaben: false, j: null, aarsagValgt: null, zoneValgt: null, efterTryk: null, fysLog: [], fysSletB: null, ttMin: 90, ttKval: 0, ttType: 0, ttNote: "", ttLog: [], ttSletB: null, fyMin: 30, fyKval: 0, fyType: 0, fyNote: "", ttEks: null, fysEks: null, backupTekst: null, kopieret: null, planAaben: null, zoner: false, side: true, rivalAaben: null, rkAaben: null, rivalAaben: null, gendanAaben: false, gendanTekst: "", gendanBesked: null, fletAaben: false, fletTekst: "", fletBesked: null, fletKasseret: 0, klubKode: "", navnUdkast: "", henter: null, hentBesked: null, kodeAaben: false, kodeUdkast: "", klubUdkast: "", klubBesked: null, klubAaben: false, kampAaben: {}, analyseAaben: {}, oversat: {}, oversaetter: {}, oversaetFejl: {},   /* ⭐ v5.9.2 */ spillerNoegle: "", doerKamp: false, zonePanel: null, statPanel: null, traenPanel: null, kampePanel: null, traenerData: null, ejerLive: null, grListe: null, grNyAaben: false, grNavn: "", grKoder: null, grKodeRum: "", grBesked: null, grForladSpoerg: null, grHenter: false, syncHenter: false, syncBesked: null, noegleAaben: false, noegleUdkast: "", foelgekode: "", liveAktiv: false, liveBesked: null, liveOvertag: null, delAaben: false, rivalAnalyser: {}, rivalHenter: false, rivalBesked: null, rivalAAaben: false, nyNoegleAaben: false, nyKodeAaben: false, visNoegle: false, visKode: false, stigeTilvalgt: false, stigeData: null, stigeHenter: false, stigeBesked: null, tvHistAaben: false, kampSlettet: false, rumBudListe: null, rumBudHenter: false, budSendt: null, rumBudSendt: null, budTraekId: null, rumTraekId: null, portStatus: null, portHenter: false, kontoAaben: null, logNavn: "", logKode: "", opretMail: "", opretKode: "", opretNavn: "", kontoBesked: null, kontoHenter: false, minKonto: null, logUdSpoerg: false, passBesked: null, kodeAaben2: false, kodeGammel: "", kodeNy: "", meldNavn: "", meldHilsen: "", meldSender: false, meldBesked: null, ejerKoe: null, ejerHenter: false, ejerSender: null, ejerBesked: null, klubOpretAaben: false, klubNavnUdkast: "", klubNyNoegle: null, klubNyKlub: "", klubOpretSender: false, klubKopieret: false, gaveAaben: false, gaveSender: null, gaveSoeg: "", klubListe: null, klubHenter: false, klubSpaerSpoerg: null, klubSpaerSender: null, klubFjernSpoerg: null, klubFjernSender: null, klubFjernTal: null,   /* ⭐ v5.3.8 */ ejerKlubBesked: null, rumInvi: null, rumInviVenner: null, rumInviPladser: 0, rumInviUdkast: "", rumInviBesked: null, mitNavn: null, navnUdkast2: "", navnBesked: null, navnLedig: null, navnTjekker: false, snakRetId: null, snakRetUdkast: "", snakSletId: null, navnAaben: false, velkomstTrin: 0, navnGemmer: false, soegUdkast: "", soegTraef: null, soegHenter: false, soegbar: null, soegbarSender: false, minKlub: null, push: null, pushHenter: false, pushSender: false, pushBesked: null, bilEmne: null, bilPr: {}, bilHenter: {}, bilSender: false, bilBesked: null, bilSletB: null, bilDelId: null, bilVisId: null, bilVisUrl: null, bilVisHenter: null, bilVisBesked: null, bilTraekId: null, skadet: null, skadetSender: false, venneValgtId: null, kortAaben: false, reakAaben: false, invitFra: "", delAppTekst: "", nulstilToken: "", nulstilKode: "", nulstilKode2: "", nulstilBesked: null, nulstilHenter: false, opretKode2: "", visOpretKode: false, visLogKode: false, visNulstilKode: false, skiftSpoerg: false, vennePanel: null, indKode: "", indKode2: "", visIndKode: false, indMail: "", indKlubkode: "", indSender: false, indBesked: null, indAaben: false, indResultat: null, indVen: null, indTrin: 1, betingelser: false, minPlan: null, indPlanSender: false, liveDemo: false, hjemBesked: null, teamLukket: false, teamForladSpoerg: false, teamInvUdkast: "", budInd: null, budUd: null, budSender: false, budBesked: null, spejlVenter: null, qrVis: false,   /* ⭐ v4.132.0 */ klubBud: null, klubBudHenter: false, klubBudSvarer: null, klubBudBesked: null, klubScannet: "",   /* ⭐ v5.1.0 · klub-bud */ planSkift: false,   /* ⭐ v5.2.0 · skift plan */ betaltTil: null, betaltSender: null,   /* ⭐ v5.3.0 · betalt */
   kaldeAaben: false, kaldeBesked: null, fuldtAaben: false, fuldtUdkast: "", fuldtSender: false, fuldtBesked: null, mitFuldtNavn: null,   /* ⭐ v4.147.0 */
   mitAvatar: undefined, avatarAaben: false, avatarSender: false, gaveInfo: null, gaveMdr: {},   /* ⭐ v4.136.0 */
   gammelAnnul: false,   /* ⭐ v4.138.0 */
@@ -1900,6 +1908,7 @@ const rensKamp = (g) => {
     point: g.point.map((q) => ({ r: q.r === "V" ? "V" : "T", "å": q["å"] || "x", f: q.f === 2 ? 2 : 1, l: [1,2,3].indexOf(q.l) >= 0 ? q.l : 0, h: [1,2].indexOf(q.h) >= 0 ? q.h : 0, z: [1,2,3].indexOf(q.z) >= 0 ? q.z : 0, ...(q.g === 1 ? { g: 1 } : {}) })) };
 };
 try { const sp = lager.hent("sai-sprog"); if (sp === "en") S.sprog = "en"; } catch(e) {}
+try { const ov = JSON.parse(lager.hent("sai-oversaet") || "{}"); if (ov && typeof ov === "object" && !Array.isArray(ov)) S.oversat = ov; } catch(e) {}   /* ⭐ v5.9.2 · oversættelserne bor i telefonen */
 /* ⭐ v5.7.3 · efter «Slet min konto»: fordøren siger det (flaget læses én gang og fjernes) */
 try { if (window.localStorage.getItem("sai-konto-slettet")) { window.localStorage.removeItem("sai-konto-slettet"); S.kontoSlettetVist = true; } } catch(e) {}
 try { if (lager.hent("sai-laas") === "op") S.laast = false; } catch(e) {}
@@ -2511,6 +2520,7 @@ try {
 // Edge Functionen: kommer der nogensinde et noter-felt ind i datamodellen,
 // bliver det ikke sendt herfra og ville blive afvist med 422 alligevel.
 const ANALYSE_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-kamp";
+const OVERSAET_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-oversaet";   /* ⭐ v5.9.2 · analysen på visningens sprog (vej B) */
 const RIVAL_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-rival";
 const UDVIKLING_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-udvikling";   // ⭐ v4.104.0 · udviklingsbrevet
 // ══════════════════════════════════════════════════════════════════════
@@ -4009,7 +4019,7 @@ const A = {
   },
   devgaa: (v) => { const p = v.split(":"); S.verden = p[0]; S.tab = p[1]; render(); },
   verden: (v) => { S.verden = v; S.tab = v === "udv" ? "hjem" : "sa-hjem"; render(); },
-  sprog: () => { S.sprog = S.sprog === "da" ? "en" : "da"; lager.gem("sai-sprog", S.sprog); render(); },
+  sprog: () => { S.sprog = S.sprog === "da" ? "en" : "da"; lager.gem("sai-sprog", S.sprog); render(); Object.keys(S.analyseAaben || {}).forEach(function(n){ if (S.analyseAaben[n]) _oversaetHvisFremmed(+n); }); },   /* ⭐ v5.9.2 · en åben analyse følger med */
   justToggle: () => {
     if (!S.aktiv) return;
     if (S.justAaben) { S.justAaben = false; render(); return; }
@@ -4594,7 +4604,7 @@ const A = {
   },
   puls: (v) => { S.puls = S.puls === v ? null : v; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   kampFold: (i) => { const n = +i; S.kampAaben[n] = !S.kampAaben[n]; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
-  analyseFold: (i) => { const n = +i; S.analyseAaben[n] = !S.analyseAaben[n]; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
+  analyseFold: (i) => { const n = +i; S.analyseAaben[n] = !S.analyseAaben[n]; S._sf = S._sf || {}; S._sf["1"] = true; render(); if (S.analyseAaben[n]) _oversaetHvisFremmed(n); },   /* ⭐ v5.9.2 */
   delAabn: () => { S.delAaben = !S.delAaben; S.liveBesked = null; S.liveOvertag = null; render(); A.liveTjek(); },
   liveFortryd: () => { S.liveOvertag = null; render(); },
   liveStart: async (bekraeftet) => {
@@ -8782,6 +8792,32 @@ const A = {
   analyseGem: (i) => { if (S.gemte[+i]) { if (!S.aTekst && S.gemte[+i].analyse) _analyseFrigiv(S.gemte[+i]);   /* ⭐ v4.145.0 · slettet analyse = plads til én igen */
     S.gemte[+i].analyse = S.aTekst; if (S.aTekst) S.gemte[+i].aSprog = S.sprog === "en" ? "en" : "da"; else delete S.gemte[+i].aSprog; gemAlle(); } S.redigerA = null; S.aTekst = ""; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
   analyseAnnuller: () => { S.redigerA = null; S.aTekst = ""; render(); },
+  // ⭐ v5.9.2 · ANALYSEN FØLGER VISNINGENS SPROG (vej B). Nicolai 28/9: «Den skal også være engelsk når man ændrer visningen.»
+  //   Den gemte tekst sendes til analyse-oversaet med navnet MASKERET (19) og kommer tilbage på det andet sprog; svaret bor
+  //   i telefonen (sai-oversaet) ved siden af kampen — aldrig i kampen, aldrig i synken. Gamle analyser får det med.
+  oversaet: (i) => {
+    const n = +i, k = S.gemte[n]; if (!k || !k.analyse || !k.id) return;
+    const til = S.sprog === "en" ? "en" : "da";
+    if (k.aSprog === til || S.oversaetter[k.id]) return;
+    if (!S.spillerNoegle) { S.oversaetFejl[k.id] = S.sprog === "en" ? "Log in to translate." : "Log ind for at oversætte."; render(); return; }
+    S.oversaetter[k.id] = true; delete S.oversaetFejl[k.id]; render();
+    const kid = k.id;
+    fetch(OVERSAET_URL, { method: "POST", headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+      body: JSON.stringify({ handling: "oversaet", til: til, tekst: navnMaskeret(k.analyse, k.modstander).slice(0, 8000) }) })
+    .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return { ok: r.ok, d: d }; }); })
+    .then(function(sv){
+      delete S.oversaetter[kid];
+      if (sv.ok && sv.d && typeof sv.d.tekst === "string" && sv.d.tekst) {
+        S.oversat[kid] = S.oversat[kid] || {}; S.oversat[kid][til] = sv.d.tekst;
+        const ids = Object.keys(S.oversat); while (ids.length > 60) delete S.oversat[ids.shift()];   /* loft i telefonen: de 60 nyeste */
+        lager.gem("sai-oversaet", JSON.stringify(S.oversat));
+      } else {
+        S.oversaetFejl[kid] = (sv.d && sv.d.kode === "loft") ? (S.sprog === "en" ? "Today\u2019s translations are used up \u2014 try again tomorrow." : "Dagens overs\u00e6ttelser er brugt \u2014 pr\u00f8v igen i morgen.")
+          : (S.sprog === "en" ? "Could not translate right now." : "Kunne ikke overs\u00e6tte lige nu.");
+      }
+      S._sf = S._sf || {}; S._sf["1"] = true; render();
+    }).catch(function(){ delete S.oversaetter[kid]; S.oversaetFejl[kid] = S.sprog === "en" ? "Could not translate right now." : "Kunne ikke overs\u00e6tte lige nu."; S._sf = S._sf || {}; S._sf["1"] = true; render(); });
+  },
   // ═══ v4.127.0 · SEND KAMPEN DIREKTE TIL ET BRUGERNAVN ════════════
   //   Nicolai 11/9: «Vi skal heller ALDRIG sende noget fra en enhed til en
   //   anden. Dette skal kunne sendes direkte via brugernavn.»
@@ -14306,6 +14342,11 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       const s = statistik(k);
       const aaben = !!S.kampAaben[i];
       const aAaben = !!S.analyseAaben[i];
+      /* ⭐ v5.9.2 · hvad kortet viser: oversættelsen, hvis analysen står på det andet sprog og den findes i telefonen */
+      const _aTil = EN ? "en" : "da";
+      const _aFremmed = !!(k.analyse && (k.aSprog === "en" || k.aSprog === "da") && k.aSprog !== _aTil);
+      const _aOversat = _aFremmed && S.oversat[k.id] && S.oversat[k.id][_aTil] ? navnTilbage(S.oversat[k.id][_aTil], k.modstander) : "";
+      const _aVis = _aOversat || k.analyse || "";
       const vandt = typeof k.facitVandt === "boolean" ? k.facitVandt : (s.setsO > s.setsM);
       const kantKl = vandt ? "dev-kant-gron" : "dev-kant-roed";
       const farve  = vandt ? "var(--vundet)" : "var(--tabt)";
@@ -14325,11 +14366,17 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
               '<span data-a="analyseAabn" data-v="'+i+'" title="'+(EN?"Edit or clear":"Ret eller ryd")+'" style="cursor:pointer;font-size:13px;opacity:.65">✏️</span>' +
             '</div>' +
             (aAaben
-              ? '<p class="lille" style="margin:8px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(k.analyse) + '</p>'
-              : '<p class="lille" style="margin:6px 0 0;color:var(--daempet)">' + esc(k.analyse.replace(/\s+/g," ").slice(0,90)) + '…</p>') +
-            // ⭐ v4.128.0 · analysen bærer sit sprog — er det ikke skærmens, siges det
-            ((k.aSprog === "en" || k.aSprog === "da") && k.aSprog !== (EN ? "en" : "da")
-              ? '<p class="lille" style="margin:6px 0 0;color:var(--guld)">🌐 ' + (EN ? "Fetched in Danish \u2014 clear it with \u270f\ufe0f and fetch again for English." : "Hentet p\u00e5 engelsk \u2014 ryd den med \u270f\ufe0f og hent igen for dansk.") + '</p>' : '') +
+              ? '<p class="lille" style="margin:8px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(_aVis) + '</p>'
+              : '<p class="lille" style="margin:6px 0 0;color:var(--daempet)">' + esc(_aVis.replace(/\s+/g," ").slice(0,90)) + '…</p>') +
+            // ⭐ v5.9.2 · analysen følger visningens sprog (vej B) — oversættelsen hentes én gang og bor i telefonen
+            (_aFremmed
+              ? (_aOversat
+                  ? '<p class="lille" style="margin:6px 0 0;color:var(--guld)">\ud83c\udf10 ' + (EN ? "Translated from Danish." : "Oversat fra engelsk.") + '</p>'
+                  : (S.oversaetter[k.id]
+                      ? '<p class="lille" style="margin:6px 0 0;color:var(--guld)">\u23f3 ' + (EN ? "Translating\u2026" : "Overs\u00e6tter\u2026") + '</p>'
+                      : '<p class="lille" style="margin:6px 0 0;color:var(--guld)">' + (S.oversaetFejl[k.id] ? esc(S.oversaetFejl[k.id]) + ' ' : '') +
+                        '<button class="knap" style="padding:6px 10px;font-size:11px;background:var(--grus);min-height:0" data-a="oversaet" data-v="'+i+'">\ud83c\udf10 ' + (EN ? "Show in English" : "Vis p\u00e5 dansk") + '</button></p>'))
+              : '') +
             // ⭐ v4.96.0 · sandheden om, hvem der kan se den — begge steder.
             (teamKunStreaks()
               ? '<p class="lille" style="margin:6px 0 0;opacity:.7">' + (EN ? "Shared by the player through the team key." : "Delt af spilleren gennem team-nøglen.") + '</p>'

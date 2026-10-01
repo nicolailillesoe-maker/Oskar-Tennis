@@ -1129,7 +1129,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.15.0 \u00b7 1. oktober 2026";
+const VERSION = "v6.15.1 \u00b7 1. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -3239,12 +3239,20 @@ async function snakLoesn() {
   render();
 }
 // Den nyeste boble skal kunne ses — kun når rummet lige er åbnet, eller når du selv har sendt (ikke ved hvert 10.-sekunds-hent).
-//   «nearest»: står den allerede på skærmen, rulles der intet (titelrækken bliver stående); ellers lige nok til, at den
-//   står over skrivefeltet (scroll-margin på boblen regner skrivefeltet og bundbaren med).
+// ⭐ v6.15.1 · DIN BESKED STÅR OVER SKRIVEFELTET. Målt på v6.15.0 med en lang samtale: fra 6 beskeder landede den, du selv
+//   sendte, bag skrivefeltet — scrollIntoView ruller ikke, når boblen står inden for vinduet, og regner ikke det sticky felt
+//   med. Nu måles bunden af boblens række (boblen + klokkeslættet) mod feltets top: står den under, rulles præcis forskellen
+//   (+12 px luft). Står den fri (en kort samtale), rulles der intet, og titelrækken bliver stående.
 function snakRul() {
   if (!S.snakRulNed || S.tab !== "rum") return;
   S.snakRulNed = false;
-  try { setTimeout(function () { const l = document.querySelectorAll('[data-act="snak-valg"]'); if (l.length) l[l.length - 1].scrollIntoView({ block: "nearest" }); }, 0); } catch (_e) {}
+  try { setTimeout(function () {
+    const l = document.querySelectorAll('[data-act="snak-valg"]'), f = document.querySelector('[data-felt="snakUdkast"]');
+    if (!l.length || !f) return;
+    const r = l[l.length - 1].parentElement || l[l.length - 1];   /* boblens række: boblen + klokkeslættet under den */
+    const bund = r.getBoundingClientRect().bottom, loft = f.getBoundingClientRect().top - 12;
+    if (bund > loft) window.scrollBy(0, Math.ceil(bund - loft));
+  }, 0); } catch (_e) {}
 }
 // Dagens overblik — fra træningens `nu` (ingen nye data). ÉN tekst, så ordbogen kan oversætte den hel.
 function snakOverblik() {

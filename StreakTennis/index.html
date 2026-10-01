@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.9.3 · 30. september 2026";
+const VERSION = "v5.9.4 · 1. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -6034,7 +6034,9 @@ const A = {
   gaveTilbageSpoerg: (v) => { S.gaveTilbage = (S.gaveTilbage === v) ? null : (v || null); S.ejerBesked = null; render(); },   // ⭐ v4.121.0
   // ⭐ v5.9.3 · «Ret» åbner ÉN række (en anden «Ret» lukker den første) · «mere…» viser BETALT i den åbne række
   gaveRet: (v) => {
-    S.gaveRet = (S.gaveRet === v) ? null : (v || null); S.betaltVisH = null; S.gaveTilbage = null; render();
+    S.gaveRet = (S.gaveRet === v) ? null : (v || null); S.betaltVisH = null; S.gaveTilbage = null;
+    S.gaveUdkast = null; if (S.gaveRet) S.gaveUdkast = _gaveUdkastH(S.gaveRet);   /* ⭐ v5.9.4 · et UDKAST — intet sendes før «Gem gaven» */
+    render();
     // den åbne række rulles helt ind på skærmen ÉN gang, her — så står den stille, mens man trykker i den (bundmenuen er regnet med)
     if (S.gaveRet) { try { const _e = document.querySelector('[data-gaveraekke="' + String(S.gaveRet).replace(/[^a-z0-9]/gi, "") + '"]'); if (_e) _e.scrollIntoView({ block: "nearest" }); } catch (_e2) {} }
   },
@@ -6042,18 +6044,33 @@ const A = {
   gaveAabn: async () => {
     S.gaveAaben = !S.gaveAaben; S.ejerBesked = null; S.gaveTilbage = null;
     S.gaveOrden = null; S.gaveRet = null; S.gaveKvit = null; S.betaltVisH = null;   /* ⭐ v5.9.3 · rækkefølgen fryses på ny, når kortet åbnes */
+    S.gaveUdkast = null;   /* ⭐ v5.9.4 */
     render();
     if (S.gaveAaben) { const r = await A.portKald("liste", { alle: true }); if (r && !r.fejl) S.ejerKoe = r; render(); }
   },
   // v er "haandtag|plan"
-  gaveMdr: (v) => { const d = String(v || "").split("|"); if (d.length === 2) { S.gaveMdr[d[0]] = +d[1] || 0; render(); } },   /* ⭐ v4.136.0 */
+  gaveMdr: (v) => { const d = String(v || "").split("|"); if (d.length === 2) { S.gaveMdr[d[0]] = +d[1] || 0; const u = _gaveUdkastH(d[0]); u.mdr = +d[1] || 0; S.gaveUdkast = u; render(); } },   /* ⭐ v4.136.0 · v5.9.4: kun udkastet */
+  // ⭐⭐ v5.9.4 · GAVE: Fuld eller Fri streaming — aldrig Basis (Basis er «Tag gaven tilbage»; motoren svarer 422 gave-basis)
+  gaveValg: (v) => {
+    const d = String(v || "").split("|");
+    if (d.length !== 2 || (d[1] !== "fuld" && d[1] !== "fri")) return;
+    const u = _gaveUdkastH(d[0]); u.plan = d[1]; S.gaveUdkast = u; S.gaveKvit = null; render();
+  },
+  // ⭐⭐ v5.9.4 · det ENESTE tryk, der sender en gave: udkastet, som det står
+  gaveGem: async (v) => {
+    const u = S.gaveUdkast;
+    if (!u || u.h !== v || (u.plan !== "fuld" && u.plan !== "fri") || u.mdr === null) return;
+    S.gaveMdr[v] = u.mdr || 0;
+    await A.gaveSaet(v + "|" + u.plan);
+  },
   // ⭐ v5.3.0 · BETALT. Kontrakten (ejer-port v10, målt 19/9): {h, plan: fuld|fri, maaneder: 1|3|6|12}
   //   → 200 {betalt, plan, fra, fornavn, betalt_til} · 404 ikke-uden-klub · 422 plan/maaneder.
   betaltSaet: async (v) => {
     const d = String(v || "").split("|");
     if (d.length !== 2) return;
     const EN = S.sprog === "en";
-    const mdr = S.gaveMdr[d[0]] || 1;   /* «ubegrænset» findes ikke for en betaling — mindst 1 md */
+    const _u = (S.gaveUdkast && S.gaveUdkast.h === d[0]) ? S.gaveUdkast : null;
+    const mdr = (_u && _u.mdr > 0) ? _u.mdr : 1;   /* «ubegrænset» findes ikke for en betaling — mindst 1 md · v5.9.4: udkastets varighed */
     S.betaltSender = d[0]; S.ejerBesked = null; S.gaveKvit = null; render();
     const r = await A.portKald("betalt", { h: d[0], plan: d[1], maaneder: mdr });
     S.betaltSender = null;
@@ -6066,7 +6083,7 @@ const A = {
   },
   gaveSaet: async (v) => {
     const d = String(v || "").split("|");
-    if (d.length !== 2) return;
+    if (d.length !== 2 || d[1] === "gaest") return;   /* ⭐ v5.9.4 · Basis sendes aldrig som gave (ejer-port v14 → 422) */
     const EN = S.sprog === "en";
     S.gaveSender = d[0]; S.ejerBesked = null; S.gaveKvit = null; render();
     // ⭐ v4.136.0 · tidsbegrænset gave: 0 = ubegrænset, ellers 1/3/6/12 måneder (ejer-port v8)
@@ -6079,8 +6096,10 @@ const A = {
       ? { fejl: true, t: r.t || (EN ? "Could not be changed." : "Kunne ikke ændres.") }
       : { fejl: false, t: (r && r.tilbage)
           ? (EN ? "Taken back: " : "Taget tilbage: ") + (r.fornavn || "") + " \u2192 " + _planNavn("gaest", EN)
-          : (EN ? "Given: " : "Givet: ") + (r.fornavn || "") + " \u2192 " + _planNavn(d[1], EN) + (r.gave_til ? (EN ? " · until " : " · til ") + String(r.gave_til).slice(0, 10) : "") });
-    if (r && !r.fejl && r.tilbage) S.gaveRet = null;
+          : (EN ? "Given: " : "Givet: ") + (r.fornavn || "") + " \u2192 " + _planNavn(d[1], EN) + (r.gave_til ? (EN ? " · until " : " · til ") + _gaveDM(r.gave_til) : "") });
+    if (r && !r.fejl && r.tilbage) { S.gaveRet = null; S.gaveUdkast = null; }
+    // ⭐ v5.9.4 · efter et gem ER udkastet det, der gælder: knapperne lyser stadig, og der står ingen gem-knap
+    if (r && !r.fejl && !r.tilbage) { const m = S.gaveMdr[d[0]] || 0; S.gaveUdkast = { h: d[0], plan: d[1], mdr: m, grund: { plan: d[1], mdr: m } }; }
     S.gaveTilbage = null;
     const r2 = await A.portKald("liste", { alle: true });
     if (r2 && !r2.fejl) S.ejerKoe = r2;
@@ -9128,6 +9147,18 @@ function _mpAftaleTekst(pl, EN) {
   if (a.status === "naade")
     return "⚠️ " + (EN ? "MobilePay could not take the payment. Your access lasts until " + dato(a.naade_til || a.udloeber) + " — check the agreement in MobilePay." : "MobilePay kunne ikke trække betalingen. Din adgang gælder til " + dato(a.naade_til || a.udloeber) + " — tjek aftalen i MobilePay.");
   return "";
+}
+// ⭐⭐ v5.9.4 · GAVEN GEMMES. d/m i UTC — samme regnestykke som motoren (UTC-måned + N).
+function _gaveDM(iso) { const d = new Date(iso); return isNaN(d.getTime()) ? String(iso || "").slice(0, 10) : d.getUTCDate() + "/" + (d.getUTCMonth() + 1); }
+function _gaveTilDM(m) { const d = new Date(); d.setUTCMonth(d.getUTCMonth() + m); return d.getUTCDate() + "/" + (d.getUTCMonth() + 1); }
+// Udkastet starter som det, der GÆLDER: en gave uden slutdato → plan + «Altid» · med slutdato → planen, ingen varighed ·
+//   ingen gave → ingen plan, «Altid». `grund` er det, udkastet sammenlignes med — gem-knappen står kun, når de er forskellige.
+function _gaveUdkastH(h) {
+  if (S.gaveUdkast && S.gaveUdkast.h === h) return S.gaveUdkast;
+  const x = ((S.ejerKoe && S.ejerKoe.godkendte) || []).find(function(y){ return y.h === h; }) || {};
+  const pl = (x.givet && (x.plan === "fuld" || x.plan === "fri")) ? x.plan : null;
+  const m = (pl && x.gave_til) ? null : 0;
+  return { h: h, plan: pl, mdr: m, grund: { plan: pl, mdr: m } };
 }
 function _planNavn(p, EN) {
   return p === "gaest" ? (EN ? "Basic" : "Basis")
@@ -12617,17 +12648,27 @@ function _tegn() {
               const _kv = (S.gaveKvit && S.gaveKvit.h === x.h) ? S.gaveKvit : null;
               if (_kv) r += '<p class="lille" style="margin:4px 0 0;color:' + (_kv.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(_kv.t) + '</p>';
               if (!_aaben || _tilbage) return r + '</div>';
-              // ⭐ v4.136.0 · varigheden vælges FØR planen trykkes: ubegrænset · 1 · 3 · 6 · 12 md
-              r += '<div class="raekke" style="margin-top:6px;gap:4px;flex-wrap:wrap">' + [0, 1, 3, 6, 12].map(function(m){
-                  const valgt = (S.gaveMdr[x.h] || 0) === m;
-                  return '<button class="knap valg" style="min-height:32px;padding:0 9px;font-size:11px' + (valgt ? ";border-color:var(--guld);color:var(--guld)" : "") + '" data-a="gaveMdr" data-v="' + esc(x.h + "|" + m) + '">' + (m === 0 ? (EN ? "no end" : "ubegr\u00e6nset") : m + (EN ? " mo" : " md")) + '</button>';
+              // ⭐⭐⭐ v5.9.4 · GAVEN GEMMES. «Ret» åbner et UDKAST: GAVE (Fuld · Fri streaming — ingen Basis) og HVOR LÆNGE.
+              //   Intet sendes før «Gem gaven» / «Giv gaven». Linjen øverst siger altid det, der GÆLDER.
+              //   Knapperne deler bredden (flex:1;min-width:0) — ingen tekst skæres af på 390 px (v5.9.3: «ubegræns»).
+              const _u = _gaveUdkastH(x.h);
+              const _guld = ";border-color:var(--guld);color:var(--guld)";
+              const _over = function(t){ return '<p class="lille" style="margin:8px 0 4px;font-size:10.5px;letter-spacing:.06em;opacity:.7">' + t + '</p>'; };
+              r += _over(EN ? "GIFT" : "GAVE") + '<div class="raekke" style="gap:6px">' + ["fuld", "fri"].map(function(pl){
+                  return '<button class="knap valg" style="flex:1;min-width:0;min-height:40px;padding:0 6px;font-size:12px' + (_u.plan === pl ? _guld : "") + '" data-a="gaveValg" data-v="' + esc(x.h + "|" + pl) + '">' + esc(_planNavn(pl, EN)) + '</button>';
                 }).join("") + '</div>' +
-                '<div class="raekke" style="margin-top:6px">' +
-                ["gaest", "fuld", "fri"].map(function(pl){
-                  return '<button class="knap valg" style="min-height:40px;font-size:12px' + (x.plan === pl ? ";border-color:var(--vundet);color:var(--vundet)" : "") + '"' +
-                    (S.gaveSender === x.h ? " disabled" : "") + ' data-a="gaveSaet" data-v="' + esc(x.h + "|" + pl) + '">' +
-                    (S.gaveSender === x.h ? "\u23f3" : _planNavn(pl, EN)) + '</button>';
+                _over(EN ? "HOW LONG" : "HVOR LÆNGE") + '<div class="raekke" style="gap:4px">' + [0, 1, 3, 6, 12].map(function(m){
+                  return '<button class="knap valg" style="flex:1;min-width:0;min-height:34px;padding:0 2px;font-size:11.5px' + (_u.mdr === m ? _guld : "") + '" data-a="gaveMdr" data-v="' + esc(x.h + "|" + m) + '">' + (m === 0 ? (EN ? "Always" : "Altid") : m + (EN ? " mo" : " md")) + '</button>';
                 }).join("") + '</div>';
+              const _aendret = _u.plan !== _u.grund.plan || _u.mdr !== _u.grund.mdr;
+              if (_u.plan && _u.mdr !== null && _aendret) {
+                r += '<p class="lille" style="margin:9px 0 6px;line-height:1.4">' + (EN ? "After: " : "Efter: ") + '<b>' + esc(x.fornavn || "") + '</b> · ' + esc(_planNavn(_u.plan, EN)) + ' · ' +
+                    (_u.mdr ? (EN ? "until " : "til ") + _gaveTilDM(_u.mdr) : (EN ? "unlimited" : "ubegrænset")) + '</p>' +
+                  '<button class="knap" style="width:100%;min-height:44px;font-size:13px;background:var(--guld);color:var(--dyb);font-weight:800"' + (S.gaveSender === x.h ? " disabled" : "") +
+                    ' data-a="gaveGem" data-v="' + esc(x.h) + '">' + (S.gaveSender === x.h ? "⏳ …" : _erGave ? (EN ? "✓ Save the gift" : "✓ Gem gaven") : (EN ? "🎁 Give the gift" : "🎁 Giv gaven")) + '</button>';
+              } else if (_u.plan && _u.mdr === null && _u.plan !== _u.grund.plan) {
+                r += '<p class="lille" style="margin:9px 0 0;color:var(--guld)">' + (EN ? "Choose how long." : "Vælg hvor længe.") + '</p>';
+              }
               // ⭐ v5.3.0 · BETALT — nu bag «mere…» (guldkanten så valgt ud hele tiden)
               if (S.betaltVisH === x.h) {
                 r += '<div class="raekke" style="margin-top:6px;align-items:center;gap:6px;flex-wrap:wrap"><span class="lille" style="margin:0;flex:0 0 100%;opacity:.8">\ud83d\udcb3 ' + (EN ? "PAID OUTSIDE THE APP:" : "BETALT UDEN FOR APPEN:") + '</span>' +

@@ -755,7 +755,7 @@ async function hentEvalUdkast(n) {
   S.kvartalUdkast = n; S.kvartalAI = null; S.kvartalNote = null;
   const klub = lager.hent("klubkode", "");
   const noegle = (S.noegler || {})[n];
-  if (!klub) { S.kvartalNote = "Ingen klubkode — skabelonen vises."; render(); return; }
+  if (!klub) { S.kvartalNote = "Ingen klub på denne telefon — skabelonen vises."; render(); return; }
   S.kvartalHenter = true; render();
   try {
     const idag = new Date().toISOString().slice(0, 10);
@@ -806,7 +806,7 @@ async function hentEvalUdkast(n) {
 function hentTilmeldinger(){
 
     if (S.tilmHenter) return;
-    if (!lager.hent("klubkode","")) { S.syncBesked={fejl:true,t:"Indtast klubkoden f\u00f8rst."}; render(); return; }
+    if (!lager.hent("klubkode","")) { S.syncBesked={fejl:true,t:"Forbind telefonen med din klub f\u00f8rst."}; render(); return; }
     S.tilmHenter = true; S.syncBesked = null; render();
     sync("hent-hold", {}).then(function(r){
       S.tilmHenter = false;
@@ -865,8 +865,8 @@ function hentTilmeldinger(){
 }
 
 function syncFejltekst(r) {
-  if (r.fejl === "mangler-klubkode") return "Indtast klubkoden først.";
-  if (r.fejl === "adgang") return "Klubkoden blev afvist.";
+  if (r.fejl === "mangler-klubkode") return "Forbind telefonen med din klub først.";
+  if (r.fejl === "adgang") return "Klubben afviste telefonens adgang.";
   if (r.fejl === "validering") return "Data blev afvist af vagten: " + ((r.detaljer||[])[0]?.grund || "");
   if (r.fejl === "netvaerk" || !r.fejl) return "Ingen forbindelse — prøv igen.";
   return "Serveren afviste det (" + r.fejl + (r.status ? " " + r.status : "") + ").";   /* v6.4.0 · princip 94 */
@@ -1129,7 +1129,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.15.1 \u00b7 1. oktober 2026";
+const VERSION = "v6.16.0 \u00b7 2. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1154,33 +1154,22 @@ var EN = {
 "Ny træner? Start her →": "New coach? Start here →",
 "brugernavn eller mail": "username or e-mail",
 "kodeord": "password",
-"SKRIDT 1 AF 3": "STEP 1 OF 3",
-"SKRIDT 2 AF 3": "STEP 2 OF 3",
-"SKRIDT 3 AF 3": "STEP 3 OF 3",
 "Hvad er StreakCoach?": "What is StreakCoach?",
-"Klubbens egen side. Her vurderer du hele holdet, sætter ugens fokus og giver familierne deres nøgle til StreakTennis.": "The club's own side. Here you rate the whole squad, set the focus of the week and give the families their key to StreakTennis.",
 "Vurdér hele holdet": "Rate the whole squad",
 "Under 20 sekunder efter træning. Ét tryk pr. spiller.": "Under 20 seconds after practice. One tap per player.",
 "Evalueringer, du godkender": "Evaluations you approve",
 "Et udkast skrives ud fra dine egne tal. Du retter og siger god for det.": "A draft is written from your own numbers. You edit it and sign it off.",
 "Ugens fokus": "Focus of the week",
 "Ét punkt, hele holdet arbejder med. Det står i spillerens app.": "One point the whole squad works on. It shows in the player's app.",
-"Nøgler til familierne": "Keys for the families",
 "Du inviterer selv. Vi er ikke inde over — det er klubbens rum.": "You invite them yourself. We are not involved — it is the club's space.",
 "Spillerne har deres egen app. Her er der kun trænere.": "The players have their own app. Coaches only in here.",
 "Videre →": "Next →",
 "← Tilbage": "← Back",
 "Videre": "Next",
-"Din trænernøgle": "Your coach key",
-"Den har du fået af klubben. Vi udsteder den ikke — det gør cheftræneren, og det er med vilje.": "The club gave it to you. We don't issue it — the head coach does, and that is on purpose.",
 "Forbind": "Connect",
-"Har du ingen nøgle endnu, så spørg din cheftræner. Er klubben ikke i gang, så skriv til": "No key yet? Ask your head coach. If the club hasn't started, write to",
 "Cheftræner i {x}": "Head coach at {x}",
 "Træner i {x}": "Coach at {x}",
-"Nøglen passer. Du kan udstede både træner- og klubnøgler.": "The key fits. You can issue both coach keys and club keys.",
-"Nøglen passer. Du kan udstede klubnøgler til familierne.": "The key fits. You can issue club keys to the families.",
 "Din konto": "Your account",
-"Så kan du logge ind på enhver telefon — og din nøgle følger med. Den er låst med dit kodeord; heller ikke vi kan læse den.": "Then you can log in on any phone — and your key comes along. It is locked with your password; not even we can read it.",
 "✓ {x} · cheftræner": "✓ {x} · head coach",
 "✓ {x} · træner": "✓ {x} · coach",
 "Mailen bruges kun, hvis du skal ind igen. Den vises aldrig for nogen.": "The e-mail is only used if you need to get back in. It is never shown to anyone.",
@@ -1201,7 +1190,6 @@ var EN = {
 "de to er ikke ens": "the two don't match",
 "de er ens": "they match",
 "skriv dit fulde navn": "write your full name",
-"nøgler har hverken 0/O eller 1/I — tjek tegnet": "keys have neither 0/O nor 1/I — check the character",
 "kun store bogstaver, tallene 2-9 og bindestreg": "capital letters, digits 2-9 and hyphens only",
 "12 tegn i alt — der er {n}": "12 characters in total — there are {n}",
 "ser ikke ud som en mail": "doesn't look like an e-mail",
@@ -1215,7 +1203,7 @@ var EN = {
 "Læg i trup": "Add to squad",
 "gør ham til din.": "makes them yours.",
 "Vælg, hvad du vil i gang med": "Choose what you want to do",
-"UDSTED NØGLE": "ISSUE KEY", "INVITÉR SPILLER": "INVITE PLAYER", "via brugernavn — eller QR til nye": "by username — or a QR code for new players",
+"INVITÉR SPILLER": "INVITE PLAYER", 
 "én pr. familie — vises kun én gang": "one per family — shown only once",
 "GRUPPER": "GROUPS",
 "hold, spillere & udvikling": "groups, players & development",
@@ -1224,7 +1212,6 @@ var EN = {
 "EVALUERING": "EVALUATION",
 "AI-udkast — du godkender alt": "AI draft — you approve everything",
 "INDSTILLINGER": "SETTINGS",
-"klubkode, trup & kopi": "club code, squad & backup",
 "{n} spillere · snit {n}/10 · fælles mål pr. {x}": "{n} players · avg {n}/10 · shared goal per {x}",
 "{n} spiller · snit {n}/10 · fælles mål pr. {x}": "{n} player · avg {n}/10 · shared goal per {x}",
 "{n} spillere · snit {n}/10": "{n} players · avg {n}/10",
@@ -1268,50 +1255,29 @@ var EN = {
 "{n} træninger · {n} kamp": "{n} practices · {n} match",
 "Generér": "Generate",
 "Ny": "New",
-"🔑 SPILLERNØGLER": "🔑 PLAYER KEYS",
 "· ADMIN": "· ADMIN",
 "Vis": "Show",
 "Skjul": "Hide",
-"➕ Ny nøgle": "➕ New key",
-"Én nøgle pr. familie. Den giver adgang til jeres klub i StreakTennis — aldrig til trænerdelen — og kan spærres her når som helst.": "One key per family. It gives access to your club in StreakTennis — never to the coach side — and can be blocked here at any time.",
-"🧑‍🏫 TRÆNERNØGLER": "🧑‍🏫 COACH KEYS",
-"Én nøgle pr. træner — aldrig en delt. Skifter en træner klub, spærrer du hans egen og rører ikke de andres.": "One key per coach — never a shared one. If a coach changes club, you block his own and leave the others untouched.",
 "➕ Træner": "➕ Coach",
-"⛔ Din egen administratornøgle kan ikke spærres herfra — ét fejlklik må ikke kunne lukke klubben ude af sin egen platform.": "⛔ Your own admin key cannot be blocked from here — one wrong tap must not be able to lock the club out of its own platform.",
-"⚠️ Er klubbens egen nøgle på listen, ligner den en trænernøgle. Spær kun en nøgle, du selv har udstedt.": "⚠️ If the club's own key is on the list, it looks like a coach key. Only block a key you issued yourself.",
 "fx familien Jensen": "e.g. the Jensen family",
 "fx Mette": "e.g. Mette",
 "⛔ spærret": "⛔ blocked",
 "Spær": "Block",
 "Sikker? Tryk igen": "Sure? Tap again",
 "· træner": "· coach",
-"Ingen trænernøgler udstedt endnu.": "No coach keys issued yet.",
-"Ingen nøgler udstedt endnu.": "No keys issued yet.",
-"🧑‍🏫 TRÆNERNØGLE": "🧑‍🏫 COACH KEY",
-"🎾 KLUBNØGLE": "🎾 CLUB KEY",
-"📋 Kopiér besked til træneren": "📋 Copy message to the coach",
-"📋 Kopiér besked til familien": "📋 Copy message to the family",
 "Færdig": "Done",
 "📥 NYE SPILLERE": "📥 NEW PLAYERS",
 "Tjek": "Check",
 "Opdatér": "Refresh",
-"Tryk Tjek for at se, om nogen familier har tastet deres nøgle.": "Tap Check to see whether any families have entered their key.",
-"Ingen familier har tastet en nøgle endnu.": "No families have entered a key yet.",
-"Ingen har tastet en nøgle endnu ✓": "Nobody has entered a key yet ✓",
 "Alle er i truppen ✓": "Everyone is in the squad ✓",
 "Alle klubbens spillere er i din trup ✓": "All the club's players are in your squad ✓",
-"De øverste er allerede lukket ind af deres nøgle — de mangler kun at stå i DIN trup.": "The ones at the top are already let in by their key — they only need to be in YOUR squad.",
 "Godkendte spillere lægges i truppen med det samme.": "Approved players are added to the squad right away.",
 "➕ Læg i trup": "➕ Add to squad",
 "⚙️ FORBINDELSE": "⚙️ CONNECTION",
-"Klubkode gemt · {n} spillere koblet til en nøgle. Vurderinger sendes automatisk.": "Club code saved · {n} players linked to a key. Ratings are sent automatically.",
-"Klubkode gemt · {n} spiller koblet til en nøgle. Vurderinger sendes automatisk.": "Club code saved · {n} player linked to a key. Ratings are sent automatically.",
 "📱": "📱",
 "Alt bliver på denne telefon.": "Everything stays on this phone.",
-"Intet sendes nogen steder. Indtast klubkoden, når du vil dele vurderinger med spillerne.": "Nothing is sent anywhere. Enter the club code when you want to share ratings with the players.",
 "Gem": "Save",
 "Koden gemmes kun på denne enhed og står ingen steder i koden.": "The code is stored on this device only and appears nowhere in the code.",
-"klubkode": "club code",
 "💾 SIKKERHEDSKOPI": "💾 BACKUP",
 "Dine vurderinger og evalueringer ligger kun i denne browser. Ryddes den, er de væk. Tag en kopi jævnligt.": "Your ratings and evaluations live only in this browser. Clear it and they are gone. Take a copy regularly.",
 "💾 Lav kopi": "💾 Make a copy",
@@ -1322,7 +1288,6 @@ var EN = {
 "Logget ind som": "Logged in as",
 "cheftræner": "head coach",
 "træner": "coach",
-"Du kan logge ind på enhver telefon med dit brugernavn — din nøgle følger med.": "You can log in on any phone with your username — your key comes along.",
 "🚪 Log ud": "🚪 Log out",
 "⚠️ Tryk igen — log ud": "⚠️ Tap again — log out",
 "🔄 Skift klub": "🔄 Change club",
@@ -1331,13 +1296,9 @@ var EN = {
 ". Tag en sikkerhedskopi under ⚙️ FORBINDELSE, før du skifter telefon.": ". Take a backup under ⚙️ CONNECTION before you change phone.",
 "🧹 Start forfra": "🧹 Start over",
 "⚠️ Tryk igen — SLETTER alt her": "⚠️ Tap again — DELETES everything here",
-"Start forfra sletter trup, vurderinger, klubkode og login på denne telefon. Kontoen på serveren røres ikke.": "Start over deletes squad, ratings, club code and login on this phone. The account on the server is untouched.",
 "✕ Luk": "✕ Close",
 "Luk": "Close",
 "🔄 Skift til en anden klub": "🔄 Change to another club",
-"Har du fået en nøgle af en ny klub, taster du den her. Du beholder din konto, dit brugernavn og dit kodeord — det er kun klubben, der skifter.": "If a new club gave you a key, enter it here. You keep your account, your username and your password — only the club changes.",
-"Tjek nøglen": "Check the key",
-"Gem den nye nøgle": "Save the new key",
 "Skift til {x}": "Change to {x}",
 "⚠️ Tryk igen — skift til {x}": "⚠️ Tap again — change to {x}",
 "dit kodeord": "your password",
@@ -1349,29 +1310,18 @@ var EN = {
 "⚡ Du ser": "⚡ You are looking at",
 "eksempeldata": "example data",
 "Sådan fylder truppen sig selv": "How the squad fills itself",
-"Udsted en nøgle pr. familie under 🔑 UDSTED NØGLE.": "Issue one key per family under 🔑 ISSUE KEY.",
-"Familien taster nøglen i StreakTennis.": "The family enters the key in StreakTennis.",
 "De dukker op under 📥 NYE SPILLERE — tryk": "They show up under 📥 NEW PLAYERS — tap",
 "Så står spilleren her,": "Then the player is listed here,",
-"koblet til sin nøgle": "linked to their key",
 ", og dine vurderinger lander i hans app.": ", and your ratings land in their app.",
 "⚠️ Du behøver": "⚠️ You do",
 "ikke": "not",
 "skrive dem ind i hånden. Det nedenfor er kun til spillere, du vil vurdere,": "need to type them in by hand. The form below is only for players you want to rate",
 "før": "before",
-"de har fået en nøgle — de kan kobles til bagefter.": "they have a key — they can be linked afterwards.",
-"{n} spiller i {n} gruppe · {n} med nøgle": "{n} player in {n} group · {n} with key",
-"{n} spillere i {n} gruppe · {n} med nøgle": "{n} players in {n} group · {n} with key",
-"{n} spiller i {n} grupper · {n} med nøgle": "{n} player in {n} groups · {n} with key",
-"{n} spillere i {n} grupper · {n} med nøgle": "{n} players in {n} groups · {n} with key",
-"{x} · ingen nøgle": "{x} · no key",
 "{x} · 🔑 koblet": "{x} · 🔑 linked",
 "Ret": "Edit",
 "Slet?": "Delete?",
 "+ Tilføj spiller": "+ Add player",
 "Skriv navnet, som klubben vil have det vist — fornavn, fornavn og initial, eller fuldt navn.": "Write the name the way the club wants it shown — first name, first name and initial, or full name.",
-"Nøglefeltet kan stå tomt.": "The key field can stay empty.",
-"Lægger du spilleren i truppen under 📥 NYE SPILLERE, kobles nøglen på af sig selv. Feltet er kun til, hvis du har fået et håndtag udleveret.": "If you add the player to the squad under 📥 NEW PLAYERS, the key is linked automatically. The field is only for a handle you have been given.",
 "{x} er tilføjet ✓": "{x} has been added ✓",
 "{x} er opdateret ✓": "{x} has been updated ✓",
 "{x} er fjernet.": "{x} has been removed.",
@@ -1380,7 +1330,6 @@ var EN = {
 "navn, som klubben vil vise det": "name, as the club wants it shown",
 "gruppe, fx U14 Elite": "group, e.g. U14 Elite",
 "gruppe": "group",
-"spillernøgle (kan udfyldes senere)": "player key (can be filled in later)",
 "håndtag (16 tegn fra Tjek)": "handle (16 characters from Check)",
 "Navnet må højst være 40 tegn.": "The name can be at most 40 characters.",
 "Skriv spillerens fornavn.": "Write the player's first name.",
@@ -1390,7 +1339,6 @@ var EN = {
 "Sejrsrate": "Win rate",
 "Træninger i træk": "Practices in a row",
 "Træninger": "Practices",
-"🔑 Ingen nøgle — vurderinger bliver på denne enhed. Nøglen sættes under ⚙ Indstillinger → MIN TRUP.": "🔑 No key — ratings stay on this device. The key is set under ⚙ Settings → MY SQUAD.",
 "🎯 FOKUSPUNKTER": "🎯 FOCUS POINTS",
 "Vælg": "Choose",
 "Ingen valgt endnu. Vælg op til tre — de følger spilleren, hvis træneren skifter.": "None chosen yet. Choose up to three — they follow the player if the coach changes.",
@@ -1452,7 +1400,6 @@ var EN = {
 "AI-UDKAST": "AI DRAFT",
 "AI-udkastet kunne ikke hentes ({x}) — skabelonen vises.": "The AI draft could not be fetched ({x}) — the template is shown.",
 "Ingen forbindelse — skabelonen vises.": "No connection — the template is shown.",
-"Ingen klubkode — skabelonen vises.": "No club code — the template is shown.",
 "Samlet fra scores + noter i klubbens format. Ret frit, godkend derefter.": "Gathered from scores + notes in the club's format. Edit freely, then approve.",
 "Bygget af rundens pas-scores, kampe og træningstal. Det er DIT udkast — ret frit, godkend derefter.": "Built from the round's session scores, matches and training numbers. It is YOUR draft — edit freely, then approve.",
 "⏳ Udkastet skrives …": "⏳ Writing the draft …",
@@ -1467,42 +1414,22 @@ var EN = {
 "Sendt til {x}": "Sent to {x}",
 "Skriv brugernavn og kodeord.": "Enter username and password.",
 "Brugernavn eller kodeord passer ikke.": "Username or password does not match.",
-"Du er inde. Din nøgle kunne ikke følge med — tast den under ⚙️ Indstillinger, så virker resten.": "You are in. Your key could not come along — enter it under ⚙️ Settings and the rest works.",
-"Tast nøglen fra din klub.": "Enter the key from your club.",
-"Nøglen kunne ikke tjekkes.": "The key could not be checked.",
-"Den nøgle kender vi ikke. Tjek den — eller spørg din cheftræner.": "We don't know that key. Check it — or ask your head coach.",
-"Den nøgle kender vi ikke. Tjek den — eller spørg din nye cheftræner.": "We don't know that key. Check it — or ask your new head coach.",
-"Det er en klubnøgle til en familie — den hører hjemme i StreakTennis-appen. Her skal klubbens træner- eller cheftrænernøgle bruges.": "That is a family's club key — it belongs in the StreakTennis app. Use the club's coach or head-coach key here.",
-"Det er en klubnøgle til en familie — den hører hjemme i StreakTennis-appen. Her skal en træner- eller cheftrænernøgle bruges.": "That is a family's club key — it belongs in the StreakTennis app. A coach or head-coach key is needed here.",
-"Der er allerede en konto på den nøgle ({x}). Gå tilbage og log ind.": "There is already an account on that key ({x}). Go back and log in.",
-"Der er allerede en konto på den nøgle ({x}). Bed klubbens cheftræner om din egen nøgle — to trænere må ikke dele én.": "There is already an account on that key ({x}). Ask the club's head coach for your own key — two coaches must not share one.",
 "Se de røde felter — der mangler noget.": "Look at the red fields — something is missing.",
 "Mailen ser ikke rigtig ud — ret den, eller lad feltet stå tomt.": "The e-mail doesn't look right — fix it, or leave the field empty.",
 "Kontoen kunne ikke oprettes.": "The account could not be created.",
 "kontoen kunne ikke oprettes lige nu — prøv et andet brugernavn eller igen om lidt": "the account could not be created right now — try another username or again in a moment",
-"Nøglen ser ikke rigtig ud — 12 tegn i grupper af fire.": "The key doesn't look right — 12 characters in groups of four.",
 "Ingen forbindelse — prøv igen. Der er ikke sket noget.": "No connection — try again. Nothing has happened.",
 "Ingen forbindelse — prøv igen.": "No connection — try again.",
 "Ingen forbindelse.": "No connection.",
 "Ingen forbindelse — prøv igen. Din trup er urørt.": "No connection — try again. Your squad is untouched.",
-"Nøglen kunne ikke gemmes. Din trup er urørt.": "The key could not be saved. Your squad is untouched.",
-"Nøglen kunne ikke gemmes.": "The key could not be saved.",
 "Der er ingen konto på denne telefon.": "There is no account on this phone.",
 "Der er ingen konto på denne telefon — log ind i stedet.": "There is no account on this phone — log in instead.",
-"Skriv dit kodeord — nøglen låses ind under det.": "Enter your password — the key is locked under it.",
-"Nøglen er gemt, og telefonen er ryddet for den forrige klub. Truppen starter tom — skriv din nye ind under 👥 MIN TRUP.": "The key is saved, and the phone is cleared of the previous club. The squad starts empty — enter your new one under 👥 MY SQUAD.",
-"Nøglen er gemt. Din trup og dine vurderinger står, hvor de stod.": "The key is saved. Your squad and your ratings are where they were.",
-"Nøglen er gemt. Truppen starter tom — børnene fra din forrige klub følger ikke med.": "The key is saved. The squad starts empty — the children from your previous club do not come along.",
 "Du er inde i {x}. Alt er klar.": "You are in at {x}. All set.",
-"Kunne ikke udstede: {x}": "Could not issue: {x}",
 "Kunne ikke spærre: {x}": "Could not block: {x}",
 "Kunne ikke hente: {x}": "Could not fetch: {x}",
 "Kunne ikke gemme: {x}": "Could not save: {x}",
 "Afvist: {x}": "Rejected: {x}",
 "Data blev afvist af vagten: {x}": "Data was rejected by the guard: {x}",
-"Indtast klubkoden først.": "Enter the club code first.",
-"Klubkoden er gemt på denne enhed ✓": "The club code is saved on this device ✓",
-"Kunne ikke kopiere — markér nøglen selv.": "Could not copy — select the key yourself.",
 "Kunne ikke kopiere — marker teksten manuelt.": "Could not copy — select the text manually.",
 "Kopiering kræver en nyere browser.": "Copying needs a newer browser.",
 "Sikkerhedskopien er kopieret ✓": "The backup has been copied ✓",
@@ -1519,7 +1446,6 @@ var EN = {
 "🔥 Streaken er TÆNDT for {x} · {n} spillere har fået holdet sat ✓": "🔥 The streak is ON for {x} · {n} players had their group set ✓",
 "🔥 Streaken er TÆNDT for {x} · {n} spiller har fået holdet sat ✓": "🔥 The streak is ON for {x} · {n} player had their group set ✓",
 "{x} er lukket": "{x} is closed",
-"Ny nøgle fra klubben": "New key from the club",
 "Uden gruppe": "No group",
 "UDEN GRUPPE": "NO GROUP",
 "👥 GRUPPER": "👥 GROUPS",
@@ -1555,16 +1481,10 @@ var EN = {
 "{n} spillere i alt": "{n} players in total",
 "{n} spiller i alt": "{n} player in total",
 "kampe": "matches",
-"Klubkode": "Club code",
 "Tryk igen — log ud": "Tap again — log out",
 "Kopiér": "Copy",
 "Kopieret ✓": "Copied ✓",
 "Gendannet ✓ {n} vurderinger · {n} evalueringer": "Restored ✓ {n} ratings · {n} evaluations",
-"Trænernøglen til {x} er spærret ✓": "The coach key for {x} has been blocked ✓",
-"Nøglen til {x} er spærret ✓": "The key for {x} has been blocked ✓",
-"Trænernøglen er spærret ✓": "The coach key has been blocked ✓",
-"Nøglen er spærret ✓": "The key has been blocked ✓",
-"Der er allerede en konto på den nøgle. Gå tilbage og log ind.": "There is already an account on that key. Go back and log in.",
 "Vurderet {x} · ugens fokus: teknisk": "Rated {x} · focus of the week: technical",
 "Vurderet {x} · ugens fokus: taktisk": "Rated {x} · focus of the week: tactical",
 "Vurderet {x} · ugens fokus: fysisk": "Rated {x} · focus of the week: physical",
@@ -1572,14 +1492,13 @@ var EN = {
 "{x} er lagt i truppen ✓ · {x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 GRUPPER.": "{x} has been added to the squad ✓ · {x} calls their own group «{x}» — put {x} in a group under 👥 GROUPS.",
 "De forsvinder, så snart din første rigtige spiller er i truppen. 💡 Den nemmeste vej: find spilleren under 📲 INVITÉR SPILLER — siger familien ja i StreakTennis, dukker spilleren op under 📥 NYE SPILLERE, og et tryk på": "They disappear as soon as your first real player is in the squad. 💡 The easiest way: find the player under 📲 INVITE PLAYER — once the family says yes in StreakTennis, the player shows up under ⚙️ SETTINGS → 📥 NEW PLAYERS, and one tap on",
 "Holdets træningsstreaks som venlig konkurrence i spillernes app — kun fornavne og tal. FRA som standard; du vælger til pr. hold, og hver familie skal OGSÅ selv sige ja i deres app (og i forældresamtykkets stige-punkt), før deres barn kan ses.": "The squad's training streaks as friendly competition in the players' app — first names and numbers only. OFF by default; you opt in per group, and every family must ALSO say yes in their own app (and in the streak item of the parental consent) before their child can be seen.",
-"Kommet ind med en nøgle": "Came in with a key",
 "Venter på klubben": "Waiting for the club"
 };
 // ⭐ v6.0.0 · programmet og REGISTRÉR på engelsk
 Object.assign(EN, {
 "📋 Registrér": "📋 Register", "REGISTRÉR": "REGISTER", "⚡ Vurdér træningen": "⚡ Rate the practice", "VURDÉR TRÆNINGEN": "RATE THE PRACTICE", "⚡ VURDÉR TRÆNINGEN": "⚡ RATE THE PRACTICE", "Vurdér et andet pas": "Rate another session",
 "Invitér spiller": "Invite player", "Program": "Schedule", "🔑 Invitér spiller": "🔑 Invite player", "📅 Program": "📅 Schedule", "👥 Grupper": "👥 Groups", "⚡ Vurdér træning": "⚡ Rate practice", "📋 Evaluering": "📋 Evaluation", "💬 Trænerrummet": "💬 The coaches' room", "⚙️ Indstillinger": "⚙️ Settings", "📋 Registrér": "📋 Register", "Grupper": "Groups", "Vurdér træning": "Rate practice", "Evaluering": "Evaluation", "Trænerrummet": "The coaches' room", "Indstillinger": "Settings", "Cheftræner": "Head coach", "Træner": "Coach",
-"via brugernavn — eller QR til nye": "by username — or a QR code for new players", "ugeskemaet — tid, bane, træner, spillere": "the weekly schedule — time, court, coach, players", "klubkode, trup & kopi": "club key, squad & backup",
+"ugeskemaet — tid, bane, træner, spillere": "the weekly schedule — time, court, coach, players", 
 "HJEM": "HOME", "PROGRAM": "SCHEDULE", "VURDÉR": "RATE", "GRUPPER": "GROUPS", "MERE": "MORE",
 "📅 UGESKEMAET": "📅 THE WEEKLY SCHEDULE",
 "✓ Godkend og send ud": "✓ Approve and publish",
@@ -1600,7 +1519,6 @@ Object.assign(EN, {
 "Dagens pas fra det godkendte program. Glemte du et pas i går? Vælg datoen.": "Today's sessions from the approved schedule. Forgot one yesterday? Pick the date.",
 "Ingen pas i dag i det godkendte program.": "No sessions today in the approved schedule.",
 "Henter dagens pas …": "Fetching today's sessions …",
-"Forbind klubnøglen under ⚙️ først.": "Connect the club key under ⚙️ first.",
 "Henter …": "Fetching …",
 "Ugeskemaet": "The weekly schedule", "Importér": "Import", "Godkend og send ud": "Approve and publish", "Godkender …": "Approving …", "Timer om ugen": "Hours per week",
 "sæt ind fra Excel — én række pr. pas": "paste from Excel — one row per session", "kladden er tom": "the draft is empty", "ingen mål sat endnu": "no targets set yet",
@@ -1624,7 +1542,6 @@ Object.assign(EN, {
 "⏳ Sender {n} vurdering …": "⏳ Sending {n} rating …", "⏳ Sender {n} vurderinger …": "⏳ Sending {n} ratings …",
 "Vurderingen kom ikke frem hos {x}. Fremmødet er gemt.": "The rating didn't reach {x}. Attendance is saved.", "Send vurderingerne igen": "Send the ratings again",
 "📅 FRA PROGRAMMET": "📅 FROM THE SCHEDULE", "👥 EN GRUPPE": "👥 A GROUP", "VURDERING · {x}": "RATING · {x}", "{n} spillere i gruppen": "{n} players in the group", "{n} spiller i gruppen": "{n} player in the group",
-"Forbind klubnøglen under ⚙️ — så kommer dagens pas frem her, og fremmødet skrives i spillernes træningslog.": "Connect the club key under ⚙️ — then today's sessions show up here, and attendance is written to the players' training log.",
 "Dagens pas — fremmødet skrives i spillernes træningslog og tæller i streaken. Glemte du et pas i går? Vælg datoen.": "Today's sessions — attendance is written to the players' training log and counts in the streak. Forgot one yesterday? Pick the date.",
 "Ingen pas i dag i det godkendte program — vælg en gruppe herunder.": "No sessions today in the approved schedule — pick a group below.",
 "Uden et pas i programmet: samme skærm, scores gemmes hos spillerne. Læg passet i PROGRAM, så tæller fremmødet også i deres streak.": "Without a session in the schedule: same screen, scores are saved with the players. Put the session in SCHEDULE and attendance counts in their streak too.",
@@ -1633,7 +1550,6 @@ Object.assign(EN, {
 "Én farve pr. spiller = vurderet. ✗ = ikke mødt. Scores gemmes hos spillerne — læg passet i PROGRAM, så tæller fremmødet også i deres streak.": "One colour per player = rated. ✗ = absent. Scores are saved with the players — put the session in SCHEDULE and attendance counts in their streak too.",
 "‹ Vælg et andet pas eller en gruppe": "‹ Choose another session or group", "Vurdér et andet pas eller en gruppe": "Rate another session or group",
 "{n} vurderet ({x})": "{n} rated ({x})", "{n} vurderet": "{n} rated", "{x} · {x} · {n} ikke mødt": "{x} · {x} · {n} absent",
-"{x}: gemt i din boks — får en nøgle under 🔑 Invitér spiller, så rejser den med.": "{x}: saved in your box — once they get a key under 🔑 Invite player, it travels with them.",
 "Vurderingen kom ikke frem hos {x}. Scoren står i din boks.": "The rating didn't reach {x}. The score is in your box.",
 "Udstil": "Publish", "🌐 Udstil": "🌐 Publish", "på klubbens hjemmeside — link eller iframe": "on the club's website — link or iframe",
 "🌐 KLUBBENS PROGRAM PÅ HJEMMESIDEN": "🌐 THE CLUB'S SCHEDULE ON THE WEBSITE", "Tændt — siden viser det godkendte program": "On — the page shows the approved schedule", "Slukket — linket viser ingenting endnu": "Off — the link shows nothing yet",
@@ -1646,16 +1562,15 @@ Object.assign(EN, {
 "NYT LINK": "NEW LINK", "Et nyt link gør det gamle dødt i samme sekund — brug det, hvis linket er havnet et sted, det ikke skulle.": "A new link kills the old one the same second — use it if the link ended up somewhere it shouldn't.",
 "Ja, lav et nyt link": "Yes, make a new link", "Fortryd": "Cancel", "Lav et nyt link …": "Make a new link …", "Kunne ikke hente udstillingen.": "Couldn't fetch the publishing settings.", "Kunne ikke kopiere — markér teksten og kopiér selv.": "Couldn't copy — select the text and copy it yourself.",
 "Sådan virker StreakCoach": "How StreakCoach works", "guide med billeder af hver skærm — åbner i en ny fane": "a guide with a picture of every screen — opens in a new tab",
-"Nøgler og invitationer": "Keys and invitations", "familier og trænere — via brugernavn eller QR": "families and coaches — by username or QR", "Skyen": "The cloud",
+"Skyen": "The cloud",
 "ikke tændt på denne telefon": "not on for this phone", "skyen er nyere end telefonen": "the cloud is newer than this phone", "intet at gemme endnu": "nothing to save yet", "gemt i skyen ✓": "saved to the cloud ✓",
 "Nye spillere": "New players", "ikke tjekket endnu — åbn for at se": "not checked yet — open to see", "alle klubbens spillere er i din trup ✓": "all the club's players are in your squad ✓",
-"Forbindelse": "Connection", "ingen klubkode — alt bliver på telefonen": "no club code — everything stays on this phone", "Min trup": "My squad", "tom — læg den første spiller ind": "empty — add the first player",
+"Forbindelse": "Connection", "Min trup": "My squad", "tom — læg den første spiller ind": "empty — add the first player",
 "Din konto": "Your account", "ikke logget ind": "not signed in", "Sprog": "Language", "Streak": "Streak", "stigen er fra for alle grupper": "the ladder is off for every group",
 "TÆND SKYEN": "TURN ON THE CLOUD", "Din trup og dine vurderinger ligger kun på denne telefon — tast dit kodeord én gang": "Your squad and your ratings live only on this phone — enter your password once",
-"NY SPILLER": "NEW PLAYER", "NYE SPILLERE": "NEW PLAYERS", "kommet ind med en nøgle — mangler i truppen": "came in with a key — not in your squad yet",
+"NY SPILLER": "NEW PLAYER", "NYE SPILLERE": "NEW PLAYERS", 
 "📖 Sådan virker StreakCoach": "📖 How StreakCoach works", "Skyen (kortet nedenfor) har en låst kopi. Sikkerhedskopien her er din egen fil ved siden af — til dig selv, ikke til os.": "The cloud (the card below) holds a locked copy. The backup here is your own file alongside it — for you, not for us."
 });
-
 Object.assign(EN, {
   "\u2601\ufe0f SKYEN": "\u2601\ufe0f THE CLOUD",
   "Din trup, dine grupper, vurderinger og evalueringer gemmes i skyen \u2014 l\u00e5st med dit kodeord. Mister du telefonen, logger du bare ind p\u00e5 en ny. Heller ikke vi kan l\u00e6se boksen.": "Your squad, groups, ratings and evaluations are saved in the cloud \u2014 locked with your password. Lose the phone and you just log in on a new one. Not even we can read the box.",
@@ -1682,19 +1597,16 @@ Object.assign(EN, {   /* v6.9.0 · automatisk backup */
   "Automatisk backup": "Automatic backup",
   "Din trup, dine grupper, vurderinger og evalueringer gemmes automatisk i skyen — låst med dit kodeord, så heller ikke vi kan læse dem. Denne telefon mangler kun dit kodeord én gang.": "Your squad, groups, ratings and evaluations are backed up to the cloud automatically — locked with your password, so not even we can read them. This phone just needs your password once.",
   "dit kodeord": "your password", "Start backup": "Start backup", "Glemt kodeord? Vælg et nyt": "Forgot your password? Choose a new one",
-  "Vælg et nyt kodeord": "Choose a new password", "Telefonen beviser, at det er dig, med den klubnøgle, den allerede har.": "The phone proves it is you with the club key it already holds.",
+  "Vælg et nyt kodeord": "Choose a new password", 
   "Der ligger en backup fra {x}, som kun dit gamle kodeord kan åbne. Med et nyt kodeord bliver det, der står på denne telefon, din backup.": "There is a backup from {x} that only your old password can open. With a new password, what is on this phone becomes your backup.",
   "nyt kodeord (mindst 8 tegn)": "new password (at least 8 characters)", "gentag det nye kodeord": "repeat the new password",
   "Gem nyt kodeord og start backup": "Save new password and start backup", "← Jeg kan huske det": "← I remember it",
   "Kodeordet passer ikke.": "The password is not right.", "Ingen forbindelse — prøv igen.": "No connection — try again.",
   "For mange forsøg i dag — prøv igen i morgen, eller vælg et nyt kodeord.": "Too many attempts today — try again tomorrow, or choose a new password.",
   "For mange forsøg i dag — prøv igen i morgen.": "Too many attempts today — try again tomorrow.",
-  "Nøglen på denne telefon hører ikke til din konto — log ud og ind med den rigtige.": "The key on this phone does not belong to your account — log out and in with the right one.",
-  "Klubnøglen på telefonen gælder ikke længere — tal med klubbens administrator.": "The club key on this phone is no longer valid — talk to the club's administrator.",
   "Kodeordet skal være mindst 8 tegn.": "The password must be at least 8 characters.", "Vælg et andet kodeord — det er for nemt at gætte.": "Choose another password — it is too easy to guess.",
   "Serveren svarede ikke som ventet — prøv igen.": "The server did not answer as expected — try again.",
   "De to kodeord er ikke ens.": "The two passwords are not the same.", "Der er ingen konto på denne telefon.": "There is no account on this phone.",
-  "Backup kræver en konto. Log ud under 👤 DIN KONTO, og opret dig med din nøgle — så kører den automatisk.": "Backup needs an account. Log out under 👤 YOUR ACCOUNT and sign up with your key — then it runs automatically.",
   "✓ Nyt kodeord · backup startet": "✓ New password · backup started", "✓ Automatisk backup · gemt {x}": "✓ Automatic backup · saved {x}",
   "✓ Automatisk backup · gemt {x} · ændringer på vej": "✓ Automatic backup · saved {x} · changes on their way",
   "BACKUP KRÆVER EN KONTO": "BACKUP NEEDS AN ACCOUNT", "Din trup og dine vurderinger ligger kun på denne telefon": "Your squad and your ratings are only on this phone",
@@ -1721,14 +1633,13 @@ Object.assign(EN, {   /* v6.13.0 · Overblik */
 Object.assign(EN, {   /* v6.12.0 · dashboardet */
   "i truppen": "in your squad", "vurderet i ugen": "rated this week", "nye spillere": "new players", "I DAG": "TODAY", "Fri i dag 🎾": "Free today 🎾",
   "dit pas": "your session", "bane {x}": "court {x}", "1 spiller": "1 player", "Træning": "Training",
-  "Forbind klubnøglen under ⚙️ — så kommer dagens pas frem her.": "Connect the club key under ⚙️ — then today's sessions show up here.",
 });
 Object.assign(EN, {   /* v6.11.0 · HJEM er kortet */
   "Spillere": "Players", "{n} i truppen": "{n} in your squad", "invitér den første": "invite the first", "ugeskemaet": "the weekly schedule",
 });
 Object.assign(EN, {   /* v6.10.0 · kortet */
-  "SPILLERE": "PLAYERS", "👥 Spillere": "👥 Players", "Klubbens nøgler": "Club keys", "🔑 Klubbens nøgler": "🔑 Club keys",
-  "trænere og familier": "coaches and families", "konto, klubbens nøgler, sprog": "account, club keys, language",
+  "SPILLERE": "PLAYERS", "👥 Spillere": "👥 Players", 
+  "trænere og familier": "coaches and families", 
   "Invitér den første spiller under 👥 SPILLERE — når han siger ja, står han i din trup.": "Invite the first player under 👥 PLAYERS — when they say yes, they are in your squad.",
   "1 NY SPILLER": "1 NEW PLAYER", "{n} NYE SPILLERE": "{n} NEW PLAYERS", "venter på jeres ja": "waiting for your yes", "mangler i truppen": "not in your squad yet",
   "{x} sagde ja og står nu i din trup under «Uden gruppe».": "{x} said yes and is now in your squad under «No group».",
@@ -1753,7 +1664,7 @@ Object.assign(EN, {   /* v6.14.0 · Spejlet */
   "Vi kender ingen, der kan modtage et spejl på det brugernavn.": "Nobody with that username can receive a mirror.", "Du kan ikke dele med dig selv.": "You cannot share with yourself.",
   "Konvolutten kunne ikke pakkes på denne telefon.": "The envelope could not be sealed on this phone.", "Delingen kunne ikke gemmes — prøv igen.": "Sharing could not be saved — try again.",
   "Delingen kunne ikke stoppes — prøv igen.": "Sharing could not be stopped — try again.", "Listen kunne ikke hentes.": "The list could not be loaded.",
-  "👁 DELER MED DIG": "👁 SHARING WITH YOU", "Log ind og tænd skyen — din nøgle til spejlet bor i den.": "Log in and turn on the cloud — your mirror key lives in it.",
+  "👁 DELER MED DIG": "👁 SHARING WITH YOU", 
   "Listen er ikke hentet.": "The list has not been loaded.", "↻ Hent": "↻ Load", "Ingen deler deres skærm med dig endnu.": "Nobody shares their screen with you yet.",
   "{x} · delt {x}": "{x} · shared {x}", "Se spejlet": "See the mirror", "Den træner deler ikke sin skærm med dig.": "That coach does not share their screen with you.",
   "{x} har ikke sendt noget til skyen endnu.": "{x} has not sent anything to the cloud yet.", "Spejlet kunne ikke låses op på denne telefon — bed {x} dele igen.": "The mirror could not be unlocked on this phone — ask {x} to share again.",
@@ -1824,9 +1735,6 @@ Object.assign(EN, {   /* v6.14.1 · Gani — hele skærmen på engelsk */
   "Sendt ✓": "Sent ✓",
   "Slettet ✓": "Deleted ✓",
   "Du kan kun slette dine egne beskeder.": "You can only delete your own messages.",
-  "Skriv klubbens trænernøgle under ⚙️ Indstillinger først.": "Enter the club's coach key under ⚙️ Settings first.",
-  "Trænerrummet er kun for klubbens trænere — den nøgle, der er gemt her, er en spillernøgle.": "The coaches' room is only for the club's coaches — the key saved here is a player key.",
-  "Nøglen blev afvist — den er spærret, udløbet eller ukendt.": "The key was rejected — it is blocked, expired or unknown.",
   "Links er ikke tilladt i rummet.": "Links are not allowed in the room.",
   "engelsk": "English",
   "dansk": "Danish",
@@ -1857,6 +1765,139 @@ Object.assign(EN, {   /* v6.14.2 · Gani II — de fem huller, skærmen fandt */
   "Afvis": "Reject",
   "tir 17:00 18:00 10&11 Jonas Mette U14 Elite Alma Askholm; Bertil B (2) 2": "tue\t17:00\t18:00\t10&11\tJonas\tMette\tU14 Elite\tAlma Askholm; Bertil B (2)\t2",
   "ugedagen (man, tir, ons, tor, fre, lør, søn)": "the weekday (mon, tue, wed, thu, fri, sat, sun)"
+});
+Object.assign(EN, {   /* v6.16.0 · nøglefri — invitationer på brugernavn */
+  "SKRIDT 1 AF 2": "STEP 1 OF 2",
+  "SKRIDT 2 AF 2": "STEP 2 OF 2",
+  "Klubbens egen side. Her vurderer du hele holdet, sætter ugens fokus og inviterer familierne til StreakTennis på deres brugernavn.": "The club's own side. Here you rate the whole squad, set the focus of the week and invite the families to StreakTennis by their username.",
+  "Invitationer på brugernavn": "Invitations by username",
+  "Du inviterer familierne selv på deres brugernavn. Vi er ikke inde over — det er klubbens rum.": "You invite the families yourself by their username. We are not involved — it is the club's space.",
+  "Din konto": "Your account",
+  "Så kan du logge ind på enhver telefon. Bagefter inviterer klubbens cheftræner dig på dit brugernavn.": "Then you can log in on any phone. Afterwards the club's head coach invites you by your username.",
+  "Velkommen, {x}!": "Welcome, {x}!",
+  "Din konto er klar. Nu skal din cheftræner invitere dig på {x}.": "Your account is ready. Now your head coach needs to invite you as {x}.",
+  "Velkommen tilbage, {x}!": "Welcome back, {x}!",
+  "Du har en invitation fra en klub.": "You have an invitation from a club.",
+  "Du er logget ind. Din klub har ikke inviteret dig endnu.": "You are logged in. Your club has not invited you yet.",
+  "Du er inde. Din adgang til klubben kunne ikke følge med — bed din cheftræner invitere dig igen.": "You are in. Your access to the club could not come along — ask your head coach to invite you again.",
+  "Venter på din klub": "Waiting for your club",
+  "Bed din cheftræner invitere": "Ask your head coach to invite",
+  ". Invitationen kommer her.": ". The invitation will show up here.",
+  "Skriv dit kodeord, så kan vi se, om klubben har inviteret dig.": "Enter your password, and we can see if the club has invited you.",
+  "dit kodeord": "your password",
+  "Tjek igen": "Check again",
+  "Log ud på denne telefon": "Log out on this phone",
+  "INVITATION": "INVITATION",
+  "fra {x}": "from {x}",
+  "som træner": "as coach",
+  "som cheftræner": "as head coach",
+  "Tag imod": "Accept",
+  "Nej tak": "No thanks",
+  "Skriv dit kodeord.": "Enter your password.",
+  "Kodeordet passer ikke.": "The password is not right.",
+  "Invitationen findes ikke længere.": "The invitation no longer exists.",
+  "Ingen forbindelse — prøv igen.": "No connection — try again.",
+  "Serveren svarede ikke som ventet — prøv igen.": "The server did not answer as expected — try again.",
+  "Der er ingen konto på denne telefon — log ind i stedet.": "There is no account on this phone — log in instead.",
+  "Ingen invitation endnu — prøv igen, når din cheftræner har inviteret dig.": "No invitation yet — try again when your head coach has invited you.",
+  "Du sagde nej tak til {x}.": "You said no thanks to {x}.",
+  "Velkommen i {x}!": "Welcome to {x}!",
+  "Du er cheftræner i {x}.": "You are head coach in {x}.",
+  "Du er træner i {x}.": "You are a coach in {x}.",
+  "Telefonen er ryddet for den forrige klub. Truppen starter tom.": "The phone has been cleared of the previous club. The squad starts empty.",
+  "Din adgang til {x} er lukket": "Your access to {x} is closed",
+  "Klubben har fjernet din adgang. Det er klubben, der bestemmer, hvem der er træner — vi kan ikke åbne den igen for dig.": "The club has removed your access. The club decides who is a coach — we cannot reopen it for you.",
+  "Truppen · dine vurderinger · fokuspunkter · evalueringer · ugens fokus · stigeholdet.": "The squad · your ratings · focus points · evaluations · focus of the week · the ladder.",
+  "📲 Er du inviteret igen?": "📲 Have you been invited again?",
+  "Du beholder din konto. Skriv dit kodeord, så kan vi se, om en klub har inviteret dig.": "You keep your account. Enter your password, and we can see if a club has invited you.",
+  "Se invitationer": "See invitations",
+  "Er det en fejl, så spørg din cheftræner — din cheftræner kan invitere dig igen på dit brugernavn. Er der ingen cheftræner tilbage i klubben, så skriv til": "If this is a mistake, ask your head coach — your head coach can invite you again by your username. If there is no head coach left in the club, write to",
+  "Bed den nye klubs cheftræner invitere dig på dit brugernavn. Du beholder din konto, dit brugernavn og dit kodeord — det er kun klubben, der skifter.": "Ask the new club's head coach to invite you by your username. You keep your account, your username and your password — only the club changes.",
+  "⚠️ Siger du ja til en anden klub, fjernes dette fra telefonen": "⚠️ If you accept another club, this is removed from the phone",
+  "truppen · dine vurderinger · fokuspunkter · evalueringer · ugens fokus · stigeholdet.": "the squad · your ratings · focus points · evaluations · focus of the week · the ladder.",
+  "Det, du allerede har sendt til spillerne, bliver stående hos klubben.": "What you have already sent to the players stays with the club.",
+  "📲 Invitér og adgang": "📲 Invite and access",
+  "Invitér og adgang": "Invite and access",
+  "spillere og trænere — på brugernavn": "players and coaches — by username",
+  "konto, invitationer, sprog": "account, invitations, language",
+  "🧑‍🏫 INVITÉR TRÆNER": "🧑‍🏫 INVITE COACH",
+  "ingen klub": "no club",
+  "Er allerede i klubben ✓": "Already in the club ✓",
+  "Venter på et ja.": "Waiting for a yes.",
+  "✉️ Invitér {x}": "✉️ Invite {x}",
+  "Sender…": "Sending…",
+  "{x} er inviteret og tager imod i StreakCoach ✓": "{x} has been invited and accepts in StreakCoach ✓",
+  "Sendte invitationer til trænere": "Sent invitations to coaches",
+  "tog imod ✓": "accepted ✓",
+  "sagde nej": "said no",
+  "venter": "waiting",
+  "Fortryd": "Undo",
+  "Invitationen er trukket tilbage ✓": "The invitation has been withdrawn ✓",
+  "Skriv trænerens brugernavn.": "Enter the coach's username.",
+  "Kun klubbens cheftræner kan invitere trænere.": "Only the club's head coach can invite coaches.",
+  "Klubben afviste telefonens adgang — log ud og ind igen.": "The club rejected this phone's access — log out and in again.",
+  "Ingen træner med det brugernavn.": "No coach with that username.",
+  "Skriv trænerens brugernavn (3-20 tegn).": "Enter the coach's username (3-20 characters).",
+  "Træneren er allerede i klubben.": "The coach is already in the club.",
+  "Træneren har allerede en invitation fra jer — den venter på et ja.": "The coach already has an invitation from you — it is waiting for a yes.",
+  "For mange åbne invitationer — fortryd en, før du sender flere.": "Too many open invitations — undo one before you send more.",
+  "Kun klubbens cheftræner kan det.": "Only the club's head coach can do that.",
+  "Den findes ikke længere.": "It no longer exists.",
+  "👥 HVEM HAR ADGANG": "👥 WHO HAS ACCESS",
+  "Opdatér": "Refresh",
+  "Vis": "Show",
+  "(uden navn)": "(no name)",
+  "træner": "coach",
+  "familie": "family",
+  "⛔ adgang fjernet": "⛔ access removed",
+  "sidst inde {x}": "last in {x}",
+  "ikke inde endnu": "not in yet",
+  "Fjern adgang": "Remove access",
+  "Sikker? Tryk igen": "Sure? Tap again",
+  "Ingen har adgang endnu.": "Nobody has access yet.",
+  "Henter …": "Loading …",
+  "Fjerner du en adgang, kommer familien eller træneren ikke ind igen, før I har inviteret dem på ny.": "If you remove an access, the family or the coach cannot get back in until you have invited them again.",
+  "Adgangen for {x} er fjernet ✓": "Access for {x} has been removed ✓",
+  "Adgangen er fjernet ✓": "Access has been removed ✓",
+  "Forbind telefonen med din klub først.": "Connect the phone to your club first.",
+  "Invitér den første spiller under ⚙️ Indstillinger → 📲 Invitér og adgang — når spilleren siger ja, står spilleren i din trup.": "Invite the first player under ⚙️ Settings → 📲 Invite and access — when the player says yes, the player is in your squad.",
+  "truppen er tom": "the squad is empty",
+  "{n} spiller i {n} gruppe · {n} i appen": "{n} player in {n} group · {n} in the app",
+  "{n} spillere i {n} gruppe · {n} i appen": "{n} players in {n} group · {n} in the app",
+  "{n} spiller i {n} grupper · {n} i appen": "{n} player in {n} groups · {n} in the app",
+  "{n} spillere i {n} grupper · {n} i appen": "{n} players in {n} groups · {n} in the app",
+  "{x} · 📲 i appen": "{x} · 📲 in the app",
+  "{x} · ikke i appen endnu": "{x} · not in the app yet",
+  "Invitér spilleren på brugernavnet under 📲 Invitér og adgang.": "Invite the player by username under 📲 Invite and access.",
+  "Familien siger ja i StreakTennis.": "The family says yes in StreakTennis.",
+  "Så står spilleren her af sig selv, og dine vurderinger lander i spillerens app.": "Then the player shows up here by itself, and your ratings land in the player's app.",
+  "de er i appen.": "they are in the app.",
+  "Forbundet til klubben · {n} spillere i appen. Vurderinger sendes automatisk.": "Connected to the club · {n} players in the app. Ratings are sent automatically.",
+  "Forbundet til klubben · {n} spiller i appen. Vurderinger sendes automatisk.": "Connected to the club · {n} player in the app. Ratings are sent automatically.",
+  "Intet sendes nogen steder. Opret en konto, så kan din klub invitere dig.": "Nothing is sent anywhere. Create an account, and your club can invite you.",
+  "Kopien indeholder trænerens tekst om spillerne. Gem den et sikkert sted — adgangen til klubben er IKKE med.": "The copy contains the coach's text about the players. Keep it somewhere safe — the access to the club is NOT included.",
+  "Ingen klub på denne telefon — skabelonen vises.": "No club on this phone — the template is shown.",
+  "Klubben afviste telefonens adgang.": "The club rejected this phone's access.",
+  "Når telefonen er forbundet med din klub, kan ugeskemaet laves her.": "Once the phone is connected to your club, the weekly schedule can be made here.",
+  "Din adgang gælder ikke som træner.": "Your access does not count as a coach.",
+  "Truppen på serveren er tom — spillerne kommer ind med en invitation.": "The squad on the server is empty — the players come in with an invitation.",
+  "ingen adgang": "no access",
+  "telefonen er ikke forbundet med klubben": "the phone is not connected to the club",
+  "adgangen til klubben blev afvist": "the access to the club was rejected",
+  "{x}: gemt i din boks — når spilleren er i appen, rejser den med.": "{x}: saved in your box — once the player is in the app, it travels along.",
+  "Når telefonen er forbundet med din klub, kommer dagens pas frem her, og fremmødet skrives i spillernes træningslog.": "Once the phone is connected to your club, today's sessions show up here, and attendance is written to the players' training log.",
+  "Når telefonen er forbundet med din klub, kommer dagens pas frem her.": "Once the phone is connected to your club, today's sessions show up here.",
+  "Trænerrummet er kun for klubbens trænere — telefonen er forbundet som spiller.": "The coaches' room is only for the club's coaches — this phone is connected as a player.",
+  "Kun klubbens trænere kan invitere — telefonen er forbundet som spiller.": "Only the club's coaches can invite — this phone is connected as a player.",
+  "Tryk Tjek for at se, om nogen familier har sagt ja.": "Tap Check to see if any families have said yes.",
+  "Ingen familier er kommet ind endnu.": "No families have come in yet.",
+  "Backup kræver en konto. Log ud under 👤 DIN KONTO, og opret dig — så kører den automatisk.": "Backup needs an account. Log out under 👤 YOUR ACCOUNT and sign up — then it runs automatically.",
+  "Du kan logge ind på enhver telefon med dit brugernavn — din adgang til klubben følger med.": "You can log in on any phone with your username — your access to the club comes along.",
+  "Start forfra sletter trup, vurderinger, klubbens adgang og login på denne telefon. Kontoen på serveren røres ikke.": "Start over deletes squad, ratings, the club's access and login on this phone. The account on the server is untouched.",
+  "Log ind og tænd skyen — spejlet bor i den.": "Log in and turn on the cloud — the mirror lives in it.",
+  "📲 Ikke i appen endnu — vurderinger bliver på denne enhed, til spilleren har sagt ja til invitationen.": "📲 Not in the app yet — ratings stay on this device until the player has accepted the invitation.",
+  "Telefonens adgang hører ikke til din konto — log ud og ind igen.": "This phone's access does not belong to your account — log out and in again.",
+  "Telefonens adgang til klubben gælder ikke længere — tal med din cheftræner.": "This phone's access to the club is no longer valid — talk to your head coach."
 });
 var _ENr = {}, _ENx = [];
 (function(){
@@ -1932,6 +1973,11 @@ function render(){
   /* ⭐⭐⭐ v6.9.0 · BACKUPPEN ER ALTID TÆNDT (Nicolai 25/9: «Skyen skal altid være tændt. Det er ikke et spørgsmål.
      Alle vil forvente det er automatisk backup»). En telefon med konto og klubnøgle, men uden boksens nøgle, kommer ikke
      forbi her — ellers ligger truppen kun på telefonen, og ingen opdager det (målt 25/9: Carstens konto har aldrig haft en boks). */
+  /* ⭐⭐⭐ v6.16.0 · NØGLEFRI: en konto uden klub venter på en invitation. Ingen faner — der er ingen klub at vise endnu. */
+  if (!paaRejse && erVenter()) {
+    el("app").innerHTML = renderVenter() + '<p class="fod">StreakCoach · SportsAInalytics · ' + VERSION + '</p>';
+    oversaetAlt(); return;
+  }
   if (!paaRejse && boksPortLukket()) {
     el("app").innerHTML = renderBoksPort() + '<p class="fod">StreakCoach \u00b7 SportsAInalytics \u00b7 ' + VERSION + '</p>';
     oversaetAlt(); return;
@@ -1997,24 +2043,7 @@ function scDom(felt, v){
     if (v.length < 2) return { ja: false, t: "skriv dit fulde navn" };
     return { ja: true, t: "" };
   }
-  // ⭐⭐⭐ v4.2.0 · NØGLEN HAR EN DOM, MAN KAN SE.
-  //   Målt i `klub-noegler`: NOEGLE_TEGN = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-  //   — 12 tegn i grupper af fire, med bindestreg. STORE bogstaver og
-  //   tallene 2-9. Hverken 0/O eller 1/I findes, så en forælder ikke skal
-  //   gætte i et klubhus. Det står nu på skærmen i stedet for i motoren.
-  // ⭐ v4.3.0 · `lukNyNoegle` er SAMME felt på en anden skærm — nøglen,
-  //   en træner taster, når klubben har lukket den gamle. Dommen skal være
-  //   ét sted, ellers driver de to fra hinanden.
-  if (felt === "doerNoegle" || felt === "lukNyNoegle" || felt === "skiftNoegle") {
-    var rene = v.toUpperCase().replace(/-/g, "");
-    if (/[0O1I]/.test(v.toUpperCase()))
-      return { ja: false, t: "nøgler har hverken 0/O eller 1/I — tjek tegnet" };
-    if (/[^A-Z2-9]/.test(rene))
-      return { ja: false, t: "kun store bogstaver, tallene 2-9 og bindestreg" };
-    if (rene.length < 12) return { ja: false, t: "12 tegn i alt (" + rene.length + " nu)" };
-    if (rene.length > 12) return { ja: false, t: "12 tegn i alt — der er " + rene.length };
-    return { ja: true, t: "ser rigtigt ud" };
-  }
+  // v6.16.0 · dommen over en indtastet nøgle er væk — ingen taster en nøgle længere.
   if (felt === "doerMail") {
     if (!/^[^@\s]{1,64}@[^@\s.]+(\.[^@\s.]+)+$/.test(v)) return { ja: false, t: "ser ikke ud som en mail" };
     return { ja: true, t: "" };
@@ -2105,52 +2134,28 @@ function scMaerk(){
 // ══════════════════════════════════════════════════════════════════════
 
 // Ordret den liste, `KLUB_TING` rydder — i menneskeord.
-var SKIFT_FJERNES = "truppen · dine vurderinger · fokuspunkter · evalueringer · ugens fokus · stigeholdet · familiernes nøgler";
+var SKIFT_FJERNES = "truppen · dine vurderinger · fokuspunkter · evalueringer · ugens fokus · stigeholdet";
 
+// ⭐⭐ v6.16.0 · KLUBSKIFTET ER EN INVITATION. Den nye klubs cheftræner inviterer dig på brugernavnet; du tager imod her.
+//   Et ja til en ANDEN klub rydder telefonen (KLUB_TING) — det står her, før der trykkes.
 function skiftKlubKort(k){
   if (!S.skiftAaben) return '';
-  var f = S.skiftFund;
-  var samme = !!(f && f.klub && k && f.klub === k.klub);
   var h = '<div style="margin-top:11px;padding-top:10px;border-top:1px dashed var(--kant)">' +
     '<b style="display:block;font-size:13px;margin-bottom:4px">🔄 Skift til en anden klub</b>' +
-    '<p class="lille" style="margin:0 0 9px;line-height:1.55">Har du fået en nøgle af en ny klub, taster du den her. ' +
-    'Du beholder din konto, dit brugernavn og dit kodeord — det er kun klubben, der skifter.</p>' +
-    scFelt("skiftNoegle", "ABCD-EFGH-JKLM", { stort: true, maks: 20 });
-
-  if (!f) {
-    h += '<button class="knap valg" style="width:100%;margin-top:7px;min-height:46px"' +
-      (S.skiftHenter ? ' disabled' : '') + ' data-act="skift-tjek">' +
-      (S.skiftHenter ? '⏳ tjekker …' : 'Tjek nøglen') + '</button>';
-  } else {
-    // ⭐ Klubbens navn kommer fra SERVEREN. Skærmen gætter aldrig.
-    h += '<p class="lille" style="margin:8px 0 0;color:var(--vundet)">✓ Nøglen hører til <b>' + esc(f.klub) + '</b> · ' +
-      (f.rolle === "admin" ? "cheftræner" : "træner") + '</p>';
-    if (samme) {
-      h += '<p class="lille" style="margin:7px 0 0;line-height:1.55">Det er den klub, du allerede er i. ' +
-        'Nøglen skiftes, og <b>din trup bliver, hvor den er</b>.</p>';
-    } else {
-      h += '<div class="kort" style="margin:9px 0 0;padding:11px;background:rgba(210,72,78,.07);border-color:rgba(210,72,78,.35)">' +
-        '<b style="display:block;font-size:12.5px;color:var(--tabt);margin-bottom:4px">⚠️ Dette fjernes fra telefonen</b>' +
-        '<p class="lille" style="margin:0;line-height:1.6">' + SKIFT_FJERNES + '.</p>' +
-        '<p class="lille" style="margin:7px 0 0;line-height:1.6;opacity:.8">Det, du allerede har sendt til spillerne i ' +
-        esc(k && k.klub ? k.klub : "din klub") + ', bliver stående hos dem. ' +
-        '<b>Vil du beholde din egen liste, så tag en sikkerhedskopi under ⚙️ FORBINDELSE først.</b></p></div>';
-    }
-    h += '<div class="raekke" style="gap:6px;margin-top:9px">' +
+    '<p class="lille" style="margin:0 0 9px;line-height:1.55">Bed den nye klubs cheftræner invitere dig på dit brugernavn. Du beholder din konto, dit brugernavn og dit kodeord — det er kun klubben, der skifter.</p>' +
+    '<div class="kort" style="margin:0 0 9px;padding:11px;background:rgba(210,72,78,.07);border-color:rgba(210,72,78,.35)">' +
+      '<b style="display:block;font-size:12.5px;color:var(--tabt);margin-bottom:4px">⚠️ Siger du ja til en anden klub, fjernes dette fra telefonen</b>' +
+      '<p class="lille" style="margin:0;line-height:1.6">' + SKIFT_FJERNES + '.</p>' +
+      '<p class="lille" style="margin:7px 0 0;line-height:1.6;opacity:.8">Det, du allerede har sendt til spillerne, bliver stående hos klubben. ' +
+      '<b>Vil du beholde din egen liste, så tag en sikkerhedskopi under ⚙️ FORBINDELSE først.</b></p></div>';
+  if (!S.tbudKode) {
+    h += '<div class="raekke" style="gap:6px">' +
       '<input class="felt" style="flex:1;min-width:0" type="' + (S.skiftVisKode ? "text" : "password") + '" data-felt="skiftKode" value="' + esc(S.skiftKode || "") + '" placeholder="dit kodeord" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="current-password">' +
-      '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px" data-act="skift-vis-kode">' + (S.skiftVisKode ? "🙈" : "👁") + '</button></div>' +
-      '<p class="lille" style="margin:5px 2px 0;opacity:.7">Kodeordet skal med, fordi nøglen låses ind under det. Vi kan ikke læse den uden.</p>' +
-      '<button class="knap" style="width:100%;margin-top:9px;min-height:50px;background:' +
-      (S.skiftBekraeft && !samme ? 'var(--tabt)' : 'var(--grus)') + '"' + (S.skiftHenter ? ' disabled' : '') +
-      ' data-act="skift-gem">' +
-      (S.skiftHenter ? '⏳ …'
-        : (samme ? 'Gem den nye nøgle'
-          : (S.skiftBekraeft ? '⚠️ Tryk igen — skift til ' + esc(f.klub) : 'Skift til ' + esc(f.klub)))) + '</button>';
+      '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px" data-act="skift-vis-kode">' + (S.skiftVisKode ? "🙈" : "👁") + '</button></div>';
   }
-  if (S.skiftBesked) {
-    h += '<p class="lille" style="margin:8px 2px 0;line-height:1.5;color:' +
-      (S.skiftBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skiftBesked.t) + '</p>';
-  }
+  h += '<button class="knap valg" style="width:100%;margin-top:7px;min-height:46px"' +
+    (S.tbudHenter ? ' disabled' : '') + ' data-act="skift-bud-hent">' + (S.tbudHenter ? '⏳ …' : 'Se invitationer') + '</button>' +
+    tbudBeskedHer() + invitKort();
   return h + '</div>';
 }
 
@@ -2168,8 +2173,8 @@ function boksFejlTekst(r, login){
   if (f === "netvaerk") return "Ingen forbindelse — prøv igen.";
   if (f === "forkert") return "Kodeordet passer ikke.";
   if (f === "loft") return login ? "For mange forsøg i dag — prøv igen i morgen, eller vælg et nyt kodeord." : "For mange forsøg i dag — prøv igen i morgen.";
-  if (f === "ikke-din") return "Nøglen på denne telefon hører ikke til din konto — log ud og ind med den rigtige.";
-  if (f === "adgang") return "Klubnøglen på telefonen gælder ikke længere — tal med klubbens administrator.";
+  if (f === "ikke-din") return "Telefonens adgang hører ikke til din konto — log ud og ind igen.";
+  if (f === "adgang") return "Telefonens adgang til klubben gælder ikke længere — tal med din cheftræner.";
   if (f === "kort") return "Kodeordet skal være mindst 8 tegn.";
   if (f === "nemt") return "Vælg et andet kodeord — det er for nemt at gætte.";
   return "Serveren svarede ikke som ventet — prøv igen.";
@@ -2214,35 +2219,34 @@ function renderLukket(){
   h += '<div style="text-align:center">' +
     '<div class="sc-op" style="font-size:46px;line-height:1">🔒</div>' +
     '<h1 class="sc-op" style="animation-delay:.04s;margin-top:10px">Din adgang til ' + esc(klub) + ' er lukket</h1>' +
-    '<p class="und sc-op" style="animation-delay:.08s">Klubben har spærret din nøgle. Det er klubben, der bestemmer, hvem der er træner — vi kan ikke åbne den igen for dig.</p>' +
+    '<p class="und sc-op" style="animation-delay:.08s">Klubben har fjernet din adgang. Det er klubben, der bestemmer, hvem der er træner — vi kan ikke åbne den igen for dig.</p>' +
     '</div>';
 
   h += '<div class="kort sc-op" style="animation-delay:.12s;text-align:left">' +
     '<b style="display:block;margin-bottom:6px">Det er fjernet fra denne telefon</b>' +
-    '<p class="lille" style="margin:0;line-height:1.6">Truppen · dine vurderinger · fokuspunkter · evalueringer · ugens fokus · stigeholdet · familiernes nøgler.</p>' +
+    '<p class="lille" style="margin:0;line-height:1.6">Truppen · dine vurderinger · fokuspunkter · evalueringer · ugens fokus · stigeholdet.</p>' +
     '<p class="lille" style="margin:9px 0 0;line-height:1.6;color:var(--daempet)">Det, du allerede har sendt til spillerne, bliver stående hos klubben. Det er deres — ikke telefonens.</p>' +
     '</div>';
 
-  // ── ER HAN SKIFTET KLUB, ER HAN IKKE FÆRDIG ────────────────────────
+  // ── ⭐⭐ v6.16.0 · ER HAN INVITERET IGEN — ELLER AF EN NY KLUB? Han beholder sin konto; kodeordet henter invitationerne.
   if (k && k.brugernavn) {
     h += '<div class="kort sc-op" style="animation-delay:.16s;text-align:left">' +
-      '<b style="display:block;margin-bottom:4px">🔑 Har du fået en ny nøgle?</b>' +
-      '<p class="lille" style="margin:0 0 9px;line-height:1.55">Er du skiftet til en anden klub, beholder du din konto — tast den nye nøgle, så er du inde igen. Kodeordet skal med, fordi nøglen låses ind under det.</p>' +
-      '<p class="lille" style="margin:0 0 7px;color:var(--daempet)">Logget ind som <b>' + esc(k.brugernavn) + '</b></p>' +
-      scFelt("lukNyNoegle", "ABCD-EFGH-JKLM", { stort: true, maks: 20 }) +
-      '<div class="raekke" style="gap:6px;margin-top:7px">' +
+      '<b style="display:block;margin-bottom:4px">📲 Er du inviteret igen?</b>' +
+      '<p class="lille" style="margin:0 0 9px;line-height:1.55">Du beholder din konto. Skriv dit kodeord, så kan vi se, om en klub har inviteret dig.</p>' +
+      '<p class="lille" style="margin:0 0 7px;color:var(--daempet)">Logget ind som <b>' + esc(k.brugernavn) + '</b></p>';
+    if (!S.tbudKode) {
+      h += '<div class="raekke" style="gap:6px;margin-top:7px">' +
         '<input class="felt" style="flex:1;min-width:0" type="' + (S.lukVisKode ? "text" : "password") + '" data-felt="lukKode" value="' + esc(S.lukKode || "") + '" placeholder="dit kodeord" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="current-password">' +
-        '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px" data-act="luk-vis-kode">' + (S.lukVisKode ? "🙈" : "👁") + '</button></div>' +
-      '<button class="knap" style="margin-top:9px;width:100%;min-height:50px;background:var(--grus)"' +
-        (S.lukSender ? ' disabled' : '') + ' data-act="luk-gem-noegle">' +
-        (S.lukSender ? '⏳ tjekker …' : 'Gem den nye nøgle') + '</button>' +
-      (S.lukBesked ? '<p class="lille" style="margin:8px 0 0;line-height:1.5;color:' +
-        (S.lukBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.lukBesked.t) + '</p>' : '') +
-      '</div>';
+        '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px" data-act="luk-vis-kode">' + (S.lukVisKode ? "🙈" : "👁") + '</button></div>';
+    }
+    h += '<button class="knap" style="margin-top:9px;width:100%;min-height:50px;background:var(--grus)"' +
+        (S.tbudHenter ? ' disabled' : '') + ' data-act="luk-bud-hent">' +
+        (S.tbudHenter ? '⏳ …' : 'Se invitationer') + '</button>' + tbudBeskedHer() +
+      '</div>' + invitKort();
   }
 
   h += '<button class="knap valg sc-op" style="animation-delay:.22s;margin-top:12px;background:none;border-color:var(--kant);color:var(--daempet)" data-act="luk-log-ud">Log ud på denne telefon</button>';
-  h += '<p class="lille sc-op" style="animation-delay:.26s;margin:14px 2px 0;color:var(--daempet);line-height:1.55">Er det en fejl, så spørg din cheftræner — han kan udstede en ny nøgle. Er der ingen cheftræner tilbage i klubben, så skriv til <a href="mailto:nicolai@sportsainalytics.com">nicolai@sportsainalytics.com</a>.</p>';
+  h += '<p class="lille sc-op" style="animation-delay:.26s;margin:14px 2px 0;color:var(--daempet);line-height:1.55">Er det en fejl, så spørg din cheftræner — din cheftræner kan invitere dig igen på dit brugernavn. Er der ingen cheftræner tilbage i klubben, så skriv til <a href="mailto:nicolai@sportsainalytics.com">nicolai@sportsainalytics.com</a>.</p>';
   return h + '</div>';
 }
 
@@ -2300,15 +2304,17 @@ function renderRejse(){
   }
 
   // ══ TRIN 1 · INDFØRINGEN ═══════════════════════════════════════════
+  // ⭐⭐⭐ v6.16.0 · NØGLEFRI (Nicolai 2/10: «Jeg vil ALDRIG have nøgler der skal sendes rundt»). To skridt: hvad er det
+  //   her → din konto. Klubben finder dig bagefter på dit brugernavn og inviterer dig; du tager imod her i StreakCoach.
   if (t === 1) {
-    h += '<div class="rejse-trin sc-op">SKRIDT 1 AF 3</div>' +
+    h += '<div class="rejse-trin sc-op">SKRIDT 1 AF 2</div>' +
       '<h1 class="sc-op" style="animation-delay:.04s">Hvad er StreakCoach?</h1>' +
-      '<p class="und sc-op" style="animation-delay:.08s">Klubbens egen side. Her vurderer du hele holdet, sætter ugens fokus og giver familierne deres nøgle til StreakTennis.</p>';
+      '<p class="und sc-op" style="animation-delay:.08s">Klubbens egen side. Her vurderer du hele holdet, sætter ugens fokus og inviterer familierne til StreakTennis på deres brugernavn.</p>';
     var _fl = [
       ["⚡", "Vurdér hele holdet", "Under 20 sekunder efter træning. Ét tryk pr. spiller."],
       ["📋", "Evalueringer, du godkender", "Et udkast skrives ud fra dine egne tal. Du retter og siger god for det."],
       ["🎯", "Ugens fokus", "Ét punkt, hele holdet arbejder med. Det står i spillerens app."],
-      ["🔑", "Nøgler til familierne", "Du inviterer selv. Vi er ikke inde over — det er klubbens rum."],
+      ["📲", "Invitationer på brugernavn", "Du inviterer familierne selv på deres brugernavn. Vi er ikke inde over — det er klubbens rum."],
     ];
     for (var i = 0; i < _fl.length; i++) {
       h += '<div class="sc-flise sc-op" style="animation-delay:' + (.12 + i * .05).toFixed(2) + 's">' +
@@ -2320,26 +2326,10 @@ function renderRejse(){
     return h + '</div>';
   }
 
-  // ══ TRIN 2 · NØGLEN ════════════════════════════════════════════════
-  // ⭐ Den TJEKKES. Før v4.0.0 fejrede skærmen uden at spørge serveren.
-  if (t === 2) {
-    h += '<div class="rejse-trin sc-op">SKRIDT 2 AF 3</div>' +
-      '<h1 class="sc-op" style="animation-delay:.04s">Din trænernøgle</h1>' +
-      '<p class="und sc-op" style="animation-delay:.08s">Den har du fået af klubben. Vi udsteder den ikke — det gør cheftræneren, og det er med vilje.</p>' +
-      '<div class="sc-op" style="animation-delay:.12s">' + scFelt("doerNoegle", "ABCD-EFGH-JKLM", { stort: true, maks: 20 }) + '</div>' +
-      '<button class="knap sc-op" style="animation-delay:.16s;background:var(--grus)"' + (S.doerHenter ? ' disabled' : '') +
-        ' data-act="doer-noegle">' + (S.doerHenter ? '⏳ tjekker …' : 'Forbind') + '</button>' +
-      '<button class="knap valg sc-op" style="animation-delay:.2s;margin-top:9px;background:none;border-color:var(--kant);color:var(--daempet)" data-act="doer-tilbage">← Tilbage</button>' +
-      (S.doerBesked ? '<p class="lille" style="margin:10px 2px 0;color:' + (S.doerBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + ';line-height:1.5">' + esc(S.doerBesked.t) + '</p>' : '') +
-      '<p class="lille sc-op" style="animation-delay:.26s;margin:16px 2px 0;color:var(--daempet);line-height:1.5">Har du ingen nøgle endnu, så spørg din cheftræner. Er klubben ikke i gang, så skriv til <a href="mailto:nicolai@sportsainalytics.com">nicolai@sportsainalytics.com</a>.</p>';
-    return h + '</div>';
-  }
-
-  // ══ TRIN 3 · KONTOEN ═══════════════════════════════════════════════
-  h += '<div class="rejse-trin sc-op">SKRIDT 3 AF 3</div>' +
+  // ══ TRIN 2 · KONTOEN ═══════════════════════════════════════════════
+  h += '<div class="rejse-trin sc-op">SKRIDT 2 AF 2</div>' +
     '<h1 class="sc-op" style="animation-delay:.04s">Din konto</h1>' +
-    '<p class="und sc-op" style="animation-delay:.08s">Så kan du logge ind på enhver telefon — og din nøgle følger med. Den er låst med dit kodeord; heller ikke vi kan læse den.</p>' +
-    (S.doerKlub ? '<p class="lille sc-op" style="animation-delay:.1s;margin:-14px 2px 16px;color:var(--vundet)">✓ ' + esc(S.doerKlub) + ' · ' + (S.doerRolle === "admin" ? "cheftræner" : "træner") + '</p>' : '') +
+    '<p class="und sc-op" style="animation-delay:.08s">Så kan du logge ind på enhver telefon. Bagefter inviterer klubbens cheftræner dig på dit brugernavn.</p>' +
     '<div class="sc-op" style="animation-delay:.12s">' + scFelt("doerNavn", "dit navn", { maks: 60 }) + '</div>' +
     '<div class="sc-op" style="animation-delay:.16s;margin-top:9px">' + scFelt("doerBrugernavn", "brugernavn", { lille: true, maks: 20 }) + '</div>' +
     // ⭐ v4.9.0 · 👁 — man skal kunne SE, hvad man skriver (login havde det; oprettelsen ikke)
@@ -2353,6 +2343,110 @@ function renderRejse(){
     '<button class="knap valg sc-op" style="animation-delay:.38s;margin-top:9px;background:none;border-color:var(--kant);color:var(--daempet)" data-act="doer-tilbage">← Tilbage</button>' +
     (S.doerBesked ? '<p class="lille" style="margin:10px 2px 0;color:' + (S.doerBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + ';line-height:1.5">' + esc(S.doerBesked.t) + '</p>' : '');
   return h + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v6.16.0 · VENTESKÆRMEN OG INVITATIONERNE (traener-konto v8).
+//   En konto uden klub venter her, til klubbens cheftræner inviterer den på brugernavnet. «Tjek igen» spørger serveren
+//   (login uden nøgle); «Tag imod» svarer (bud-svar), og serveren laver adgangen — intet menneske ser den.
+//   ⛔ Kodeordet huskes KUN i hukommelsen (S.tbudKode), aldrig i lageret. Er siden genindlæst, beder skærmen om det igen.
+//   Samme kort bruges tre steder: venteskærmen · lukket-skærmen · klubskiftet under 👤 Din konto.
+// ══════════════════════════════════════════════════════════════════════
+function erVenter(){
+  var k = S.konto || lager.hent("konto", null);
+  return !!(k && k.brugernavn && !k.klub && !lager.hent("klubkode", ""));
+}
+function invitKort(){
+  var l = S.tbudListe;
+  if (!Array.isArray(l) || !l.length) return '';
+  return l.map(function(b){
+    return '<div class="kort sc-op" style="text-align:left;border-left:3px solid var(--guld);margin-top:10px">' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">INVITATION</div>' +
+      '<div style="font-size:17px;font-weight:800;margin-top:4px">' + esc(b.klub || "") + '</div>' +
+      '<div class="lille" style="color:var(--daempet)"><span>' + esc("fra " + (b.fra_navn || "klubben")) + '</span> · <span>' + (b.rolle === "admin" ? "som cheftræner" : "som træner") + '</span></div>' +
+      '<div class="raekke" style="gap:6px;margin-top:10px">' +
+        '<button class="knap" style="flex:1;min-height:46px;background:var(--guld);color:#12203a;font-weight:800"' + (S.tbudHenter ? ' disabled' : '') + ' data-act="bud-ja" data-v="' + esc(b.id) + '">' + (S.tbudHenter ? '⏳ …' : 'Tag imod') + '</button>' +
+        '<button class="knap valg" style="flex:none;min-height:46px;padding:0 16px"' + (S.tbudHenter ? ' disabled' : '') + ' data-act="bud-nej" data-v="' + esc(b.id) + '">Nej tak</button>' +
+      '</div></div>';
+  }).join("");
+}
+function tbudBeskedHer(){
+  if (!S.tbudBesked) return '';
+  return '<p class="lille" style="margin:9px 2px 0;line-height:1.5;color:' + (S.tbudBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.tbudBesked.t) + '</p>';
+}
+function renderVenter(){
+  var k = S.konto || lager.hent("konto", null) || {};
+  var h = '<div class="rejse" data-skaerm="venter">';
+  h += '<div style="text-align:center">' +
+    '<div class="sc-op" style="font-size:46px;line-height:1">⏳</div>' +
+    '<h1 class="sc-op" style="animation-delay:.04s;margin-top:10px">Venter på din klub</h1>' +
+    '<p class="und sc-op" style="animation-delay:.08s">Bed din cheftræner invitere <b>' + esc(k.brugernavn || "") + '</b>. Invitationen kommer her.</p>' +
+    '</div>';
+  h += '<div class="kort sc-op" style="animation-delay:.12s;text-align:left">';
+  if (!S.tbudKode) {
+    h += '<p class="lille" style="margin:0 0 7px;line-height:1.55">Skriv dit kodeord, så kan vi se, om klubben har inviteret dig.</p>' +
+      '<input class="felt" style="width:100%" type="password" data-felt="venterKode" value="' + esc(S.venterKode || "") + '" placeholder="dit kodeord" maxlength="200" autocapitalize="off" spellcheck="false" autocomplete="current-password">';
+  }
+  h += '<button class="knap" style="margin-top:9px;width:100%;min-height:50px;background:var(--grus)"' + (S.tbudHenter ? ' disabled' : '') + ' data-act="venter-tjek">' +
+    (S.tbudHenter ? '⏳ …' : 'Tjek igen') + '</button>' + tbudBeskedHer() + '</div>';
+  h += invitKort();
+  h += '<button class="knap valg sc-op" style="animation-delay:.2s;margin-top:14px;background:none;border-color:var(--kant);color:var(--daempet)" data-act="luk-log-ud">Log ud på denne telefon</button>';
+  return h + '</div>';
+}
+// Svaret på en invitation. Et ja: serveren har dannet adgangen — den gemmes som før, og telefonen er inde i klubben.
+async function budSvar(id, ja){
+  var k = S.konto || lager.hent("konto", null) || {};
+  var kode = S.tbudKode || "";
+  var b = (S.tbudListe || []).filter(function(x){ return x.id === id; })[0] || {};
+  if (!k.brugernavn || !kode) { S.tbudBesked = { fejl: true, t: "Skriv dit kodeord." }; render(); return; }
+  S.tbudHenter = true; S.tbudBesked = null; render();
+  var r = await kontoKald("bud-svar", { brugernavn: k.brugernavn, kode: kode, id: id, ja: ja === true }, "");
+  S.tbudHenter = false;
+  if (!r || r.fejl) {
+    if (r && r.fejl === "ukendt") S.tbudListe = (S.tbudListe || []).filter(function(x){ return x.id !== id; });
+    S.tbudBesked = { fejl: true, t: r && r.fejl === "forkert" ? "Kodeordet passer ikke." : r && r.fejl === "ukendt" ? "Invitationen findes ikke længere." : "Ingen forbindelse — prøv igen." };
+    render(); return;
+  }
+  S.tbudListe = (S.tbudListe || []).filter(function(x){ return x.id !== id; });
+  if (!r.taget) { S.tbudBesked = { fejl: false, t: "Du sagde nej tak til " + (b.klub || "klubben") + "." }; render(); return; }
+  // ⭐ Et ja. Var telefonen i en ANDEN klub, ryddes den først (KLUB_TING) — samme regel som før.
+  var skiftede = !!(k.klub && r.klub && r.klub !== k.klub);
+  if (skiftede) ryddKlubben();
+  if (r.noegle) lager.gem("klubkode", r.noegle);
+  var nk = { brugernavn: r.brugernavn || k.brugernavn, navn: r.navn || k.navn, klub: r.klub, rolle: r.rolle };
+  lager.gem("konto", nk); S.konto = nk;
+  lager.gem("traenernavn", nk.navn); lager.gem("klubnavn", r.klub);
+  S.traener = nk.navn; if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].navn = nk.navn;
+  S.minRolle = r.rolle; try { lager.gem("minrolle", r.rolle); KONFIG.klub = r.klub; } catch (_e) {}
+  // ⭐ Boksen og det øvrige efter login går samme vej som et login med klub — kodeordet er i hukommelsen.
+  clearTimeout(_boksUr);
+  boksNoegleUdled(nk.brugernavn, kode).then(function(bn){ lager.gem("boksnoegle", bn); return boksHent(false); }).catch(function(){});
+  S.tbudKode = ""; S.venterKode = ""; S.tbudListe = null; S.tbudBesked = null;
+  S.adgangLukket = false; S.lukKode = ""; S.lukBesked = null;
+  S.skiftAaben = false; S.skiftKode = ""; S.skiftBesked = null;
+  S.doerFest = { ikon: "🎉", h: "Velkommen i " + r.klub + "!",
+    u: skiftede ? "Telefonen er ryddet for den forrige klub. Truppen starter tom."
+      : (r.rolle === "admin" ? "Du er cheftræner i " + r.klub + "." : "Du er træner i " + r.klub + "."),
+    sidste: true, bolde: true };
+  render();
+}
+// «Tjek igen» / «Se invitationer»: login uden nøgle — svaret bærer invitationerne. `hvor` siger, hvor beskeden skal stå.
+async function budHentMine(kode){
+  var k = S.konto || lager.hent("konto", null) || {};
+  kode = String(kode || "");
+  if (!k.brugernavn) { S.tbudBesked = { fejl: true, t: "Der er ingen konto på denne telefon — log ind i stedet." }; render(); return; }
+  if (!kode) { S.tbudBesked = { fejl: true, t: "Skriv dit kodeord." }; render(); return; }
+  S.tbudHenter = true; S.tbudBesked = null; render();
+  var r = await kontoKald("login", { navn: k.brugernavn, kode: kode }, "");
+  S.tbudHenter = false;
+  if (!r || r.fejl) {
+    S.tbudBesked = { fejl: true, t: r && r.fejl === "forkert" ? "Kodeordet passer ikke." : r && r.fejl === "netvaerk" ? "Ingen forbindelse — prøv igen." : "Serveren svarede ikke som ventet — prøv igen." };
+    render(); return;
+  }
+  S.tbudKode = kode; S.venterKode = "";
+  S.tbudListe = Array.isArray(r.bud) ? r.bud : [];
+  if (!S.tbudListe.length) S.tbudBesked = { fejl: false, t: "Ingen invitation endnu — prøv igen, når din cheftræner har inviteret dig." };
+  render();
 }
 
 // ---------- TRÆNER ----------
@@ -2386,9 +2480,9 @@ async function traeningKald(handling, krop) {
 function traeningFejl(r){
   if (!r) return "Ingen forbindelse lige nu.";
   if (r.fejl === "netvaerk") return "Ingen forbindelse lige nu — prøv igen.";
-  if (r.fejl === "mangler-klubkode") return "Forbind klubnøglen under ⚙️ først.";
+  if (r.fejl === "mangler-klubkode") return "Forbind telefonen med din klub først.";
   if (r.fejl === "kraever-admin") return "Kun klubbens administrator kan godkende programmet.";
-  if (r.fejl === "kraever-traener" || r.fejl === "adgang" || r.fejl === "mangler-noegle") return "Nøglen gælder ikke som trænernøgle.";
+  if (r.fejl === "kraever-traener" || r.fejl === "adgang" || r.fejl === "mangler-noegle") return "Din adgang gælder ikke som træner.";
   if (r.fejl === "bane-optaget") return "Banen er optaget i det tidsrum.";
   if (r.fejl === "ikke-kladde") return "Kun kladden kan rettes — godkend igen bagefter.";
   if (r.fejl === "ikke-godkendt") return "Der registreres kun på det godkendte program.";
@@ -2646,7 +2740,7 @@ function prgImport(prg){
 
 function traenerProgram(){
   var h = '';
-  if (!lager.hent("klubkode", "")) return '<div class="kort"><h3>📅 Programmet</h3><p class="lille">Forbind klubnøglen under ⚙️ først — så kan ugeskemaet laves her.</p></div>';
+  if (!lager.hent("klubkode", "")) return '<div class="kort"><h3>📅 Programmet</h3><p class="lille">Når telefonen er forbundet med din klub, kan ugeskemaet laves her.</p></div>';
   if (!S.prg && !S.prgHenter && !S.prgBesked) { setTimeout(function(){ prgHent("kladde"); }, 0); }
   if (!S.prgUgedag) S.prgUgedag = ugedagAf(dkIdag());
   var prg = S.prg || { pas: [], sidst_godkendt: null, aendret_siden: 0, traenere: [], timer: [] };
@@ -2706,7 +2800,7 @@ function traenerProgram(){
       var paa = {}; (p.deltagere || []).forEach(function(d){ paa[d.h] = true; });
       var kand = trupKandidater().filter(function(k){ return !paa[k.h]; });
       h += '<div style="margin-top:10px;border-top:1px solid var(--kant);padding-top:10px"><input class="felt" data-felt="prgSoeg" value="' + esc(S.prgSoeg || "") + '" placeholder="søg i truppen" autocapitalize="words">';
-      if (!(S.tilmeldinger || []).length) h += '<p class="lille" style="margin-top:8px">' + (S.tilmHenter ? 'Henter truppen …' : 'Truppen på serveren er tom — spillerne kommer ind med klubnøglen eller en invitation.') + '</p>';
+      if (!(S.tilmeldinger || []).length) h += '<p class="lille" style="margin-top:8px">' + (S.tilmHenter ? 'Henter truppen …' : 'Truppen på serveren er tom — spillerne kommer ind med en invitation.') + '</p>';
       else if (!kand.length) h += '<p class="lille" style="margin-top:8px">Alle i truppen er på passet.</p>';
       kand.slice(0, 40).forEach(function(k){
         h += '<div class="delt-rk" style="cursor:pointer" data-act="prg-delt-tilfoej" data-v="' + esc(k.h) + '" data-kand="' + esc(k.navn.toLowerCase()) + '"><div class="nv">' + esc(k.navn) + (k.aargang ? '<small>årgang ' + esc(k.aargang) + '</small>' : '') + '</div><span style="color:var(--is);font-weight:800">+ læg på</span></div>';
@@ -2733,10 +2827,10 @@ function regTrupNavn(h){
   return p && p.navn && DATA.spillere[p.navn] && (S.noegler || {})[p.navn] ? p.navn : null;
 }
 function vurdFejltekst(r){   /* princip 94: «ingen forbindelse» siges KUN om netværket — serverens nej får sin egen sætning */
-  if (!r) return "ingen nøgle";
+  if (!r) return "ingen adgang";
   if (r.fejl === "netvaerk") return "ingen forbindelse";
-  if (r.fejl === "mangler-klubkode") return "klubkoden mangler";
-  if (r.fejl === "adgang") return "klubkoden blev afvist";
+  if (r.fejl === "mangler-klubkode") return "telefonen er ikke forbundet med klubben";
+  if (r.fejl === "adgang") return "adgangen til klubben blev afvist";
   if (r.fejl === "validering") return "afvist af vagten: " + ((((r.detaljer || [])[0]) || {}).grund || "");
   return "serveren sagde nej (" + (r.fejl || "?") + (r.status ? " " + r.status : "") + ")";
 }
@@ -2811,7 +2905,7 @@ function traenerRegistrer(t){
         '<p class="lille" style="margin:6px 0 0">Passet står nu i loggen hos ' + r.svar.log_skrevet + (r.svar.log_fjernet ? ' · fjernet hos ' + r.svar.log_fjernet : '') + ' — og tæller i streaken.' + (r.svar.ikke_moedt ? ' ' + r.svar.ikke_moedt + ' ikke mødt.' : '') + '</p>';
     }
     if (vd.sendt.length) h += '<p class="lille" style="margin:6px 0 0">Vurderingen' + (r.kilde === "gruppe" ? '' : omrT) + ' står nu hos ' + vd.sendt.map(function(x){ return esc(x.split(" ")[0]); }).join(', ') + ' ✓</p>';
-    if (vd.lokalt.length) h += '<p class="lille" style="margin:6px 0 0">' + vd.lokalt.map(function(x){ return esc(x.split(" ")[0]); }).join(', ') + ': gemt i din boks — får en nøgle under 🔑 Invitér spiller, så rejser den med.</p>';
+    if (vd.lokalt.length) h += '<p class="lille" style="margin:6px 0 0">' + vd.lokalt.map(function(x){ return esc(x.split(" ")[0]); }).join(', ') + ': gemt i din boks — når spilleren er i appen, rejser den med.</p>';
     if (vd.venter) h += '<p class="lille" style="margin:6px 0 0">⏳ Sender ' + vd.venter + (vd.venter === 1 ? ' vurdering …' : ' vurderinger …') + '</p>';
     h += '</div>';
     if (vd.fejl.length) h += '<div class="kort" style="border-left:3px solid var(--tabt)"><p class="lille" style="margin:0;color:var(--tabt)">Vurderingen kom ikke frem hos ' + vd.fejl.map(function(f){ return esc(f.navn.split(" ")[0]) + ' (' + esc(f.t) + ')'; }).join(', ') + '.' + (r.kilde === "gruppe" ? ' Scoren står i din boks.' : ' Fremmødet er gemt.') + '</p>' +
@@ -2860,7 +2954,7 @@ function traenerRegistrer(t){
   if (harKode && !idag && !S.prgGodkendt && !S.prgHenter) setTimeout(function(){ prgHent("godkendt"); }, 0);
   if (harKode && idag && !S.nuHentet && !S.nuHenter) setTimeout(function(){ nuHent(false); }, 0);   /* én gang — ikke i ring */
   h += '<div class="kort" style="padding:11px 14px"><div class="eyebrow">📅 FRA PROGRAMMET</div>';
-  if (!harKode) h += '<p class="lille" style="margin:6px 0 0">Forbind klubnøglen under ⚙️ — så kommer dagens pas frem her, og fremmødet skrives i spillernes træningslog.</p></div>';
+  if (!harKode) h += '<p class="lille" style="margin:6px 0 0">Når telefonen er forbundet med din klub, kommer dagens pas frem her, og fremmødet skrives i spillernes træningslog.</p></div>';
   else {
     h += '<div class="tid-rk" style="margin-top:6px"><input class="felt" type="date" data-felt="regDato" value="' + esc(S.regDato || dkIdag()) + '" max="' + dkIdag() + '" aria-label="dato"></div>' +
       '<p class="lille" style="margin:6px 0 0">' + (idag ? 'Dagens pas — fremmødet skrives i spillernes træningslog og tæller i streaken. Glemte du et pas i går? Vælg datoen.' : 'Pas ' + DAGE_LANG[ugedagAf(S.regDato)] + ' i det godkendte program.') + '</p></div>';
@@ -2897,7 +2991,7 @@ function bundNav(){
 
 function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emoji som flisen på HJEM */
   if (tab === "indst" && S.indstVisning) return { nye: "\ud83d\udce5 Nye spillere", forbindelse: "\u2699\ufe0f Forbindelse", sky: "\u2601\ufe0f Skyen",
-    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", noegler: "\ud83d\udd11 Klubbens n\u00f8gler", spejl: "\ud83e\ude9e Spejlet" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
+    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", adgang: "\ud83d\udcf2 Invit\u00e9r og adgang", spejl: "\ud83e\ude9e Spejlet" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen", udstil: "\ud83c\udf10 Udstil" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Spillere", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
            kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\ud83d\udcca Overblik" }[tab] || "";
@@ -2930,7 +3024,7 @@ function traenerDash(){
     '<div><b>' + vurd + '</b><span>vurderet i ugen</span></div>' +
     '<div><b>' + nye + '</b><span>nye spillere</span></div></div>' +
     '<div class="dash-skil"></div><div class="dash-over">I DAG</div>';
-  if (!lager.hent("klubkode", "")) h += '<div class="dash-fri">Forbind klubnøglen under ⚙️ — så kommer dagens pas frem her.</div>';
+  if (!lager.hent("klubkode", "")) h += '<div class="dash-fri">Når telefonen er forbundet med din klub, kommer dagens pas frem her.</div>';
   else if (S.nuFejl) h += '<div class="dash-fri">' + esc(S.nuFejl) + '</div>';
   else if (!S.nu) h += '<div class="dash-fri">Henter dagens pas …</div>';
   else if (!(S.nu.pas || []).length) h += '<div class="dash-fri">Fri i dag 🎾</div>';
@@ -2959,7 +3053,7 @@ function renderTraener(){
   // Prototype-banneret gaelder kun eksempeldata. Har traeneren skrevet sin egen
   // trup ind, er det hans rigtige spillere — og saa maa der ikke staa "fake data".
   if (!(S.truppen||[]).length) {
-    if (S.tab === "hjem") h += '<div class="proto-note">👋 <b>Truppen er tom endnu.</b> Invitér den første spiller under 👥 SPILLERE — når han siger ja, står han i din trup.</div>';
+    if (S.tab === "hjem") h += '<div class="proto-note">👋 <b>Truppen er tom endnu.</b> Invitér den første spiller under ⚙️ Indstillinger → 📲 Invitér og adgang — når spilleren siger ja, står spilleren i din trup.</div>';
   }
   if (S.tab==="hjem") {
     // v6.1.0 · «Vælg, hvad du vil i gang med» og statuslinjen er ude — StreakTennis har dem ikke. Status om nye
@@ -2972,7 +3066,7 @@ function renderTraener(){
       if (lager.hent("klubkode", "") && !S.nuHentet && !S.nuHenter) setTimeout(function(){ nuHent(false); }, 0);
       var b = nuBedste(), uf = nuUdenFremmoede();
       var linje;
-      if (!lager.hent("klubkode", "")) linje = 'Forbind klubnøglen under ⚙️ — så kommer dagens pas frem her.';
+      if (!lager.hent("klubkode", "")) linje = 'Når telefonen er forbundet med din klub, kommer dagens pas frem her.';
       else if (S.nuFejl) linje = S.nuFejl;
       else if (!S.nu) linje = 'Henter dagens pas …';
       else if (b) linje = (b.lige_slut ? 'Lige slut: ' : 'Næste: ') + tidTekst(b) + ' · bane ' + esc(b.bane) + (pasTekst(b) ? ' · ' + esc(pasTekst(b)) : '') + ' · ' + (b.deltagere || []).length + ' spillere';
@@ -3005,11 +3099,11 @@ function renderTraener(){
       /* v6.11.0 · HJEM ER KORTET, BUNDBAREN ER GENVEJEN (Nicolai 26/9: «Således er forsiden fuldkommen - navigation i bunden har
          det vigtigste»). Spillere og Program står igen forrest i guld — HJEM er den ene dør ud over bundbaren. */
       (function(){ var _nt = (lager.hent("truppen", []) || []).length;
-        return '<button class="dev-flise dev-kant dev-kant-guld" data-act="tab" data-v="grupper"><span class="dev-ikon">\ud83d\udc65</span><b>Spillere</b><small>' + (_nt ? _nt + ' i truppen' : 'invitér den første') + '</small></button>'; })() +
+        return '<button class="dev-flise dev-kant dev-kant-guld" data-act="tab" data-v="grupper"><span class="dev-ikon">\ud83d\udc65</span><b>Spillere</b><small>' + (_nt ? _nt + ' i truppen' : 'truppen er tom') + '</small></button>'; })() +
       '<button class="dev-flise dev-kant dev-kant-guld" data-act="tab" data-v="program"><span class="dev-ikon">\ud83d\udcc5</span><b>Program</b><small>ugeskemaet</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="kvartal"><span class="dev-ikon">\ud83d\udccb</span><b>Evaluering</b><small>AI-udkast \u2014 du godkender alt</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="rum"><span class="dev-ikon">\ud83d\udcac</span><b>Tr\u00e6nerrummet</b><small>klubbens tr\u00e6nere \u2014 samtalen bliver</small></button>' +
-      '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="indst" style="grid-column:auto"><span class="dev-ikon">\u2699\ufe0f</span><b>Indstillinger</b><small>konto, klubbens nøgler, sprog</small></button>' +
+      '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="indst" style="grid-column:auto"><span class="dev-ikon">\u2699\ufe0f</span><b>Indstillinger</b><small>konto, invitationer, sprog</small></button>' +
       overblikFlise() +   /* v6.13.0 · dashboardet er en flise — HJEM skal kunne ses uden at rulle */
       '</div>';
   } else {
@@ -3079,52 +3173,7 @@ function faneKnap(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'"
 //      det andet — men først efter næste gentegning. Det er dét, der
 //      gjorde en nøgle «uden navn».
 // ══════════════════════════════════════════════════════════════════
-/* \u2b50\u2b50 v5.4.0 \u00b7 EEN KILDE TIL LINKET. Beskeden til familien og QR-koden SKAL vise
-   det samme; bygges det to steder, kan de komme fra hinanden uden at nogen opdager det. */
-function famLink(noegle){
-  return "https://tennis.sportsainalytics.com/StreakTennis/#klub=" + encodeURIComponent(noegle);
-}
-/* \u2b50 QR'en tegnes af det inline bibliotek \u2014 intet hentes udefra. */
-function qrSvg(tekst){
-  try {
-    var q = window.__qrlib; var lav = (q && q.default) || q;
-    var k = lav(0, "M"); k.addData(String(tekst)); k.make();
-    return k.createSvgTag({ cellSize: 4, margin: 3, scalable: true });
-  } catch (_e) { return ""; }
-}
-function noegleKvittering(afsnit){
-  if (!S.famNyNoegle) return '';
-  var erT = S.famNyRolle === "traener";
-  if (erT !== (afsnit === "traener")) return '';   // ⭐ kun i sit eget afsnit
-  var farve = erT ? 'var(--guld)' : 'var(--is)';
-  return '<div style="border:1.5px solid ' + farve + ';border-radius:10px;padding:12px;margin-top:9px;text-align:center">' +
-    '<div class="lille" style="font-weight:800;letter-spacing:1.2px;color:' + farve + ';margin-bottom:4px">' +
-      (erT ? '🧑‍🏫 TRÆNERNØGLE' : '🎾 KLUBNØGLE') + '</div>' +
-    '<div class="lille" style="margin-bottom:5px">Ny nøgle' +
-      (S.famNyEtiket ? ' til <b>' + esc(S.famNyEtiket) + '</b>' : ' <b>uden navn</b>') +
-      ' — <b>vises kun nu</b>:</div>' +
-    '<div style="font-size:18px;font-weight:800;letter-spacing:2px;user-select:all">' + esc(S.famNyNoegle) + '</div>' +
-    '<button class="knap" style="width:100%;margin-top:9px;min-height:44px;background:' +
-      (erT ? 'var(--guld);color:#12203a' : 'var(--grus)') + '" data-act="fam-kopier">' +
-      (S.famKopieret ? '✓ Kopieret'
-        : (erT ? '📋 Kopiér besked til træneren' : '📋 Kopiér besked til familien')) + '</button>' +
-    (erT
-      ? '<p class="lille" style="margin:7px 0 0;opacity:.85">⛔ Den her må <b>aldrig</b> gives til en familie — den åbner hele truppen.</p>'
-      : '<p class="lille" style="margin:7px 0 0;opacity:.75">Åbner kun spillerens egen app — aldrig trænerdelen.</p>') +
-    /* \u2b50\u2b50\u2b50 v5.4.0 \u00b7 STAAR FORAELDEREN VED SIDEN AF, ER KAMERAET HURTIGERE END TASTATURET.
-       Maalt 15/9: den ene familie, der kom ind, var den, hvis telefon var i rummet.
-       \u26d4 KUN paa klubnoeglen \u2014 en traenernoegle aabner hele truppen og maa ikke kunne
-       scannes af en tilfaeldig, der staar ved siden af. */
-    (erT ? '' :
-      '<button class="knap valg" style="width:100%;margin-top:6px;min-height:44px" data-act="fam-qr">' +
-      (S.famQrVis ? '\u2715 Skjul QR-koden' : '\ud83d\udcf1 Vis QR-kode \u2014 familien scanner den') + '</button>' +
-      (S.famQrVis
-        ? '<div id="fam-qr" style="margin-top:9px;background:#fff;padding:10px;border-radius:10px">' +
-            qrSvg(famLink(S.famNyNoegle)) + '</div>' +
-          '<p class="lille" style="margin:7px 0 0;opacity:.85">Hold sk\u00e6rmen frem. Far eller mor \u00e5bner <b>kameraet</b> og peger p\u00e5 koden \u2014 n\u00f8glen er med, og de er inde.</p>'
-        : '')) +
-    '<button class="knap valg" style="width:100%;margin-top:6px;min-height:44px" data-act="fam-luk-ny">Færdig — jeg har sendt den</button></div>';
-}
+/* v6.16.0 · linket med klubbens adgang i fragmentet, QR'en og «Ny nøgle»-kvitteringen er væk (nøglefri). */
 
 // ⭐⭐⭐ v4.7.0 · HVEM MANGLER I TRUPPEN?
 // Det er DET spørgsmål, træneren har — ikke «hvem venter på svar».
@@ -3183,9 +3232,9 @@ async function snakKald(handling, krop) {
 // Hvert udfald sin egen sætning (princip 75) — aldrig «noget gik galt».
 function snakFejltekst(r) {
   if (!r) return "Ingen forbindelse — prøv igen.";
-  if (r.fejl === "mangler-klubkode" || r.fejl === "mangler-noegle") return "Skriv klubbens trænernøgle under ⚙️ Indstillinger først.";
-  if (r.fejl === "kraever-traener") return "Trænerrummet er kun for klubbens trænere — den nøgle, der er gemt her, er en spillernøgle.";
-  if (r.fejl === "adgang") return "Nøglen blev afvist — den er spærret, udløbet eller ukendt.";
+  if (r.fejl === "mangler-klubkode" || r.fejl === "mangler-noegle") return "Forbind telefonen med din klub først.";
+  if (r.fejl === "kraever-traener") return "Trænerrummet er kun for klubbens trænere — telefonen er forbundet som spiller.";
+  if (r.fejl === "adgang") return "Klubben afviste telefonens adgang — log ud og ind igen.";
   if (r.fejl === "link") return "Links er ikke tilladt i rummet.";
   if (r.fejl === "ukendt") return "Beskeden findes ikke længere.";   /* v6.15.0 · fastgør på en besked, der er væk (404 ukendt) */
   if (r.fejl === "tom") return "Skriv noget først.";
@@ -3354,9 +3403,9 @@ async function budKald(handling, krop) {
 }
 function budFejltekst(r) {
   const k = r && r.fejl;
-  if (k === "mangler-klubkode" || k === "mangler-noegle") return "Skriv klubbens trænernøgle under ⚙️ Indstillinger først.";
-  if (k === "kraever-traener") return "Kun klubbens trænere kan invitere — nøglen her er en spillernøgle.";
-  if (k === "adgang") return "Nøglen blev afvist — den er spærret, udløbet eller ukendt.";
+  if (k === "mangler-klubkode" || k === "mangler-noegle") return "Forbind telefonen med din klub først.";
+  if (k === "kraever-traener") return "Kun klubbens trænere kan invitere — telefonen er forbundet som spiller.";
+  if (k === "adgang") return "Klubben afviste telefonens adgang — log ud og ind igen.";
   if (k === "ingen") return "Ingen med det brugernavn.";   /* v6.10.0 · princip 101 */
   if (k === "format") return "Skriv spillerens brugernavn (3-20 tegn).";
   if (k === "allerede-i-klubben") return "Spilleren er allerede i klubben.";
@@ -3445,90 +3494,156 @@ function budKortet() {
 document.addEventListener("keydown", function (e) {
   if (e.key === "Enter" && e.target && e.target.dataset && e.target.dataset.felt === "budNavn") { e.preventDefault(); budSoeg(); }
 });
-function noegleKortet(){
-  let h = '';   /* v6.10.0 · invitationen bor under 👥 SPILLERE (kortet, princip 100) — her står kun klubbens nøgler */
-  // ── FAMILIENØGLER (v3.2.0) · traeneren inviterer familierne SELV.
-    // Noeglen dannes paa serveren, vises EEN gang og gemmes kun som hash.
-    // Ingen mennesker administrerer hemmeligheder — heller ikke Nicolai.
-    {
-      h += '<div class="kort" style="border-left:3px solid var(--is)">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-          '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udd11 SPILLERN\u00d8GLER' +
-          (S.minRolle === "admin" ? '<span style="color:var(--guld)"> \u00b7 ADMIN</span>' : '') + '</div>' +
-          '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="fam-liste">' +
-          (S.famHenter ? '\u2026' : (S.famListe ? 'Opdat\u00e9r' : 'Vis')) + '</button></div>';
-      // \u26a0\ufe0f VISES KUN NU. Serveren gemmer kun hashen — lukkes kortet,
-      // findes noeglen ingen steder mere. Derfor kraever "Faerdig" et tryk.
-      h += noegleKvittering("spiller");
-      if (!S.famNyNoegle || S.famNyRolle === "traener") {
-        h += '<div class="raekke" style="margin-top:9px">' +
-          '<input class="felt" style="flex:1;min-width:0" data-felt="famEtiket" value="'+esc(S.famEtiket||'')+'" placeholder="fx familien Jensen" maxlength="40" autocapitalize="words">' +
-          '<button class="knap" style="flex:none;background:var(--grus);min-height:44px" data-act="fam-udsted">' +
-          (S.famUdsteder ? '\u23f3 \u2026' : '\u2795 Ny n\u00f8gle') + '</button></div>';
-      }
-      // ⭐ v4.0.0 · KUN spillernøgler her. Trænernøglerne har fået deres
-      //   eget afsnit længere nede — to slags nøgler i én liste var den
-      //   forveksling, rollerne blev bygget for at fjerne.
-      var _spillerN = (S.famListe || []).filter(function(x){ return x.rolle !== "traener"; });
-      var _traenerN = (S.famListe || []).filter(function(x){ return x.rolle === "traener"; });
-      if (_spillerN.length) {
-        _spillerN.forEach(function(k2){
-          var brugt = k2.sidst_brugt ? new Date(k2.sidst_brugt).toLocaleDateString('da-DK') : 'aldrig brugt';
-          h += '<div style="border-top:1px solid var(--kant);padding:8px 0;display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-            '<div><div style="font-size:13px;font-weight:700">' +
-              (k2.rolle === 'traener' ? '<span style="color:var(--guld)">\ud83e\uddd1\u200d\ud83c\udfeb </span>' : '') +
-              esc(k2.etiket||'(uden etiket)')+'</div>' +
-            '<div class="lille">'+(k2.status==='aktiv' ? '\ud83d\udfe2 aktiv \u00b7 '+brugt : '\u26d4 sp\u00e6rret') +
-              (k2.rolle === 'traener' ? ' \u00b7 tr\u00e6ner' : '') + '</div></div>' +
-            (k2.status==='aktiv'
-              ? '<button class="knap valg" style="flex:none;padding:7px 12px;font-size:12px;min-height:44px" data-act="fam-spaer" data-v="'+esc(k2.id)+'">' +
-                (S.famSpaerBed===k2.id ? 'Sikker? Tryk igen' : 'Sp\u00e6r') + '</button>'
-              : '') + '</div>';
-        });
-      } else if (S.famListe) {
-        h += '<p class="lille" style="margin:8px 0 0">Ingen spillern\u00f8gler udstedt endnu.</p>';
-      }
-      h += famBeskedHer("spiller");
-      h += '<p class="lille" style="margin:8px 0 0;opacity:.7">\u00c9n n\u00f8gle pr. familie. Den giver adgang til jeres klub i StreakTennis \u2014 aldrig til tr\u00e6nerdelen \u2014 og kan sp\u00e6rres her n\u00e5r som helst.</p>';
-      // ⭐⭐⭐ v4.0.0 · TRÆNERNØGLER — KUN FOR CHEFTRÆNEREN.
-      //   Nicolai 30/8: «han bliver admin og kan udstede træner nøgler.»
-      //   Afsnittet tegnes KUN, når serveren har svaret, at min egen rolle
-      //   er `admin` (`liste` bærer den). Skærmen gætter ikke — motoren
-      //   dømmer, og en træner får 403 «kun klubbens administrator».
-      if (S.minRolle === "admin") {
-        h += '<div style="border-top:2px solid var(--kant);margin-top:12px;padding-top:11px">' +
-          '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">\ud83e\uddd1\u200d\ud83c\udfeb TR\u00c6NERN\u00d8GLER</div>' +
-          '<p class="lille" style="margin:5px 0 0;opacity:.75">\u00c9n n\u00f8gle pr. tr\u00e6ner \u2014 aldrig en delt. Skifter en tr\u00e6ner klub, sp\u00e6rrer du hans egen og r\u00f8rer ikke de andres.</p>' +
-          '<div class="raekke" style="margin-top:9px">' +
-            '<input class="felt" style="flex:1;min-width:0" data-felt="famEtiketT" value="'+esc(S.famEtiketT||'')+'" placeholder="fx Mette" maxlength="40" autocapitalize="words">' +
-            '<button class="knap" style="flex:none;background:var(--guld);color:#12203a;min-height:44px;font-weight:800;padding:8px 14px" data-act="fam-udsted" data-v="traener">' +
-            (S.famUdsteder ? '\u23f3' : '\u2795 Tr\u00e6ner') + '</button></div>' +
-          noegleKvittering("traener") + famBeskedHer("traener") +
-          (_traenerN.length
-            ? _traenerN.map(function(k3){
-                var _b = k3.sidst_brugt ? new Date(k3.sidst_brugt).toLocaleDateString('da-DK') : 'aldrig brugt';
-                return '<div style="border-top:1px solid var(--kant);padding:8px 0;display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-                  '<div><div style="font-size:13px;font-weight:700">' + esc(k3.etiket || '(uden etiket)') + '</div>' +
-                  '<div class="lille">' + (k3.status === 'aktiv' ? '\ud83d\udfe2 aktiv \u00b7 ' + _b : '\u26d4 sp\u00e6rret') + '</div></div>' +
-                  (k3.status === 'aktiv'
-                    ? '<button class="knap valg" style="flex:none;padding:7px 12px;font-size:12px;min-height:44px" data-act="fam-spaer" data-v="' + esc(k3.id) + '">' +
-                      (S.famSpaerBed === k3.id ? 'Sikker? Tryk igen' : 'Sp\u00e6r') + '</button>'
-                    : '') + '</div>';
-              }).join("")
-            : (S.famListe ? '<p class="lille" style="margin:8px 0 0">Ingen tr\u00e6nern\u00f8gler udstedt endnu.</p>' : '')) +
-          '<p class="lille" style="margin:8px 0 0;opacity:.6">\u26d4 Din egen administratorn\u00f8gle kan ikke sp\u00e6rres herfra \u2014 ét fejlklik m\u00e5 ikke kunne lukke klubben ude af sin egen platform.</p>' +
-          // ⚠️ v4.0.0 · KLUBBENS EGEN NØGLE KAN STÅ PÅ DENNE LISTE. Er den
-          //   `traener` og ikke `admin` (som B.93's er lige nu), ligner den
-          //   enhver anden trænernøgle — og en spærring ville lukke den
-          //   telefon ude, der bruger den hver dag. Serveren skelner ikke
-          //   endnu; derfor står advarslen her, hvor der trykkes.
-          '<p class="lille" style="margin:6px 0 0;opacity:.6">\u26a0\ufe0f Er klubbens egen n\u00f8gle p\u00e5 listen, ligner den en tr\u00e6nern\u00f8gle. Sp\u00e6r kun en n\u00f8gle, du selv har udstedt.</p>' +
-        '</div>';
-      }
-      h += '</div>';
-    }
-  return h;
+// ══════════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v6.16.0 · 📲 INVITÉR OG ADGANG (Nicolai 2/10: «Jeg vil ALDRIG have nøgler der skal sendes rundt. Man skal kun kunne
+//   adde via appen»). Fire dele i rækkefølge: invitér en spiller (flyttet fra 👥 SPILLERE) · invitér en træner (kun
+//   cheftræneren · klub-noegler v2) · de sendte trænerinvitationer · hvem har adgang, med «Fjern adgang».
+//   Ingen hemmelighed vises nogen steder — serveren laver adgangen, når den inviterede siger ja.
+// ══════════════════════════════════════════════════════════════════════
+S.tbNavn = ""; S.tbTraef = null; S.tbHenter = false; S.tbSender = false; S.tbBesked = null; S.tbSendte = null;
+S.tbudListe = null; S.tbudKode = ""; S.tbudBesked = null; S.tbudHenter = false; S.venterKode = "";
+function tbFejltekst(r){   /* hvert udfald sin sætning (princip 75) — serverens egne ord vises aldrig */
+  var k = r && r.fejl;
+  if (!r || k === "netvaerk") return "Ingen forbindelse — prøv igen.";
+  if (k === "mangler-klubkode" || k === "mangler-noegle") return "Forbind telefonen med din klub først.";
+  if (k === "kraever-admin") return "Kun klubbens cheftræner kan invitere trænere.";
+  if (k === "adgang") return "Klubben afviste telefonens adgang — log ud og ind igen.";
+  if (k === "ukendt" || k === "ingen") return "Ingen træner med det brugernavn.";
+  if (k === "validering" || k === "format") return "Skriv trænerens brugernavn (3-20 tegn).";
+  if (k === "allerede-i-klubben") return "Træneren er allerede i klubben.";
+  if (k === "bud-findes") return "Træneren har allerede en invitation fra jer — den venter på et ja.";
+  if (k === "loft") return "For mange åbne invitationer — fortryd en, før du sender flere.";
+  return "Serveren svarede ikke som ventet — prøv igen.";
 }
+function adgangFejltekst(r){
+  var k = r && r.fejl;
+  if (!r || k === "netvaerk") return "Ingen forbindelse — prøv igen.";
+  if (k === "mangler-klubkode" || k === "mangler-noegle") return "Forbind telefonen med din klub først.";
+  if (k === "kraever-admin") return "Kun klubbens cheftræner kan det.";
+  if (k === "adgang") return "Klubben afviste telefonens adgang — log ud og ind igen.";
+  if (k === "ukendt") return "Den findes ikke længere.";
+  return "Serveren svarede ikke som ventet — prøv igen.";
+}
+async function tbSoeg(){
+  if (S.tbHenter) return;
+  var bn = String(S.tbNavn || "").trim().toLowerCase();
+  if (!bn) { S.tbBesked = { fejl: true, t: "Skriv trænerens brugernavn." }; render(); return; }
+  S.tbHenter = true; S.tbBesked = null; S.tbTraef = null; render();
+  var r = await noegleKald("traener-soeg", { brugernavn: bn });
+  S.tbHenter = false;
+  if (r && r.traener) S.tbTraef = r.traener; else S.tbBesked = { fejl: true, t: tbFejltekst(r) };
+  render();
+}
+async function tbInviter(){
+  if (S.tbSender || !S.tbTraef) return;
+  S.tbSender = true; S.tbBesked = null; render();
+  var r = await noegleKald("traener-inviter", { brugernavn: S.tbTraef.brugernavn });
+  S.tbSender = false;
+  if (r && r.bud) {
+    S.tbBesked = { fejl: false, t: (r.bud.navn || r.bud.brugernavn || S.tbTraef.navn) + " er inviteret og tager imod i StreakCoach ✓" };
+    S.tbTraef = null; S.tbNavn = "";
+    try { traenerSendteHent(); } catch (_e) {}
+  } else S.tbBesked = { fejl: true, t: tbFejltekst(r) };
+  render();
+}
+async function traenerSendteHent(){
+  var r = await noegleKald("traener-sendte", {});
+  if (r && Array.isArray(r.bud)) { S.tbSendte = r.bud; render(); }
+}
+async function tbFortryd(id){
+  if (S.tbSender) return;
+  S.tbSender = true; S.tbBesked = null; render();
+  var r = await noegleKald("traener-fortryd", { id: id });
+  S.tbSender = false;
+  if (r && r.fortrudt) {
+    S.tbBesked = { fejl: false, t: "Invitationen er trukket tilbage ✓" };
+    S.tbSendte = (S.tbSendte || []).filter(function(b){ return b.id !== id; });
+  } else S.tbBesked = { fejl: true, t: r && r.fejl === "ukendt" ? "Invitationen findes ikke længere." : tbFejltekst(r) };
+  render();
+  try { traenerSendteHent(); } catch (_e) {}
+}
+// Rummet åbnes: hvem har adgang · de sendte spillerinvitationer · (cheftræneren) de sendte trænerinvitationer.
+function adgangHent(){
+  if (!lager.hent("klubkode", "")) return;
+  if (!S.famHenter) {
+    S.famHenter = true; render();
+    noegleKald("liste", {}).then(function(r){
+      S.famHenter = false;
+      if (r && r.fejl) { S.famBesked = { fejl: true, hvor: "adgang", t: adgangFejltekst(r) }; render(); return; }
+      S.famListe = (r && r.noegler) || []; S.minRolle = (r && r.rolle) || S.minRolle;
+      try { if (r && r.rolle) lager.gem("minrolle", r.rolle); } catch (_e) {}
+      render();
+    }).catch(function(){ S.famHenter = false; S.famBesked = { fejl: true, hvor: "adgang", t: "Ingen forbindelse — prøv igen." }; render(); });
+  }
+  try { budSendteHent(); } catch (_e) {}
+  if (S.minRolle === "admin") { try { traenerSendteHent(); } catch (_e) {} }
+}
+function traenerBudKortet(){
+  var h = '<div class="kort" style="border-left:3px solid var(--guld)">' +
+    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">🧑‍🏫 INVITÉR TRÆNER</div>' +
+    '<div style="height:10px"></div>' +
+    '<div style="display:flex;gap:8px;align-items:center">' +
+      '<input class="felt" data-felt="tbNavn" placeholder="brugernavn" autocapitalize="none" autocomplete="off" value="' + esc(S.tbNavn || '') + '" style="flex:1;min-width:0">' +
+      '<button class="knap" style="flex:none;padding:12px 16px;background:var(--grus)" data-act="tb-soeg">' + (S.tbHenter ? '…' : 'Find') + '</button></div>';
+  if (S.tbTraef) {
+    var f = S.tbTraef;
+    h += '<div style="margin-top:10px;padding:10px 12px;border-radius:14px;background:var(--flade);border:1px solid var(--kant)">' +
+      '<div style="font-weight:800;font-size:15px">' + esc(f.navn || f.brugernavn || '') + '</div>' +
+      '<div class="lille" style="color:var(--daempet)">' + esc(f.brugernavn || '') + '</div>' +
+      '<div class="lille" style="color:var(--daempet)">' + (f.klub ? esc(f.klub) : 'ingen klub') + '</div>' +
+      (f.allerede ? '<p class="lille" style="margin:8px 0 0;color:var(--vundet)">Er allerede i klubben ✓</p>'
+        : f.bud ? '<p class="lille" style="margin:8px 0 0;color:var(--is)">Venter på et ja.</p>'
+        : '<button class="knap" style="margin-top:10px;background:var(--guld);color:#12203a" data-act="tb-inviter">' + (S.tbSender ? 'Sender…' : '✉️ Invitér ' + esc(f.navn || f.brugernavn || '')) + '</button>') +
+      '</div>';
+  }
+  if (S.tbBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.tbBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.tbBesked.t) + '</p>';
+  var l = (S.tbSendte || []).filter(function(b){ return b && b.status !== "fortrudt"; });
+  if (l.length) {
+    h += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--kant)"><div class="lille" style="color:var(--daempet);margin-bottom:4px">Sendte invitationer til trænere</div>';
+    l.slice(0, 20).forEach(function(b){
+      h += '<div class="lille" style="display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:40px"><span>' + esc(b.navn || b.brugernavn || '?') + '</span>' +
+        (b.status === "taget" ? '<span style="color:var(--vundet)">tog imod ✓</span>'
+          : b.status === "afvist" ? '<span style="color:var(--tabt)">sagde nej</span>'
+          : '<span style="display:flex;align-items:center;gap:8px"><span style="color:var(--daempet)">venter</span>' +
+            '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11.5px;min-height:34px"' + (S.tbSender ? ' disabled' : '') + ' data-act="tb-fortryd" data-v="' + esc(b.id) + '">Fortryd</button></span>') +
+        '</div>';
+    });
+    h += '</div>';
+  }
+  return h + '</div>';
+}
+function adgangListeKortet(){
+  var h = '<div class="kort" style="border-left:3px solid var(--is)">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">👥 HVEM HAR ADGANG</div>' +
+      '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="fam-liste">' +
+      (S.famHenter ? '…' : (S.famListe ? 'Opdatér' : 'Vis')) + '</button></div>';
+  var l = S.famListe || [];
+  l.forEach(function(k2){
+    var aktiv = k2.status === "aktiv";
+    var brugt = k2.sidst_brugt ? new Date(k2.sidst_brugt).toLocaleDateString('da-DK') : '';
+    h += '<div style="border-top:1px solid var(--kant);padding:8px 0;display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+      '<div><div style="font-size:13px;font-weight:700">' + (k2.rolle === "traener" ? '<span style="color:var(--guld)">🧑‍🏫 </span>' : '') + esc(k2.etiket || '(uden navn)') + '</div>' +
+      '<div class="lille"><span>' + (k2.rolle === "traener" ? 'træner' : 'familie') + '</span> · <span>' +
+        (!aktiv ? '⛔ adgang fjernet' : brugt ? 'sidst inde ' + brugt : 'ikke inde endnu') + '</span></div></div>' +
+      (aktiv ? '<button class="knap valg" style="flex:none;padding:7px 12px;font-size:12px;min-height:44px" data-act="fam-spaer" data-v="' + esc(k2.id) + '">' +
+        (S.famSpaerBed === k2.id ? 'Sikker? Tryk igen' : 'Fjern adgang') + '</button>' : '') + '</div>';
+  });
+  if (S.famListe && !l.length) h += '<p class="lille" style="margin:8px 0 0">Ingen har adgang endnu.</p>';
+  if (!S.famListe && S.famHenter) h += '<p class="lille" style="margin:8px 0 0">Henter …</p>';
+  if (S.famBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.famBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.famBesked.t) + '</p>';
+  h += '<p class="lille" style="margin:8px 0 0;opacity:.7">Fjerner du en adgang, kommer familien eller træneren ikke ind igen, før I har inviteret dem på ny.</p>';
+  return h + '</div>';
+}
+function adgangKortet(){
+  if (!lager.hent("klubkode", "")) return '<div class="kort"><p class="lille" style="margin:0">Forbind telefonen med din klub først.</p></div>';
+  var h = budKortet();
+  if (S.minRolle === "admin") h += traenerBudKortet();
+  return h + adgangListeKortet();
+}
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Enter" && e.target && e.target.dataset && e.target.dataset.felt === "tbNavn") { e.preventDefault(); tbSoeg(); }
+});
 
 /* ⭐⭐⭐ v6.8.0 · INDSTILLINGER SOM FLISER (Nicolai 21/9: «ALT skal laves som tiles») — hvert kort er nu sin egen undervisning,
    præcis som PROGRAM fik det i v6.3.0. Kortenes indhold er FLYTTET, ikke skrevet om: samme kode, samme knapper, samme tekster. */
@@ -3549,13 +3664,13 @@ function indstNye(){   /* v6.8.0 · 📥 nye spillere — familier, der har tast
           '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="tilm-hent">' +
           (S.tilmHenter ? '\u2026' : (S.tilmHentet ? 'Opdatér' : 'Tjek')) + '</button></div>';
       if (!S.tilmHentet) {
-        h += '<p class="lille" style="margin:6px 0 0">Tryk Tjek for at se, om nogen familier har tastet deres n\u00f8gle.</p>';
+        h += '<p class="lille" style="margin:6px 0 0">Tryk Tjek for at se, om nogen familier har sagt ja.</p>';
       } else if (!_ialt) {
         // ⭐ To forskellige slags «tomt» — og de betyder ikke det samme.
         h += '<p class="lille" style="margin:6px 0 0">' +
           ((S.tilmeldinger||[]).length
             ? 'Alle klubbens spillere er i din trup \u2713'
-            : 'Ingen familier har tastet en n\u00f8gle endnu.') + '</p>';
+            : 'Ingen familier er kommet ind endnu.') + '</p>';
       } else {
         // ── ① KOMMET IND MED EN NØGLE · mangler kun i truppen
         if (_ny.nye.length) {
@@ -3593,15 +3708,9 @@ function indstForbindelse(){   /* v6.8.0 · ⚙️ forbindelse: klubkoden + (bag
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">⚙️ FORBINDELSE</div>' +
       '<span data-act="ops-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.opsAaben?'✕':'✏️') + '</span></div>' +
     '<p class="lille" style="margin:6px 0 0">' + (kk
-      ? 'Klubkode gemt · ' + antalN + ' spiller' + (antalN===1?'':'e') + ' koblet til en nøgle. Vurderinger sendes automatisk.'
-      : '\ud83d\udcf1 <b>Alt bliver på denne telefon.</b> Intet sendes nogen steder. Indtast klubkoden, når du vil dele vurderinger med spillerne.') + '</p>';
+      ? 'Forbundet til klubben · ' + antalN + ' spiller' + (antalN===1?'':'e') + ' i appen. Vurderinger sendes automatisk.'
+      : '\ud83d\udcf1 <b>Alt bliver på denne telefon.</b> Intet sendes nogen steder. Opret en konto, så kan din klub invitere dig.') + '</p>';
   if (S.opsAaben) {
-    h += '<div style="display:flex;gap:6px;margin-top:8px">' +
-      '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:13px;order:2" data-act="vis-skift" data-v="visKode">' + (S.visKode?'\ud83d\ude48':'\ud83d\udc41') + '</button>' +
-      '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:' + (S.visKode?'none':'disc') + '" data-felt="kkUdkast" value="' + esc(S.kkUdkast||'') +
-      '" placeholder="klubkode" autocapitalize="off" spellcheck="false" autocomplete="off">' + '</div>' +
-      '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="ops-gem">Gem</button></div>' +
-      '<p class="lille" style="margin:8px 0 0;font-style:italic">Koden gemmes kun på denne enhed og står ingen steder i koden.</p>';
     // ── SIKKERHEDSKOPI
     h += '<div style="border-top:1px solid var(--kant);margin-top:12px;padding-top:10px">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udcbe SIKKERHEDSKOPI</div>' +
@@ -3612,7 +3721,7 @@ function indstForbindelse(){   /* v6.8.0 · ⚙️ forbindelse: klubkoden + (bag
       h += '<textarea rows="5" readonly style="margin-top:8px;font-size:11px">'+esc(S.bkTekst)+'</textarea>' +
         '<div class="raekke" style="margin-top:6px"><button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px" data-act="bk-kopier">\ud83d\udccb Kopiér</button>' +
         '<button class="knap valg" style="flex:none;padding:7px 11px;font-size:12px" data-act="bk-del">\ud83d\udce4 Del\u2026</button></div>' +
-        '<p class="lille" style="margin:6px 0 0;font-style:italic">Kopien indeholder trænerens tekst om spillerne. Gem den et sikkert sted \u2014 klubkoden er IKKE med.</p>';
+        '<p class="lille" style="margin:6px 0 0;font-style:italic">Kopien indeholder trænerens tekst om spillerne. Gem den et sikkert sted \u2014 adgangen til klubben er IKKE med.</p>';
     }
     if (S.bkAaben) {
       h += '<textarea rows="4" data-felt="gendanUdkast" placeholder="Indsæt en sikkerhedskopi her" style="margin-top:8px;font-size:11px">'+esc(S.gendanUdkast||'')+'</textarea>' +
@@ -3634,7 +3743,7 @@ function indstSkyen(){   /* v6.8.0 · ☁️ skyen — trænerens boks, låst me
         '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\u2601\ufe0f SKYEN</div>' +
         '<p class="lille" style="margin:6px 0 8px">Din trup, dine grupper, vurderinger og evalueringer gemmes i skyen \u2014 l\u00e5st med dit kodeord. Mister du telefonen, logger du bare ind p\u00e5 en ny. Heller ikke vi kan l\u00e6se boksen.</p>';
       if (!_bn) {
-        if (!(S.konto || lager.hent("konto", null))) { h += '<p class="lille" style="margin:0;color:var(--guld)">Backup kræver en konto. Log ud under 👤 DIN KONTO, og opret dig med din nøgle — så kører den automatisk.</p></div>'; return h; }   /* v6.9.0 */
+        if (!(S.konto || lager.hent("konto", null))) { h += '<p class="lille" style="margin:0;color:var(--guld)">Backup kræver en konto. Log ud under 👤 DIN KONTO, og opret dig — så kører den automatisk.</p></div>'; return h; }   /* v6.9.0 */
         h += '<p class="lille" style="margin:0 0 6px;color:var(--guld)">Skyen er ikke t\u00e6ndt p\u00e5 denne telefon endnu \u2014 tast dit kodeord \u00e9n gang.</p>' +
           (_bs.fejl ? '<p class="lille" style="margin:0 0 6px;color:var(--tabt)">\u26a0\ufe0f ' + esc(_bs.fejl) + '</p>' : '') +
           '<div style="display:flex;gap:6px"><input class="felt" style="flex:1;min-width:0" type="password" data-felt="boksKode" value="' + esc(S.boksKode || "") + '" placeholder="dit kodeord" autocapitalize="off" spellcheck="false" autocomplete="current-password">' +
@@ -3690,7 +3799,7 @@ function indstKonto(){   /* v6.8.0 · 👤 din konto — log ud · skift klub ·
     if (_k) {
       h += '<p class="lille" style="margin:7px 0 0">Logget ind som <b>' + esc(_k.brugernavn) + '</b> \u00b7 ' +
         esc(_k.klub || "") + ' \u00b7 ' + (_k.rolle === "admin" ? '<span style="color:var(--guld)">cheftr\u00e6ner</span>' : 'tr\u00e6ner') + '</p>' +
-        '<p class="lille" style="margin:5px 0 0;opacity:.7">Du kan logge ind p\u00e5 enhver telefon med dit brugernavn \u2014 din n\u00f8gle f\u00f8lger med.</p>' +
+        '<p class="lille" style="margin:5px 0 0;opacity:.7">Du kan logge ind p\u00e5 enhver telefon med dit brugernavn \u2014 din adgang til klubben f\u00f8lger med.</p>' +
         '<div class="raekke" style="margin-top:9px;gap:6px;flex-wrap:wrap"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="log-ud">' +
         (S.logUdSpoerg ? '\u26a0\ufe0f Tryk igen \u2014 log ud' : '\ud83d\udeaa Log ud') + '</button>' +
         '<button class="knap valg' + (S.skiftAaben ? ' til' : '') + '" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="skift-aabn">' +
@@ -3707,7 +3816,7 @@ function indstKonto(){   /* v6.8.0 · 👤 din konto — log ud · skift klub ·
       (S.forfraBekraeft ? 'background:var(--tabt);border-color:var(--tabt);color:#fff' : 'color:var(--tabt);border-color:rgba(210,72,78,.5)') +
       '" data-act="start-forfra">' +
       (S.forfraBekraeft ? '\u26a0\ufe0f Tryk igen \u2014 SLETTER alt her' : '\ud83e\uddf9 Start forfra') + '</button></div>' +
-      '<p class="lille" style="margin:6px 0 0;opacity:.6">Start forfra sletter trup, vurderinger, klubkode og login p\u00e5 denne telefon. Kontoen p\u00e5 serveren r\u00f8res ikke.</p>' +
+      '<p class="lille" style="margin:6px 0 0;opacity:.6">Start forfra sletter trup, vurderinger, klubbens adgang og login p\u00e5 denne telefon. Kontoen p\u00e5 serveren r\u00f8res ikke.</p>' +
       '</div>';
   }
   return h;
@@ -3764,7 +3873,7 @@ function indstTrup(){   /* v6.8.0 · 👥 min trup */
         '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udc65 MIN TRUP</div>' +
         '<span data-act="trup-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.trupAaben?'\u2715':'\u270f\ufe0f') + '</span></div>' +
       '<p class="lille" style="margin:6px 0 0">' + (egen
-        ? egen + ' spiller' + (egen===1?'':'e') + ' i ' + antG + ' gruppe' + (antG===1?'':'r') + ' \u00b7 ' + medN + ' med n\u00f8gle'
+        ? egen + ' spiller' + (egen===1?'':'e') + ' i ' + antG + ' gruppe' + (antG===1?'':'r') + ' \u00b7 ' + medN + ' i appen'
         : '\u26a1 Du ser <b>eksempeldata</b>.') + '</p>';
     // ══════════════════════════════════════════════════════════════
     // ⛔⛔ v4.6.0 · TRUPPEN BAD OM NOGET, CHEFTRÆNEREN IKKE HAR.
@@ -3787,11 +3896,10 @@ function indstTrup(){   /* v6.8.0 · 👥 min trup */
       h += '<div style="margin-top:9px;padding:10px 12px;background:rgba(47,191,107,.08);border-radius:9px">' +
         '<b style="font-size:12.5px;display:block;margin-bottom:5px">S\u00e5dan fylder truppen sig selv</b>' +
         '<div class="lille" style="line-height:1.65">' +
-        '<b>1.</b> Udsted en n\u00f8gle pr. familie under \ud83d\udd11 UDSTED N\u00d8GLE.<br>' +
-        '<b>2.</b> Familien taster n\u00f8glen i StreakTennis.<br>' +
-        '<b>3.</b> De dukker op under \ud83d\udce5 NYE SPILLERE \u2014 tryk <b>L\u00e6g i trup</b>.<br>' +
-        '<b>4.</b> S\u00e5 st\u00e5r spilleren her, <b>koblet til sin n\u00f8gle</b>, og dine vurderinger lander i hans app.</div>' +
-        '<p class="lille" style="margin:8px 0 0;opacity:.8">\u26a0\ufe0f Du beh\u00f8ver <b>ikke</b> skrive dem ind i h\u00e5nden. Det nedenfor er kun til spillere, du vil vurdere, <b>f\u00f8r</b> de har f\u00e5et en n\u00f8gle \u2014 de kan kobles til bagefter.</p></div>';
+        '<b>1.</b> Invitér spilleren på brugernavnet under 📲 Invitér og adgang.<br>' +
+        '<b>2.</b> Familien siger ja i StreakTennis.<br>' +
+        '<b>3.</b> Så står spilleren her af sig selv, og dine vurderinger lander i spillerens app.</div>' +
+        '<p class="lille" style="margin:8px 0 0;opacity:.8">⚠️ Du behøver <b>ikke</b> skrive dem ind i hånden. Det nedenfor er kun til spillere, du vil vurdere, <b>før</b> de er i appen.</p></div>';
     }
     if (S.trupAaben) {
       if (egen) {
@@ -3799,7 +3907,7 @@ function indstTrup(){   /* v6.8.0 · 👥 min trup */
         (S.truppen||[]).forEach(function(p, i){
           h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:8px 0">' +
             '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">'+esc(p.navn)+'</div>' +
-            '<div class="lille">'+esc(p.gruppe||UDEN_GRUPPE)+(p.noegle?' \u00b7 \ud83d\udd11 koblet':' \u00b7 ingen n\u00f8gle')+'</div></div>' +
+            '<div class="lille">'+esc(p.gruppe||UDEN_GRUPPE)+(p.noegle?' \u00b7 \ud83d\udcf2 i appen':' \u00b7 ikke i appen endnu')+'</div></div>' +
             '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px" data-act="trup-ret" data-v="'+i+'">'+(S.trupRet===i?'Luk':'Ret')+'</button>' +
             '<button class="knap valg" style="flex:none;padding:6px 10px;font-size:11.5px;'+(S.trupSlet===i?'background:var(--tabt);color:#fff':'')+'" data-act="trup-slet" data-v="'+i+'">'+(S.trupSlet===i?'Slet?':'\ud83d\uddd1')+'</button></div>';
           // Ret-i-truppen (19/8): gruppe og n\u00f8gle rettes HER \u2014 aldrig inde p\u00e5 spilleren.
@@ -3817,14 +3925,8 @@ function indstTrup(){   /* v6.8.0 · 👥 min trup */
       h += '<input class="felt" style="margin-top:9px" data-felt="trupNavn" value="'+esc(S.trupNavn||'')+'" placeholder="navn, som klubben vil vise det" autocapitalize="words">' +
         gruppeSelect("trupGruppe", S.trupGruppe || "", "margin-top:6px") +
         (!(S.grupper||[]).length ? '<p class="lille" style="margin:5px 0 0;opacity:.8">Opret en gruppe under \ud83d\udc65 GRUPPER f\u00f8rst \u2014 s\u00e5 kan du l\u00e6gge spillere i den. Indtil da st\u00e5r de uden gruppe.</p>' : '') +
-        '<div style="display:flex;gap:6px;margin-top:6px">' +
-        '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:'+(S.visTrupN?'none':'disc')+'" data-felt="trupNoegle" value="'+esc(S.trupNoegle||'')+'" placeholder="spillern\u00f8gle (kan udfyldes senere)" autocapitalize="off" spellcheck="false" autocomplete="off">' +
-        '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:13px" data-act="vis-skift" data-v="visTrupN">'+(S.visTrupN?'\ud83d\ude48':'\ud83d\udc41')+'</button></div>' +
         '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-act="trup-tilfoej">+ Tilf\u00f8j spiller</button></div>' +
-        '<p class="lille" style="margin:8px 0 0;font-style:italic">Skriv navnet, som klubben vil have det vist \u2014 fornavn, fornavn og initial, eller fuldt navn.</p>' +
-        // ⭐ v4.6.0 · nøglefeltet er en UNDTAGELSE, ikke et krav. Cheftræneren
-        //   har det normalt ikke, og skal ikke lede efter det.
-        '<p class="lille" style="margin:5px 0 0;opacity:.75">\ud83d\udd11 <b>N\u00f8glefeltet kan st\u00e5 tomt.</b> L\u00e6gger du spilleren i truppen under \ud83d\udce5 NYE SPILLERE, kobles n\u00f8glen p\u00e5 af sig selv. Feltet er kun til, hvis du har f\u00e5et et h\u00e5ndtag udleveret.</p>';
+        '<p class="lille" style="margin:8px 0 0;font-style:italic">Skriv navnet, som klubben vil have det vist \u2014 fornavn, fornavn og initial, eller fuldt navn.</p>';
     }
   }
     if (S.syncBesked) h += '<p class="lille" style="margin:6px 0 0;color:' +
@@ -3848,7 +3950,7 @@ function indstOversigt(){   /* v6.8.0 · fliserne — hver bærer sin status, s�
   h += '<div class="dev-grid">' +
     /* guiden er et LINK, ikke en undervisning — den bor i ROD og åbner i en ny fane */
     '<a class="dev-flise dev-kant dev-kant-is" href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="text-decoration:none"><span class="dev-ikon">📖</span><b>Sådan virker StreakCoach</b><small>guide med billeder af hver skærm — åbner i en ny fane</small></a>' +
-    prgFlise("indst-vis", "noegler", "🔑", "Klubbens nøgler", "trænere og familier", "dev-kant-staal") +   /* v6.10.0 · kortet */
+    prgFlise("indst-vis", "adgang", "📲", "Invitér og adgang", "spillere og trænere — på brugernavn", "dev-kant-staal") +   /* v6.16.0 · nøglefri */
     prgFlise("indst-vis", "konto", "👤", "Din konto",
       _k ? ((_bs.fejl || _bs.konflikt) ? '<span style="color:var(--guld);font-weight:800">noget skal ordnes — åbn</span>' : 'logget ind som ' + esc(_k.brugernavn)) : '<span style="color:var(--guld);font-weight:800">ikke logget ind</span>',
       (_k && !(_bs.fejl || _bs.konflikt)) ? "dev-kant-staal" : "dev-kant-guld") +   /* v6.9.0 */
@@ -3885,7 +3987,7 @@ function indstSpejl(){
   if (S.spejl.fejl) h += '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">⚠️ ' + esc(S.spejl.fejl) + '</p>';
   h += '</div>';
   h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">👁 DELER MED DIG</div>';
-  if (!_k || !_bn) h += '<p class="lille" style="margin:6px 0 0;color:var(--guld)">Log ind og tænd skyen — din nøgle til spejlet bor i den.</p>';
+  if (!_k || !_bn) h += '<p class="lille" style="margin:6px 0 0;color:var(--guld)">Log ind og tænd skyen — spejlet bor i den.</p>';
   else if (S.spejl.henter && !l) h += '<p class="lille" style="margin:6px 0 0">⏳ Henter…</p>';
   else if (!l) h += '<p class="lille" style="margin:6px 0 0">Listen er ikke hentet.</p><div class="raekke" style="margin-top:6px"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="spejl-liste">↻ Hent</button></div>';
   else if (!l.modtaget.length) h += '<p class="lille" style="margin:6px 0 0">Ingen deler deres skærm med dig endnu.</p>';
@@ -3940,7 +4042,7 @@ function traenerIndstillinger(){   /* v6.8.0 · fliser først, undervisningen ba
   if (S.indstVisning === "forbindelse") return indstForbindelse();
   if (S.indstVisning === "sky") return indstSkyen();
   if (S.indstVisning === "konto") return indstKonto() + indstForbindelse();   /* v6.10.0 · forbindelsen bor under Din konto (kortet) */
-  if (S.indstVisning === "noegler") return noegleKortet();                    /* v6.10.0 · 🔑 Klubbens nøgler */
+  if (S.indstVisning === "adgang") return adgangKortet();                      /* v6.16.0 · 📲 Invitér og adgang */
   if (S.indstVisning === "sprog") return indstSprog();
   if (S.indstVisning === "streak") return indstStreak();
   if (S.indstVisning === "trup") return indstTrup();
@@ -3956,7 +4058,6 @@ function traenerGrupper(t){
      («Uden gruppe» = hvor et ja lander) · ret truppen nederst. Nicolai 26/9: «Det er VIRKELIGT mange veje ind til det samme steder.» */
   if (S.autoTrupBesked) h += '<p class="lille" style="margin:0 2px 10px;color:var(--vundet);font-weight:700">' + esc(S.autoTrupBesked) + '</p>';
   if (S.syncBesked && !S.syncBesked.hvor) h += '<p class="lille" style="margin:0 2px 10px;font-weight:700;color:' + (S.syncBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
-  h += budKortet();
   try { var _nyS = nyeSpillere(); if (_nyS.venter.length + _nyS.nye.length) h += indstNye(); } catch (_e) {}
   const egenTrup = !!(S.truppen && S.truppen.length);
   // ⭐⭐ v5.0.0 · GRUPPERNE STYRES HER. Kun når truppen er trænerens egen —
@@ -4090,7 +4191,7 @@ function spillerDetalje(navn){
   // ── SPILLERNØGLE-kortet FJERNET 19/8 (Nicolai): spilleropsætning bor
   // under Indstillinger → MIN TRUP, hvor gruppe og nøgle nu kan rettes direkte.
   const minN = (S.noegler||{})[navn];
-  if (!minN) h += '<p class="lille" style="margin:0 0 8px">\ud83d\udd11 Ingen n\u00f8gle \u2014 vurderinger bliver p\u00e5 denne enhed. N\u00f8glen s\u00e6ttes under \u2699 Indstillinger \u2192 MIN TRUP.</p>';
+  if (!minN) h += '<p class="lille" style="margin:0 0 8px">\ud83d\udcf2 Ikke i appen endnu \u2014 vurderinger bliver p\u00e5 denne enhed, til spilleren har sagt ja til invitationen.</p>';
 
   // ── SENESTE KAMPE (19/8) · tr\u00e6nerens weekend-kig: hvordan gik det?
   // Fra kampresum\u00e9et \u2014 fem tal pr. kamp, aldrig boldene.
@@ -4465,9 +4566,6 @@ document.addEventListener("click", function(e){
     }).catch(function(){ S.boksTaender = false; S.boksStatus = { fejl: "Ingen forbindelse — prøv igen." }; render(); }); }
   else if (act==="boks-send"){ if (!lager.hent("boks-lokal", "")) boksRoert(); else { clearTimeout(_boksUr); S.boksStatus = null; boksSend(); } }
   else if (act==="boks-hent"){ S.boksStatus = null; render(); boksHent(true); }
-  else if (act==="ops-gem"){
-    lager.gem("klubkode", (S.kkUdkast||"").trim()); S.opsAaben=false;
-    S.syncBesked = { fejl:false, t:"Klubkoden er gemt på denne enhed ✓" }; render(); }
   else if (act==="noegle-aabn"){ S.noegleFor = (S.noegleFor===v?null:v); S.noegleUdkast = (S.noegler||{})[v]||""; render(); }
   else if (act==="noegle-gem"){
     const sp = t.dataset.sp; const n = (S.noegleUdkast||"").trim();
@@ -4498,6 +4596,7 @@ document.addEventListener("click", function(e){
     S.indstVisning = v || null;
     if (S.indstVisning === "spejl") { S.spejl.aaben = null; S.spejl.fejl = null; S.spejl.besked = null; render(); if (!S.spejl.liste) spejlHentListe(); return; }   /* v6.14.0 */
     if (S.indstVisning === "nye" && !S.tilmHentet && !S.tilmHenter) { render(); hentTilmeldinger(); return; }
+    if (S.indstVisning === "adgang") { S.famBesked = null; S.tbBesked = null; render(); adgangHent(); return; }   /* v6.16.0 */
     render(); }
   if (act==="prg-visning"){
     S.prgVisning = v || null; prgNulstilForm(); S.prgSlet = null;
@@ -4660,7 +4759,7 @@ document.addEventListener("click", function(e){
         })
         .catch(function(){ S.syncBesked = { fejl: true, t: "Evalueringen er gemt HER, men netv\u00e6rket svigtede \u2014 pr\u00f8v Godkend & send igen." }; render(); });
     } else {
-      alert("\u2713 Evalueringen er gemt her p\u00e5 enheden.\n\nSpilleren har ingen n\u00f8gle endnu \u2014 f\u00f8j n\u00f8glen til under \ud83d\udc65 MIN TRUP, og tryk Godkend & send igen, s\u00e5 lander den i spillerens app.");
+      alert("\u2713 Evalueringen er gemt her p\u00e5 enheden.\n\nSpilleren er ikke i appen endnu \u2014 invit\u00e9r spilleren under \ud83d\udcf2 Invit\u00e9r og adgang, og tryk Godkend & send igen, n\u00e5r spilleren har sagt ja.");
     }
     S.kvartalUdkast=null; render(); }
   // ══════════════════════════════════════════════════════════════════
@@ -4670,7 +4769,7 @@ document.addEventListener("click", function(e){
   //   har bekræftet (den fejl kostede v3.3.0 sin troværdighed).
   // ══════════════════════════════════════════════════════════════════
   else if (act==="doer-frem"){
-    S.doerTrin = Math.min(3, (S.doerTrin || 0) + 1);
+    S.doerTrin = Math.min(2, (S.doerTrin || 0) + 1);
     S.doerBesked = null; try { window.scrollTo(0,0); } catch(_e){} render(); }
   else if (act==="doer-tilbage"){
     S.doerTrin = Math.max(0, (S.doerTrin || 0) - 1);
@@ -4679,7 +4778,7 @@ document.addEventListener("click", function(e){
   else if (act==="doer-fest-videre"){
     var _f = S.doerFest; S.doerFest = null;
     if (_f && _f.sidste) { S.doerFaerdig = true; lager.gem("doer", { faerdig: true }); S.tab = "hjem"; }
-    else S.doerTrin = Math.min(3, (S.doerTrin || 0) + 1);
+    else S.doerTrin = Math.min(2, (S.doerTrin || 0) + 1);
     try { window.scrollTo(0,0); } catch(_e){} render(); }
 
   // ── LOG IND. Kontoen giver identitet OG nøglen tilbage. ───────────
@@ -4699,6 +4798,19 @@ document.addEventListener("click", function(e){
       // ⭐ Nøglen kom med hjem, låst op med det kodeord, der lige blev
       //   bevist. Uden den kan platformen intet — alle andre motorer
       //   godkender på `x-klub-noegle`.
+      // ⭐⭐⭐ v6.16.0 · EN KONTO UDEN KLUB. Ingen «Alt er klar», ingen nøgle der mangler — den venter på en invitation.
+      if (!r.klub) {
+        if (lager.hent("klubkode", "")) ryddKlubben();   // en anden klubs ting må ikke stå på telefonen
+        var _vk = { brugernavn: r.brugernavn, navn: r.navn, klub: null, rolle: null };
+        lager.gem("konto", _vk); S.konto = _vk; lager.gem("traenernavn", r.navn);
+        S.traener = r.navn; if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].navn = r.navn;
+        S.tbudKode = _k; S.tbudListe = Array.isArray(r.bud) ? r.bud : []; S.tbudBesked = null;
+        S.doerLogKode = "";
+        S.doerFest = { ikon:"👋", h:"Velkommen tilbage, " + String(r.navn||"").split(" ")[0] + "!",
+          u: S.tbudListe.length ? "Du har en invitation fra en klub." : "Du er logget ind. Din klub har ikke inviteret dig endnu.",
+          sidste:true, bolde:false };
+        render(); return;
+      }
       if (r.noegle) lager.gem("klubkode", r.noegle);
       lager.gem("konto", { brugernavn: r.brugernavn, navn: r.navn, klub: r.klub, rolle: r.rolle });
       lager.gem("traenernavn", r.navn); lager.gem("klubnavn", r.klub);
@@ -4716,7 +4828,7 @@ document.addEventListener("click", function(e){
       //   skrinet ikke fulgte med), SIGES det — der lades ikke som om.
       S.doerFest = { ikon:"👋", h:"Hej " + String(r.navn||"").split(" ")[0] + "!",
         u: r.noegle_mangler
-          ? "Du er inde. Din nøgle kunne ikke følge med — tast den under ⚙️ Indstillinger, så virker resten."
+          ? "Du er inde. Din adgang til klubben kunne ikke følge med — bed din cheftræner invitere dig igen."
           : (r.klub + " · " + (r.rolle === "admin" ? "cheftræner" : "træner") + ". Alt er klar."),
         sidste:true, bolde:true };
       render();
@@ -4731,49 +4843,7 @@ document.addEventListener("click", function(e){
       S.doerHenter = false;
       S.doerBesked = { fejl:true, t:"Ingen forbindelse — prøv igen." }; render(); }); }
 
-  // ── NØGLEN TJEKKES MOD SERVEREN, FØR DER FEJRES. ──────────────────
-  else if (act==="doer-noegle"){
-    if (S.doerHenter) return;
-    var _kn = (S.doerNoegle||"").trim().toUpperCase();
-    if (!_kn) { S.doerBesked={fejl:true,t:"Tast nøglen fra din klub."}; render(); return; }
-    S.doerNoegle = _kn;
-    S.doerHenter = true; S.doerBesked = null; render();
-    kontoKald("min-status", {}, _kn).then(function(r){
-      S.doerHenter = false;
-      if (r && r.fejl) {
-        S.doerBesked = { fejl:true, t: r.fejl === "netvaerk"
-          ? "Ingen forbindelse — prøv igen." : (r.t || "Nøglen kunne ikke tjekkes.") };
-        render(); return;
-      }
-      if (!r.kendt) {
-        S.doerBesked = { fejl:true, t:"Den nøgle kender vi ikke. Tjek den — eller spørg din cheftræner." };
-        render(); return;
-      }
-      // ⛔ En SPILLERnøgle hører hjemme i StreakTennis. Sig HVOR.
-      if (r.rolle === "spiller") {
-        S.doerBesked = { fejl:true, t:"Det er en klubnøgle til en familie — den hører hjemme i StreakTennis-appen. Her skal klubbens træner- eller cheftrænernøgle bruges." };
-        render(); return;
-      }
-      // ⭐ Er der allerede en konto på nøglen, skal han LOGGE IND, ikke
-      //   oprette sig igen. Det var præcis dét, der gik galt for Louise
-      //   i spillerappen 30/8.
-      if (r.harKonto) {
-        S.doerBesked = { fejl:true, t:"Der er allerede en konto på den nøgle" +
-          (r.brugernavn ? " (" + r.brugernavn + ")" : "") + ". Gå tilbage og log ind." };
-        render(); return;
-      }
-      S.doerKlub = r.klub; S.doerRolle = r.rolle;
-      S.doerFest = { ikon:"🔗", h: r.rolle === "admin" ? "Cheftræner i " + r.klub : "Træner i " + r.klub,
-        u: r.rolle === "admin"
-          ? "Nøglen passer. Du kan udstede både træner- og klubnøgler."
-          : "Nøglen passer. Du kan udstede klubnøgler til familierne.",
-        sidste:false };
-      render();
-    }).catch(function(){
-      S.doerHenter = false;
-      S.doerBesked = { fejl:true, t:"Ingen forbindelse — prøv igen." }; render(); }); }
-
-  // ── KONTOEN OPRETTES. Nøglen er invitationen. ─────────────────────
+  // ── KONTOEN OPRETTES — uden nøgle (v6.16.0). Klubben inviterer bagefter på brugernavnet. ──
   else if (act==="doer-opret"){
     if (S.doerHenter) return;
     var _felter = ["doerNavn","doerBrugernavn","doerKode","doerKode2"];
@@ -4786,7 +4856,7 @@ document.addEventListener("click", function(e){
     S.doerHenter = true; S.doerBesked = null; render();
     kontoKald("opret", { brugernavn: (S.doerBrugernavn||"").trim().toLowerCase(),
                          kode: S.doerKode, navn: (S.doerNavn||"").trim(),
-                         mail: (S.doerMail||"").trim() }, (S.doerNoegle||"").trim()).then(function(r){
+                         mail: (S.doerMail||"").trim() }, "").then(function(r){
       S.doerHenter = false;
       if (r && r.fejl) {
         if (r.fejl === "navn-taget") S.doerNavnLedig = { navn: (S.doerBrugernavn||"").trim().toLowerCase(), ledig: false, t: "det brugernavn er taget" };
@@ -4794,161 +4864,41 @@ document.addEventListener("click", function(e){
           ? "Ingen forbindelse — prøv igen." : (r.t || "Kontoen kunne ikke oprettes.") };
         render(); return;
       }
-      lager.gem("klubkode", (S.doerNoegle||"").trim());
-      lager.gem("konto", { brugernavn: r.brugernavn, navn: r.navn, klub: r.klub, rolle: r.rolle });
-      lager.gem("traenernavn", r.navn); lager.gem("klubnavn", r.klub);
-      S.konto = { brugernavn: r.brugernavn, navn: r.navn, klub: r.klub, rolle: r.rolle };
+      // ⭐⭐⭐ v6.16.0 · kontoen har ingen klub endnu — den venter på en invitation (venteskærmen).
+      //   Kodeordet bliver i hukommelsen (S.tbudKode), så «Tjek igen» og «Tag imod» virker uden at spørge igen.
+      var _nk0 = { brugernavn: r.brugernavn, navn: r.navn, klub: r.klub || null, rolle: r.rolle || null };
+      lager.gem("konto", _nk0); S.konto = _nk0;
+      lager.gem("traenernavn", r.navn);
       S.traener = r.navn; if (DATA.traenere && DATA.traenere[0]) DATA.traenere[0].navn = r.navn;
-      S.minRolle = r.rolle; try { lager.gem("minrolle", r.rolle); KONFIG.klub = r.klub; } catch(_e){}
-      // ⭐ v5.1.0 · boksens nøgle udledes af det nye kodeord
-      var _ok = S.doerKode;
-      boksNoegleUdled(r.brugernavn, _ok).then(function(bn){ lager.gem("boksnoegle", bn); if (lager.hent("boks-lokal", "")) boksRoert(); }).catch(function(){});
+      S.tbudKode = S.doerKode; S.tbudListe = Array.isArray(r.bud) ? r.bud : []; S.tbudBesked = null;
       S.doerKode = ""; S.doerKode2 = "";
       S.doerFest = { ikon:"🎉", h:"Velkommen, " + String(r.navn||"").split(" ")[0] + "!",
-        u:"Din konto er klar. Du kan logge ind på enhver telefon med " + r.brugernavn + ".",
+        u:"Din konto er klar. Nu skal din cheftræner invitere dig på " + r.brugernavn + ".",
         sidste:true, bolde:true };
       render();
     }).catch(function(){
       S.doerHenter = false;
       S.doerBesked = { fejl:true, t:"Ingen forbindelse — prøv igen." }; render(); }); }
 
+  // ══ v6.16.0 · INVITATIONERNE (traener-konto v8 · klub-noegler v2) ══
+  else if (act==="venter-tjek"){ budHentMine(S.tbudKode || S.venterKode); }
+  else if (act==="bud-ja"){ if (!S.tbudHenter && v) budSvar(String(v), true); }
+  else if (act==="bud-nej"){ if (!S.tbudHenter && v) budSvar(String(v), false); }
+  else if (act==="luk-bud-hent"){ budHentMine(S.tbudKode || S.lukKode); }
+  else if (act==="skift-bud-hent"){ budHentMine(S.tbudKode || S.skiftKode); }
+  else if (act==="tb-soeg"){ tbSoeg(); }
+  else if (act==="tb-inviter"){ tbInviter(); }
+  else if (act==="tb-fortryd"){ if (v) tbFortryd(String(v)); }
+
   // ══ v4.4.0 · KLUBSKIFTET ═════════════════════════════════════════
   else if (act==="skift-aabn"){
     S.skiftAaben = !S.skiftAaben;
-    S.skiftNoegle = ""; S.skiftKode = ""; S.skiftFund = null;
+    S.skiftKode = ""; S.tbudListe = null; S.tbudBesked = null;   /* v6.16.0 · en invitation, ikke en nøgle */
     S.skiftBesked = null; S.skiftBekraeft = false; S.skiftVisKode = false; render(); }
   else if (act==="skift-vis-kode"){ S.skiftVisKode = !S.skiftVisKode; render(); }
 
-  // ⭐ TRIN 1 · HVEM HØRER NØGLEN TIL? Der spørges, FØR der advares —
-  //   ellers ville skærmen skulle gætte klubbens navn (princip 14).
-  //   `min-status` kræver intet kodeord og afslører kun det, fordøren
-  //   allerede viser i skridt 2.
-  else if (act==="skift-tjek"){
-    if (S.skiftHenter) return;
-    var _sn = (S.skiftNoegle||"").trim().toUpperCase();
-    var _sd = scDom("skiftNoegle", _sn);
-    if (!_sd || !_sd.ja) { S.skiftBesked={fejl:true,t:"Nøglen ser ikke rigtig ud — 12 tegn i grupper af fire."}; render(); return; }
-    var _mig = S.konto || lager.hent("konto", null);
-    S.skiftHenter = true; S.skiftBesked = null; render();
-    kontoKald("min-status", {}, _sn).then(function(r){
-      S.skiftHenter = false;
-      if (r && r.fejl) {
-        S.skiftBesked = { fejl:true, t: r.fejl === "netvaerk"
-          ? "Ingen forbindelse — prøv igen. Der er ikke sket noget."
-          : (r.t || "Nøglen kunne ikke tjekkes.") };
-        render(); return;
-      }
-      if (!r.kendt) {
-        S.skiftBesked = { fejl:true, t:"Den nøgle kender vi ikke. Tjek den — eller spørg din nye cheftræner." };
-        render(); return;
-      }
-      // ⛔ De tre nej'er, sagt med en grund hver.
-      if (r.rolle === "spiller") {
-        S.skiftBesked = { fejl:true, t:"Det er en klubnøgle til en familie — den hører hjemme i StreakTennis-appen. Her skal en træner- eller cheftrænernøgle bruges." };
-        render(); return;
-      }
-      // ⭐⭐ ÉN NØGLE, ÉN TRÆNER. Hele pointen med rollerne 30/8 var, at
-      //   trænere IKKE deler nøgle — ellers kan den ene ikke lukkes ude
-      //   uden den anden. Serveren håndhæver det ikke, så skærmen gør.
-      if (r.harKonto && _mig && r.brugernavn && r.brugernavn !== _mig.brugernavn) {
-        S.skiftBesked = { fejl:true, t:"Der er allerede en konto på den nøgle (" + r.brugernavn +
-          "). Bed klubbens cheftræner om din egen nøgle — to trænere må ikke dele én." };
-        render(); return;
-      }
-      S.skiftFund = { klub: r.klub, rolle: r.rolle };
-      S.skiftBekraeft = false; render();
-    }).catch(function(){
-      S.skiftHenter = false;
-      S.skiftBesked = { fejl:true, t:"Ingen forbindelse — prøv igen. Der er ikke sket noget." }; render(); }); }
-
-  // ⭐ TRIN 2 · SKIFTET. Serveren FØRST, oprydningen bagefter — omvendt
-  //   af lukningen, fordi truppen her stadig findes og kan tabes.
-  else if (act==="skift-gem"){
-    if (S.skiftHenter || !S.skiftFund) return;
-    var _smig = S.konto || lager.hent("konto", null);
-    if (!_smig || !_smig.brugernavn) { S.skiftBesked={fejl:true,t:"Der er ingen konto på denne telefon."}; render(); return; }
-    if (!(S.skiftKode||"")) { S.skiftBesked={fejl:true,t:"Skriv dit kodeord — nøglen låses ind under det."}; render(); return; }
-    var _sny = (S.skiftNoegle||"").trim().toUpperCase();
-    var _samme = S.skiftFund.klub === _smig.klub;
-    // SLETTE-REGLEN: et skifte til en ANDEN klub kræver to tryk.
-    if (!_samme && !S.skiftBekraeft) { S.skiftBekraeft = true; S.skiftBesked = null; render(); return; }
-    S.skiftHenter = true; S.skiftBesked = null; render();
-    kontoKald("gem-noegle", { brugernavn: _smig.brugernavn, kode: S.skiftKode }, _sny).then(function(r){
-      S.skiftHenter = false; S.skiftBekraeft = false;
-      if (r && r.fejl) {
-        // ⛔ Intet er rørt. Truppen står, hvor den stod.
-        S.skiftBesked = { fejl:true, t: r.fejl === "netvaerk"
-          ? "Ingen forbindelse — prøv igen. Din trup er urørt."
-          : (r.t || "Nøglen kunne ikke gemmes. Din trup er urørt.") };
-        render(); return;
-      }
-      var nyKlub = r.klub || S.skiftFund.klub;
-      var skiftede = nyKlub !== _smig.klub;
-      // ⭐ Først NU ryddes der — og kun hvis klubben faktisk er en anden.
-      if (skiftede) ryddKlubben();
-      lager.gem("klubkode", _sny);
-      lager.gem("klubnavn", nyKlub); KONFIG.klub = nyKlub;
-      S.minRolle = r.rolle || S.skiftFund.rolle;
-      try { lager.gem("minrolle", S.minRolle); } catch(_e){}
-      var nk = { brugernavn: _smig.brugernavn, navn: _smig.navn, klub: nyKlub, rolle: S.minRolle };
-      lager.gem("konto", nk); S.konto = nk;
-      S.skiftAaben = false; S.skiftNoegle = ""; S.skiftKode = "";
-      S.skiftFund = null; S.skiftVisKode = false; S.skiftBesked = null;
-      S.doerFest = { ikon:"🔄", h:"Du er nu i " + nyKlub,
-        u: skiftede
-          ? "Nøglen er gemt, og telefonen er ryddet for den forrige klub. Truppen starter tom — skriv din nye ind under 👥 MIN TRUP."
-          : "Nøglen er gemt. Din trup og dine vurderinger står, hvor de stod.",
-        sidste:true, bolde:true };
-      render();
-    }).catch(function(){
-      S.skiftHenter = false; S.skiftBekraeft = false;
-      S.skiftBesked = { fejl:true, t:"Ingen forbindelse — prøv igen. Din trup er urørt." }; render(); }); }
-
   // ══ v4.3.0 · DEN LUKKEDE SKÆRMS TRE KNAPPER ══════════════════════
   else if (act==="luk-vis-kode"){ S.lukVisKode = !S.lukVisKode; render(); }
-
-  // ⭐ EN NY NØGLE PÅ EN GAMMEL KONTO. `gem-noegle` krypterer den om
-  //   under kodeordet og flytter kontoen til den nye klub og rolle.
-  //   Målt i motoren: brugernavn + kodeord i kroppen, nøglen i hovedet.
-  else if (act==="luk-gem-noegle"){
-    if (S.lukSender) return;
-    var _lk = S.konto || lager.hent("konto", null);
-    if (!_lk || !_lk.brugernavn) { S.lukBesked={fejl:true,t:"Der er ingen konto på denne telefon — log ind i stedet."}; render(); return; }
-    var _lny = (S.lukNyNoegle||"").trim().toUpperCase();
-    var _ld = scDom("lukNyNoegle", _lny);
-    if (!_ld || !_ld.ja) { S.lukBesked={fejl:true,t:"Nøglen ser ikke rigtig ud — 12 tegn i grupper af fire."}; render(); return; }
-    if (!(S.lukKode||"")) { S.lukBesked={fejl:true,t:"Skriv dit kodeord — nøglen låses ind under det."}; render(); return; }
-    S.lukSender = true; S.lukBesked = null; render();
-    kontoKald("gem-noegle", { brugernavn: _lk.brugernavn, kode: S.lukKode }, _lny).then(function(r){
-      S.lukSender = false;
-      if (r && r.fejl) {
-        // ⛔ Princip 35: en manglende forbindelse er ingen dom. Skærmen
-        //   bliver stående, og der loves ingenting.
-        S.lukBesked = { fejl:true, t: r.fejl === "netvaerk"
-          ? "Ingen forbindelse — prøv igen. Der er ikke sket noget."
-          : (r.t || "Nøglen kunne ikke gemmes.") };
-        render(); return;
-      }
-      // Serveren har sagt ja. Nøglen bor på telefonen igen, og klubben
-      // og rollen kommer fra SVARET — ikke fra det, der stod før.
-      lager.gem("klubkode", _lny);
-      if (r.klub) { lager.gem("klubnavn", r.klub); KONFIG.klub = r.klub; }
-      if (r.rolle) { S.minRolle = r.rolle; try { lager.gem("minrolle", r.rolle); } catch(_e){} }
-      var _nk = { brugernavn: _lk.brugernavn, navn: _lk.navn,
-                  klub: r.klub || _lk.klub, rolle: r.rolle || _lk.rolle };
-      lager.gem("konto", _nk); S.konto = _nk;
-      S.lukKode = ""; S.lukNyNoegle = ""; S.lukVisKode = false;
-      S.adgangLukket = false; S.lukBesked = null;
-      // ⚠️ Truppen kommer IKKE med. Den bor kun på telefonen (Julie-
-      //   spørgsmålet), og en ny klub skal starte på en tom liste —
-      //   ikke arve børnene fra den forrige. Det siges højt.
-      S.doerFest = { ikon:"🔑", h:"Du er inde i " + (r.klub || "klubben"),
-        u:"Nøglen er gemt. Truppen starter tom — børnene fra din forrige klub følger ikke med.",
-        sidste:true, bolde:true };
-      render();
-    }).catch(function(){
-      S.lukSender = false;
-      S.lukBesked = { fejl:true, t:"Ingen forbindelse — prøv igen. Der er ikke sket noget." }; render(); }); }
 
   else if (act==="luk-log-ud"){
     ["konto","klubkode","traenernavn","klubnavn","minrolle","doer","boksnoegle","boks-sendt"].forEach(function(n){
@@ -4980,46 +4930,6 @@ document.addEventListener("click", function(e){
     try { window.location.reload(); } catch(_e){} }
 
   else if (act==="tilm-hent"){ hentTilmeldinger(); }
-  else if (act==="fam-udsted"){
-    if (S.famUdsteder) return;
-    var _hvor = (v === "traener") ? "traener" : "spiller";
-    if (!lager.hent("klubkode","")) { S.famBesked={fejl:true,hvor:_hvor,t:"Indtast klubkoden f\u00f8rst."}; render(); return; }
-    S.famUdsteder = true; S.famBesked = null; render();
-    // ⭐ v4.5.0 · hvert afsnit har sit EGET felt. Før delte de ét.
-    var _etk = ((v === "traener" ? S.famEtiketT : S.famEtiket)||"").trim();
-    // ⭐ v4.0.0 · `v` baerer rollen: tom/"spiller" = familie, "traener" =
-    //   en traener. Kun en ADMIN faar 200 paa den sidste (motoren doemmer,
-    //   ikke skaermen — knappen vises bare ikke for andre).
-    var _rolle = (v === "traener") ? "traener" : "spiller";
-    noegleKald("udsted", Object.assign({ rolle: _rolle }, _etk ? { etiket: _etk } : {})).then(function(r){
-      S.famUdsteder = false;
-      if (r && r.fejl) { S.famBesked={fejl:true,hvor:_hvor,t:"Kunne ikke udstede: "+(r.t||r.fejl)}; render(); return; }
-      S.famNyNoegle = r.noegle; S.famNyEtiket = r.etiket; S.famNyRolle = r.rolle || _rolle;
-      if (v === "traener") S.famEtiketT = ""; else S.famEtiket = "";
-      S.famKopieret = false;
-      render();
-      noegleKald("liste", {}).then(function(r2){ if (r2 && r2.noegler) { S.famListe = r2.noegler; S.minRolle = r2.rolle || S.minRolle; render(); } });
-    }).catch(function(){ S.famUdsteder=false; S.famBesked={fejl:true,hvor:_hvor,t:"Ingen forbindelse."}; render(); }); }
-  else if (act==="fam-kopier"){
-    var _kn = (typeof KONFIG !== "undefined" && KONFIG.klub) || "klubben";
-    // ⭐⭐ v4.0.0 · EN TRAENERNOEGLE ER IKKE EN FAMILIENOEGLE, og beskeden
-    //   maa ikke sige det. Den ene aabner spillerappen, den anden aabner
-    //   traenerplatformen — og de to noegler kan ikke bruges i hinandens.
-    var _tekst = (S.famNyRolle === "traener")
-      ? ("\ud83c\udfbe " + _kn + " \u00b7 StreakCoach\n\nDin tr\u00e6nern\u00f8gle: " + S.famNyNoegle +
-         "\n\n\u00c5bn platformen og tast n\u00f8glen p\u00e5 skridt 2:\nhttps://tennis.sportsainalytics.com/trainer-platform.html" +
-         "\n\nN\u00f8glen er din alene \u2014 del den ikke.")
-      /* ⭐ v5.3.1 · NØGLEN REJSER MED LINKET. Før stod den på egen linje, og familien skulle markere tolv tegn
-         på en telefon og taste dem i et felt. App v5.0.4 læser `#klub=` fra fragmentet og udfylder feltet selv.
-         Nøglen står stadig læsbart nederst — virker linket ikke, skal vejen frem stadig findes. */
-      : ("\ud83c\udfbe " + _kn + " inviterer jer ind i StreakTennis!\n\nTryk p\u00e5 linket \u2014 jeres klubn\u00f8gle er med:\n" +
-         famLink(S.famNyNoegle) +
-         "\n\nVirker linket ikke, s\u00e5 tast n\u00f8glen selv, n\u00e5r I opretter jer: " + S.famNyNoegle);
-    try {
-      navigator.clipboard.writeText(_tekst).then(function(){ S.famKopieret = true; render(); },
-        function(){ S.famBesked={fejl:true,t:"Kunne ikke kopiere \u2014 mark\u00e9r n\u00f8glen selv."}; render(); });
-    } catch(e) { S.famBesked={fejl:true,t:"Kunne ikke kopiere \u2014 mark\u00e9r n\u00f8glen selv."}; render(); } }
-  else if (act==="fam-qr"){ S.famQrVis = !S.famQrVis; render(); }
   else if (act==="bud-soeg"){ budSoeg(); }
   else if (act==="bud-inviter"){ budInviter(); }
   else if (act==="snak-hent"){ snakHent(false); }
@@ -5028,13 +4938,12 @@ document.addEventListener("click", function(e){
   else if (act==="snak-valg"){ S.snakValgt = (S.snakValgt === v) ? null : (v || null); render(); }   /* v6.15.0 · ét tryk folder handlingerne ud */
   else if (act==="snak-fastgoer"){ if (v) snakFastgoer(v); }
   else if (act==="snak-loesn"){ snakLoesn(); }
-  else if (act==="fam-luk-ny"){ S.famNyNoegle=null; S.famNyEtiket=null; S.famNyRolle=null; S.famKopieret=false; S.famQrVis=false; render(); }
   else if (act==="fam-liste"){
     if (S.famHenter) return;
     S.famHenter = true; render();
     noegleKald("liste", {}).then(function(r){
       S.famHenter = false;
-      if (r && r.fejl) { S.famBesked={fejl:true,t:"Kunne ikke hente: "+(r.t||r.fejl)}; render(); return; }
+      if (r && r.fejl) { S.famBesked={fejl:true,hvor:"adgang",t:adgangFejltekst(r)}; render(); return; }
       // ⭐ Svaret baerer OGSAA min egen rolle. Det er den, der afgoer, om
       //   traenernoegle-afsnittet overhovedet tegnes.
       S.famListe = r.noegler || []; S.minRolle = r.rolle || null; try { if (r.rolle) lager.gem("minrolle", r.rolle); } catch(_e){} render();
@@ -5044,13 +4953,9 @@ document.addEventListener("click", function(e){
     if (S.famSpaerBed !== v) { S.famSpaerBed = v; render(); return; }
     S.famSpaerBed = null;
     noegleKald("spaer", { id: v }).then(function(r){
-      if (r && r.fejl) { S.famBesked={fejl:true,hvor:"spiller",t:"Kunne ikke sp\u00e6rre: "+(r.t||r.fejl)}; render(); return; }
-      // ⛔ FANGET PÅ ET SKÆRMBILLEDE 31/8: «Trænernøglen er spærret ✓» stod
-      //   i GRØNT lige under en AKTIV familienøgle. Det så ud, som om
-      //   familiens nøgle var blevet spærret. Kvitteringen bor nu i det
-      //   afsnit, den handler om.
-      S.famBesked={fejl:false, hvor:(r.rolle==="traener"?"traener":"spiller"),
-        t:(r.rolle==="traener"?"Tr\u00e6nern\u00f8glen":"N\u00f8glen")+(r.etiket?" til "+r.etiket:"")+" er sp\u00e6rret \u2713"};
+      if (r && r.fejl) { S.famBesked={fejl:true,hvor:"adgang",t:adgangFejltekst(r)}; render(); return; }
+      // ⭐ v6.16.0 · ordet er «adgang» — hvad der ligger bag, er serverens sag.
+      S.famBesked={fejl:false, hvor:"adgang", t: r.etiket ? "Adgangen for " + r.etiket + " er fjernet ✓" : "Adgangen er fjernet ✓"};
       noegleKald("liste", {}).then(function(r2){ if (r2 && r2.noegler) { S.famListe = r2.noegler; S.minRolle = r2.rolle || S.minRolle; } render(); });
     }).catch(function(){ S.famBesked={fejl:true,hvor:"spiller",t:"Ingen forbindelse."}; render(); }); }
   // ⭐⭐ v4.7.0 · LÆG I TRUP. Spilleren er ALLEREDE godkendt af doeren, saa
@@ -5096,7 +5001,7 @@ document.addEventListener("click", function(e){
     // og spillerne ser den kun, hvis familien OGSAA selv har valgt til i deres app.
     if (S.stigeTravl) return;
     var g = String(v||"").trim(); if (!g) return;
-    if (!lager.hent("klubkode","")) { S.syncBesked={fejl:true,t:"Indtast klubkoden f\u00f8rst."}; render(); return; }
+    if (!lager.hent("klubkode","")) { S.syncBesked={fejl:true,t:"Forbind telefonen med din klub f\u00f8rst."}; render(); return; }
     var til = S.stigeHold.indexOf(g) === -1;
     S.stigeTravl = true; render();
     sync("stige-hold", { hold: g, til: til }).then(function(r){
@@ -5180,9 +5085,9 @@ document.addEventListener("click", function(e){
     S.truppen = S.truppen || [];
     if (S.truppen.some(function(x){return x.navn.toLowerCase()===nv.toLowerCase();})) {
       S.syncBesked={fejl:true,t:nv+" er der allerede."}; render(); return; }
-    S.truppen.push({ navn:nv, gruppe:(gruppeAf((S.trupGruppe||"").trim()) ? (S.trupGruppe||"").trim() : ""), noegle:(S.trupNoegle||"").trim() });
+    S.truppen.push({ navn:nv, gruppe:(gruppeAf((S.trupGruppe||"").trim()) ? (S.trupGruppe||"").trim() : ""), noegle:"" });   /* v6.16.0 · spilleren kobles, når familien siger ja */
     lager.gem("truppen", S.truppen);
-    S.trupNavn = ""; S.trupNoegle = "";   // gruppen bliver staaende, saa naeste spiller gaar hurtigt
+    S.trupNavn = "";   // gruppen bliver staaende, saa naeste spiller gaar hurtigt
     byggTrup();
     if (S.noegler) lager.gem("noegler", S.noegler);
     S.syncBesked={fejl:false,t:nv+" er tilf\u00f8jet \u2713"}; render();

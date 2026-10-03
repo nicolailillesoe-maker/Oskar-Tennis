@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.9.4 · 1. oktober 2026";
+const VERSION = "v5.10.0 · 3. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -501,21 +501,28 @@ const HANDEL = { url: "https://tennis.sportsainalytics.com/handelsbetingelser.ht
    «Betal med MobilePay» → betaling-start → MobilePay. Nicolai 24/9: «Det skal bare være direkte betaling.» */
 function _udtjekBoks(plan, kilde, EN) {
   var p = plan === "fri" ? 98 : 49;
+  var _ap = PLATFORM.betaling === "apple";   /* ⭐ v5.10.0 · i appen: Apples pris, Apples vilkår, Apples knap */
   /* ⭐ v5.8.8 · klubfri = fri streaming oven på klubbens plan (betaling-start v6) */
   var navn = plan === "fri" ? (EN ? "🚀 FULL + FREE STREAMING" : "🚀 FULD + FRI STREAMING") : plan === "klubfri" ? (EN ? "🚀 FREE STREAMING" : "🚀 FRI STREAMING") : (EN ? "⭐ FULL ACCESS" : "⭐ FULD ADGANG");
   return '<div style="margin:4px 0 8px;padding:12px;border:1px solid var(--guld);border-radius:12px;text-align:left">' +
     '<div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">🧾 ' + (EN ? "CONFIRM PURCHASE" : "BEKRÆFT KØB") + '</div>' +
-    '<div style="margin:6px 0 2px"><b>' + navn + '</b><span style="float:right;font-weight:800;color:var(--guld)">' + p + (EN ? " kr/mo" : " kr./md.") + '</span></div>' +
+    '<div style="margin:6px 0 2px"><b>' + navn + '</b><span style="float:right;font-weight:800;color:var(--guld)">' + (_ap ? esc(applePris(plan, p + " kr.")) + (EN ? "/mo" : "/md.") : p + (EN ? " kr/mo" : " kr./md.")) + '</span></div>' +
     '<ul class="lille" style="margin:6px 0 8px;padding-left:18px;line-height:1.5">' +
       (plan === "klubfri" ? '<li>' + (EN ? "On top of what your club pays — live streaming with no limit." : "Oven på det, din klub betaler — live-deling uden loft.") + '</li>' : '') +
       '<li>' + (EN ? "Renews every month until you cancel. No commitment." : "Fornyes hver måned, til I opsiger. Ingen binding.") + '</li>' +
-      '<li>' + (EN ? "Cancel any time in MobilePay — access lasts the month you paid for." : "Opsig når som helst i MobilePay — adgangen gælder den måned, I har betalt for.") + '</li>' +
-      '<li>' + (EN ? "14-day right of withdrawal — full refund." : "14 dages fortrydelsesret — hele beløbet tilbage.") + '</li>' +
-      '<li>' + (EN ? "Payment: MobilePay. The buyer must be 18 or over — MobilePay checks." : "Betaling: MobilePay. Den, der betaler, skal være fyldt 18 — MobilePay tjekker det.") + '</li></ul>' +
+      (_ap
+        ? '<li>' + (EN ? "Cancel any time under your Apple subscriptions — access lasts the month you paid for." : "Opsig når som helst under dine Apple-abonnementer — adgangen gælder den måned, I har betalt for.") + '</li>' +
+          '<li>' + (EN ? "Refunds go through Apple." : "Fortrydelse og refusion går gennem Apple.") + '</li>' +
+          '<li>' + (EN ? "Payment: App Store — Apple charges your Apple ID." : "Betaling: App Store — Apple trækker beløbet på dit Apple-ID.") + '</li></ul>'
+        : '<li>' + (EN ? "Cancel any time in MobilePay — access lasts the month you paid for." : "Opsig når som helst i MobilePay — adgangen gælder den måned, I har betalt for.") + '</li>' +
+          '<li>' + (EN ? "14-day right of withdrawal — full refund." : "14 dages fortrydelsesret — hele beløbet tilbage.") + '</li>' +
+          '<li>' + (EN ? "Payment: MobilePay. The buyer must be 18 or over — MobilePay checks." : "Betaling: MobilePay. Den, der betaler, skal være fyldt 18 — MobilePay tjekker det.") + '</li></ul>') +
     '<p class="lille" style="margin:0 0 8px">' + (EN ? "By paying you accept the " : "Ved at betale accepterer I ") +
-      '<a href="' + HANDEL.url + '" target="_blank" rel="noopener" data-handelsbetingelser="1" style="color:var(--is)">' + (EN ? "terms of sale" : "handelsbetingelserne") + '</a>.</p>' +
-    '<button class="knap" style="width:100%;min-height:48px;background:#5a78ff" data-a="betalMP" data-v="' + plan + '|' + kilde + '">' +
-      (S.betalSender ? "⏳" : (EN ? "Pay with MobilePay · " : "Betal med MobilePay · ") + p + " kr →") + '</button>' +
+      '<a href="' + HANDEL.url + '" target="_blank" rel="noopener" data-handelsbetingelser="1" style="color:var(--is)">' + (EN ? "terms of sale" : "handelsbetingelserne") + '</a>' +
+      (_ap ? (EN ? " and the " : " og ") + '<a href="' + PRIVATLIV_URL + '" target="_blank" rel="noopener" data-privatliv="1" style="color:var(--is)">' + (EN ? "privacy policy" : "privatlivspolitikken") + '</a>' : '') + '.</p>' +
+    '<button class="knap" style="width:100%;min-height:48px;background:#5a78ff" data-a="betalMP" data-v="' + plan + '|' + kilde + '"' + (_ap ? ' data-apple="abo"' : '') + '>' +
+      (S.betalSender ? "⏳" : _ap ? (EN ? "Subscribe in the App Store · " : "Abonnér gennem App Store · ") + esc(applePris(plan, p + " kr.")) + (EN ? "/mo" : "/md.")
+        : (EN ? "Pay with MobilePay · " : "Betal med MobilePay · ") + p + " kr →") + '</button>' +
     (kilde === "ind"
       ? '<button class="knap valg" style="width:100%;min-height:44px;margin-top:8px" data-a="indPlan" data-v="gaest">' + (EN ? "Start on Basis instead (free)" : "Start på Basis i stedet (gratis)") + '</button>' +
         ''   /* rejsens egen «← Tilbage» lukker udtjekningen (indTilbage) — ingen dobbelt knap */
@@ -531,7 +538,21 @@ const I_SKALLEN = (function () {
   } catch (_e) {}
   return false;
 })();
-const SKAL = I_SKALLEN ? " \u00b7 app" : "";
+/* ⭐⭐⭐ v5.10.0 · PLATFORMLAGET — ÉN KILDE, TO UDGIVELSER (App Store-vejen A1, besluttet 1/10). Alt, der er forskelligt mellem
+   appen fra App Store og web-appen, læser PLATFORM. Byggescriptet måler, at I_SKALLEN kun står i sin egen definition, her og i DEL_URL.
+     app          · den native skal (Capacitors plugins findes)
+     betaling     · "apple" = Apples køb i appen (regel 3.1.1) · "mobilepay" = web
+     push         · "apns" = Apples kanal · "web" = Web Push
+     hjemmeskaerm · web-appens «læg på hjemmeskærmen» findes kun på web
+     linksUd      · "intern" (appen) · "fane" (web) — til A4, når skallens skærme gennemgås */
+const PLATFORM = Object.freeze({
+  app: I_SKALLEN,
+  betaling: I_SKALLEN ? "apple" : "mobilepay",
+  push: I_SKALLEN ? "apns" : "web",
+  hjemmeskaerm: !I_SKALLEN,
+  linksUd: I_SKALLEN ? "intern" : "fane"
+});
+const SKAL = PLATFORM.app ? " \u00b7 app" : "";
 /* \u26d4\u2b50\u2b50\u2b50 v5.0.6 \u00b7 ADRESSEN, ANDRE KAN NAA.
    MAALT 16/9 kl. 21.23: et delt link lod capacitor://localhost/#ven=nikke og var doedt hos modtageren.
    location.origin er appens EGEN adresse - den findes kun inde i skallen. Alt, der forlader telefonen,
@@ -1057,7 +1078,7 @@ const UG_PAAMIND_FRA = 7000, UG_PAAMIND_TIL = 7400;   // vores id'er — alt and
 let ugPaamindKoe = Promise.resolve();
 function nativLokal() {
   try {
-    if (!I_SKALLEN) return null;
+    if (!PLATFORM.app) return null;
     const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications;
     return P && typeof P.schedule === "function" && typeof P.getPending === "function" ? P : null;
   } catch (_e) { return null; }
@@ -2018,7 +2039,7 @@ try {
   // for vejledningen, var den eneste der aldrig fik den.
   if (lager.hent("sai-push-vil") === "1"
       && (typeof Notification === "undefined" || Notification.permission === "default")
-      && !I_SKALLEN
+      && PLATFORM.push === "web"
       && ((erIOS() && !paaHjemmeskaerm()) || pushMulig())) {
     S.indResultat = "inde"; S.indTrin = 7;
   }
@@ -2329,7 +2350,7 @@ function hjemkomstFraLink(sp, fraHaendelse) {
       S.tab = "opsaet"; S.opsAaben = "konto";
       /* ⭐ v5.7.5 · MobilePay sender tilbage til en BROWSER — ikke til appen på hjemmeskærmen. Målt 25/9 på
          Nicolais telefon: «den genlæste på Chrome efter betalingen og opdaterede ikke i Web-appen». */
-      const _hj = I_SKALLEN || paaHjemmeskaerm();
+      const _hj = PLATFORM.app || paaHjemmeskaerm();
       S.kontoBesked = { fejl: false, t: S.sprog === "en"
         ? (_hj ? "Thanks! MobilePay is handling the payment — your plan changes as soon as it has gone through."
                : "Thanks! MobilePay is handling the payment. If you use StreakTennis from your home screen, go back there — your plan changes as soon as the payment has gone through.")
@@ -2344,7 +2365,7 @@ function hjemkomstFraLink(sp, fraHaendelse) {
       const _kr = String(sp.get("ref") || "");
       let _kv = null; try { _kv = JSON.parse(lager.hent("sai-koeb-venter") || "null"); } catch (_e) {}
       const _mit = !!(_kv && _kv.ref === _kr);
-      if (!_mit && !(I_SKALLEN || paaHjemmeskaerm())) {
+      if (!_mit && !(PLATFORM.app || paaHjemmeskaerm())) {
         /* ⭐ v5.8.3 · MobilePay sender tilbage til standardbrowseren — ikke til appen på hjemmeskærmen (målt 25/9 og 26/9:
            Chrome med en anden profil). Købet blev startet et andet sted; det lander dér, når appen bliver synlig igen. */
         S.tab = "kamp"; S.wiz = 3;
@@ -2390,7 +2411,10 @@ function _hjemLyt() {
     return true;
   } catch (_e) { return false; }
 }
-if (I_SKALLEN) { if (!_hjemLyt()) window.addEventListener("load", function () { _hjemLyt(); }); }
+if (PLATFORM.app) { if (!_hjemLyt()) window.addEventListener("load", function () { _hjemLyt(); }); }
+/* ⭐⭐ v5.10.0 · APPLES KØB: lytteren og App Store-priserne hentes, når appen starter med en konto (renewals lander af sig selv:
+   pluginets init() sender de løbende abonnementer, og de går til apple-koeb, som kun skriver noget nyt). */
+if (PLATFORM.betaling === "apple") setTimeout(function () { try { appleStart(); } catch (_e) {} }, 1500);
 
 // ⭐⭐ EN APP, DER ALLEREDE ER AABEN, GENSTARTER IKKE. Trykker man paa et
 // #ven=-link, mens StreakTennis staar aabent — eller browseren svarer fra
@@ -2861,7 +2885,7 @@ function pushMulig() {
    siger det gamle, sande: kun på web. */
 function nativPush() {
   try {
-    if (!I_SKALLEN) return null;
+    if (PLATFORM.push !== "apns") return null;
     const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PushNotifications;
     return P && typeof P.register === "function" ? P : null;
   } catch (_e) { return null; }
@@ -2896,7 +2920,7 @@ const GUIDE_URL = "kom-i-gang.html";
 
 // ⭐ v5.7.2 · kopiens etiket: app og browser på samme iPhone skal kunne skelnes (25/9 kaldte begge sig «iPhone · Safari»)
 function skyEnhed() {
-  try { return (erIOS() ? "iPhone" : "Enhed") + " · " + (I_SKALLEN ? "app" : browserNavn()); } catch (_e) { return "Enhed"; }
+  try { return (erIOS() ? "iPhone" : "Enhed") + " · " + (PLATFORM.app ? "app" : browserNavn()); } catch (_e) { return "Enhed"; }
 }
 function erIOS() {
   try {
@@ -2926,6 +2950,135 @@ const KONTO_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/konto
 const KONTO_SLET_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/konto-slet";   /* ⭐ v5.7.3 · Slet min konto */
 /* ⭐ v5.3.7 · KUN DIREKTE BETALING — betaling-start opretter MobilePay-aftalen og svarer {url} */
 const BETAL_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/betaling-start";
+/* ⭐⭐⭐ v5.10.0 · APPLES KØB I APPEN (App Store 3.1.1). Første App Store-udgave har KUN Apples køb; MobilePay bliver på web.
+   Appen taler direkte med pluginets native del (capacitor-plugin-cdv-purchase 13.18.0, «PurchasePlugin», StoreKit 2 — kontrakten
+   målt i dens PurchasePlugin.swift 3/10): load {productIds} → {validProducts:[{id, price}]} · purchase {productId, applicationUsername}
+   · finish {transactionId} · restore · manageSubscriptions · hændelsen «transactionUpdated» {state, transactionIdentifier, productId,
+   jwsRepresentation}. Apples signerede transaktion går til apple-koeb v1 ({handling:"koeb", jws} + x-spiller-noegle). FØRST når svaret
+   er 200, kaldes finish() hos Apple — uden svar ligger købet hos Apple og kommer igen. Produkterne står ét sted, med samme ni id'er
+   som basens apple_koeb_skriv (migration apple_koeb_v1). */
+const APPLE_KOEB_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/apple-koeb";
+const PRIVATLIV_URL = "https://tennis.sportsainalytics.com/privatliv.html";
+const APPLE_ID = "com.sportsainalytics.streaktennis.";
+const APPLE_PRODUKT = {
+  fuld: APPLE_ID + "fuld.maaned", fri: APPLE_ID + "fri.maaned", klubfri: APPLE_ID + "klubfri.maaned",
+  "kamp.1": APPLE_ID + "kamp.1", "kamp.3": APPLE_ID + "kamp.3", "kamp.5": APPLE_ID + "kamp.5",
+  "live.1": APPLE_ID + "live.1", "live.3": APPLE_ID + "live.3", "live.5": APPLE_ID + "live.5"
+};
+function nativKoeb() {
+  try {
+    if (PLATFORM.betaling !== "apple") return null;
+    const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.PurchasePlugin;
+    return P && typeof P.purchase === "function" && typeof P.finish === "function" && typeof P.addListener === "function" ? P : null;
+  } catch (_e) { return null; }
+}
+/* appAccountToken: en fast UUID pr. spiller, regnet af en HASH af nøglen — nøglen forlader aldrig telefonen. Med den kan
+   apple-webhook v2 finde spilleren til et køb, appen aldrig nåede at sende hjem (Apples besked bærer tokenet). */
+async function appleUuid() {
+  try {
+    if (!S.spillerNoegle || !(window.crypto && crypto.subtle)) return "";
+    const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("streaktennis-apple|" + S.spillerNoegle)));
+    h[6] = (h[6] & 0x0f) | 0x80; h[8] = (h[8] & 0x3f) | 0x80;   /* RFC 9562: version 8 · variant 10 */
+    const x = Array.from(h.slice(0, 16), function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+    return x.slice(0, 8) + "-" + x.slice(8, 12) + "-" + x.slice(12, 16) + "-" + x.slice(16, 20) + "-" + x.slice(20, 32);
+  } catch (_e) { return ""; }
+}
+/* Apples priser — det, Apple tager, er det, knappen siger. Et tomt svar (produkterne er ikke oprettet endnu) gemmes ikke. */
+let _appleVarerP = null;
+function appleVarer() {
+  const P = nativKoeb(); if (!P) return Promise.resolve(null);
+  if (S.appleVarer) return Promise.resolve(S.appleVarer);
+  if (_appleVarerP) return _appleVarerP;
+  _appleVarerP = Promise.resolve().then(function () { return P.load({ productIds: Object.keys(APPLE_PRODUKT).map(function (k) { return APPLE_PRODUKT[k]; }) }); }).then(function (r) {
+    const m = {}; let i = 0;
+    ((r && r.validProducts) || []).forEach(function (p) { if (p && p.id) { m[p.id] = { pris: String(p.price || "") }; i++; } });
+    _appleVarerP = null;
+    if (!i) return null;
+    S.appleVarer = m; try { render(); } catch (_e) {}
+    return m;
+  }).catch(function () { _appleVarerP = null; return null; });
+  return _appleVarerP;
+}
+function applePris(noegle, reserve) { const v = S.appleVarer && S.appleVarer[APPLE_PRODUKT[noegle]]; return v && v.pris ? v.pris : reserve; }
+let _appleStartet = false;
+const _appleIgang = new Set();
+function appleStart() {
+  const P = nativKoeb(); if (!P || _appleStartet || !S.spillerNoegle) return;
+  _appleStartet = true;
+  try { P.addListener("transactionUpdated", function (d) { const pr = appleTx(d).catch(function () {}); _appleIgang.add(pr); pr.then(function () { _appleIgang.delete(pr); }); }); } catch (_e) {}
+  try { Promise.resolve(P.init({})).catch(function () {}); } catch (_e) {}
+  appleVarer();
+}
+/* En løbende aftale betalt uden for appen — samme regel som basens apple_koeb_skriv (409 mobilepay-aktiv). Den siges FØR Apple trækker. */
+function _appleAboLoeber(a) {
+  if (!a || a.udbyder === "apple" || ["aktiv", "naade", "proeve"].indexOf(a.status) < 0) return false;
+  const d = [a.udloeber, a.naade_til].filter(Boolean).map(function (x) { return Date.parse(x); }).filter(function (x) { return !isNaN(x); });
+  return (d.length ? Math.max.apply(null, d) : Infinity) > Date.now();
+}
+function appleSlut(v, fejl, t) {
+  S.appleVenter = null; S.betalSender = false; S.koebSender = null;
+  const b = { fejl: fejl, t: t }; const hvor = String((v && v.hvor) || "");
+  if (v && v.ind) S.indBesked = b;
+  else if (hvor.indexOf("a:") === 0) S.hentBesked = { i: _koebKampIndeks(hvor.slice(2)), fejl: fejl, t: t };
+  else if (hvor === "start") S.nyBesked = b;
+  else if (hvor === "live") S.liveBesked = b;
+  else S.kontoBesked = b;
+  render();
+}
+async function appleFaerdig(v, d) {
+  const EN = S.sprog === "en";
+  S.appleVenter = null; S.betalSender = false; S.koebSender = null;
+  if (d && d.slags === "abo") {
+    S.udtjek = null; S.planSkift = false; S.indUdtjek = null;
+    try { await inviteretTjek(); } catch (_e) {}
+    const nv = d.plan === "fri" ? (EN ? "Full + free streaming" : "Fuld + fri streaming") : d.plan === "klubfri" ? (EN ? "free streaming" : "fri streaming") : (EN ? "Full access" : "Fuld adgang");
+    const t = EN ? "The payment went through — you have " + nv + " now." : "Betalingen er gået igennem — du har " + nv + " nu.";
+    if (v && v.ind) { S.indBesked = null; S.indTrin = 3; }
+    else { S.tab = "opsaet"; S.opsAaben = "konto"; S.kontoBesked = { fejl: false, t: t }; }
+    render(); try { A.betalStatus(); } catch (_e) {}
+    return;
+  }
+  A.koebFaerdig({ hvor: (v && v.hvor) || "", antal: (v && v.antal) || 1, type: (v && v.type) || "kamp" });
+}
+/* Hver hændelse fra Apple. Hvert udfald får sin EGEN sætning (75). finish() KUN når købet står i basen (200) — eller aldrig kan
+   komme til at stå der (Apple har tilbagekaldt det, eller det står allerede på en anden konto). */
+async function appleTx(d) {
+  d = d || {};
+  const st = String(d.state || ""); const v = S.appleVenter; const vores = !!(v && v.id && v.id === d.productId);
+  const EN = S.sprog === "en";
+  if (st === "PaymentTransactionStateFailed") {
+    if (vores) appleSlut(v, true, EN ? "The purchase was cancelled — nothing was charged." : "Købet blev afbrudt — der er ikke trukket noget.");
+    return;
+  }
+  if (st === "PaymentTransactionStateDeferred") {
+    if (vores) appleSlut(v, false, EN ? "The purchase is waiting for approval in the App Store — it lands here by itself once approved." : "Købet venter på en godkendelse i App Store — det lander her af sig selv, når det er godkendt.");
+    return;
+  }
+  if (st !== "PaymentTransactionStatePurchased" && st !== "PaymentTransactionStateRestored") return;
+  const jws = String(d.jwsRepresentation || ""); const tx = String(d.transactionIdentifier || "");
+  if (!jws || !tx || !S.spillerNoegle) return;
+  let status = 0, svar = {};
+  const ac = new AbortController(); const ur = setTimeout(function () { ac.abort(); }, 20000);
+  try {
+    const x = await fetch(APPLE_KOEB_URL, { method: "POST", signal: ac.signal,
+      headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+      body: JSON.stringify({ handling: "koeb", jws: jws }) });
+    clearTimeout(ur); status = x.status; svar = await x.json().catch(function () { return {}; });
+  } catch (_e) { clearTimeout(ur); }
+  const kode = String((svar && svar.kode) || "");
+  if (status === 200 || kode === "anden" || kode === "tilbagekaldt") { try { const P = nativKoeb(); if (P) await P.finish({ transactionId: tx }); } catch (_e) {} }
+  if (st === "PaymentTransactionStateRestored") { if (status === 200 && S.appleGendanner) S.appleGendanner.fundet++; return; }
+  if (!vores || S.appleVenter !== v) { if (status === 200) { try { A.betalStatus(); } catch (_e) {} } return; }
+  if (status === 200) return appleFaerdig(v, svar);
+  appleSlut(v, true,
+    !status ? (EN ? "The App Store has the payment, but we could not reach our server — the purchase lands the next time you open the app." : "App Store har betalingen, men vi kunne ikke nå vores server — købet lander, næste gang du åbner appen.")
+    : kode === "anden" ? (EN ? "The purchase belongs to another StreakTennis account on this Apple ID." : "Købet hører til en anden StreakTennis-konto på dette Apple-ID.")
+    : kode === "tilbagekaldt" ? (EN ? "Apple has withdrawn the purchase — nothing was added." : "Apple har tilbagekaldt købet — der er ikke lagt noget til.")
+    : kode === "mobilepay-aktiv" ? (EN ? "You already have a subscription paid outside the app — write to " + HANDEL.mail + " and we will sort it out." : "Du har allerede et abonnement, der betales uden for appen — skriv til " + HANDEL.mail + ", så ordner vi det.")
+    : kode === "afvist" ? (EN ? "Your account is not let in — the purchase was not added." : "Din konto er ikke lukket ind — købet er ikke lagt til.")
+    : kode === "adgang" ? (EN ? "Log in again — the purchase lands when you are logged in." : "Log ind igen — købet lander, når du er logget ind.")
+    : (EN ? "The App Store has the payment, but we could not check it yet — we try again the next time you open the app." : "App Store har betalingen, men vi kunne ikke kontrollere den endnu — vi prøver igen, næste gang du åbner appen."));
+}
 // ⭐ DOEREN UD (22/8 nat): en invitation begynder med en voksen, der
 // skriver. Mailen ER kanalen — vi gemmer INTET om nogen, der ikke er
 // lukket ind, og GDPR-notatets loefte ("e-mail, telefon,
@@ -3280,8 +3433,8 @@ function koebKnap(type, pris, hvor, EN) {
   const t = type === "live" ? (EN ? "Buy an extra live match" : "Køb en ekstra live-kamp")
     : String(hvor).indexOf("a:") === 0 ? (EN ? "Buy the analysis" : "Køb analysen") : (EN ? "Buy live match + AI analysis" : "Køb live-kamp + AI-analyse");   /* ⭐ v5.8.5 */
   return '<div class="raekke" style="margin-top:8px"><button class="knap" data-koeb="1" style="width:100%;min-height:48px;background:#5a78ff" data-a="koebStart" data-v="' +
-    esc(type + "|" + hvor) + '">' + (S.koebSender ? "⏳ " : "💳 ") + t + ' · ' + p + ' kr</button></div>' +
-    '<p class="lille" style="margin:4px 0 0;opacity:.75;text-align:center">' + (EN ? "MobilePay · one purchase, no subscription" : "MobilePay · ét køb, intet abonnement") + '</p>' +
+    esc(type + "|" + hvor) + '">' + (S.koebSender ? "⏳ " : "💳 ") + t + ' · ' + (PLATFORM.betaling === "apple" ? esc(applePris(type + ".1", p + " kr")) : p + ' kr') + '</button></div>' +
+    '<p class="lille" style="margin:4px 0 0;opacity:.75;text-align:center">' + (PLATFORM.betaling === "apple" ? (EN ? "App Store · one purchase, no subscription" : "App Store · ét køb, intet abonnement") : (EN ? "MobilePay · one purchase, no subscription" : "MobilePay · ét køb, intet abonnement")) + '</p>' +
     /* ⭐ v5.8.6 · Basis: Fuld adgang som det andet valg — samme sted, samme øjeblik (Nicolai: «opgradere med det samme») */
     (type === "kamp" && S.minPlan === "gaest"
       ? '<div class="raekke" style="margin-top:8px"><button class="knap valg" data-opgrader="1" style="width:100%;min-height:48px" data-a="planOpgraderNu">⭐ ' + (EN ? "Or Full access · 49 kr/month" : "Eller Fuld adgang · 49 kr/md") +
@@ -3309,15 +3462,20 @@ function _livekoebKort(pl, EN) {
   const k = S.koebKlar || { kamp: 0, live: 0 }; const klar = (k.kamp || 0) + (k.live || 0);
   const knap = function (n) {
     return '<button class="knap" data-livekoeb="' + n + '" style="flex:1;min-height:56px;background:#5a78ff;padding:6px 4px" data-a="koebStart" data-v="' + type + '|konto|' + n + '">' +
-      (S.koebSender ? "⏳" : '<b>' + n + (EN ? (n === 1 ? " match" : " matches") : (n === 1 ? " kamp" : " kampe")) + '</b><br><span style="font-size:11px">' + P[n] + " kr" + (n > 1 ? " · " + Math.round(P[n] / n) + (EN ? "/each" : "/stk") : "") + '</span>') + '</button>';
+      (S.koebSender ? "⏳" : '<b>' + n + (EN ? (n === 1 ? " match" : " matches") : (n === 1 ? " kamp" : " kampe")) + '</b><br><span style="font-size:11px">' +
+        (PLATFORM.betaling === "apple" ? esc(applePris(type + "." + n, P[n] + " kr")) : P[n] + " kr" + (n > 1 ? " · " + Math.round(P[n] / n) + (EN ? "/each" : "/stk") : "")) + '</span>') + '</button>';
   };
   return '<div class="kort" style="padding:12px;margin:2px 0 10px;border:1px solid var(--guld);border-radius:12px;text-align:left">' +
     '<div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--guld)">📡 ' + (EN ? "LIVE MATCHES" : "LIVE-KAMPE") + '</div><span class="lille" data-livekoeb-klar="1" style="margin:0">' + klar + (EN ? " ready" : " klar") + '</span></div>' +
     '<p class="lille" style="margin:6px 0 8px">' + (type === "kamp"
-      ? (EN ? "Buy ahead — so you are not on the court with MobilePay. A bought match is ready for your next one, and the AI analysis comes with it." : "Køb på forhånd — så står du ikke med MobilePay på banen. En købt kamp ligger klar til din næste, og AI-analysen følger med.")
+      ? (PLATFORM.betaling === "apple"
+        ? (EN ? "Buy ahead — so you are not buying on the court. A bought match is ready for your next one, and the AI analysis comes with it." : "Køb på forhånd — så står du ikke og køber på banen. En købt kamp ligger klar til din næste, og AI-analysen følger med.")
+        : (EN ? "Buy ahead — so you are not on the court with MobilePay. A bought match is ready for your next one, and the AI analysis comes with it." : "Køb på forhånd — så står du ikke med MobilePay på banen. En købt kamp ligger klar til din næste, og AI-analysen følger med."))
       : (EN ? "Buy ahead — extra live matches for when the month's 3 are used. A bought match is ready for your next one." : "Køb på forhånd — ekstra live-kampe til når månedens 3 er brugt. En købt kamp ligger klar til din næste.")) + '</p>' +
     '<div class="raekke" style="gap:6px">' + knap(1) + knap(3) + knap(5) + '</div>' +
-    '<p class="lille" style="margin:6px 0 0;opacity:.7;text-align:center">' + (EN ? "MobilePay · one purchase, no subscription · bought matches do not expire" : "MobilePay · ét køb, intet abonnement · købte kampe udløber ikke") + '</p></div>';
+    '<p class="lille" style="margin:6px 0 0;opacity:.7;text-align:center">' + (PLATFORM.betaling === "apple"
+      ? (EN ? "App Store · one purchase, no subscription · bought matches do not expire" : "App Store · ét køb, intet abonnement · købte kampe udløber ikke")
+      : (EN ? "MobilePay · one purchase, no subscription · bought matches do not expire" : "MobilePay · ét køb, intet abonnement · købte kampe udløber ikke")) + '</p></div>';
 }
 /* ⭐ v5.8.2 · tallet fra basen (betaling-start status → live): «2 af 3 gratis tilbage» · «1 af 3 tilbage denne måned» */
 function liveTalTekst(EN) {
@@ -4875,7 +5033,7 @@ const A = {
     /* ⭐ v5.0.3 · TEAMET: invitationer hentes, hver gang kortet åbnes — pilotaftenen 15/9: en invitation sendt efter app-start blev aldrig set */
     if (S.opsAaben === "familie") { try { A.teamBudHent(true); } catch (_e) {} }
     /* ⭐ v5.3.7 · Din konto spørger, om en betaling blev afvist (ét ord: «alder») */
-    if (S.opsAaben === "konto") { try { A.betalStatus(); } catch (_e) {} }
+    if (S.opsAaben === "konto") { try { A.betalStatus(); } catch (_e) {} try { appleStart(); } catch (_e) {} }   /* ⭐ v5.10.0 · appleStart */
     if (S.opsAaben === "klub") { try { A.klubBudHent(true); } catch (_e) {} }   /* ⭐ v5.1.0 · klubbens invitationer */
     // ⭐ v4.91.0 · KLUBBER er sin egen flise med sin egen liste.
     if (S.opsAaben === "klubber" && S.portStatus && S.portStatus.ejer) A.klubHent();
@@ -8441,6 +8599,8 @@ const A = {
       S.minPlan = r.plan || "gaest"; S.gaveInfo = null; S.planSkift = false; S.udtjek = null;
       S.kontoBesked = { fejl: false, t: S.sprog === "en" ? "Basis — from now. Live is off; analyses count as Basis." : "Basis — gælder fra nu. Live er lukket, og analyserne tæller som Basis." };
     } else if (r.fejl === "klub") { S.minPlan = "klub"; S.planSkift = false; }
+    /* ⭐ v5.10.0 · et abonnement købt i App Store opsiges hos Apple — ikke i MobilePay */
+    else if (r.fejl === "aftale-aktiv" && S.mpAftale && S.mpAftale.udbyder === "apple") { S.kontoBesked = { fejl: true, t: S.sprog === "en" ? "Cancel your subscription in the App Store — you keep the plan for the rest of the paid month." : "Opsig dit abonnement i App Store — du beholder planen resten af den betalte måned." }; }
     /* ⭐ v5.3.7 · konto v9: en betalt måned løber → motorens egen sætning (opsig i MobilePay) */
     else { S.kontoBesked = { fejl: true, t: r.t || (r.ingenSvar ? (S.sprog === "en" ? "No connection — try again." : "Ingen forbindelse — prøv igen.") : (S.sprog === "en" ? "Could not change the plan — try again." : "Kunne ikke skifte plan — prøv igen.")) }; }
     render();
@@ -8452,6 +8612,60 @@ const A = {
   /* ⭐⭐ v5.3.7 · BETAL MED MOBILEPAY. Kontrakten (betaling-start v2, målt i dens prøve):
      {handling:"start", plan} + x-spiller-noegle → 200 {url} · 503 betaling-ikke-klar · 409 aftale-findes
      · 409 klub-betaler · 403 afvist · 502 udbyder. Hvert udfald får sin EGEN sætning (75). */
+  /* ⭐⭐⭐ v5.10.0 · KØB GENNEM APPLE. v = "abo|plan|kilde" (fra betalMP) eller "koeb|type|hvor|antal" (fra koebStart). */
+  appleKoeb: async (v) => {
+    const EN = S.sprog === "en";
+    const del = String(v || "").split("|");
+    let ctx;
+    if (del[0] === "abo") {
+      const plan = del[1] === "fri" ? "fri" : del[1] === "klubfri" ? "klubfri" : "fuld";
+      ctx = { slags: "abo", plan: plan, ind: del[2] === "ind", hvor: del[2] === "ind" ? "ind" : "konto", id: APPLE_PRODUKT[plan] };
+    } else {
+      const type = del[1] === "live" ? "live" : "kamp"; const antal = [1, 3, 5].indexOf(+del[3]) >= 0 ? +del[3] : 1;
+      ctx = { slags: "koeb", type: type, hvor: String(del[2] || ""), antal: antal, id: APPLE_PRODUKT[type + "." + antal] };
+    }
+    if (S.appleVenter || S.betalSender || S.koebSender) return;
+    const sig = function (t) { appleSlut(ctx, true, t); };
+    const P = nativKoeb();
+    if (!P) return sig(EN ? "Buying in the app needs the newest version — update StreakTennis." : "Køb i appen kræver den nyeste version — opdatér StreakTennis.");
+    if (!S.spillerNoegle) return sig(EN ? "Log in first — then you can buy." : "Log ind først — så kan du købe.");
+    S.appleVenter = ctx;
+    if (ctx.slags === "abo") S.betalSender = true; else S.koebSender = ctx.type;
+    if (ctx.ind) S.indBesked = null; else if (ctx.hvor === "konto") S.kontoBesked = null;
+    render();
+    appleStart();
+    if (ctx.slags === "abo") {
+      /* basen siger nej til et Apple-abonnement oven på en løbende aftale (409 mobilepay-aktiv) — spørg FØR Apple trækker */
+      const a = await A.betalStatus();
+      if (a === undefined) return sig(EN ? "No connection — try again." : "Ingen forbindelse — prøv igen.");
+      if (_appleAboLoeber(a)) return sig(EN ? "You already have a subscription paid outside the app. It must run out before you can buy here." : "Du har allerede et abonnement, der betales uden for appen. Det skal udløbe, før du kan købe her.");
+    }
+    const varer = await appleVarer();
+    if (!varer || !varer[ctx.id]) return sig(EN ? "That purchase is not open in the App Store yet — try again later." : "Det køb er ikke åbnet i App Store endnu — prøv igen senere.");
+    const token = await appleUuid();
+    try { await P.purchase({ productId: ctx.id, applicationUsername: token }); }
+    catch (_e) { if (S.appleVenter === ctx) return sig(EN ? "The App Store did not answer — nothing was charged. Try again." : "App Store svarede ikke — der er ikke trukket noget. Prøv igen."); }
+    /* et svar, der aldrig kommer, må ikke efterlade en knap med ⏳ */
+    setTimeout(function () { if (S.appleVenter === ctx) appleSlut(ctx, false, EN ? "The App Store is still handling the purchase — it lands here by itself." : "App Store behandler stadig købet — det lander her af sig selv."); }, 45000);
+  },
+  /* Gendan køb (Apple kræver knappen): pluginet sender de løbende abonnementer igen → apple-koeb → finish */
+  appleGendan: async () => {
+    const P = nativKoeb(); const EN = S.sprog === "en";
+    if (!P || S.appleGendanner) return;
+    if (!S.spillerNoegle) { S.kontoBesked = { fejl: true, t: EN ? "Log in first." : "Log ind først." }; render(); return; }
+    appleStart();
+    S.appleGendanner = { fundet: 0 }; S.kontoBesked = null; render();
+    let ok = true;
+    try { await P.restore(); } catch (_e) { ok = false; }
+    try { await Promise.all(Array.from(_appleIgang)); } catch (_e) {}
+    const fundet = S.appleGendanner.fundet; S.appleGendanner = null;
+    if (fundet) { try { await inviteretTjek(); } catch (_e) {} try { await A.betalStatus(); } catch (_e) {} }
+    S.kontoBesked = !ok ? { fejl: true, t: EN ? "The App Store did not answer — try again." : "App Store svarede ikke — prøv igen." }
+      : fundet ? { fejl: false, t: EN ? "Your App Store purchases are restored ✓" : "Dine køb i App Store er hentet ✓" }
+      : { fejl: false, t: EN ? "There is no subscription to restore on this Apple ID." : "Der er intet abonnement at gendanne på dette Apple-ID." };
+    render();
+  },
+  appleAdministrer: async () => { const P = nativKoeb(); if (!P) return; try { await P.manageSubscriptions(); } catch (_e) {} try { A.betalStatus(); } catch (_e) {} },
   betalKald: async (plan) => {
     const st = new AbortController(); const ur = setTimeout(function(){ st.abort(); }, 20000);
     try {
@@ -8464,6 +8678,7 @@ const A = {
     } catch (e) { clearTimeout(ur); return { fejl: "netvaerk", ingenSvar: true, t: "" }; }
   },
   betalMP: async (v) => {
+    if (PLATFORM.betaling === "apple") return A.appleKoeb("abo|" + v);   /* ⭐ v5.10.0 · i appen køber man gennem Apple */
     if (S.betalSender) return;
     const del = String(v || "").split("|"); const plan = del[0] === "fri" ? "fri" : del[0] === "klubfri" ? "klubfri" : "fuld"; const ind = del[1] === "ind";   /* ⭐ v5.8.8 */
     const EN = S.sprog === "en";
@@ -8476,6 +8691,7 @@ const A = {
     }   /* videre til MobilePay */
     S.betalSender = false;
     if (r.fejl === "betaling-ikke-klar") sig(EN ? "MobilePay opens soon — we are waiting for the final approval. Basis is free until then." : "MobilePay åbner snart — vi venter på den sidste godkendelse. Indtil da er Basis gratis.");
+    else if (r.fejl === "aftale-findes" && S.mpAftale && S.mpAftale.udbyder === "apple") sig(EN ? "You have a subscription in the App Store — change or cancel it there." : "Du har et abonnement i App Store — skift eller opsig det dér.");   /* ⭐ v5.10.0 */
     else if (r.fejl === "aftale-findes") sig(EN ? "You already have an agreement. To change plan, cancel it in MobilePay first." : "I har allerede en aftale. Vil I skifte plan, så opsig den i MobilePay først.");
     else if (r.fejl === "klub-betaler") sig(EN ? "Your club pays — you already have full access." : "Jeres klub betaler — I har allerede fuld adgang.");
     else if (r.fejl === "ikke-klub") sig(EN ? "Free streaming on top of a club plan needs a club plan — choose Full + free streaming instead." : "Fri streaming oven på klubben kræver en klubplan — vælg Fuld + fri streaming i stedet.");   /* ⭐ v5.8.8 */
@@ -8547,6 +8763,7 @@ const A = {
   /* ⭐⭐ v5.8.0 · ET ENGANGSKØB. Hvert udfald får sin EGEN sætning (75). Telefonen husker ref, type, tid og hvor
      købet blev startet (sai-koeb-venter) — ikke beløb, ikke telefonnummer. */
   koebStart: async (v) => {
+    if (PLATFORM.betaling === "apple") return A.appleKoeb("koeb|" + v);   /* ⭐ v5.10.0 · i appen køber man gennem Apple */
     if (S.koebSender) return;
     const del = String(v || "").split("|"); const type = del[0] === "live" ? "live" : "kamp"; const hvor = String(del[1] || "");
     const antal = [1, 3, 5].indexOf(+del[2]) >= 0 ? +del[2] : 1;   /* ⭐ v5.9.0 · pakken */
@@ -8582,6 +8799,33 @@ const A = {
     else sig(r.t || (EN ? "Could not start the purchase — try again." : "Kunne ikke starte købet — prøv igen."));
     render();
   },
+  /* ⭐⭐ v5.10.0 · ET ENGANGSKØB ER BETALT — MobilePay (koebVent) og Apple (appleFaerdig) ender her. kv = {hvor, antal, type}. */
+  koebFaerdig: (kv) => {
+    const EN = S.sprog === "en";
+    const hvor = String(kv.hvor || ""); const erA = hvor.indexOf("a:") === 0;
+    const n = erA ? _koebKampIndeks(hvor.slice(2)) : -1;
+      if (hvor === "konto") {
+        /* ⭐ v5.9.0 · købt hjemmefra: tilbage til Din konto, tallet hentes igen */
+        const _an = [1, 3, 5].indexOf(+kv.antal) >= 0 ? +kv.antal : 1;
+        S.tab = "opsaet"; S.opsAaben = "konto"; S.koebKlar = null; S.liveTal = null; S._liveTalSpurgt = false;
+        S.kontoBesked = { fejl: false, t: _an > 1
+          ? (EN ? "The purchase went through ✓ — " + _an + " matches are ready for your next ones." : "Købet er gået igennem ✓ — " + _an + " kampe ligger klar til dine næste.")
+          : (EN ? "The purchase went through ✓ — the match is ready for your next one." : "Købet er gået igennem ✓ — kampen ligger klar til din næste.") };
+        render(); try { A.betalStatus(); } catch (_e) {} return;
+      }
+      if (erA && n >= 0 && S.gemte[n] && !S.gemte[n].analyse) {
+        S.tab = "historik"; S.statPanel = "kampe"; S.kampAaben[n] = true; S.hentBesked = null; render();
+        A.hentAnalyse(n); return;
+      }
+      if (S.aktiv && !_aktivGammel()) {
+        S.tab = "kamp"; S.liveKoeb = null; S.delAaben = true; render();
+        A.liveStart(); return;
+      }
+      /* ⭐ v5.8.3 · ingen kamp i gang → Start kamp, live TIL, købet i basen venter på den næste kamp */
+      S.tab = "kamp"; S.wiz = 3; S.nyLive = true; S.liveKoeb = null; S.koebKlar = null; S.liveTal = null; S._liveTalSpurgt = false;
+      S.nyBesked = { fejl: false, t: EN ? "The purchase went through ✓ — live is included in your next match." : "Købet er gået igennem ✓ — live er med i den næste kamp." };
+      render(); return;
+  },
   /* ⭐⭐ v5.8.0 · VENT PÅ KØBET. koeb-status henter betalingen hjem hos MobilePay (og trækker den). Ved hjemkomsten
      op til 10 forsøg med 3 s imellem; når appen bliver synlig igen, 4. Inden for 30 min — derefter glemmes det.
      Betalt: live starter selv på den aktive kamp · analysen hentes selv på kampen, den blev købt til. */
@@ -8610,29 +8854,7 @@ const A = {
     const hvor = String(kv.hvor || ""); const erA = hvor.indexOf("a:") === 0;
     const n = erA ? _koebKampIndeks(hvor.slice(2)) : -1;
     if (status === "betalt" || status === "annulleret" || status === "ukendt") { try { lager.slet("sai-koeb-venter"); } catch (_e) {} }
-    if (status === "betalt") {
-      if (hvor === "konto") {
-        /* ⭐ v5.9.0 · købt hjemmefra: tilbage til Din konto, tallet hentes igen */
-        const _an = [1, 3, 5].indexOf(+kv.antal) >= 0 ? +kv.antal : 1;
-        S.tab = "opsaet"; S.opsAaben = "konto"; S.koebKlar = null; S.liveTal = null; S._liveTalSpurgt = false;
-        S.kontoBesked = { fejl: false, t: _an > 1
-          ? (EN ? "The purchase went through ✓ — " + _an + " matches are ready for your next ones." : "Købet er gået igennem ✓ — " + _an + " kampe ligger klar til dine næste.")
-          : (EN ? "The purchase went through ✓ — the match is ready for your next one." : "Købet er gået igennem ✓ — kampen ligger klar til din næste.") };
-        render(); try { A.betalStatus(); } catch (_e) {} return;
-      }
-      if (erA && n >= 0 && S.gemte[n] && !S.gemte[n].analyse) {
-        S.tab = "historik"; S.statPanel = "kampe"; S.kampAaben[n] = true; S.hentBesked = null; render();
-        A.hentAnalyse(n); return;
-      }
-      if (S.aktiv && !_aktivGammel()) {
-        S.tab = "kamp"; S.liveKoeb = null; S.delAaben = true; render();
-        A.liveStart(); return;
-      }
-      /* ⭐ v5.8.3 · ingen kamp i gang → Start kamp, live TIL, købet i basen venter på den næste kamp */
-      S.tab = "kamp"; S.wiz = 3; S.nyLive = true; S.liveKoeb = null; S.koebKlar = null; S.liveTal = null; S._liveTalSpurgt = false;
-      S.nyBesked = { fejl: false, t: EN ? "The purchase went through ✓ — live is included in your next match." : "Købet er gået igennem ✓ — live er med i den næste kamp." };
-      render(); return;
-    }
+    if (status === "betalt") { A.koebFaerdig(kv); return; }   /* ⭐ v5.10.0 · samme vej som Apples køb */
     const sig = (t, fejl) => {
       if (erA) { S.tab = "historik"; S.statPanel = "kampe"; if (n >= 0) S.kampAaben[n] = true; S.hentBesked = { i: n, fejl: fejl, t: t,
         koeb: fejl && n >= 0 ? { type: "kamp", pris: kv.type === "live" ? 15 : 20 } : null }; }
@@ -9127,6 +9349,13 @@ function _betaltTekst(EN) {
 function _mpAftaleTekst(pl, EN) {
   const a = S.mpAftale;
   const dato = function (iso) { const d = String(iso || "").slice(0, 10).split("-"); return d.length === 3 ? d[2] + "/" + d[1] + "-" + d[0] : ""; };
+  /* ⭐ v5.10.0 · købt i App Store: fornyelse og opsigelse styres af Apple (betaling-start v8 siger udbyder). Vi ved ikke, om
+     fornyelsen er slået fra, før apple-webhook v2 skriver Apples beskeder — derfor siger sætningen kun det, der er sandt. */
+  if (a && a.udbyder === "apple") {
+    if (a.udloeber && Date.parse(a.udloeber) > Date.now())
+      return "🍎 " + (EN ? "Bought in the App Store — valid until " + dato(a.udloeber) + ". Renewal and cancelling are handled by Apple." : "Købt i App Store — gælder til " + dato(a.udloeber) + ". Fornyelse og opsigelse styres af Apple.");
+    return "";
+  }
   let t0 = 0; try { t0 = parseInt(lager.hent("sai-betal-startet") || "0", 10) || 0; } catch (_e) {}
   const frisk = !!t0 && (Date.now() - t0) < 1800000;
   /* ⭐ v5.8.8 · klub + fri streaming: aftalen med plan klubfri hører til klubspilleren */
@@ -10683,8 +10912,8 @@ function _tegn() {
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
               _b("Search", "Approved players can find you by searching your username — the result shows username, club and birth year. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
               _b("Messages", "A message disappears a day after your friend has read it — never before. At most 200 per conversation, and after 30 days at the latest. Delete removes it for both of you. Notifications show a name and a place — never content.") +
-              _b("Price", "With a club key the club pays — and free streaming can be added on top for 49 kr/month. Basic is free and includes 3 AI analyses and 3 live-streamed matches in total; after that one match can be bought for 20 kr (live + AI analysis). Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month — an extra live match is 15 kr. Full + free streaming is 98 kr/month with live and no limit. Watching is always free. You pay with MobilePay right in the app: the first month is charged when you buy, then every month. You cancel in MobilePay. The buyer must be 18 or over.") +
-              _b("Leaving", "Log out wipes the phone. Under Your account you can delete the account yourself — everything is deleted at once, including a subscription in MobilePay. It cannot be undone.")
+              _b("Price", "With a club key the club pays — and free streaming can be added on top for 49 kr/month. Basic is free and includes 3 AI analyses and 3 live-streamed matches in total; after that one match can be bought for 20 kr (live + AI analysis). Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month — an extra live match is 15 kr. Full + free streaming is 98 kr/month with live and no limit. Watching is always free. " + (PLATFORM.betaling === "apple" ? "You buy through the App Store: Apple charges the first month when you buy, then every month. You cancel under your Apple subscriptions." : "You pay with MobilePay right in the app: the first month is charged when you buy, then every month. You cancel in MobilePay. The buyer must be 18 or over.")) +
+              _b("Leaving", "Log out wipes the phone. Under Your account you can delete the account yourself — everything is deleted at once" + (PLATFORM.betaling === "apple" ? ". A subscription bought in the App Store does not stop by itself — cancel it under your Apple subscriptions. It cannot be undone." : ", including a subscription in MobilePay. It cannot be undone."))
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
               _b("Sikkerhedskopien", "Jeres kampe (hver bold, resultatet, analysen) og udviklingsbrevet gemmes læsbart hos os — uden modstandernes navne og uden jeres noter — så de kommer tilbage med kontoen alene. Navne og noter gemmes kun i en boks, der er låst med jeres kodeord; den kan vi ikke åbne.") +
               _b("Hvad klubben ser", "Med en klubnøgle ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig.") +
@@ -10692,8 +10921,8 @@ function _tegn() {
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
               _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises brugernavn, klub og årgang. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
               _b("Beskeder", "En besked forsvinder et døgn efter, din ven har læst den — aldrig før. Højst 200 pr. samtale, og senest efter 30 dage. Slet fjerner for jer begge. Notifikationer viser navn og sted — aldrig indhold.") +
-              _b("Prisen", "Med klubnøgle betaler klubben — og fri streaming kan lægges oven på for 49 kr/md. Basis er gratis og rummer 3 AI-analyser og 3 live-delte kampe i alt; derefter kan én kamp købes for 20 kr (live + AI-analyse). Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — en ekstra live-kamp koster 15 kr. Fuld + fri streaming koster 98 kr/md med live uden loft. At se med er altid gratis. I betaler med MobilePay direkte i appen: første måned trækkes, når I køber, og derefter hver måned. I opsiger i MobilePay. Den, der køber, skal være fyldt 18.") +
-              _b("Vejen ud", "Log ud rydder telefonen. Under Din konto kan du slette kontoen selv — alt slettes med det samme, også et abonnement i MobilePay. Det kan ikke fortrydes.")) +
+              _b("Prisen", "Med klubnøgle betaler klubben — og fri streaming kan lægges oven på for 49 kr/md. Basis er gratis og rummer 3 AI-analyser og 3 live-delte kampe i alt; derefter kan én kamp købes for 20 kr (live + AI-analyse). Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — en ekstra live-kamp koster 15 kr. Fuld + fri streaming koster 98 kr/md med live uden loft. At se med er altid gratis. " + (PLATFORM.betaling === "apple" ? "I køber gennem App Store: Apple trækker første måned, når I køber, og derefter hver måned. I opsiger under jeres Apple-abonnementer." : "I betaler med MobilePay direkte i appen: første måned trækkes, når I køber, og derefter hver måned. I opsiger i MobilePay. Den, der køber, skal være fyldt 18.")) +
+              _b("Vejen ud", "Log ud rydder telefonen. Under Din konto kan du slette kontoen selv — alt slettes med det samme" + (PLATFORM.betaling === "apple" ? ". Et abonnement købt i App Store stopper ikke af sig selv — opsig det under dine Apple-abonnementer. Det kan ikke fortrydes." : ", også et abonnement i MobilePay. Det kan ikke fortrydes."))) +
           '<p class="lille" style="margin:4px 0 0;opacity:.6">StreakTennis · SportsAInalytics · CVR 40524002<br>' + HANDEL.mail + ' \u00b7 ' + HANDEL.tlf + '</p>' +
           '<p class="lille" style="margin:8px 0 0"><a href="' + HANDEL.url + '" target="_blank" rel="noopener" data-handelsbetingelser="2" style="color:var(--is)">' + (S.sprog === "en" ? "Terms of sale \u2192" : "Handelsbetingelser \u2192") + '</a></p>' +
           '</div>' +
@@ -10865,9 +11094,9 @@ function _tegn() {
             // ⭐ v4.62.0 · wow'et FOER valget: eksemplet er ét tryk vaek.
             '<div class="raekke sai-op" style="animation-delay:.14s;margin-top:10px"><button class="knap valg" style="min-height:46px;border-color:var(--guld);color:var(--guld)" data-a="liveDemo">▶ ' +
               (S.sprog === "en" ? "See what live looks like" : "Se hvordan live ser ud") + '</button></div>' +
-            '<p class="lille sai-op" style="animation-delay:.16s;margin:12px auto 0;max-width:22em;opacity:.65">' + (S.sprog === "en"
-              ? "Full and Free are paid with MobilePay — Basis is free. You can change any time."
-              : "Fuld og Fri betales med MobilePay — Basis er gratis. I kan altid skifte.") + '</p>' +
+            '<p class="lille sai-op" style="animation-delay:.16s;margin:12px auto 0;max-width:22em;opacity:.65">' + (PLATFORM.betaling === "apple"
+              ? (S.sprog === "en" ? "Full and Free are bought through the App Store — Basis is free. You can change any time." : "Fuld og Fri købes gennem App Store — Basis er gratis. I kan altid skifte.")
+              : (S.sprog === "en" ? "Full and Free are paid with MobilePay — Basis is free. You can change any time." : "Fuld og Fri betales med MobilePay — Basis er gratis. I kan altid skifte.")) + '</p>' +
             (S.indBesked ? '<p class="lille" style="margin:8px auto 0;font-weight:700;color:var(--tabt)">' + esc(S.indBesked.t) + '</p>' : '') +
             (S.indPlanSender ? '<p class="lille" style="margin:8px auto 0;opacity:.6">\u23f3 \u2026</p>' : '');
           _knap = '';
@@ -10922,7 +11151,7 @@ function _tegn() {
           (S.indVen ? (S.sprog === "en" ? "To the friend zone" : "Til vennezonen") : (S.sprog === "en" ? "Into the app" : "Ind i appen")) + ' →</button>';
         _kro = '<div class="sai-op" style="font-size:54px;line-height:1;margin-bottom:10px">🔔</div>' +
           '<b class="sai-op" style="animation-delay:.06s;font-size:21px;display:block;margin-bottom:8px">' + (S.sprog === "en" ? "Notifications" : "Notifikationer") + '</b>';
-        if (I_SKALLEN && !nativPush()) {   /* v5.3.8 · kun et ældre byg uden pluginet */
+        if (PLATFORM.app && !nativPush()) {   /* v5.3.8 · kun et ældre byg uden pluginet */
           /* v5.0.6 · i skallen findes kanalen ikke — og hjemmeskærmen er ikke vejen dertil. */
           _kro += '<p class="lille sai-op" style="animation-delay:.1s;margin:0 auto;max-width:21em;line-height:1.55">' + (S.sprog === "en"
             ? "Notifications arrive in the web version at tennis.sportsainalytics.com. Everything else works right here."
@@ -12765,7 +12994,7 @@ function _tegn() {
         // «browseren kan ikke» UDEN at naevne hjemmeskaermen. Louise
         // stod med et kort, der ikke kunne taendes, og ingen vej videre.
         // Paa iPhone ER hjemmeskaermen svaret — den doemmes FOERST.
-        if (I_SKALLEN && !nativPush()) {   /* v5.3.8 · kun et ældre byg uden pluginet */
+        if (PLATFORM.app && !nativPush()) {   /* v5.3.8 · kun et ældre byg uden pluginet */
           /* \u26d4 v5.0.6 \u00b7 MAALT: i en WKWebView findes PushManager ikke (Web Push paa iOS er
              kun for hjemmeskaerms-web-apps), og service workeren registreres kun paa https:.
              Kanalen kan altsaa ikke taendes her. Kortet sagde foer "kraever hjemmeskaerm" og bad om
@@ -12900,7 +13129,7 @@ function _tegn() {
         //   for dem, der trykkede «senere».
         try {
           const _pInde2 = S.portStatus && S.portStatus.kendt && S.portStatus.status === "godkendt";
-          const _safari2 = !I_SKALLEN && erIOS() && !paaHjemmeskaerm();
+          const _safari2 = PLATFORM.hjemmeskaerm && erIOS() && !paaHjemmeskaerm();
           const _kanSpoerge2 = !_safari2 && pushMulig() && (typeof Notification !== "undefined" && Notification.permission === "default");
           if (_pInde2 && S.rolle !== "familie" && (_safari2 || forkertBrowser())) {
             _pkrop += '<div style="margin-top:10px;padding:10px 12px;border:1.5px solid ' + (forkertBrowser() ? 'var(--guld)' : 'var(--is)') + ';border-radius:12px;display:flex;align-items:center;gap:10px">' +
@@ -12972,6 +13201,10 @@ function _tegn() {
             /* ⭐ v5.7.5 · AFTALEN, SOM DEN ER — kun på Fuld/Fri og lige efter et køb. Klubben betaler dér, hvor den gør. */
             var _aftaleTekst = _mpAftaleTekst(_pl, EN);
             if (_aftaleTekst) _kk += '<p class="lille" data-mp-aftale="1" style="margin:2px 0 8px">' + _aftaleTekst + '</p>';
+            /* ⭐ v5.10.0 · i appen: Gendan køb (Apple kræver den) · Administrér abonnement, når der er et i App Store */
+            if (PLATFORM.betaling === "apple") _kk += '<div class="raekke" style="gap:6px;margin:0 0 8px">' +
+              (S.mpAftale && S.mpAftale.udbyder === "apple" ? '<button class="knap valg" data-apple="administrer" style="flex:1;min-height:40px" data-a="appleAdministrer">' + (EN ? "Manage subscription" : "Administrér abonnement") + '</button>' : '') +
+              '<button class="knap valg" data-apple="gendan" style="flex:1;min-height:40px" data-a="appleGendan">' + (S.appleGendanner ? "⏳" : (EN ? "Restore purchases" : "Gendan køb")) + '</button></div>';
             if (liveTalTekst(EN)) _kk += '<p class="lille" data-live-tal="1" style="margin:2px 0 8px">📡 ' + (EN ? "Live matches: " : "Live-kampe: ") + liveTalTekst(EN) + '.</p>';   /* ⭐ v5.8.2 */
             /* ⭐ v5.9.0 · live-kampe købes her — Basis, Fuld og Klub (ikke Fri, ikke Klub + fri) */
             if ((_pl === "gaest" || _pl === "fuld" || _pl === "klub") && !_friLoeber() && !S.udtjek) _kk += _livekoebKort(_pl, EN);
@@ -12991,7 +13224,9 @@ function _tegn() {
                   _pv("gaest", "🎟", "BASIS", (EN ? "free" : "gratis"), (EN ? "3 AI analyses · 3 live matches in total" : "3 AI-analyser · 3 live-kampe i alt")) +
                   _pv("fuld", "⭐", (EN ? "FULL ACCESS" : "FULD ADGANG"), (EN ? "49 kr/mo" : "49 kr/md"), (EN ? "40 AI analyses a month · live, 3 matches a month included" : "40 AI-analyser om måneden · live, 3 kampe om måneden er med")) +
                   _pv("fri", "🚀", (EN ? "FULL + FREE STREAMING" : "FULD + FRI STREAMING"), (EN ? "98 kr/mo" : "98 kr/md"), (EN ? "live with no limit" : "live uden loft")) +
-                  '<p class="lille" style="margin:8px 0 0;opacity:.7">' + (EN ? "Full and Free are paid with MobilePay right here. Basis is free and applies at once." : "Fuld og Fri betales med MobilePay lige her. Basis er gratis og gælder med det samme.") + '</p>' +
+                  '<p class="lille" style="margin:8px 0 0;opacity:.7">' + (PLATFORM.betaling === "apple"
+                    ? (EN ? "Full and Free are bought through the App Store right here. Basis is free and applies at once." : "Fuld og Fri købes gennem App Store lige her. Basis er gratis og gælder med det samme.")
+                    : (EN ? "Full and Free are paid with MobilePay right here. Basis is free and applies at once." : "Fuld og Fri betales med MobilePay lige her. Basis er gratis og gælder med det samme.")) + '</p>' +
                   '<button class="knap valg" style="min-height:40px;margin-top:6px" data-a="planSkiftAabn">' + (EN ? "Cancel" : "Fortryd") + '</button></div>';
               } else {
                 _kk += '<button class="knap' + (_pl === "gaest" ? '' : ' valg') + '" style="min-height:40px;margin:0 0 8px;padding:6px 14px' + (_pl === "gaest" ? ';background:var(--grus)' : '') + '" data-a="planSkiftAabn">' +
@@ -13115,8 +13350,8 @@ function _tegn() {
           if (S.kontoSletSpoerg) {
             _kk += '<div style="margin-top:12px;padding:11px;border:1.5px solid var(--tabt);border-radius:10px">' +
               '<p class="lille" style="margin:0 0 8px"><b>' + (EN ? "Delete your account?" : "Slet din konto?") + '</b> ' + (EN
-                ? "Everything about you is deleted at once — matches, every ball, training, streak, analyses, friends, messages, rooms, your team and your place in a club — and this phone is wiped. If you pay with MobilePay, the agreement stops and nothing more is charged. <b>It cannot be undone.</b>"
-                : "Alt om dig slettes med det samme — kampe, hver bold, træning, streak, analyser, venner, beskeder, rum, dit team og din plads i en klub — og denne telefon ryddes. Betaler du med MobilePay, stopper aftalen, og der trækkes ikke mere. <b>Det kan ikke fortrydes.</b>") + '</p>' +
+                ? "Everything about you is deleted at once — matches, every ball, training, streak, analyses, friends, messages, rooms, your team and your place in a club — and this phone is wiped. " + (PLATFORM.betaling === "apple" ? "A subscription bought in the App Store does <b>not</b> stop by itself — cancel it under Manage subscription first." : "If you pay with MobilePay, the agreement stops and nothing more is charged.") + " <b>It cannot be undone.</b>"
+                : "Alt om dig slettes med det samme — kampe, hver bold, træning, streak, analyser, venner, beskeder, rum, dit team og din plads i en klub — og denne telefon ryddes. " + (PLATFORM.betaling === "apple" ? "Et abonnement købt i App Store stopper <b>ikke</b> af sig selv — opsig det under Administrér abonnement først." : "Betaler du med MobilePay, stopper aftalen, og der trækkes ikke mere.") + " <b>Det kan ikke fortrydes.</b>") + '</p>' +
               (S.minKonto ? '<input type="password" placeholder="' + (EN ? "your password" : "dit kodeord") + '" value="' + esc(S.kontoSletKode || "") + '" data-felt="kontoSletKode" maxlength="200" autocomplete="current-password" style="margin-bottom:7px">' : '') +
               '<div class="raekke">' +
               '<button class="knap" style="min-height:44px;background:var(--tabt)" data-a="kontoSletJa">' + (S.kontoSletHenter ? "⏳ …"

@@ -1,6 +1,10 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v8 (3/10-2026) — APPLES KØB I APPEN (StreakTennis v5.10.0 · App Store 3.1.1). Købs-pluginet (StoreKit 2) installeres altid,
+#   med fast version. To vagter efter cap sync: pod'en står i Podfile, og PurchasePlugin står i appens packageClassList.
+#   Ingen ny profil og intet entitlement — et køb gennem StoreKit kræver ingen af delene.
+#
 # v7 (27/9-2026) — HJEMKOMSTEN LANDER I APPEN (StreakTennis v5.8.7 · universal link). Nicolai: «lad os gøre allerede nu så man
 #   ryger tilbage hvor man kommer fra.» MobilePay åbner retur-linket som et almindeligt link → Chrome. Med Associated Domains
 #   åbner iOS https://tennis.sportsainalytics.com/StreakTennis/… i appen. Samme greb som Push (v5/v6): profil-push.mjs v2 slår
@@ -141,6 +145,7 @@ jobs:
           if [ "$PUSH" = "ja" ]; then npm install --no-audit --no-fund "@capacitor/push-notifications@^6"; fi   # v6.2 · pakken skrives i package.json, hvor Capacitor finder plugins
           npm install --no-audit --no-fund "@capacitor/local-notifications@^6"   # v6.3 · påmindelserne fra Min uge — altid, skrevet i package.json
           npm install --no-audit --no-fund "@capacitor/app@^6"   # v7 · appUrlOpen (universal link ind i en app, der kører) — altid
+          npm install --no-audit --no-fund "capacitor-plugin-cdv-purchase@13.18.0"   # v8 · Apples køb (StoreKit 2) — altid, fast version
           npx cap add ios
           npx cap sync ios
           if [ "$PUSH" = "ja" ]; then
@@ -150,6 +155,9 @@ jobs:
           fi
           grep -q "LocalNotifications" ios/App/Podfile || { echo "⛔ påmindelses-pluginet (LocalNotifications) kom ikke med i Podfile"; exit 1; }   # v6.3
           grep -q "CapacitorApp" ios/App/Podfile || { echo "⛔ app-pluginet (CapacitorApp) kom ikke med i Podfile"; exit 1; }   # v7
+          grep -q "CapacitorPluginCdvPurchase" ios/App/Podfile || { echo "⛔ købs-pluginet (CapacitorPluginCdvPurchase) kom ikke med i Podfile"; exit 1; }   # v8
+          grep -q '"PurchasePlugin"' ios/App/App/capacitor.config.json || { echo "⛔ PurchasePlugin står ikke i appens packageClassList"; exit 1; }   # v8
+          echo "⭐ Apples køb: CapacitorPluginCdvPurchase i Podfile · PurchasePlugin i packageClassList"   # v8
       - name: Push · AppDelegate + entitlements (v5 · kun når profilen bærer Push)
         if: env.PUSH == 'ja'
         run: |

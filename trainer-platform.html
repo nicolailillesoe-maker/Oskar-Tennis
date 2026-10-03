@@ -1129,7 +1129,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.16.1 \u00b7 3. oktober 2026";
+const VERSION = "v6.16.2 \u00b7 3. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1908,6 +1908,25 @@ Object.assign(EN, {   /* v6.16.1 · linket til appen */
   "📤 Del linket": "📤 Share the link",
   "Linket giver ikke adgang til klubben — det gør din invitation.": "The link gives no access to the club — your invitation does.",
   "QR-kode til StreakTennis": "QR code for StreakTennis"
+});
+Object.assign(EN, {   /* v6.16.2 · fliser i Invitér og adgang */
+  "🎾 Invitér spiller": "🎾 Invite player",
+  "🧑‍🏫 Invitér træner": "🧑‍🏫 Invite coach",
+  "📱 Link til appen": "📱 Link to the app",
+  "👥 Klubben": "👥 The club",
+  "Invitér træner": "Invite coach",
+  "Link til appen": "Link to the app",
+  "Klubben": "The club",
+  "på brugernavn": "by username",
+  "1 venter på et ja": "1 waiting for a yes",
+  "{n} venter på et ja": "{n} waiting for a yes",
+  "QR-kode · kopiér · del": "QR code · copy · share",
+  "1 har adgang": "1 has access",
+  "{n} har adgang": "{n} have access",
+  "spiller": "player",
+  "Skjul de fjernede": "Hide the removed",
+  "Vis {n} fjernede": "Show {n} removed",
+  "Fjerner du en adgang, kommer spilleren eller træneren ikke ind igen, før I har inviteret dem på ny.": "If you remove an access, the player or the coach cannot get back in until you have invited them again."
 });
 var _ENr = {}, _ENx = [];
 (function(){
@@ -3001,7 +3020,8 @@ function bundNav(){
 
 function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emoji som flisen på HJEM */
   if (tab === "indst" && S.indstVisning) return { nye: "\ud83d\udce5 Nye spillere", forbindelse: "\u2699\ufe0f Forbindelse", sky: "\u2601\ufe0f Skyen",
-    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", adgang: "\ud83d\udcf2 Invit\u00e9r og adgang", spejl: "\ud83e\ude9e Spejlet" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
+    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", adgang: "\ud83d\udcf2 Invit\u00e9r og adgang", spejl: "\ud83e\ude9e Spejlet",
+    "adgang-spiller": "\ud83c\udfbe Invit\u00e9r spiller", "adgang-traener": "\ud83e\uddd1\u200d\ud83c\udfeb Invit\u00e9r tr\u00e6ner", "adgang-link": "\ud83d\udcf1 Link til appen", "adgang-klub": "\ud83d\udc65 Klubben" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen", udstil: "\ud83c\udf10 Udstil" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Spillere", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
            kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\ud83d\udcca Overblik" }[tab] || "";
@@ -3118,7 +3138,8 @@ function renderTraener(){
       '</div>';
   } else {
     /* v6.2.0 · StreakTennis' titelrække, ordret (linje 10425 i v5.3.1): ← og fanens navn i én række */
-    var _tilbage = (S.tab === "indst" && S.indstVisning) ? 'data-act="indst-vis" data-v=""' :   /* v6.8.0 */
+    var _tilbage = (S.tab === "indst" && S.indstVisning && S.indstVisning.indexOf("adgang-") === 0) ? 'data-act="indst-vis" data-v="adgang"' :   /* v6.16.2 · fra et underrum til fliserne */
+      (S.tab === "indst" && S.indstVisning) ? 'data-act="indst-vis" data-v=""' :   /* v6.8.0 */
       (S.tab === "program" && S.prgVisning) ? 'data-act="prg-visning" data-v=""' : (((S.tab === "vurder" || S.tab === "registrer") && S.reg && S.reg.trin > 1 && !S.vurderOmraade) ? 'data-act="reg-igen"' : 'data-act="tab" data-v="hjem"');   /* v6.5.0 · fra trin 2/3 går ← til trin 1 */   /* v6.3.0 · fra en undervisning går ← til fliserne */
     h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px"><button class="pil-tilbage" ' + _tilbage + '>\u2190</button><b style="font-size:16px">' + faneTitel(S.tab) + '</b></div>';
     if (S.tab==="noegler") h += noegleKortet();
@@ -3400,7 +3421,7 @@ const GUIDE_URL = "https://tennis.sportsainalytics.com/coach-guide.html";   /* v
 /* ⭐ v6.16.1 · ÉN KILDE TIL LINKET TIL APPEN. QR-koden, «Kopiér» og «Del linket» bruger alle denne — og den bærer
    ingen nøgle og intet om klubben i fragmentet. Adgangen til klubben er invitationen på brugernavn. */
 const APP_URL = "https://tennis.sportsainalytics.com/StreakTennis/";
-S.appQrVis = false; S.appLinkKopieret = false; S.appLinkFejl = null;
+S.appLinkKopieret = false; S.appLinkFejl = null; S.famVisFjernede = false;   /* v6.16.2 · QR-knappens tilstand er væk: rummet viser koden */
 /* \u2b50 QR'en tegnes af det inline bibliotek \u2014 intet hentes udefra. */
 /* v6.16.1 · skåret ud af v6.15.1 ved måling — kun størrelsen er ny. */
 function qrSvg(tekst){
@@ -3641,21 +3662,25 @@ function adgangListeKortet(){
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">👥 HVEM HAR ADGANG</div>' +
       '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="fam-liste">' +
       (S.famHenter ? '…' : (S.famListe ? 'Opdatér' : 'Vis')) + '</button></div>';
-  var l = S.famListe || [];
+  var alle = S.famListe || [];
+  var fjernede = alle.filter(function(k2){ return k2.status !== "aktiv"; });   /* v6.16.2 · foldet væk */
+  var l = S.famVisFjernede ? alle : alle.filter(function(k2){ return k2.status === "aktiv"; });
   l.forEach(function(k2){
     var aktiv = k2.status === "aktiv";
     var brugt = k2.sidst_brugt ? new Date(k2.sidst_brugt).toLocaleDateString('da-DK') : '';
     h += '<div style="border-top:1px solid var(--kant);padding:8px 0;display:flex;justify-content:space-between;align-items:center;gap:8px">' +
       '<div><div style="font-size:13px;font-weight:700">' + (k2.rolle === "traener" ? '<span style="color:var(--guld)">🧑‍🏫 </span>' : '') + esc(k2.etiket || '(uden navn)') + '</div>' +
-      '<div class="lille"><span>' + (k2.rolle === "traener" ? 'træner' : 'familie') + '</span> · <span>' +
+      '<div class="lille"><span>' + (k2.rolle === "traener" ? 'træner' : 'spiller') + '</span> · <span>' +
         (!aktiv ? '⛔ adgang fjernet' : brugt ? 'sidst inde ' + brugt : 'ikke inde endnu') + '</span></div></div>' +
       (aktiv ? '<button class="knap valg" style="flex:none;padding:7px 12px;font-size:12px;min-height:44px" data-act="fam-spaer" data-v="' + esc(k2.id) + '">' +
         (S.famSpaerBed === k2.id ? 'Sikker? Tryk igen' : 'Fjern adgang') + '</button>' : '') + '</div>';
   });
   if (S.famListe && !l.length) h += '<p class="lille" style="margin:8px 0 0">Ingen har adgang endnu.</p>';
+  if (fjernede.length) h += '<button class="knap valg" style="width:100%;margin-top:10px;min-height:40px;font-size:12.5px" data-act="fam-vis-fjernede">' +
+    (S.famVisFjernede ? 'Skjul de fjernede' : 'Vis ' + fjernede.length + ' fjernede') + '</button>';   /* v6.16.2 */
   if (!S.famListe && S.famHenter) h += '<p class="lille" style="margin:8px 0 0">Henter …</p>';
   if (S.famBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.famBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.famBesked.t) + '</p>';
-  h += '<p class="lille" style="margin:8px 0 0;opacity:.7">Fjerner du en adgang, kommer familien eller træneren ikke ind igen, før I har inviteret dem på ny.</p>';
+  h += '<p class="lille" style="margin:8px 0 0;opacity:.7">Fjerner du en adgang, kommer spilleren eller træneren ikke ind igen, før I har inviteret dem på ny.</p>';
   return h + '</div>';
 }
 /* ⭐⭐ v6.16.1 · LINKET TIL APPEN (Nicolai 3/10: «man skal stadig kunne sende et link og have QR koden. Der er nogen der
@@ -3664,11 +3689,9 @@ function adgangListeKortet(){
 function appLinkKort(){
   var h = '<div class="kort" style="border-left:3px solid var(--is)">' +
     '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--is)">📱 NY I STREAKTENNIS?</div>' +
-    '<p class="lille" style="margin:8px 0 0">Vis koden, eller send linket. Når spilleren har oprettet sig, inviterer du på brugernavnet.</p>' +
-    '<button class="knap" style="width:100%;margin-top:10px;min-height:44px;background:var(--grus)" data-act="app-qr">' +
-      (S.appQrVis ? '✕ Skjul QR-koden' : '📱 Vis QR-kode') + '</button>';
-  if (S.appQrVis) h +=
-    '<div id="app-qr" role="img" aria-label="QR-kode til StreakTennis" style="margin:10px auto 0;background:#fff;padding:6px;border-radius:12px;width:max-content;max-width:100%">' +
+    '<p class="lille" style="margin:8px 0 0">Vis koden, eller send linket. Når spilleren har oprettet sig, inviterer du på brugernavnet.</p>';
+  h +=   /* v6.16.2 · koden står med det samme — rummet er koden */
+    '<div id="app-qr" role="img" aria-label="QR-kode til StreakTennis" style="margin:12px auto 0;background:#fff;padding:6px;border-radius:12px;width:max-content;max-width:100%">' +
       qrSvg(APP_URL) + '</div>' +
     '<p class="lille" style="margin:7px 0 0;text-align:center">Kameraet åbner StreakTennis i browseren.</p>';
   h += '<div style="display:flex;gap:8px;align-items:center;margin-top:10px">' +
@@ -3679,11 +3702,29 @@ function appLinkKort(){
   h += '<p class="lille" style="margin:8px 0 0;color:var(--daempet)">Linket giver ikke adgang til klubben — det gør din invitation.</p>';
   return h + '</div>';
 }
-function adgangKortet(){
-  if (!lager.hent("klubkode", "")) return '<div class="kort"><p class="lille" style="margin:0">Forbind telefonen med din klub først.</p></div>';
-  var h = budKortet() + appLinkKort();   /* v6.16.1 · linket til appen */
-  if (S.minRolle === "admin") h += traenerBudKortet();
-  return h + adgangListeKortet();
+/* ⭐⭐ v6.16.2 · FLISER, ÉN TING PR. RUM (Nicolai 3/10: «Klart A»). Statussen i underteksten er målt — ikke lovet (70):
+   venter = de sendte invitationer med status afventer · har adgang = aktive rækker i listen. Før første hentning står «…». */
+function adgangStatus(l, tom){
+  if (!Array.isArray(l)) return '\u2026';
+  var k = l.filter(function(b){ return b && b.status === "afventer"; }).length;
+  return k ? k + ' venter p\u00e5 et ja' : tom;
+}
+function adgangFliser(){
+  if (!lager.hent("klubkode", "")) return '<div class="kort"><p class="lille" style="margin:0">Forbind telefonen med din klub f\u00f8rst.</p></div>';
+  var aktive = Array.isArray(S.famListe) ? S.famListe.filter(function(k2){ return k2 && k2.status === "aktiv"; }).length : null;
+  return '<div class="dev-grid">' +
+    prgFlise("indst-vis", "adgang-spiller", "\ud83c\udfbe", "Invit\u00e9r spiller", adgangStatus(S.budSendte, 'p\u00e5 brugernavn'), "dev-kant-is") +
+    (S.minRolle === "admin" ? prgFlise("indst-vis", "adgang-traener", "\ud83e\uddd1\u200d\ud83c\udfeb", "Invit\u00e9r tr\u00e6ner", adgangStatus(S.tbSendte, 'p\u00e5 brugernavn'), "dev-kant-guld") : '') +
+    prgFlise("indst-vis", "adgang-link", "\ud83d\udcf1", "Link til appen", 'QR-kode \u00b7 kopi\u00e9r \u00b7 del', "dev-kant-staal") +
+    prgFlise("indst-vis", "adgang-klub", "\ud83d\udc65", "Klubben", aktive === null ? '\u2026' : aktive + ' har adgang', "dev-kant-staal") +
+    '</div>';
+}
+function adgangKortet(hvad){
+  if (!lager.hent("klubkode", "")) return '<div class="kort"><p class="lille" style="margin:0">Forbind telefonen med din klub f\u00f8rst.</p></div>';
+  if (hvad === "spiller") return budKortet();
+  if (hvad === "traener") return S.minRolle === "admin" ? traenerBudKortet() : adgangFliser();
+  if (hvad === "link") return appLinkKort();
+  return adgangListeKortet();
 }
 document.addEventListener("keydown", function (e) {
   if (e.key === "Enter" && e.target && e.target.dataset && e.target.dataset.felt === "tbNavn") { e.preventDefault(); tbSoeg(); }
@@ -4086,7 +4127,11 @@ function traenerIndstillinger(){   /* v6.8.0 · fliser først, undervisningen ba
   if (S.indstVisning === "forbindelse") return indstForbindelse();
   if (S.indstVisning === "sky") return indstSkyen();
   if (S.indstVisning === "konto") return indstKonto() + indstForbindelse();   /* v6.10.0 · forbindelsen bor under Din konto (kortet) */
-  if (S.indstVisning === "adgang") return adgangKortet();                      /* v6.16.0 · 📲 Invitér og adgang */
+  if (S.indstVisning === "adgang") return adgangFliser();                      /* v6.16.2 · fire fliser, én ting pr. rum */
+  if (S.indstVisning === "adgang-spiller") return adgangKortet("spiller");
+  if (S.indstVisning === "adgang-traener") return adgangKortet("traener");
+  if (S.indstVisning === "adgang-link") return adgangKortet("link");
+  if (S.indstVisning === "adgang-klub") return adgangKortet("klub");
   if (S.indstVisning === "sprog") return indstSprog();
   if (S.indstVisning === "streak") return indstStreak();
   if (S.indstVisning === "trup") return indstTrup();
@@ -4640,7 +4685,7 @@ document.addEventListener("click", function(e){
     S.indstVisning = v || null;
     if (S.indstVisning === "spejl") { S.spejl.aaben = null; S.spejl.fejl = null; S.spejl.besked = null; render(); if (!S.spejl.liste) spejlHentListe(); return; }   /* v6.14.0 */
     if (S.indstVisning === "nye" && !S.tilmHentet && !S.tilmHenter) { render(); hentTilmeldinger(); return; }
-    if (S.indstVisning === "adgang") { S.famBesked = null; S.tbBesked = null; render(); adgangHent(); return; }   /* v6.16.0 */
+    if (S.indstVisning === "adgang" || (S.indstVisning && S.indstVisning.indexOf("adgang-") === 0)) { S.famBesked = null; S.tbBesked = null; render(); adgangHent(); return; }   /* v6.16.0 · v6.16.2 underrummene */
     render(); }
   if (act==="prg-visning"){
     S.prgVisning = v || null; prgNulstilForm(); S.prgSlet = null;
@@ -4976,7 +5021,7 @@ document.addEventListener("click", function(e){
   else if (act==="tilm-hent"){ hentTilmeldinger(); }
   else if (act==="bud-soeg"){ budSoeg(); }
   else if (act==="bud-inviter"){ budInviter(); }
-  else if (act==="app-qr"){ S.appQrVis = !S.appQrVis; render(); }   /* v6.16.1 · linket til appen */
+  else if (act==="fam-vis-fjernede"){ S.famVisFjernede = !S.famVisFjernede; render(); }   /* v6.16.2 */
   else if (act==="app-link-kopier"){
     var _aOk = function(){ S.appLinkKopieret = true; S.appLinkFejl = null; render(); };
     var _aNej = function(){ S.appLinkKopieret = false; S.appLinkFejl = "Kunne ikke kopiere — markér teksten og kopiér selv."; render();

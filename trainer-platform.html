@@ -1129,7 +1129,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.16.0 \u00b7 2. oktober 2026";
+const VERSION = "v6.16.1 \u00b7 3. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1898,6 +1898,16 @@ Object.assign(EN, {   /* v6.16.0 · nøglefri — invitationer på brugernavn */
   "📲 Ikke i appen endnu — vurderinger bliver på denne enhed, til spilleren har sagt ja til invitationen.": "📲 Not in the app yet — ratings stay on this device until the player has accepted the invitation.",
   "Telefonens adgang hører ikke til din konto — log ud og ind igen.": "This phone's access does not belong to your account — log out and in again.",
   "Telefonens adgang til klubben gælder ikke længere — tal med din cheftræner.": "This phone's access to the club is no longer valid — talk to your head coach."
+});
+Object.assign(EN, {   /* v6.16.1 · linket til appen */
+  "📱 NY I STREAKTENNIS?": "📱 NEW TO STREAKTENNIS?",
+  "Vis koden, eller send linket. Når spilleren har oprettet sig, inviterer du på brugernavnet.": "Show the code or send the link. Once the player has signed up, you invite them by username.",
+  "📱 Vis QR-kode": "📱 Show QR code",
+  "✕ Skjul QR-koden": "✕ Hide the QR code",
+  "Kameraet åbner StreakTennis i browseren.": "The camera opens StreakTennis in the browser.",
+  "📤 Del linket": "📤 Share the link",
+  "Linket giver ikke adgang til klubben — det gør din invitation.": "The link gives no access to the club — your invitation does.",
+  "QR-kode til StreakTennis": "QR code for StreakTennis"
 });
 var _ENr = {}, _ENx = [];
 (function(){
@@ -3387,6 +3397,19 @@ document.addEventListener("keydown", function (e) {
 // Siger spilleren ja i StreakTennis, udsteder serveren nøglen direkte til spillerens app.
 const KLUBBUD_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/klub-bud";
 const GUIDE_URL = "https://tennis.sportsainalytics.com/coach-guide.html";   /* v6.7.0 · guiden bor i ROD */
+/* ⭐ v6.16.1 · ÉN KILDE TIL LINKET TIL APPEN. QR-koden, «Kopiér» og «Del linket» bruger alle denne — og den bærer
+   ingen nøgle og intet om klubben i fragmentet. Adgangen til klubben er invitationen på brugernavn. */
+const APP_URL = "https://tennis.sportsainalytics.com/StreakTennis/";
+S.appQrVis = false; S.appLinkKopieret = false; S.appLinkFejl = null;
+/* \u2b50 QR'en tegnes af det inline bibliotek \u2014 intet hentes udefra. */
+/* v6.16.1 · skåret ud af v6.15.1 ved måling — kun størrelsen er ny. */
+function qrSvg(tekst){
+  try {
+    var q = window.__qrlib; var lav = (q && q.default) || q;
+    var k = lav(0, "M"); k.addData(String(tekst)); k.make();
+    return k.createSvgTag({ cellSize: 6, margin: 24 }).replace("<svg ", '<svg style="display:block;shape-rendering:crispEdges" ');   /* v6.16.1 · fast størrelse: 6 px pr. modul, hele pixels */
+  } catch (_e) { return ""; }
+}
 S.budNavn = ""; S.budTraef = null; S.budHenter = false; S.budSender = false; S.budBesked = null; S.budSendte = null; S.autoTrupBesked = null;   /* v6.10.0 */
 async function budKald(handling, krop) {
   const klub = lager.hent("klubkode", "");
@@ -3635,9 +3658,30 @@ function adgangListeKortet(){
   h += '<p class="lille" style="margin:8px 0 0;opacity:.7">Fjerner du en adgang, kommer familien eller træneren ikke ind igen, før I har inviteret dem på ny.</p>';
   return h + '</div>';
 }
+/* ⭐⭐ v6.16.1 · LINKET TIL APPEN (Nicolai 3/10: «man skal stadig kunne sende et link og have QR koden. Der er nogen der
+   ikke har en iPhone. Og de skal bruge web-appen så.»). Til en spiller uden StreakTennis: vis koden, kopiér eller del
+   linket. Spilleren opretter sig, og træneren inviterer på brugernavnet i kortet ovenfor — linket åbner kun appen. */
+function appLinkKort(){
+  var h = '<div class="kort" style="border-left:3px solid var(--is)">' +
+    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--is)">📱 NY I STREAKTENNIS?</div>' +
+    '<p class="lille" style="margin:8px 0 0">Vis koden, eller send linket. Når spilleren har oprettet sig, inviterer du på brugernavnet.</p>' +
+    '<button class="knap" style="width:100%;margin-top:10px;min-height:44px;background:var(--grus)" data-act="app-qr">' +
+      (S.appQrVis ? '✕ Skjul QR-koden' : '📱 Vis QR-kode') + '</button>';
+  if (S.appQrVis) h +=
+    '<div id="app-qr" role="img" aria-label="QR-kode til StreakTennis" style="margin:10px auto 0;background:#fff;padding:6px;border-radius:12px;width:max-content;max-width:100%">' +
+      qrSvg(APP_URL) + '</div>' +
+    '<p class="lille" style="margin:7px 0 0;text-align:center">Kameraet åbner StreakTennis i browseren.</p>';
+  h += '<div style="display:flex;gap:8px;align-items:center;margin-top:10px">' +
+      '<input class="felt" data-felt="appLink" readonly value="' + esc(APP_URL) + '" style="flex:1;min-width:0;font-size:13px">' +
+      '<button class="knap valg" style="flex:none;padding:10px 14px" data-act="app-link-kopier">' + (S.appLinkKopieret ? '✓ Kopieret' : 'Kopiér') + '</button></div>';
+  if (navigator.share) h += '<button class="knap valg" style="width:100%;margin-top:6px;min-height:44px" data-act="app-link-del">📤 Del linket</button>';
+  if (S.appLinkFejl) h += '<p class="lille" style="margin:8px 0 0;color:var(--tabt)">' + esc(S.appLinkFejl) + '</p>';
+  h += '<p class="lille" style="margin:8px 0 0;color:var(--daempet)">Linket giver ikke adgang til klubben — det gør din invitation.</p>';
+  return h + '</div>';
+}
 function adgangKortet(){
   if (!lager.hent("klubkode", "")) return '<div class="kort"><p class="lille" style="margin:0">Forbind telefonen med din klub først.</p></div>';
-  var h = budKortet();
+  var h = budKortet() + appLinkKort();   /* v6.16.1 · linket til appen */
   if (S.minRolle === "admin") h += traenerBudKortet();
   return h + adgangListeKortet();
 }
@@ -4932,6 +4976,13 @@ document.addEventListener("click", function(e){
   else if (act==="tilm-hent"){ hentTilmeldinger(); }
   else if (act==="bud-soeg"){ budSoeg(); }
   else if (act==="bud-inviter"){ budInviter(); }
+  else if (act==="app-qr"){ S.appQrVis = !S.appQrVis; render(); }   /* v6.16.1 · linket til appen */
+  else if (act==="app-link-kopier"){
+    var _aOk = function(){ S.appLinkKopieret = true; S.appLinkFejl = null; render(); };
+    var _aNej = function(){ S.appLinkKopieret = false; S.appLinkFejl = "Kunne ikke kopiere — markér teksten og kopiér selv."; render();
+      try { var _f = document.querySelector('[data-felt="appLink"]'); if (_f) { _f.focus(); _f.select(); } } catch (_e) {} };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(APP_URL).then(_aOk, _aNej); else _aNej(); }
+  else if (act==="app-link-del"){ if (navigator.share) navigator.share({ title: "StreakTennis", url: APP_URL }).catch(function(){}); }
   else if (act==="snak-hent"){ snakHent(false); }
   else if (act==="snak-send"){ snakSend(); }
   else if (act==="snak-slet"){ if (v) snakSlet(v); }

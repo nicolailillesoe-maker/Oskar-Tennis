@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.10.1 · 4. oktober 2026";
+const VERSION = "v5.10.2 · 4. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -8776,13 +8776,14 @@ const A = {
   koebLuk: () => { S.koebSkaerm = null; S.koebBesked = null; S.koebTelefon = ""; render(); },
   /* ⭐⭐ v5.10.1 · NÆSTE. Kontrakten (betaling-start v9, målt gennem pg_net 4/10): koeb {type, antal, telefon} → 200 {vej:"push", ref, type,
      antal, pris} · 422 `telefon` · de øvrige som før. MobilePay sender en anmodning til nummeret — appen venter og spørger koeb-status. */
-  koebNaeste: async () => {
+  koebNaeste: async (v) => {
     const k = S.koebSkaerm; if (!k || S.koebSender) return;
     const type = k.type, hvor = k.hvor, antal = k.antal;
     const EN = S.sprog === "en";
-    let telefon = String(S.koebTelefon || "").replace(/\D/g, "");
+    const her = v === "her";   /* ⭐ v5.10.2 · «Betal på denne telefon»: intet nummer, MobilePay åbner her */
+    let telefon = her ? "" : String(S.koebTelefon || "").replace(/\D/g, "");
     if (telefon.length === 10 && telefon.indexOf("45") === 0) telefon = telefon.slice(2);
-    if (!/^[2-9]\d{7}$/.test(telefon)) { S.koebBesked = EN ? "Enter the 8 digits of the phone number." : "Skriv de 8 cifre i telefonnummeret."; render(); return; }
+    if (!her && !/^[2-9]\d{7}$/.test(telefon)) { S.koebBesked = EN ? "Enter the 8 digits of the phone number." : "Skriv de 8 cifre i telefonnummeret."; render(); return; }
     const sig = (t) => { S.koebBesked = t; };   /* svaret står på den skærm, man trykkede på (75) */
     S.koebSender = type; S.koebBesked = null; render();
     let r = {};
@@ -8790,7 +8791,7 @@ const A = {
     try {
       const x = await fetch(BETAL_URL, { method: "POST", signal: st.signal,
         headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle || "" },
-        body: JSON.stringify({ handling: "koeb", type: type, antal: antal, telefon: telefon }) });   /* ⭐ v5.10.1 · nummeret rejser med — gemmes aldrig */
+        body: JSON.stringify(her ? { handling: "koeb", type: type, antal: antal } : { handling: "koeb", type: type, antal: antal, telefon: telefon }) });   /* ⭐ v5.10.1 · nummeret rejser med — gemmes aldrig · v5.10.2: «her» uden nummer */
       clearTimeout(ur);
       const d = await x.json().catch(function(){ return {}; });
       r = x.ok ? d : { fejl: d.kode || "ukendt", t: d.fejl || "" };
@@ -8801,8 +8802,14 @@ const A = {
       S.koebPush = { ref: r.ref, type: type, hvor: hvor, antal: antal, pris: k.pris, til: telefon.slice(-2), t: Date.now() };   /* ⭐ v5.10.1 · venteskærmen: kun de to sidste cifre */
       render(); _koebUrStart(); A.koebPushVent(); return;
     }
+    /* ⭐ v5.10.2 · app-vejen: MobilePay åbner på denne telefon — telefonen husker købet som før (koebVent ved hjemkomsten) */
+    if (her && !r.fejl && r.url && /^https:\/\//.test(r.url) && /^st-[kl]-[0-9a-f]{24}$/.test(String(r.ref || ""))) {
+      try { lager.gem("sai-koeb-venter", JSON.stringify({ ref: r.ref, type: type, t: Date.now(), hvor: hvor, antal: antal })); } catch (_e) {}
+      location.href = r.url; return;
+    }
     S.koebSender = null;
-    if (r.fejl === "telefon") sig(EN ? "Enter the 8 digits of the phone number." : "Skriv de 8 cifre i telefonnummeret.");   /* ⭐ v5.10.1 */
+    if (r.fejl === "telefon-afvist") sig(EN ? "MobilePay could not send to that number. Tap «Pay on this phone», and MobilePay opens here." : "MobilePay kunne ikke sende til det nummer. Tryk «Betal på denne telefon», så åbner MobilePay her.");   /* ⭐ v5.10.2 · betaling-start v10 */
+    else if (r.fejl === "telefon") sig(EN ? "Enter the 8 digits of the phone number." : "Skriv de 8 cifre i telefonnummeret.");   /* ⭐ v5.10.1 */
     else if (r.fejl === "betaling-ikke-klar") sig(EN ? "Buying with MobilePay opens soon." : "Køb med MobilePay åbner snart.");
     else if (r.fejl === "fri-har-alt") sig(EN ? "You have live without a limit — there is nothing to buy." : "Du har live uden loft — der er intet at købe.");
     else if (r.fejl === "forkert-plan") sig(EN ? "That purchase belongs to another plan — see Your account under ⚙️." : "Det køb hører til en anden plan — se Din konto under ⚙️.");
@@ -10787,6 +10794,8 @@ function _koebSkaerm(EN) {
     '</div>' +
     (S.koebBesked ? '<p class="lille" style="margin:10px 0 0;color:#F4A3A3;text-align:center;max-width:420px">' + esc(S.koebBesked) + '</p>' : '') +
     '<button class="knap" id="koeb-naeste" style="flex:none;width:auto;min-width:180px;min-height:52px;margin-top:16px;border-radius:999px;background:var(--guld);color:#1a1400;font-size:17px;font-weight:800" data-a="koebNaeste">' + (S.koebSender ? "⏳" : (EN ? "Next" : "Næste")) + '</button>' +
+    /* ⭐ v5.10.2 · den gamle vej tilbage: MobilePay åbner på denne telefon (WEB_REDIRECT) — uden nummer */
+    '<button class="knap" id="koeb-her" style="flex:none;width:auto;margin-top:18px;background:none;color:var(--is);text-decoration:underline;font-weight:700;font-size:15px;box-shadow:none" data-a="koebNaeste" data-v="her">' + (EN ? "Pay on this phone" : "Betal på denne telefon") + '</button>' +
     '<div style="flex:1"></div>' +
     '<button class="knap" style="flex:none;width:auto;background:none;color:var(--is);text-decoration:underline;font-weight:600;font-size:15px;box-shadow:none" data-a="koebLuk">' + (EN ? "Cancel" : "Afbryd") + '</button>');
 }

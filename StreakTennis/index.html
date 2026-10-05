@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.10.3 · 4. oktober 2026";
+const VERSION = "v5.10.4 · 5. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -8587,7 +8587,7 @@ const A = {
   kontoRum: (v) => {
     S.kontoRum = v || null; S.kontoBesked = null;
     if (!v) { S.planSkift = false; S.udtjek = null; S.kodeAaben2 = false; S.logUdSpoerg = false; S.fortrydSpoerg = false; }
-    render(); try { window.scrollTo(0, 0); } catch (_e) {}
+    render();   /* v5.10.4: rummet er en egen skærm — siden står, hvor den stod */
   },
   planSkiftAabn: () => { S.planSkift = !S.planSkift; S.udtjek = null; S.kontoBesked = null; render(); },
   /* ⭐ v5.3.6 · tilbage fra «Bekræft køb» til de tre planer */
@@ -9454,6 +9454,7 @@ function _gaveUdkastH(h) {
 }
 /* ⭐⭐ v5.10.3 · DIN KONTO SOM FLISER (Nicolai 4/10: «Skal abonnementer ligge under "din profil"?» → tegningen → «Lets go»).
    Delene er bygget som før; her skæres de ud ved mærkerne og lægges i hvert sit rum. Fliserne har status i underteksten (64/70). */
+let _kontoRumAaben = null;   /* ⭐ v5.10.4 · det åbne rum (titel + indhold) — tegnes som egen skærm af _kontoRumSkaerm() */
 function _kontoFlise(rum, a, ik, titel, status, lille, kant, ekstra) {
   return '<button class="dev-flise ' + kant + '" data-kontorum="' + rum + '" data-a="' + a + '"' + (ekstra || '') + '>' +
     '<span class="dev-ikon">' + ik + '</span><b>' + titel + '</b>' +
@@ -9472,10 +9473,11 @@ function _kontoRum(kk, m, EN) {
   const fortryd = del(m.h, m.i);
   const slet = del(m.j, kk.length);
   const rum = S.kontoRum || ((S.planSkift || S.udtjek) ? "plan" : (S.kodeAaben2 ? "kode" : ""));
-  const tilbage = '<button class="knap valg" data-kontorum-tilbage="1" style="min-height:40px;margin:0 0 10px;padding:6px 14px" data-a="kontoRum" data-v="">‹ ' + (EN ? "Your account" : "Din konto") + '</button>';
-  if (rum === "plan") return tilbage + plan + fortryd + besked;
-  if (rum === "live" && live) return tilbage + live + besked;
-  if (rum === "kode") return tilbage + kode + besked;
+  /* ⭐ v5.10.4 · rummet tegnes som egen skærm (Nicolai 5/10: «Den store») — fliserne står urørte nedenunder */
+  _kontoRumAaben = null;
+  if (rum === "plan") _kontoRumAaben = { rum: "plan", titel: "PLAN", html: plan + fortryd + besked };
+  else if (rum === "live" && live) _kontoRumAaben = { rum: "live", titel: (EN ? "LIVE MATCHES" : "LIVE-KAMPE"), html: live + besked };
+  else if (rum === "kode") _kontoRumAaben = { rum: "kode", titel: (EN ? "PASSWORD" : "KODEORD"), html: kode + besked };
   /* fliserne */
   const pl = S.minPlan;
   const venter = !!(S.portStatus && S.portStatus.kendt && S.portStatus.status !== "godkendt");
@@ -9505,6 +9507,19 @@ function _kontoRum(kk, m, EN) {
   f += _kontoFlise("kode", "kodeAabn2", "🔑", (EN ? "PASSWORD" : "KODEORD"), (EN ? "Change password" : "Skift kodeord"), (EN ? "Your login" : "Dit login"), "dev-kant-staal");
   if (!S.logUdSpoerg) f += _kontoFlise("logud", "logUdSpoerg", "🚪", (EN ? "LOG OUT" : "LOG UD"), "", (EN ? "Everything follows your account" : "Alt følger din konto"), "dev-kant-staal");
   return hoved + '<div class="dev-grid" data-kontofliser="1" style="margin:4px 0 6px">' + f + '</div>' + (S.logUdSpoerg ? logud : '') + besked + slet;
+}
+/* ⭐ v5.10.4 · RUMMET SOM EGEN SKÆRM — samme ramme som betalingsskærmen (over alt andet, egen rulning). Tegnes KUN i den render,
+   hvor Din konto-kortet lagde et rum til side; forbruges og nulstilles her, så et rum aldrig hænger ved fra en tidligere render. */
+function _kontoRumSkaerm(EN) {
+  const r = _kontoRumAaben; _kontoRumAaben = null;
+  if (!r) return "";
+  return '<div id="konto-rum" data-kontorum-skaerm="' + r.rum + '" style="position:fixed;inset:0;z-index:60;background:var(--dyb);overflow:auto;padding:max(12px,env(safe-area-inset-top)) 0 max(24px,env(safe-area-inset-bottom))">' +
+    '<div class="wrap" style="padding-top:0">' +
+    '<div style="display:flex;align-items:center;gap:10px;margin:0 0 12px">' +
+    '<button class="knap valg" data-kontorum-tilbage="1" style="flex:none;min-height:40px;margin:0;padding:6px 14px" data-a="kontoRum" data-v="">‹ ' + (EN ? "Your account" : "Din konto") + '</button>' +
+    '<span style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">' + r.titel + '</span></div>' +
+    '<div class="kort dev-kant dev-kant-is" style="padding:14px">' + r.html + '</div>' +
+    '</div></div>';
 }
 function _planNavn(p, EN) {
   return p === "gaest" ? (EN ? "Basic" : "Basis")
@@ -15302,7 +15317,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   // ⭐ v4.34.0 · Ikke i venne-chatten. Der er skrivefeltet det sidste,
   // der staar — en fod under det ville skubbe det op igen.
   // ⭐ v4.40.0 · Billedet ligger OVER alt andet — derfor sidst i strengen.
-  h += _koebSkaerm(EN);   /* ⭐ v5.10.1 · betalingsskærmen — over alt andet */
+  h += _kontoRumSkaerm(EN);   /* ⭐ v5.10.4 · Din kontos rum som egen skærm */
+  h += _koebSkaerm(EN);   /* ⭐ v5.10.1 · betalingsskærmen — over alt andet (også over rummet) */
   h += _bilVis(EN);
   // ⛔⛔ v4.87.0 · FODNOTEN LØJ OM DATA — OG DEN STÅR PÅ HVER ENESTE SKÆRM.
   //   Den sagde: «Data gemmes lokalt i browseren på denne enhed. Analyserne

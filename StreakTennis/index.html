@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.10.2 · 4. oktober 2026";
+const VERSION = "v5.10.3 · 4. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -2347,7 +2347,7 @@ function hjemkomstFraLink(sp, fraHaendelse) {
   try {
     if (sp.get("betaling") === "retur") {
       ramt = true;
-      S.tab = "opsaet"; S.opsAaben = "konto";
+      S.tab = "opsaet"; S.opsAaben = "konto"; S.kontoRum = "plan";   /* v5.10.3 */
       /* ⭐ v5.7.5 · MobilePay sender tilbage til en BROWSER — ikke til appen på hjemmeskærmen. Målt 25/9 på
          Nicolais telefon: «den genlæste på Chrome efter betalingen og opdaterede ikke i Web-appen». */
       const _hj = PLATFORM.app || paaHjemmeskaerm();
@@ -3034,7 +3034,7 @@ async function appleFaerdig(v, d) {
     const nv = d.plan === "fri" ? (EN ? "Full + free streaming" : "Fuld + fri streaming") : d.plan === "klubfri" ? (EN ? "free streaming" : "fri streaming") : (EN ? "Full access" : "Fuld adgang");
     const t = EN ? "The payment went through — you have " + nv + " now." : "Betalingen er gået igennem — du har " + nv + " nu.";
     if (v && v.ind) { S.indBesked = null; S.indTrin = 3; }
-    else { S.tab = "opsaet"; S.opsAaben = "konto"; S.kontoBesked = { fejl: false, t: t }; }
+    else { S.tab = "opsaet"; S.opsAaben = "konto"; S.kontoRum = "plan"; S.kontoBesked = { fejl: false, t: t }; }   /* v5.10.3 */
     render(); try { A.betalStatus(); } catch (_e) {}
     return;
   }
@@ -5033,6 +5033,7 @@ const A = {
     /* ⭐ v5.0.3 · TEAMET: invitationer hentes, hver gang kortet åbnes — pilotaftenen 15/9: en invitation sendt efter app-start blev aldrig set */
     if (S.opsAaben === "familie") { try { A.teamBudHent(true); } catch (_e) {} }
     /* ⭐ v5.3.7 · Din konto spørger, om en betaling blev afvist (ét ord: «alder») */
+    if (S.opsAaben === "konto") S.kontoRum = null;   /* ⭐ v5.10.3 · et tryk på kortet viser fliserne */
     if (S.opsAaben === "konto") { try { A.betalStatus(); } catch (_e) {} try { appleStart(); } catch (_e) {} }   /* ⭐ v5.10.0 · appleStart */
     if (S.opsAaben === "klub") { try { A.klubBudHent(true); } catch (_e) {} }   /* ⭐ v5.1.0 · klubbens invitationer */
     // ⭐ v4.91.0 · KLUBBER er sin egen flise med sin egen liste.
@@ -8582,6 +8583,12 @@ const A = {
   //   konto plan-saet kunne begge veje siden v5 — skærmen kunne kun én. Kontrakten:
   //   { plan: gaest|fuld|fri } → 200 { plan } · 409 klub (klubben betaler) · 403 afventer.
   //   Et eget valg afslutter en gave paa serveren (konto v8) — og kortet siger det samme her.
+  /* ⭐ v5.10.3 · Din konto: et rum åbnes (plan · live) — eller tilbage til fliserne (tom v) */
+  kontoRum: (v) => {
+    S.kontoRum = v || null; S.kontoBesked = null;
+    if (!v) { S.planSkift = false; S.udtjek = null; S.kodeAaben2 = false; S.logUdSpoerg = false; S.fortrydSpoerg = false; }
+    render(); try { window.scrollTo(0, 0); } catch (_e) {}
+  },
   planSkiftAabn: () => { S.planSkift = !S.planSkift; S.udtjek = null; S.kontoBesked = null; render(); },
   /* ⭐ v5.3.6 · tilbage fra «Bekræft køb» til de tre planer */
   udtjekTilbage: () => { S.udtjek = null; render(); },
@@ -8608,7 +8615,7 @@ const A = {
   /* ⭐ v5.3.7 · opgraderingen åbner udtjekningen — den skifter aldrig planen selv */
   planOpgrader: () => { S.planSkift = true; S.udtjek = "fuld"; S.kontoBesked = null; render(); },
   /* ⭐ v5.8.6 · fra et køb direkte til udtjekningen (Bekræft køb → Betal med MobilePay) */
-  planOpgraderNu: () => { S.tab = "opsaet"; S.opsAaben = "konto"; S.planSkift = true; S.udtjek = "fuld"; S.kontoBesked = null; render(); try { window.scrollTo(0, 0); } catch (_e) {} },
+  planOpgraderNu: () => { S.tab = "opsaet"; S.opsAaben = "konto"; S.kontoRum = "plan"; S.planSkift = true; S.udtjek = "fuld"; S.kontoBesked = null; render(); try { window.scrollTo(0, 0); } catch (_e) {} },
   /* ⭐⭐ v5.3.7 · BETAL MED MOBILEPAY. Kontrakten (betaling-start v2, målt i dens prøve):
      {handling:"start", plan} + x-spiller-noegle → 200 {url} · 503 betaling-ikke-klar · 409 aftale-findes
      · 409 klub-betaler · 403 afvist · 502 udbyder. Hvert udfald får sin EGEN sætning (75). */
@@ -8750,7 +8757,7 @@ const A = {
         if (S.minPlan === a.plan || S.minPlan === "klub") {
           try { lager.slet("sai-betal-startet"); } catch (_e) {}
           const nv = a.plan === "fri" ? (EN ? "Full + free streaming" : "Fuld + fri streaming") : a.plan === "klubfri" ? (EN ? "free streaming" : "fri streaming") : (EN ? "Full access" : "Fuld adgang");   /* ⭐ v5.8.8 */
-          S.tab = "opsaet"; S.opsAaben = "konto"; S.planSkift = false; S.udtjek = null;   /* udtjekningen er brugt */
+          S.tab = "opsaet"; S.opsAaben = "konto"; S.kontoRum = "plan"; S.planSkift = false; S.udtjek = null;   /* udtjekningen er brugt · v5.10.3: rummet PLAN */
           S.kontoBesked = { fejl: false, t: EN ? "The payment went through — you have " + nv + " now." : "Betalingen er gået igennem — du har " + nv + " nu." };
           render();
           break;
@@ -8863,7 +8870,7 @@ const A = {
       if (hvor === "konto") {
         /* ⭐ v5.9.0 · købt hjemmefra: tilbage til Din konto, tallet hentes igen */
         const _an = [1, 3, 5].indexOf(+kv.antal) >= 0 ? +kv.antal : 1;
-        S.tab = "opsaet"; S.opsAaben = "konto"; S.koebKlar = null; S.liveTal = null; S._liveTalSpurgt = false;
+        S.tab = "opsaet"; S.opsAaben = "konto"; S.kontoRum = "live"; S.koebKlar = null; S.liveTal = null; S._liveTalSpurgt = false;   /* v5.10.3 */
         S.kontoBesked = { fejl: false, t: _an > 1
           ? (EN ? "The purchase went through ✓ — " + _an + " matches are ready for your next ones." : "Købet er gået igennem ✓ — " + _an + " kampe ligger klar til dine næste.")
           : (EN ? "The purchase went through ✓ — the match is ready for your next one." : "Købet er gået igennem ✓ — kampen ligger klar til din næste.") };
@@ -9444,6 +9451,60 @@ function _gaveUdkastH(h) {
   const pl = (x.givet && (x.plan === "fuld" || x.plan === "fri")) ? x.plan : null;
   const m = (pl && x.gave_til) ? null : 0;
   return { h: h, plan: pl, mdr: m, grund: { plan: pl, mdr: m } };
+}
+/* ⭐⭐ v5.10.3 · DIN KONTO SOM FLISER (Nicolai 4/10: «Skal abonnementer ligge under "din profil"?» → tegningen → «Lets go»).
+   Delene er bygget som før; her skæres de ud ved mærkerne og lægges i hvert sit rum. Fliserne har status i underteksten (64/70). */
+function _kontoFlise(rum, a, ik, titel, status, lille, kant, ekstra) {
+  return '<button class="dev-flise ' + kant + '" data-kontorum="' + rum + '" data-a="' + a + '"' + (ekstra || '') + '>' +
+    '<span class="dev-ikon">' + ik + '</span><b>' + titel + '</b>' +
+    (status ? '<span style="font-size:12px;font-weight:700">' + status + '</span>' : '') +
+    (lille ? '<small>' + lille + '</small>' : '') + '</button>';
+}
+function _kontoRum(kk, m, EN) {
+  if (m.b < 0) m.b = m.d; if (m.c < 0) m.c = m.d;
+  const del = function (a, b) { return (a >= 0 && b >= a) ? kk.slice(a, b) : ""; };
+  const hoved = kk.slice(0, m.a);
+  const plan = del(m.a, m.b) + del(m.c, m.d);
+  const live = del(m.b, m.c);
+  const kode = del(m.d, m.e);
+  const logud = del(m.e, m.f);
+  const besked = del(m.g, m.h);
+  const fortryd = del(m.h, m.i);
+  const slet = del(m.j, kk.length);
+  const rum = S.kontoRum || ((S.planSkift || S.udtjek) ? "plan" : (S.kodeAaben2 ? "kode" : ""));
+  const tilbage = '<button class="knap valg" data-kontorum-tilbage="1" style="min-height:40px;margin:0 0 10px;padding:6px 14px" data-a="kontoRum" data-v="">‹ ' + (EN ? "Your account" : "Din konto") + '</button>';
+  if (rum === "plan") return tilbage + plan + fortryd + besked;
+  if (rum === "live" && live) return tilbage + live + besked;
+  if (rum === "kode") return tilbage + kode + besked;
+  /* fliserne */
+  const pl = S.minPlan;
+  const venter = !!(S.portStatus && S.portStatus.kendt && S.portStatus.status !== "godkendt");
+  const gave = !!(S.gaveInfo && S.gaveInfo.gave);
+  const planNavn = pl === "gaest" ? "Basis" : pl === "fuld" ? (EN ? "Full access" : "Fuld adgang") : pl === "fri" ? (EN ? "Full + free streaming" : "Fuld + fri streaming")
+    : pl === "klub" ? (EN ? "Club" : "Klub") + (_friLoeber() ? (EN ? " + free streaming" : " + fri streaming") : "") : "";
+  const planStatus = venter ? (EN ? "Waiting for a yes" : "Venter på et ja") : planNavn + (gave ? (EN ? " · gift" : " · gave") : "");
+  const planLille = venter ? "" : S.betalAfvist ? (EN ? "The agreement was not created" : "Aftalen blev ikke oprettet")
+    : (S.mpAftale && S.mpAftale.udbyder === "apple") ? (EN ? "Bought in the App Store" : "Købt i App Store")
+    : pl === "gaest" ? (EN ? "3 AI analyses and 3 live matches in total" : "3 AI-analyser og 3 live-kampe i alt")
+    : pl === "fuld" ? (EN ? "40 analyses and 3 live matches a month" : "40 analyser og 3 live-kampe om måneden")
+    : pl === "fri" ? (EN ? "40 analyses and live with no limit" : "40 analyser og live uden loft")
+    : pl === "klub" ? (EN ? "Your club pays" : "Klubben betaler") : "";
+  /* aftalens tilstand står på flisen — samme sandhed som rummets sætning (_mpAftaleTekst), forkortet (70: en flises status er et løfte) */
+  const at = venter ? "" : _mpAftaleTekst(pl, EN); const ma = S.mpAftale || {};
+  const dm = function (iso) { const d = String(iso || "").slice(0, 10).split("-"); return d.length === 3 ? (+d[2]) + "/" + (+d[1]) : ""; };
+  const aftLille = !at ? "" : at.indexOf("⚠️") === 0 ? (EN ? "⚠️ Check the agreement in MobilePay" : "⚠️ Tjek aftalen i MobilePay")
+    : at.indexOf("⏹") === 0 ? (EN ? "Stopped — lasts until " + dm(ma.udloeber) : "Stoppet — gælder til " + dm(ma.udloeber))
+    : at.indexOf("🔁") === 0 ? (EN ? "MobilePay · renews " + dm(ma.udloeber) : "MobilePay · fornyes " + dm(ma.udloeber))
+    : at.indexOf("⏳") === 0 ? (EN ? "⏳ Waiting for MobilePay" : "⏳ Venter på MobilePay") : "";
+  const planRoed = !!S.betalAfvist || at.indexOf("⚠️") === 0;
+  const k = S.koebKlar || { kamp: 0, live: 0 }; const klar = (k.kamp || 0) + (k.live || 0);
+  let f = _kontoFlise("plan", "kontoRum", "🎟️", (EN ? "PLAN" : "PLAN"), planStatus, (!S.betalAfvist && aftLille) ? aftLille : planLille, planRoed ? "dev-kant-roed" : "dev-kant-grus", ' data-v="plan"');
+  if (live) f += _kontoFlise("live", "kontoRum", "📡", (EN ? "LIVE MATCHES" : "LIVE-KAMPE"), (EN ? klar + " ready" : klar + " klar"), liveTalTekst(EN), "dev-kant-guld", ' data-v="live"');
+  f += _kontoFlise("kopi", "gaaKopi", "💾", (EN ? "BACKUP" : "SIKKERHEDSKOPI"), S.skyLaast ? (EN ? "⚠️ locked" : "⚠️ låst") : (EN ? "Automatic" : "Automatisk"),
+    S.skyLaast ? (EN ? "Log in again to unlock" : "Log ind igen for at låse op") : (EN ? "Locked on this phone" : "Låst på telefonen"), S.skyLaast ? "dev-kant-roed" : "dev-kant-gron");
+  f += _kontoFlise("kode", "kodeAabn2", "🔑", (EN ? "PASSWORD" : "KODEORD"), (EN ? "Change password" : "Skift kodeord"), (EN ? "Your login" : "Dit login"), "dev-kant-staal");
+  if (!S.logUdSpoerg) f += _kontoFlise("logud", "logUdSpoerg", "🚪", (EN ? "LOG OUT" : "LOG UD"), "", (EN ? "Everything follows your account" : "Alt følger din konto"), "dev-kant-staal");
+  return hoved + '<div class="dev-grid" data-kontofliser="1" style="margin:4px 0 6px">' + f + '</div>' + (S.logUdSpoerg ? logud : '') + besked + slet;
 }
 function _planNavn(p, EN) {
   return p === "gaest" ? (EN ? "Basic" : "Basis")
@@ -13266,10 +13327,12 @@ function _tegn() {
       // egen telefon, fordi der ikke fandtes en log ud.
       if (S.rolle !== "familie") {
         var _kk;
+        var _m = null;   /* ⭐ v5.10.3 · mærkerne mellem kontoens dele — _kontoRum() skærer ved dem */
         if (S.minKonto) {
           _kk = '<p class="lille" style="margin:0 0 9px">' + (EN
               ? "You are logged in as <b>" + esc(S.minKonto) + "</b>. Log in with the same username on any phone \u2014 everything follows you."
               : "Du er logget ind som <b>" + esc(S.minKonto) + "</b>. Log ind med samme brugernavn p\u00e5 en hvilken som helst telefon \u2014 alt f\u00f8lger med.") + '</p>';
+          _m = { a: _kk.length, b: -1, c: -1, d: -1, e: -1, f: -1, g: -1, h: -1, i: -1, j: -1 };   /* ⭐ v5.10.3 */
           // ⭐ v4.61.0 · planen staar ved kontoen — og vejen op er ét tryk.
           // Kendes planen ikke (aeldre rejse), staar der intet: princip 63.
           // ⛔⛔ v4.66.0 · VENTER MAN, STAAR DER AT MAN VENTER.
@@ -13317,9 +13380,11 @@ function _tegn() {
             if (PLATFORM.betaling === "apple") _kk += '<div class="raekke" style="gap:6px;margin:0 0 8px">' +
               (S.mpAftale && S.mpAftale.udbyder === "apple" ? '<button class="knap valg" data-apple="administrer" style="flex:1;min-height:40px" data-a="appleAdministrer">' + (EN ? "Manage subscription" : "Administrér abonnement") + '</button>' : '') +
               '<button class="knap valg" data-apple="gendan" style="flex:1;min-height:40px" data-a="appleGendan">' + (S.appleGendanner ? "⏳" : (EN ? "Restore purchases" : "Gendan køb")) + '</button></div>';
+            _m.b = _kk.length;   /* ⭐ v5.10.3 · LIVE-KAMPE begynder */
             if (liveTalTekst(EN)) _kk += '<p class="lille" data-live-tal="1" style="margin:2px 0 8px">📡 ' + (EN ? "Live matches: " : "Live-kampe: ") + liveTalTekst(EN) + '.</p>';   /* ⭐ v5.8.2 */
             /* ⭐ v5.9.0 · live-kampe købes her — Basis, Fuld og Klub (ikke Fri, ikke Klub + fri) */
             if ((_pl === "gaest" || _pl === "fuld" || _pl === "klub") && !_friLoeber() && !S.udtjek) _kk += _livekoebKort(_pl, EN);
+            _m.c = _kk.length;   /* ⭐ v5.10.3 · LIVE-KAMPE slutter */
             if (_pl && _pl !== "klub") {
               if (S.planSkift && S.udtjek) {
                 /* ⭐ v5.3.6 · UDTJEKNINGEN — «Bekræft køb» står FØR planen skiftes. Alt, man køber, står her:
@@ -13357,6 +13422,7 @@ function _tegn() {
               }
             }
           }
+          _m.d = _kk.length;   /* ⭐ v5.10.3 · KODEORD begynder */
           if (S.kodeAaben2) {
             _kk += '<input type="password" placeholder="' + (EN?"current password":"nuværende kodeord") + '" value="' + esc(S.kodeGammel) + '" data-felt="kodeGammel" maxlength="200" autocomplete="current-password">' +
               '<input type="password" placeholder="' + (EN?"new password (min 8)":"nyt kodeord (mindst 8)") + '" value="' + esc(S.kodeNy) + '" data-felt="kodeNy" maxlength="200" autocomplete="new-password" style="margin-top:7px">' +
@@ -13366,6 +13432,7 @@ function _tegn() {
           } else {
             _kk += '<button class="knap valg" style="min-height:44px;padding:8px 15px" data-a="kodeAabn2">' + (EN?"Change password":"Skift kodeord") + '</button>';
           }
+          _m.e = _kk.length;   /* ⭐ v5.10.3 · LOG UD begynder */
           if (S.logUdSpoerg) {
             // ⚠️ Log ud rydder telefonen. Det SKAL stå, før man trykker —
             // og synkroniseringen sker først, så intet går tabt.
@@ -13388,6 +13455,7 @@ function _tegn() {
           } else {
             _kk += '<div style="margin-top:9px"><button class="knap valg" style="min-height:44px;padding:8px 15px;color:var(--daempet)" data-a="logUdSpoerg">' + (EN?"Log out":"Log ud") + '</button></div>';
           }
+          _m.f = _kk.length;   /* ⭐ v5.10.3 */
         } else if (S.kontoAaben === "log") {
           _kk = _loginKort(EN);
         } else {
@@ -13426,9 +13494,11 @@ function _tegn() {
               : '<div style="margin-top:9px"><button class="knap valg" style="min-height:44px;padding:8px 15px;color:var(--daempet)" data-a="skiftSpoerg">' +
                 (EN ? "Not you? Switch player" : "Ikke dig? Skift spiller") + '</button></div>');
         }
+        if (_m) _m.g = _kk.length;   /* ⭐ v5.10.3 · beskeden */
         if (S.kontoBesked && S.kontoAaben !== "log") {
           _kk += '<p class="lille" style="margin:8px 0 0;color:' + (S.kontoBesked.fejl?'var(--tabt)':'var(--vundet)') + '">' + esc(S.kontoBesked.t) + '</p>';
         }
+        if (_m) _m.h = _kk.length;   /* ⭐ v5.10.3 · fortryd aftale + betal her (hører til PLAN) */
         /* ⭐ v5.3.6 · FORTRYD AFTALE (forbrugeraftaleloven fra 19/6-2026: fortrydelsen skal kunne ske i appen).
            Kun på en betalt Fuld/Fri. «Bekræft fortrydelse» åbner en mail til os med brugernavnet — svaret er kvitteringen. */
         if ((S.minPlan === "fuld" || S.minPlan === "fri") && S.betaltTil && S.kontoAaben !== "log") {
@@ -13448,6 +13518,7 @@ function _tegn() {
           _kk += '<a class="knap" href="' + esc(BETALINGSLINK[S.minPlan]) + '" target="_blank" rel="noopener" style="display:block;text-align:center;min-height:44px;line-height:44px;margin-top:8px;text-decoration:none">💳 ' +
             (EN ? "Pay here" : "Betal her") + ' · ' + (S.minPlan === "fuld" ? "49" : "98") + ' kr/md →</a>';
         }
+        if (_m) _m.i = _kk.length;   /* ⭐ v5.10.3 · sikkerhedskopien (bliver en flise) */
         /* ⭐ v4.158.0 · sikkerhedskopien er et afsnit i kontoen — den handler om kontoens data */
         _kk += '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--linje)">' +
           '<div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:var(--grus);margin-bottom:6px">\ud83d\udcbe ' + (EN?"BACKUP":"SIKKERHEDSKOPI") + ' \u00b7 <span style="color:' + (S.skyLaast ? "var(--tabt)" : "var(--vundet)") + '">' +
@@ -13457,6 +13528,7 @@ function _tegn() {
           : "Dine kampe, hver bold, din tr\u00e6ningslog og dine analyser kopieres automatisk. <b>Boldene, resultaterne og analyserne gemmes l\u00e6sbart i arkivet</b>, s\u00e5 de kommer tilbage med din konto alene \u2014 ogs\u00e5 hvis du glemmer dit kodeord. <b>Modstandernes navne og dine noter l\u00e5ses p\u00e5 denne telefon, f\u00f8r de sendes</b>: serveren opbevarer en boks, den ikke kan \u00e5bne, og de kommer tilbage med dit kodeord. Log ind p\u00e5 en ny telefon, og det hele kommer tilbage.") + '</p>' +
         '<button class="knap" style="width:100%;min-height:48px;background:var(--grus)" data-a="gaaKopi">' +
         (EN?"Open backup \u2192":"\u00c5bn sikkerhedskopien \u2192") + '</button>' + '</div>';
+        if (_m) _m.j = _kk.length;   /* ⭐ v5.10.3 · slet min konto (nederst under fliserne) */
         /* ⭐⭐⭐ v5.7.3 · SLET MIN KONTO — nederst i kontoen, aldrig i team-visningen */
         if (VISNING !== "team" && S.kontoAaben !== "log") {
           if (S.kontoSletSpoerg) {
@@ -13475,6 +13547,7 @@ function _tegn() {
             _kk += '<div style="margin-top:10px"><button class="knap valg" style="min-height:40px;padding:6px 14px;color:var(--daempet)" data-a="kontoSletSpoerg">' + (EN ? "Delete my account" : "Slet min konto") + '</button></div>';
           }
         }
+        if (_m) _kk = _kontoRum(_kk, _m, EN);   /* ⭐⭐ v5.10.3 · fliserne og rummene */
         _kort.konto = _opsKort("konto", "\ud83d\udc64", (EN?"YOUR ACCOUNT":"DIN KONTO"),
           S.minKonto ? esc(S.minKonto) : (EN?"this phone only":"kun denne telefon"),
           S.minKonto ? "var(--vundet)" : "var(--daempet)", _kk);

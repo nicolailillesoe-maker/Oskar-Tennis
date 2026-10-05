@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.10.4 · 5. oktober 2026";
+const VERSION = "v5.10.5 · 5. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -3456,6 +3456,9 @@ function _friLoeber() {
 /* ⭐⭐ v5.9.0 · LIVE-KAMPE KØBES HJEMMEFRA (Nicolai 27/9: «man skal kunne købe et antal live kampe et sted - jo nok der hvor
    man opgraderer»). Priserne står ÉT sted og skal matche betaling-start v7 (KOEB.pakker) og priserne.md. */
 const KOEB_PAKKER = { kamp: { 1: 20, 3: 54, 5: 85 }, live: { 1: 15, 3: 40, 5: 65 } };
+/* ⭐ v5.10.5 · NUMMERET ER LUKKET, til MobilePay har åbnet push til et nummer for vores salgssted (målt 5/10: 400 «PUSH_MESSAGE not
+   allowed»). false → betalingsskærmen har én knap: «Betal med MobilePay» (åbner her). true → nummerfeltet og Næste som i v5.10.1-5.10.4. */
+const KOEB_PUSH_AABEN = false;
 function _livekoebKort(pl, EN) {
   const type = pl === "gaest" ? "kamp" : "live";
   const P = KOEB_PAKKER[type];
@@ -8898,6 +8901,7 @@ const A = {
     if (!kv || !/^st-[kl]-[0-9a-f]{24}$/.test(String(kv.ref || ""))) return;
     if (Date.now() - (+kv.t || 0) > 1800000) { try { lager.slet("sai-koeb-venter"); } catch (_e) {} return; }
     S.koebVenter = true; S.koebSender = null;
+    S.koebSkaerm = null; S.koebBesked = null; S.koebTelefon = "";   /* ⭐ v5.10.5 · betalingsskærmen lukkes — sætningen lander, hvor købet blev startet, ikke bag skærmen */
     const EN = S.sprog === "en";
     let status = "";
     for (let i = 0; i < (tvang ? 10 : 4); i++) {
@@ -10864,6 +10868,7 @@ function _koebSkaerm(EN) {
     '<div style="margin-top:2px;font-size:14px;color:var(--daempet)">' + hvad(k.type, k.antal) + '</div>' +
     '<div style="margin-top:20px;font-size:40px;font-weight:800;color:var(--kridt)">' + k.pris + ' kr.</div>' +
     '<div style="flex:1;min-height:24px"></div>' +
+    (KOEB_PUSH_AABEN ?
     '<div style="width:100%;max-width:420px;display:flex;gap:10px;align-items:flex-start">' +
       '<div style="flex:none;padding:13px 14px;border-radius:14px;border:1px solid var(--kant);background:rgba(255,255,255,.05);font-weight:700;font-size:16px;color:var(--kridt)">🇩🇰 +45</div>' +
       '<input id="koeb-telefon" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="12" placeholder="' + (EN ? "Phone number" : "Telefonnummer") + '" value="' + esc(S.koebTelefon || "") + '" data-felt="koebTelefon" style="flex:1;margin:0;font-size:18px;padding:12px 14px">' +
@@ -10871,7 +10876,12 @@ function _koebSkaerm(EN) {
     (S.koebBesked ? '<p class="lille" style="margin:10px 0 0;color:#F4A3A3;text-align:center;max-width:420px">' + esc(S.koebBesked) + '</p>' : '') +
     '<button class="knap" id="koeb-naeste" style="flex:none;width:auto;min-width:180px;min-height:52px;margin-top:16px;border-radius:999px;background:var(--guld);color:#1a1400;font-size:17px;font-weight:800" data-a="koebNaeste">' + (S.koebSender ? "⏳" : (EN ? "Next" : "Næste")) + '</button>' +
     /* ⭐ v5.10.2 · den gamle vej tilbage: MobilePay åbner på denne telefon (WEB_REDIRECT) — uden nummer */
-    '<button class="knap" id="koeb-her" style="flex:none;width:auto;margin-top:18px;background:none;color:var(--is);text-decoration:underline;font-weight:700;font-size:15px;box-shadow:none" data-a="koebNaeste" data-v="her">' + (EN ? "Pay on this phone" : "Betal på denne telefon") + '</button>' +
+    '<button class="knap" id="koeb-her" style="flex:none;width:auto;margin-top:18px;background:none;color:var(--is);text-decoration:underline;font-weight:700;font-size:15px;box-shadow:none" data-a="koebNaeste" data-v="her">' + (EN ? "Pay on this phone" : "Betal på denne telefon") + '</button>'
+    :
+    /* ⭐ v5.10.5 · nummeret lukket: én knap, samme vej som «Betal på denne telefon» — MobilePay åbner her. Sætningerne lander her (75). */
+    (S.koebBesked ? '<p class="lille" style="margin:0 0 10px;color:#F4A3A3;text-align:center;max-width:420px">' + esc(S.koebBesked) + '</p>' : '') +
+    '<button class="knap" id="koeb-her" style="flex:none;width:auto;min-width:220px;min-height:52px;margin-top:6px;border-radius:999px;background:var(--guld);color:#1a1400;font-size:17px;font-weight:800" data-a="koebNaeste" data-v="her">' + (S.koebSender ? "⏳" : (EN ? "Pay with MobilePay" : "Betal med MobilePay")) + '</button>'
+    ) +
     '<div style="flex:1"></div>' +
     '<button class="knap" style="flex:none;width:auto;background:none;color:var(--is);text-decoration:underline;font-weight:600;font-size:15px;box-shadow:none" data-a="koebLuk">' + (EN ? "Cancel" : "Afbryd") + '</button>');
 }

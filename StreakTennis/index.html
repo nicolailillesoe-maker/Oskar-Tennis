@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.10.6 · 8. oktober 2026";
+const VERSION = "v5.11.0 · 9. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -1181,7 +1181,7 @@ function fletPasUdefra(log) {
   var kendt = {}; sikrePasId(S.fysLog).concat(sikrePasId(S.ttLog)).forEach(function(e){ kendt[e.id] = true; });
   log.forEach(function(p){
     if (!p || !p.id || kendt[p.id]) return;
-    var post = { id: p.id, d: p.d, m: p.m || 0, k: p.k || 0, t: 0, n: "", _fjern: true };
+    var post = { id: p.id, d: p.d, m: p.m || 0, k: p.k || 0, t: 0, n: "", _fjern: !erKlubPost(p) };   /* v5.11.0 · klubbens post er klubbens, ikke en anden telefons */
     if (p.t === "fysisk") { S.fysLog.push(post); nyeFys++; } else { S.ttLog.push(post); nyeTt++; }
     kendt[p.id] = true;
   });
@@ -1476,6 +1476,44 @@ function _minUgeHero(EN) {
     if (sen.length) h += '<p class="lille" style="margin:0 2px 10px">📅 ' + (EN ? "Later today: " : "Senere i dag: ") + sen.map(function(p){ return ugLinje(p, EN); }).join(" · ") + '</p>';
   }
   if (S.ugLogBesked) h += '<p class="lille" style="margin:0 2px 10px;color:' + (S.ugLogBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.ugLogBesked.t) + '</p>';
+  return h;
+}
+// ⭐ v5.11.0 · en post, klubben har skrevet (REGISTRÉR i StreakCoach): id «klub-<pas>-<dato>».
+function erKlubPost(e) { return !!e && String(e.id || "").indexOf("klub-") === 0; }
+function _dinTraeningKort(EN) {
+  if (!egenNoegle()) return "";
+  if (!S.klubProgramHenter && (!S.klubProgramTid || Date.now() - S.klubProgramTid > 600000)) setTimeout(function(){ A.klubProgramHent(); }, 0);
+  const kp = S.klubProgram;
+  const top = '<div class="kort" style="border-left:3px solid var(--vundet)">' +
+    '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--vundet)">🏟 ' + (EN ? "YOUR TRAINING" : "DIN TRÆNING") + '</div>';
+  const igen = '<button class="knap" style="flex:none;width:auto;padding:7px 14px;margin-top:8px;background:transparent;border:1px solid var(--kant);font-size:12px" data-a="klubProgramHent">🔄 ' + (EN ? "Try again" : "Prøv igen") + '</button>';
+  if (!kp) {
+    if (!S.klubProgramFejl) return "";
+    return top + '<p id="din-traening-fejl" style="margin:6px 0 0;font-size:13px;color:var(--tabt)">' + esc(traeningFejltekst(S.klubProgramFejl, EN)) + '</p>' + igen + '</div>';
+  }
+  if (!kp.klub) return "";
+  let h = top + '<div style="font-size:12px;color:var(--daempet);margin-top:2px">' + esc(kp.klub) + '</div>';
+  if (!kp.pas.length) {
+    h += '<p id="din-traening-tom" style="margin:8px 0 0;font-size:13px">' + esc(kp.klub) + (EN ? " hasn't put you on a squad yet." : " har ikke lagt dig på et hold endnu.") + '</p>';
+  } else {
+    const DAG = UG_DAG[EN ? "en" : "da"];
+    const idag = isoUgedagAf(dkDato(0));
+    h += '<div id="din-traening" style="margin-top:6px">' + kp.pas.map(function(p){
+      const iDag = +p.ugedag === idag;
+      const tr = [p.traener, p.traener2].filter(Boolean).map(esc).join(" & ");
+      const maerke = [p.titel, p.hold].filter(Boolean).map(esc).join(" · ");
+      return '<div class="din-traening-pas" style="display:flex;gap:8px;border-top:1px solid var(--kant);padding:7px 0' + (iDag ? ';background:rgba(232,181,74,.08)' : '') + '">' +
+        '<span style="flex:none;width:72px;font-size:12px;font-weight:700">' + (DAG[+p.ugedag] || "") +
+          (iDag ? '<span style="display:block;font-size:9.5px;font-weight:800;letter-spacing:1px;color:var(--guld)">' + (EN ? "TODAY" : "I DAG") + '</span>' : '') + '</span>' +
+        '<span style="flex:1;font-size:12.5px;line-height:1.45">' + ugTid(p.start, EN) + "–" + ugTid(p.slut, EN) +
+          (maerke ? ' <span style="font-size:10px;font-weight:800;border:1px solid var(--kant);border-radius:6px;padding:0 5px;margin-left:2px">' + maerke + '</span>' : '') +
+          '<span style="display:block;color:var(--daempet)">📍 ' + esc(p.bane || "") + (tr ? ' · 🧑‍🏫 ' + tr : '') + '</span></span></div>';
+    }).join("") + '</div>';
+  }
+  if (S.klubProgramFejl) h += '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(traeningFejltekst(S.klubProgramFejl, EN)) + '</p>';
+  h += '<p class="lille" style="margin:8px 0 0;opacity:.8">' + (EN
+    ? "When you've attended, your club can write the session into your log — date and length."
+    : "Når du er mødt, kan din klub skrive træningspasset i din log — dato og længde.") + '</p></div>';
   return h;
 }
 function _minUgeKort(EN) {
@@ -2603,6 +2641,26 @@ const SKY_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/sky-kopi"
 //   er teamets. Kun `spejl-hent` kaldes med team-nøglen.
 const TEAMBUD_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/team-bud";
 function egenNoegle() { try { return window.localStorage.getItem("sai-spillernoegle") || ""; } catch (_e) { return ""; } }
+// ⭐ v5.11.0 · DIN TRÆNING (trin 3) — klubbens program for spilleren. traening · mit-program med spillernøglen.
+const TRAENING_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/traening";
+async function traeningKald(handling, krop) {
+  const sn = egenNoegle();
+  if (!sn) return { fejl: "mangler-noegle" };
+  const st = new AbortController(); const ur = setTimeout(() => st.abort(), 20000);
+  try {
+    const r = await fetch(TRAENING_URL, { method: "POST", signal: st.signal,
+      headers: { "content-type": "application/json", "x-spiller-noegle": sn },
+      body: JSON.stringify(Object.assign({ handling }, krop || {})) });
+    clearTimeout(ur);
+    const d = await r.json().catch(() => ({}));
+    return r.ok ? d : { fejl: d.kode || "ukendt", status: r.status };
+  } catch (_e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+}
+// Hvert udfald sin egen sætning (75) — «ingen forbindelse» KUN om netværket (94).
+function traeningFejltekst(k, EN) {
+  if (k === "netvaerk") return EN ? "No connection — your programme couldn't be fetched." : "Ingen forbindelse — programmet kunne ikke hentes.";
+  return EN ? "Your programme couldn't be fetched right now." : "Programmet kunne ikke hentes lige nu.";
+}
 // ⭐ v5.1.0 · KLUB-BUD — klubben inviterer gennem appen (sende-reglen anvendt på klubben).
 const KLUBBUD_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/klub-bud";
 async function klubBudKald(handling, krop) {
@@ -4283,6 +4341,16 @@ const A = {
     S.ugBesked = { fejl: false, t: dag + " " + ugTid(st, EN) + "–" + ugTid(sl, EN) + (EN ? " is in your week ✅" : " er lagt i din uge ✅") };
     render();
   },
+  klubProgramHent: async () => {   /* ⭐ v5.11.0 · trin 3 */
+    if (S.klubProgramHenter) return;
+    S.klubProgramHenter = true; S.klubProgramTid = Date.now();
+    const r = await traeningKald("mit-program", {});
+    S.klubProgramHenter = false;
+    if (r && !r.fejl) { S.klubProgram = { klub: r.klub || null, pas: Array.isArray(r.pas) ? r.pas : [] }; S.klubProgramFejl = null; }
+    else if (r && (r.fejl === "adgang" || r.fejl === "afventer-godkendelse" || r.fejl === "mangler-noegle")) { S.klubProgram = { klub: null, pas: [] }; S.klubProgramFejl = null; }
+    else { S.klubProgramFejl = (r && r.fejl) || "ukendt"; }
+    render();
+  },
   ugSletSpoerg: (id) => { S.ugSletB = S.ugSletB === id ? null : id; render(); },
   ugSlet: (id) => {
     const EN = S.sprog === "en";
@@ -4331,7 +4399,7 @@ const A = {
   },
   ttSletSpoerg: (i) => { S.ttSletB = +i; render(); },
   ttSletFortryd: () => { S.ttSletB = null; render(); },
-  ttSlet: (i) => { S.ttLog.splice(+i, 1); S.ttSletB = null; lager.gem("sai-tennis-log", JSON.stringify(S.ttLog)); render(); },
+  ttSlet: (i) => { if (erKlubPost(S.ttLog[+i])) { S.ttSletB = null; render(); return; } S.ttLog.splice(+i, 1); S.ttSletB = null; lager.gem("sai-tennis-log", JSON.stringify(S.ttLog)); render(); },
   ingen: () => {},
   rkToggle: (k) => { S.rkAaben = S.rkAaben === k ? null : k; render(); },
   anbefalVis: (k) => { S.anbefalVis = S.anbefalVis === k ? null : k; render(); },   /* v5.0.1 · fliserne på Anbefalinger */
@@ -11105,7 +11173,7 @@ function _tegn() {
           (S.sprog === "en"
             ? _b("What lives on the phone", "Your notes and all free text stay on the phone. Analyses are computed from numbers — never from what you write.") +
               _b("The backup", "Your matches (every ball, the result, the analysis) and your development letter are kept readable with us — without opponents’ names and without your notes — so they come back with your account alone. Names and notes are kept only in a box locked with your password; we cannot open it.") +
-              _b("What the club sees", "With a club key, your club\u2019s coach sees the full name you write under Your profile \u2014 and your matches, training and assessments. Without a club, nobody sees the full name. Friends never do.") +
+              _b("What the club sees", "With a club key, your club\u2019s coach sees the full name you write under Your profile \u2014 and your matches, training and assessments. Without a club, nobody sees the full name. Friends never do. If you're on a squad in the club's training programme, your club can write a training session into your log when you've attended \u2014 date and length.") +
               _b("What friends see", "Your nickname, your username, your avatar, the few words you may write about yourself (never shown to anyone but friends), your streak and — while a match is live — the score. Never your messages. If you share a match (live or from the archive), the score, tournament and opponent travel with it; friends see the opponent shortened.") +
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
               _b("Search", "Approved players can find you by searching your username — the result shows username, club and birth year. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
@@ -11114,7 +11182,7 @@ function _tegn() {
               _b("Leaving", "Log out wipes the phone. Under Your account you can delete the account yourself — everything is deleted at once" + (PLATFORM.betaling === "apple" ? ". A subscription bought in the App Store does not stop by itself — cancel it under your Apple subscriptions. It cannot be undone." : ", including a subscription in MobilePay. It cannot be undone."))
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
               _b("Sikkerhedskopien", "Jeres kampe (hver bold, resultatet, analysen) og udviklingsbrevet gemmes læsbart hos os — uden modstandernes navne og uden jeres noter — så de kommer tilbage med kontoen alene. Navne og noter gemmes kun i en boks, der er låst med jeres kodeord; den kan vi ikke åbne.") +
-              _b("Hvad klubben ser", "Med en klubnøgle ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig.") +
+              _b("Hvad klubben ser", "Med en klubnøgle ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig. Er du på et hold i klubbens træningsprogram, kan din klub skrive et træningspas i din log, når du er mødt \u2014 dato og længde.") +
               _b("Hvad venner ser", "Kaldenavn, brugernavn, avatar, de få ord I selv skriver om jer (vises kun for venner — aldrig i søgning), streaken og — mens en kamp er live — stillingen. Aldrig jeres beskeder. Deler I en kamp (live eller fra arkivet), rejser stillingen, turneringen og modstanderens navn med — venner ser modstanderen forkortet.") +
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
               _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises brugernavn, klub og årgang. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
@@ -14469,8 +14537,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       if (S.ttLog.length) {
         h += '<div class="kort" style="border-left:3px solid var(--is)"><h3>📊 '+S.ttLog.length+' '+(EN?"sessions":"træninger")+' · '+(ttTot/60).toFixed(1)+' '+(EN?"hours":"timer")+(ttGk ? ' · '+(EN?"avg. quality":"Ø-kvalitet")+' '+ttGk+'/10' : '')+'</h3>' +
           S.ttLog.slice(0,8).map(function(e, i){
-            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(e.x?'':'🆕 ')+e.d+' · '+e.m+' min · '+(e.t===1?'🎾 ':e.t===2?'🧑‍🏫 ':'')+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span>' +
-              (S.ttSletB === i
+            return '<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--daempet);margin-bottom:4px"><span style="flex:1">'+(erKlubPost(e) ? '🏟 '+esc(S.minKlub && S.minKlub !== "Uden klub" ? S.minKlub : (EN?"Your club":"Din klub"))+' · ' : (e.x?'':'🆕 '))+e.d+' · '+e.m+' min · '+(e.t===1?'🎾 ':e.t===2?'🧑‍🏫 ':'')+"⭐".repeat(e.k)+(e.n?' · '+esc(e.n):'')+'</span>' +
+              (erKlubPost(e) ? '' : S.ttSletB === i
                 ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="ttSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="ttSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="ttSletSpoerg" data-v="'+i+'">🗑</button>') + '</div>'; }).join("") +
           '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="ttEksport">📤 '+(EN?"Export new":"Eksportér nye")+' ('+S.ttLog.filter(function(e){return !e.x;}).length+')</button></div>';
@@ -14478,6 +14546,9 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           return f ? '<p class="lille" style="margin:6px 0 0;padding-top:6px;border-top:1px dashed var(--kant);opacity:.85">\ud83d\udcf1 '
             + f + (EN ? " session(s) came from another phone \u2014 date and length only."
                       : " pas kom fra en anden telefon \u2014 kun dato og l\u00e6ngde.") + '</p>' : ''; })();
+        h += (S.ttLog||[]).some(erKlubPost) ? '<p class="lille" id="klubpost-forklaring" style="margin:6px 0 0;opacity:.85">🏟 ' + (EN
+          ? "Sessions from your club can't be deleted here — your club corrects the attendance."
+          : "Pas fra din klub kan ikke slettes her — klubben retter fremmødet.") + '</p>' : '';
         if (S.ttEks) h += '<p class="lille">'+(EN?"Select, copy and share with your coach:":"Markér, kopiér og del med træneren:")+'</p><textarea readonly onfocus="this.select()" style="height:110px">'+esc(S.ttEks)+'</textarea>' + eksportKnapper('ttEks', EN);
       }
     
@@ -14519,6 +14590,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       }
 
       if (_tp === "uge") {
+      h += _dinTraeningKort(EN);   /* ⭐ v5.11.0 · trin 3 · din træning */
       h += _minUgeKort(EN);   /* ⭐ v5.4.0 · min uge */
       (function(){
         const m = ugeMaalVis();   /* ⭐ v5.6.0 · din uge */

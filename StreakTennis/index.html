@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.10.5 · 5. oktober 2026";
+const VERSION = "v5.10.6 · 8. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -3456,9 +3456,9 @@ function _friLoeber() {
 /* ⭐⭐ v5.9.0 · LIVE-KAMPE KØBES HJEMMEFRA (Nicolai 27/9: «man skal kunne købe et antal live kampe et sted - jo nok der hvor
    man opgraderer»). Priserne står ÉT sted og skal matche betaling-start v7 (KOEB.pakker) og priserne.md. */
 const KOEB_PAKKER = { kamp: { 1: 20, 3: 54, 5: 85 }, live: { 1: 15, 3: 40, 5: 65 } };
-/* ⭐ v5.10.5 · NUMMERET ER LUKKET, til MobilePay har åbnet push til et nummer for vores salgssted (målt 5/10: 400 «PUSH_MESSAGE not
-   allowed»). false → betalingsskærmen har én knap: «Betal med MobilePay» (åbner her). true → nummerfeltet og Næste som i v5.10.1-5.10.4. */
-const KOEB_PUSH_AABEN = false;
+/* ⭐ v5.10.5 · NUMMERET bag én kontakt. false → betalingsskærmen har én knap: «Betal med MobilePay» (åbner her). true → nummerfeltet,
+   Næste og «Betal på denne telefon» som i v5.10.1-5.10.4. v5.10.6: ÅBNET — MobilePay slog PUSH_MESSAGE til på salgsstedet 7/10. */
+const KOEB_PUSH_AABEN = true;
 function _livekoebKort(pl, EN) {
   const type = pl === "gaest" ? "kamp" : "live";
   const P = KOEB_PAKKER[type];

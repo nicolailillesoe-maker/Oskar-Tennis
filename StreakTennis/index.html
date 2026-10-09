@@ -491,12 +491,12 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.11.0 · 9. oktober 2026";
+const VERSION = "v5.11.1 · 9. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
 /* ⭐ v5.3.6 · HANDELSBETINGELSERNE OG KONTAKTEN — ét sted (Vipps MobilePay kræver dem synlige). */
-const HANDEL = { url: "https://tennis.sportsainalytics.com/handelsbetingelser.html", mail: "nicolai@sportsainalytics.com", tlf: "61 22 76 07" };
+const HANDEL = { url: "https://tennis.sportsainalytics.com/handelsbetingelser.html", mail: "nicolai@sportsainalytics.com", tlf: "61 22 75 07" };
 /* ⭐⭐ v5.3.7 · ÉN UDTJEKNING, TO STEDER (Din konto og rejsen). Alt, man køber, står her — og der er ÉN knap:
    «Betal med MobilePay» → betaling-start → MobilePay. Nicolai 24/9: «Det skal bare være direkte betaling.» */
 function _udtjekBoks(plan, kilde, EN) {
@@ -11648,12 +11648,9 @@ function _tegn() {
             '\ud83e\udd1d <b style="color:var(--guld)">' + esc(_invitFornavn(_invitVed()) || _invitVed()) + '</b> ' + (S.sprog === "en"
               ? "invited you. Create yourself with <b>your own</b> name \u2014 " + esc(_invitFornavn(_invitVed()) || _invitVed()) + " is already waiting as the friend you can ask once you are in."
               : "har inviteret dig. Opret dig med <b>dit eget</b> navn \u2014 " + esc(_invitFornavn(_invitVed()) || _invitVed()) + " st\u00e5r allerede klar som den ven, du kan sp\u00f8rge, n\u00e5r du er inde.") + '</div>' : '') +
-          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (_invitVed()
-            ? (S.sprog === "en" ? "CLUB KEY · OPTIONAL" : "KLUBNØGLE · VALGFRIT")
-            : (S.sprog === "en" ? "CLUB KEY OR FRIEND · OPTIONAL" : "KLUBNØGLE ELLER VEN · VALGFRIT")) + '<span id="ok-indKlubkode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
-          '<input data-felt="indKlubkode" maxlength="40" style="letter-spacing:1px;font-weight:700" placeholder="' + (_invitVed()
-            ? (S.sprog === "en" ? "only from your club" : "kun fra din klub")
-            : (S.sprog === "en" ? "key or username" : "kode eller brugernavn")) + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">' +
+          (_invitVed() ? '' :   /* ⭐ v5.11.1 · nøglerne er væk — feltet er kun til en vens brugernavn; har en ven inviteret, står chippen ovenfor */
+          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (S.sprog === "en" ? "FRIEND · OPTIONAL" : "VEN · VALGFRIT") + '<span id="ok-indKlubkode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
+          '<input data-felt="indKlubkode" maxlength="40" style="letter-spacing:1px;font-weight:700" placeholder="' + (S.sprog === "en" ? "your friend’s username" : "din vens brugernavn") + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">') +
           // ⭐ v4.72.0 · Tre saetninger blev til én. Etiketten siger selv
           //   «VALGFRIT», saa «ingen kode? gaa bare videre» var det samme
           //   sagt to gange paa 20 pixels afstand.

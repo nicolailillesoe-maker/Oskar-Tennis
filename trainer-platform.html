@@ -33,6 +33,7 @@ h3{font-size:14px;margin:0 0 6px}
 .brandby b{color:var(--is)}
 .eyebrow{font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--daempet);text-transform:uppercase}
 .kort{background:var(--kort);border:1px solid var(--kant);border-radius:18px;padding:14px 16px;margin-bottom:10px;backdrop-filter:blur(8px)}
+.kort,.tonet{--tone:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tone) 35%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--tone) 11%,transparent),color-mix(in srgb,var(--tone) 2%,transparent) 55%,transparent),var(--kort)}
 .lille{font-size:12px;color:var(--daempet);margin:2px 0}
 .raekke{display:flex;gap:8px}
 .knap{flex:1;padding:12px;border:none;border-radius:14px;background:var(--flade);color:var(--kridt);font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
@@ -1129,7 +1130,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.16.2 \u00b7 3. oktober 2026";
+const VERSION = "v6.16.3 \u00b7 3. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2229,7 +2230,7 @@ function renderBoksPort(){
     h += '<div class="kort sc-op" style="animation-delay:.12s;text-align:left">' +
       '<b style="display:block;margin-bottom:4px">Vælg et nyt kodeord</b>' +
       '<p class="lille" style="margin:0 0 4px;line-height:1.55">Denne telefon er allerede koblet til din klub, så du kan vælge et nyt kodeord her.</p>' +
-      (S.boksGammel ? '<p class="lille" style="margin:6px 0 2px;padding:8px 10px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 8px 8px 0;line-height:1.55">Det, du gemte ' + esc(boksTid(S.boksGammel)) + ', kan kun åbnes med dit gamle kodeord. Med et nyt kodeord gælder det, der står på denne telefon.</p>' : '') +
+      (S.boksGammel ? '<p class="lille tonet" style="margin:6px 0 2px;padding:8px 10px;--tone:var(--guld);border-radius:10px;line-height:1.55">Det, du gemte ' + esc(boksTid(S.boksGammel)) + ', kan kun åbnes med dit gamle kodeord. Med et nyt kodeord gælder det, der står på denne telefon.</p>' : '') +
       felt("boksNy", "nyt kodeord (mindst 8 tegn)", "new-password") +
       felt("boksNy2", "gentag det nye kodeord", "new-password") +
       '<button class="knap" style="margin-top:9px;width:100%;min-height:50px;background:var(--grus)"' + (S.boksTaender ? ' disabled' : '') + ' data-act="boks-nykode">' +
@@ -2389,7 +2390,7 @@ function invitKort(){
   var l = S.tbudListe;
   if (!Array.isArray(l) || !l.length) return '';
   return l.map(function(b){
-    return '<div class="kort sc-op" style="text-align:left;border-left:3px solid var(--guld);margin-top:10px">' +
+    return '<div class="kort sc-op" style="text-align:left;--tone:var(--guld);margin-top:10px">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">INVITATION</div>' +
       '<div style="font-size:17px;font-weight:800;margin-top:4px">' + esc(b.klub || "") + '</div>' +
       '<div class="lille" style="color:var(--daempet)"><span>' + esc("fra " + (b.fra_navn || "klubben")) + '</span> · <span>' + (b.rolle === "admin" ? "som cheftræner" : "som træner") + '</span></div>' +
@@ -2736,7 +2737,7 @@ function impFejlTekst(f, mod){
 }
 function prgImport(prg){
   var im = S.imp || {};
-  var h = '<div class="kort" style="border-left:3px solid var(--guld)"><div class="eyebrow">📥 IMPORTÉR FRA EXCEL</div>' +
+  var h = '<div class="kort" style="--tone:var(--guld)"><div class="eyebrow">📥 IMPORTÉR FRA EXCEL</div>' +
     '<p class="lille" style="margin:6px 0 8px">Én række pr. pas. Kolonnerne: <b>ugedag · start · slut · bane · træner · medtræner · titel · spillere · uden app</b>. Kopiér rækkerne i Excel og sæt dem ind her — spillere adskilles med <b>;</b>, og «Bertil B (2)» sætter hold 2. Ukendte navne gemmes ikke; de listes, så du kan invitere dem.</p>' +
     '<textarea class="felt" data-felt="impTekst" rows="7" spellcheck="false" placeholder="tir\t17:00\t18:00\t10&amp;11\tJonas\tMette\tU14 Elite\tAlma Askholm; Bertil B (2)\t2">' + esc(S.impTekst || "") + '</textarea>' +
     '<div class="raekke" style="margin-top:8px"><button class="knap" style="background:var(--grus)"' + (im.koerer ? ' disabled' : '') + ' data-act="prg-imp-tjek">' + (im.koerer && !im.skarp ? '⏳ …' : 'Tjek rækkerne') + '</button>' +
@@ -2748,7 +2749,7 @@ function prgImport(prg){
   var lagt = im.lagt;
   var fejlRk = Object.keys(fejl.reduce(function(o, f){ o[f.raekke] = 1; return o; }, {})).length;   /* rækker med mindst én fejl */
   var klar = Math.max(0, (sv.pas_i_alt || 0) - fejlRk);   /* det, der faktisk kan lægges ind — ikke motorens format-tal */
-  h += '<div class="kort" style="border-left:3px solid ' + (fejl.length ? 'var(--tabt)' : (lagt ? 'var(--vundet)' : 'var(--is)')) + '">' +
+  h += '<div class="kort" style="--tone:' + (fejl.length ? 'var(--tabt)' : (lagt ? 'var(--vundet)' : 'var(--is)')) + '">' +
     '<div class="eyebrow">' + (lagt ? '✓ LAGT I KLADDEN' : 'TJEKKET') + '</div>' +
     '<div style="font-size:14px;font-weight:800;margin-top:4px">' + (lagt ? lagt.pas_oprettet + ' pas lagt i kladden · ' + lagt.deltagere + ' spillere' + (lagt.kladde_ryddet ? ' · kladden ryddet (' + lagt.kladde_ryddet + ' pas)' : '')
       : klar + ' pas klar' + (fejlRk ? ' · <span style="color:var(--tabt)">' + fejlRk + (fejlRk === 1 ? ' række med fejl' : ' rækker med fejl') + '</span>' : '') + ' · ' + fu.length + ' spillere fundet' + (uk.length ? ' · ' + uk.length + ' ukendte' : '') + (fl.length ? ' · ' + fl.length + ' flertydige' : '')) + '</div>';
@@ -2781,7 +2782,7 @@ function traenerProgram(){
   if (S.prgVisning === "import") return prgImport(prg);
   if (S.prgVisning === "timer") return prgTimer(prg);
   if (S.prgVisning === "udstil") return prgUdstil();   /* v6.6.0 */
-  h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
+  h += '<div class="kort" style="--tone:var(--guld)">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
       '<div><div class="eyebrow">📅 UGESKEMAET</div>' +
       '<div style="font-size:13px;margin-top:3px">' + (S.prgHenter && !S.prg ? 'Henter …' :
@@ -2799,7 +2800,7 @@ function traenerProgram(){
   var dagens = prg.pas.filter(function(p){ return p.ugedag === S.prgUgedag; });
   // ── nyt pas
   if (S.prgNy) {
-    h += '<div class="kort" style="border-left:3px solid var(--is)"><div class="eyebrow">NYT PAS · ' + DAGE_LANG[S.prgUgedag].toUpperCase() + '</div>' + prgFormular(true) + '</div>';
+    h += '<div class="kort" style="--tone:var(--is)"><div class="eyebrow">NYT PAS · ' + DAGE_LANG[S.prgUgedag].toUpperCase() + '</div>' + prgFormular(true) + '</div>';
   } else {
     h += '<button class="knap valg" style="width:100%;margin-bottom:8px;border-style:dashed" data-act="prg-ny">+ Nyt pas ' + DAGE_LANG[S.prgUgedag] + '</button>';
   }
@@ -2813,7 +2814,7 @@ function traenerProgram(){
       '<div class="om">' + esc(pasTekst(p) || '—') + '<small>' + (n ? n + (n === 1 ? ' spiller: ' : ' spillere: ') + esc(pasDeltagerNavne(p).join(", ")) : 'ingen spillere endnu') + (p.uden_app ? ' \u00b7 +' + p.uden_app + ' uden app' : '') + '</small></div>' +
       '<div class="mrk">' + (aaben ? '✕' : '✏️') + '</div></button>';
     if (!aaben) return;
-    h += '<div class="kort" style="margin-top:-2px;border-left:3px solid var(--is)">';
+    h += '<div class="kort" style="margin-top:-2px;--tone:var(--is)">';
     h += '<div class="eyebrow">PASSET</div>' + prgFormular(false);
     // deltagerne
     var loft = 4 * Math.max(1, (String(p.bane).match(/\d+/g) || []).length);
@@ -2937,7 +2938,7 @@ function traenerRegistrer(t){
     if (vd.lokalt.length) h += '<p class="lille" style="margin:6px 0 0">' + vd.lokalt.map(function(x){ return esc(x.split(" ")[0]); }).join(', ') + ': gemt i din boks — når spilleren er i appen, rejser den med.</p>';
     if (vd.venter) h += '<p class="lille" style="margin:6px 0 0">⏳ Sender ' + vd.venter + (vd.venter === 1 ? ' vurdering …' : ' vurderinger …') + '</p>';
     h += '</div>';
-    if (vd.fejl.length) h += '<div class="kort" style="border-left:3px solid var(--tabt)"><p class="lille" style="margin:0;color:var(--tabt)">Vurderingen kom ikke frem hos ' + vd.fejl.map(function(f){ return esc(f.navn.split(" ")[0]) + ' (' + esc(f.t) + ')'; }).join(', ') + '.' + (r.kilde === "gruppe" ? ' Scoren står i din boks.' : ' Fremmødet er gemt.') + '</p>' +
+    if (vd.fejl.length) h += '<div class="kort" style="--tone:var(--tabt)"><p class="lille" style="margin:0;color:var(--tabt)">Vurderingen kom ikke frem hos ' + vd.fejl.map(function(f){ return esc(f.navn.split(" ")[0]) + ' (' + esc(f.t) + ')'; }).join(', ') + '.' + (r.kilde === "gruppe" ? ' Scoren står i din boks.' : ' Fremmødet er gemt.') + '</p>' +
       '<button class="knap valg" style="width:100%;margin-top:8px" data-act="reg-vurd-igen">Send vurderingerne igen</button></div>';
     h += '<button class="knap valg" style="width:100%;margin-top:10px" data-act="reg-igen">Vurdér et andet pas eller en gruppe</button>';
     return h;
@@ -3362,7 +3363,7 @@ function traenerRummet() {
   if (ov) h += '<p class="lille" style="margin:0 0 10px;color:var(--daempet);font-weight:700">' + esc(ov) + '</p>';
   const fast = S.snakFast;
   if (fast && fast.id) {
-    h += '<div style="display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:9px 12px;border-left:3px solid var(--guld);background:rgba(240,207,97,.08);border-radius:0 12px 12px 0">' +
+    h += '<div class="tonet" style="display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:9px 12px;--tone:var(--guld);border-radius:12px">' +
       '<div style="flex:1;min-width:0"><div style="font-size:14px;line-height:1.4;overflow-wrap:anywhere">' + esc("📌 " + (fast.tekst || "")) + '</div>' +
         '<div class="lille" style="margin:2px 0 0;color:var(--daempet)">' + esc((fast.navn || "") + " · " + snakKlokke(fast.t)) + '</div></div>' +
       '<button class="knap valg" style="flex:none;min-height:34px;padding:0 12px;font-size:12px" data-act="snak-loesn">Løsn</button></div>';
@@ -3505,7 +3506,7 @@ function autoTrup(){
   S.autoTrupBesked = nye.join(", ") + " sagde ja og står nu i din trup under «Uden gruppe».";
 }
 function budKortet() {
-  let h = '<div class="kort" style="border-left:3px solid var(--guld)">' +
+  let h = '<div class="kort" style="--tone:var(--guld)">' +
     '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">📲 INVITÉR SPILLER</div>' +
     '<div style="height:10px"></div>' +   /* v6.10.0 · princip 101: ingen forklaring — feltet og knappen guider */
     '<div style="display:flex;gap:8px;align-items:center">' +
@@ -3623,7 +3624,7 @@ function adgangHent(){
   if (S.minRolle === "admin") { try { traenerSendteHent(); } catch (_e) {} }
 }
 function traenerBudKortet(){
-  var h = '<div class="kort" style="border-left:3px solid var(--guld)">' +
+  var h = '<div class="kort" style="--tone:var(--guld)">' +
     '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">🧑‍🏫 INVITÉR TRÆNER</div>' +
     '<div style="height:10px"></div>' +
     '<div style="display:flex;gap:8px;align-items:center">' +
@@ -3657,7 +3658,7 @@ function traenerBudKortet(){
   return h + '</div>';
 }
 function adgangListeKortet(){
-  var h = '<div class="kort" style="border-left:3px solid var(--is)">' +
+  var h = '<div class="kort" style="--tone:var(--is)">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">👥 HVEM HAR ADGANG</div>' +
       '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="fam-liste">' +
@@ -3687,7 +3688,7 @@ function adgangListeKortet(){
    ikke har en iPhone. Og de skal bruge web-appen så.»). Til en spiller uden StreakTennis: vis koden, kopiér eller del
    linket. Spilleren opretter sig, og træneren inviterer på brugernavnet i kortet ovenfor — linket åbner kun appen. */
 function appLinkKort(){
-  var h = '<div class="kort" style="border-left:3px solid var(--is)">' +
+  var h = '<div class="kort" style="--tone:var(--is)">' +
     '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--is)">📱 NY I STREAKTENNIS?</div>' +
     '<p class="lille" style="margin:8px 0 0">Vis koden, eller send linket. Når spilleren har oprettet sig, inviterer du på brugernavnet.</p>';
   h +=   /* v6.16.2 · koden står med det samme — rummet er koden */
@@ -3742,7 +3743,7 @@ function indstNye(){   /* v6.8.0 · 📥 nye spillere — familier, der har tast
       //   ramte derfor aldrig listen (målt 1/9 kl. 08.16).
       const _ny = nyeSpillere();
       const _ialt = _ny.venter.length + _ny.nye.length;
-      h += '<div class="kort" style="border-left:3px solid ' + (_ialt ? 'var(--guld)' : 'var(--kant)') + '">' +
+      h += '<div class="kort" style="--tone:' + (_ialt ? 'var(--guld)' : 'var(--kant)') + '">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
           '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udce5 NYE SPILLERE' +
           (_ialt ? ' <span style="background:var(--guld);color:var(--nat);padding:1px 6px;border-radius:7px;margin-left:5px">'+_ialt+'</span>' : '') + '</div>' +
@@ -3788,7 +3789,7 @@ function indstForbindelse(){   /* v6.8.0 · ⚙️ forbindelse: klubkoden + (bag
     // ── OPSÆTNING · klubkoden bor på enheden, aldrig i koden
   const kk = lager.hent("klubkode","");
   const antalN = Object.keys(S.noegler||{}).length;
-  h += '<div class="kort" style="border-left:3px solid ' + (kk ? 'var(--vundet)' : 'var(--guld)') + '">' +
+  h += '<div class="kort" style="--tone:' + (kk ? 'var(--vundet)' : 'var(--guld)') + '">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">⚙️ FORBINDELSE</div>' +
       '<span data-act="ops-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.opsAaben?'✕':'✏️') + '</span></div>' +
@@ -3824,7 +3825,7 @@ function indstSkyen(){   /* v6.8.0 · ☁️ skyen — trænerens boks, låst me
     {
       var _bn = !!lager.hent("boksnoegle", ""), _bs = S.boksStatus || {}, _st = boksStempler();
       var _tid = function(iso){ try { var d = new Date(iso); if (isNaN(d)) return ""; return d.getDate() + "/" + (d.getMonth()+1) + " " + String(d.getHours()).padStart(2,"0") + "." + String(d.getMinutes()).padStart(2,"0"); } catch (_e) { return ""; } };
-      h += '<div class="kort" style="border-left:3px solid ' + (_bn ? 'var(--vundet)' : 'var(--guld)') + '">' +
+      h += '<div class="kort" style="--tone:' + (_bn ? 'var(--vundet)' : 'var(--guld)') + '">' +
         '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\u2601\ufe0f SKYEN</div>' +
         '<p class="lille" style="margin:6px 0 8px">Din trup, dine grupper, vurderinger og evalueringer gemmes i skyen \u2014 l\u00e5st med dit kodeord. Mister du telefonen, logger du bare ind p\u00e5 en ny. Heller ikke vi kan l\u00e6se boksen.</p>';
       if (!_bn) {
@@ -3879,7 +3880,7 @@ function indstKonto(){   /* v6.8.0 · 👤 din konto — log ud · skift klub ·
   // ══════════════════════════════════════════════════════════════════
   {
     var _k = S.konto || lager.hent("konto", null);
-    h += '<div class="kort" style="border-left:3px solid ' + (_k ? 'var(--vundet)' : 'var(--guld)') + '">' +
+    h += '<div class="kort" style="--tone:' + (_k ? 'var(--vundet)' : 'var(--guld)') + '">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udc64 DIN KONTO</div>';
     if (_k) {
       h += '<p class="lille" style="margin:7px 0 0">Logget ind som <b>' + esc(_k.brugernavn) + '</b> \u00b7 ' +
@@ -3911,7 +3912,7 @@ function indstSprog(){   /* v6.8.0 · 🌐 sprog: skærmen og evalueringerne */
     // ── SPROG · v5.0.0
   {
     var ev = function(v, tekst){ return '<button class="knap valg' + (EVALSPROG === v ? ' til' : '') + '" style="flex:1;min-height:40px;padding:6px 10px;font-size:12.5px" data-act="evalsprog-saet" data-v="' + v + '">' + tekst + '</button>'; };
-    h += '<div class="kort" style="border-left:3px solid var(--kant)">' +
+    h += '<div class="kort" style="--tone:var(--kant)">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83c\udf10 SPROG \u00b7 LANGUAGE</div>' +
       '<p class="lille" style="margin:6px 0 8px">Sk\u00e6rmens sprog f\u00f8lger denne telefon. Evalueringerne skrives i det sprog, spillerne l\u00e6ser \u2014 det beh\u00f8ver ikke v\u00e6re dit.</p>' +
       '<div class="lille" style="font-weight:700;margin-bottom:4px">Sk\u00e6rmen</div>' + sprogVaelger(false) +
@@ -3928,7 +3929,7 @@ function indstStreak(){   /* v6.8.0 · 🔥 streak-stigen pr. gruppe */
     (S.grupper||[]).forEach(function(g){ if (grupperILive.indexOf(g.navn) === -1) grupperILive.push(g.navn); });
     (S.truppen||[]).forEach(function(p){ if (p.gruppe && p.gruppe !== "Mit hold" && grupperILive.indexOf(p.gruppe) === -1) grupperILive.push(p.gruppe); });
     const antalTil = S.stigeHold.length;
-    h += '<div class="kort" style="border-left:3px solid ' + (antalTil ? 'var(--guld)' : 'var(--kant)') + '">' +
+    h += '<div class="kort" style="--tone:' + (antalTil ? 'var(--guld)' : 'var(--kant)') + '">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udd25 STREAK</div>' +
       '<p class="lille" style="margin:6px 0 0">Holdets tr\u00e6ningsstreaks som venlig konkurrence i spillernes app \u2014 kun fornavne og tal. FRA som standard; du v\u00e6lger til pr. hold, og hver familie skal OGS\u00c5 selv sige ja i deres app (og i for\u00e6ldresamtykkets stige-punkt), f\u00f8r deres barn kan ses.</p>';
     if (!grupperILive.length) {
@@ -3953,7 +3954,7 @@ function indstTrup(){   /* v6.8.0 · 👥 min trup */
     const egen = (S.truppen||[]).length;
     const antG = egen ? Object.keys(DATA.grupper).length : 0;
     const medN = (S.truppen||[]).filter(function(x){return x.noegle;}).length;
-    h += '<div class="kort" style="border-left:3px solid ' + (egen ? 'var(--vundet)' : 'var(--guld)') + '">' +
+    h += '<div class="kort" style="--tone:' + (egen ? 'var(--vundet)' : 'var(--guld)') + '">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
         '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udc65 MIN TRUP</div>' +
         '<span data-act="trup-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.trupAaben?'\u2715':'\u270f\ufe0f') + '</span></div>' +
@@ -4059,7 +4060,7 @@ function spejlFliseStatus(){
 function indstSpejl(){
   if (S.spejl.aaben) return spejlVisning(S.spejl.aaben);
   var _bn = !!lager.hent("boksnoegle", ""), _k = S.konto || lager.hent("konto", null), _til = lager.hent("spejl-til", ""), l = S.spejl.liste;
-  var h = '<div class="kort" style="border-left:3px solid ' + (_til ? 'var(--is)' : 'var(--grus)') + '">' +
+  var h = '<div class="kort" style="--tone:' + (_til ? 'var(--is)' : 'var(--grus)') + '">' +
     '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🪞 DEL MIN SKÆRM</div>' +
     '<p class="lille" style="margin:6px 0 8px">Den, du deler med, kan se din trup, dine grupper, vurderinger og evalueringer — som på din egen skærm, men kan ikke ændre noget. Det låses op på modtagerens telefon — vi kan stadig ikke læse det.</p>';
   if (!_k) h += '<p class="lille" style="margin:0;color:var(--guld)">Deling kræver en konto — log ind under 👤 DIN KONTO.</p>';
@@ -4093,7 +4094,7 @@ function spejlVisning(a){
   trup.forEach(function(p){ var g = String(p.gruppe || "").trim(); if (g === "Mit hold") g = ""; if (!g) g = UDEN_GRUPPE; if (!gr[g]) { gr[g] = { aargang: "", spillere: [] }; raekke.push(g); } gr[g].spillere.push(p.navn); });
   raekke = raekke.filter(function(g){ return g !== UDEN_GRUPPE; }).concat(gr[UDEN_GRUPPE] ? [UDEN_GRUPPE] : []);
   var senest = {}; vurd.forEach(function(v){ if (!v || !v.spiller || !OMRNAVN[v.omraade] || typeof v.score !== "number") return; var k = v.spiller + "|" + v.omraade; if (!senest[k] || String(senest[k].dato) < String(v.dato)) senest[k] = v; });
-  var h = '<div class="kort" style="border-left:3px solid var(--is)"><div style="display:flex;align-items:center;gap:8px">' +
+  var h = '<div class="kort" style="--tone:var(--is)"><div style="display:flex;align-items:center;gap:8px">' +
     '<span style="flex:1;min-width:0"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🪞 SPEJL AF ' + esc(String(a.navn || a.fra).toUpperCase()) + '</div>' +
     '<span class="lille">' + esc(a.klub || "") + (a.stempel ? ' · gemt ' + esc(boksTid(a.stempel)) : '') + ' · læs-kun</span></span>' +
     '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="spejl-luk">Luk spejlet</button></div></div>';
@@ -4152,7 +4153,7 @@ function traenerGrupper(t){
   // ⭐⭐ v5.0.0 · GRUPPERNE STYRES HER. Kun når truppen er trænerens egen —
   //   eksempeldataene er eksempler, ikke noget man omdøber.
   {   // v5.1.0 · altid — også før den første spiller, ellers kan den første gruppe ikke oprettes
-    h += '<div class="kort" style="border-left:3px solid var(--guld)">' +
+    h += '<div class="kort" style="--tone:var(--guld)">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
         '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udc65 GRUPPER</div>' +
         '<span data-act="grp-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.grpAaben ? '\u2715' : '\u270f\ufe0f') + '</span></div>' +
@@ -4329,7 +4330,7 @@ function spillerDetalje(navn){
   const mine = S.fokuspunkter[navn] || [];
   const alle = Object.entries(KATEGORIER);
   const navnPaa = id => { for (const [,liste] of alle) { const k = liste.find(x=>x.id===id); if (k) return k.navn; } return id; };
-  h += '<div class="kort" style="border-left:3px solid var(--is)">' +
+  h += '<div class="kort" style="--tone:var(--is)">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🎯 FOKUSPUNKTER</div>' +
       '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="fp-aabn" data-v="'+esc(navn)+'">' +
@@ -4371,7 +4372,7 @@ function spillerDetalje(navn){
   const omr = KONFIG.omraader.filter(o=>(s.vurdering||{})[o.id]);
   if (omr.length){
     const svag = omr.slice().sort((a,b)=>s.vurdering[a.id].score - s.vurdering[b.id].score)[0];
-    h += '<div class="kort" style="border-left:3px solid var(--grus)"><div class="eyebrow" style="color:var(--grus)">🎯 DATA-DREVET FOKUS</div>' +
+    h += '<div class="kort" style="--tone:var(--grus)"><div class="eyebrow" style="color:var(--grus)">🎯 DATA-DREVET FOKUS</div>' +
       '<p style="margin:6px 0 0;font-size:13px">Laveste score er <b>'+svag.emoji+' '+esc(svag.navn)+'</b> ('+s.vurdering[svag.id].score+'/10). Sæt træningsfokus her — og følg med i spillerens kamp-app, om det flytter sig.</p></div>';
   }
   return h;
@@ -4425,7 +4426,7 @@ function miniRing(label, pct){
 function faellesLag(s){
   if (!s.kampliste || !s.kampliste.length) return "";
   const st = s.statistik || {};
-  let h = '<div class="kort" style="border-left:3px solid var(--is)"><div class="eyebrow" style="color:var(--is)">\ud83d\udd17 F\u00c6LLES LAG \u2014 FRA KAMP-APP\u0027EN</div>';
+  let h = '<div class="kort" style="--tone:var(--is)"><div class="eyebrow" style="color:var(--is)">\ud83d\udd17 F\u00c6LLES LAG \u2014 FRA KAMP-APP\u0027EN</div>';
   // Fuld statistik
   h += '<div class="grid2" style="margin-top:8px">' +
     mini("Point vundet", (st.pointPct||0)+"%") +
@@ -4482,7 +4483,7 @@ function traenerVurder(t){
         '" data-act="saet-ugefokus" data-v="' + o.id + '">' +
         '<span class="ik">' + o.ikon + '</span><b>' + o.navn.toUpperCase() + '</b>' +
         '<small>' + (valgt===o.id ? 'ugens fokus' : 'vælg som fokus') + '</small></button>').join('') + '</div>';
-    if (valgt) h += '<div class="kort" style="border-left:3px solid var(--guld);margin-top:12px">' +
+    if (valgt) h += '<div class="kort" style="--tone:var(--guld);margin-top:12px">' +
       '<p class="lille" style="margin:0">Alle vurderinger denne uge kobles til <b>' +
       UGEOMRAADER.find(o=>o.id===valgt).navn.toLowerCase() + '</b>. Tryk igen for at fjerne.</p></div>';
     return h;

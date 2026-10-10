@@ -388,7 +388,7 @@ const GUIDE = [
   ["🤝 Venner og rummet","Find en ven på brugernavn; begge siger ja. Venner ser hinandens streaks og kan følge en kamp live. Et rum er en flok venner samme sted. Tryk på en besked for at rette den; træk den til venstre for at slette."],
   ["👪 Dit team","De mennesker, du selv inviterer ind — en forælder, en træner. De ser dine kampe, din træning og dine analyser."],
   ["📡 Live — sådan følger man med","Under kampen: tryk 'Følg fra sofaen' → 'Del kampen'. Du får en kode og et link; alle med linket ser kampen bold for bold, mens den spilles — og intet andet. Tryk 'Stop', og koden holder op med at virke."],
-  ["🏛 Klub og planer","En klubnøgle kobler dig til din træner i StreakCoach. Basis er gratis (streak, kampe, venner — og 3 AI-analyser og 3 live-kampe at prøve). Fuld giver 40 analyser om måneden og live-deling. Hvad vi gemmer, og hvordan, står på betingelses-siden — ikke her."],
+  ["🏛 Klub og planer","Din klub inviterer dig på dit brugernavn, og så ser din træner dig i StreakCoach. Basis er gratis (streak, kampe, venner — og 3 AI-analyser og 3 live-kampe at prøve). Fuld giver 40 analyser om måneden og live-deling. Hvad vi gemmer, og hvordan, står på betingelses-siden — ikke her."],
   ["📲 Læg appen på hjemmeskærmen","iPhone: åbn StreakTennis i Safari → del-knappen → 'Føj til hjemmeskærm'. Så ligger den som en app — og notifikationer virker kun derfra."],
   ["🟠🧊 Hvorfor 'Grus & Is'?","Appens tema er hele filosofien i tre ord: GRUS er underlaget — sommergruset på klubbens baner og ved mesterskaberne, Nadal-mønstrenes hjemmebane, og kridtstregen i kampbilledet, hvor pointene sætter fodspor. IS er det kolde hoved — Sinners 'samme ansigt ved 40-0 og 0-40', rutinerne og 🧊-nulstillingen. Underlaget, der spilles på, og temperamentet, der vindes med."],
 ];
@@ -453,7 +453,7 @@ const GUIDE_EN = [
   ["🤝 Friends and the room","Find a friend by username; both say yes. Friends see each other's streaks and can follow a match live. A room is a bunch of friends in one place. Tap a message to edit it; swipe it left to delete."],
   ["👪 Your team","The people you invite in — a parent, a coach. They see your matches, training and analyses."],
   ["📡 Live — how to follow","During the match: tap 'Follow from the sofa' → 'Share the match'. You get a code and a link; everyone with the link sees the match ball by ball while it is played — and nothing else. Tap 'Stop', and the code stops working."],
-  ["🏛 Club and plans","A club key connects you to your coach in StreakCoach. Basic is free (streak, matches, friends — and 3 AI analyses and 3 live matches to try). Full gives 40 analyses a month and live sharing. What we keep and how is written on the terms page — not here."],
+  ["🏛 Club and plans","Your club invites you by username, and then your coach sees you in StreakCoach. Basic is free (streak, matches, friends — and 3 AI analyses and 3 live matches to try). Full gives 40 analyses a month and live sharing. What we keep and how is written on the terms page — not here."],
   ["📲 Put the app on your home screen","iPhone: open StreakTennis in Safari → share button → 'Add to Home Screen'. Then it sits there like an app — and notifications only work from there."],
   ["🟠🧊 Why 'Clay & Ice'?","The app's theme is the whole philosophy in three words: CLAY is the surface — the summer clay at the club and at championships, the home ground of Nadal's patterns, and the chalk line in the match view where the points leave footprints. ICE is the cool head — Sinner's 'same face at 40-0 and 0-40', the routines and the 🧊 reset. The surface you play on, and the temperament you win with."],
 ];
@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.11.1 · 9. oktober 2026";
+const VERSION = "v5.11.2 · 10. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -1228,8 +1228,9 @@ function ugeMaal(fysLog) {
 //   Uden en uge: det gamle mål. ⛔ ugeMaal() ovenfor regner streaken, synken sender til træneren — den røres ikke.
 function ugeMaalVis() {
   const plan = S.ugeplan || [];
-  if (!plan.length) { const m0 = ugeMaal(S.fysLog || []); m0.minUge = false; return m0; }
-  const MAAL = plan.length, taelling = {};
+  const klubPas = (S.klubProgram && Array.isArray(S.klubProgram.pas)) ? S.klubProgram.pas : [];   /* v5.11.2 · klubbens program tæller med i ugens mål */
+  if (!plan.length && !klubPas.length) { const m0 = ugeMaal(S.fysLog || []); m0.minUge = false; return m0; }
+  const MAAL = plan.length + klubPas.length, taelling = {};
   (S.ttLog || []).concat(S.fysLog || []).forEach(function(e){ if (e && e.d) { const k = ugeNoegle(String(e.d).slice(0, 10)); taelling[k] = (taelling[k] || 0) + 1; } });
   const nuISO = dkDato(0), denneUge = taelling[ugeNoegle(nuISO)] || 0;
   let streak = denneUge >= MAAL ? 1 : 0;
@@ -1481,7 +1482,7 @@ function _minUgeHero(EN) {
 // ⭐ v5.11.0 · en post, klubben har skrevet (REGISTRÉR i StreakCoach): id «klub-<pas>-<dato>».
 function erKlubPost(e) { return !!e && String(e.id || "").indexOf("klub-") === 0; }
 function _dinTraeningKort(EN) {
-  if (!egenNoegle()) return "";
+  if (!traeningNoegle()) return "";
   if (!S.klubProgramHenter && (!S.klubProgramTid || Date.now() - S.klubProgramTid > 600000)) setTimeout(function(){ A.klubProgramHent(); }, 0);
   const kp = S.klubProgram;
   const top = '<div class="kort" style="border-left:3px solid var(--vundet)">' +
@@ -2643,8 +2644,9 @@ const TEAMBUD_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/team-
 function egenNoegle() { try { return window.localStorage.getItem("sai-spillernoegle") || ""; } catch (_e) { return ""; } }
 // ⭐ v5.11.0 · DIN TRÆNING (trin 3) — klubbens program for spilleren. traening · mit-program med spillernøglen.
 const TRAENING_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/traening";
+function traeningNoegle() { return VISNING === "team" ? String(S.spillerNoegle || "") : egenNoegle(); }   /* v5.11.2 · teamet spørger for SPILLEREN */
 async function traeningKald(handling, krop) {
-  const sn = egenNoegle();
+  const sn = traeningNoegle();
   if (!sn) return { fejl: "mangler-noegle" };
   const st = new AbortController(); const ur = setTimeout(() => st.abort(), 20000);
   try {
@@ -11173,21 +11175,21 @@ function _tegn() {
           (S.sprog === "en"
             ? _b("What lives on the phone", "Your notes and all free text stay on the phone. Analyses are computed from numbers — never from what you write.") +
               _b("The backup", "Your matches (every ball, the result, the analysis) and your development letter are kept readable with us — without opponents’ names and without your notes — so they come back with your account alone. Names and notes are kept only in a box locked with your password; we cannot open it.") +
-              _b("What the club sees", "With a club key, your club\u2019s coach sees the full name you write under Your profile \u2014 and your matches, training and assessments. Without a club, nobody sees the full name. Friends never do. If you're on a squad in the club's training programme, your club can write a training session into your log when you've attended \u2014 date and length.") +
+              _b("What the club sees", "If you are in a club, your club\u2019s coach sees the full name you write under Your profile \u2014 and your matches, training and assessments. Without a club, nobody sees the full name. Friends never do. If you're on a squad in the club's training programme, your club can write a training session into your log when you've attended \u2014 date and length. If your coach writes the evaluation in a language other than yours, it is translated by the same service that writes the match analysis \u2014 with your name removed before it is sent, and put back afterwards.") +
               _b("What friends see", "Your nickname, your username, your avatar, the few words you may write about yourself (never shown to anyone but friends), your streak and — while a match is live — the score. Never your messages. If you share a match (live or from the archive), the score, tournament and opponent travel with it; friends see the opponent shortened.") +
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
               _b("Search", "Approved players can find you by searching your username — the result shows username, club and birth year. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
               _b("Messages", "A message disappears a day after your friend has read it — never before. At most 200 per conversation, and after 30 days at the latest. Delete removes it for both of you. Notifications show a name and a place — never content.") +
-              _b("Price", "With a club key the club pays — and free streaming can be added on top for 49 kr/month. Basic is free and includes 3 AI analyses and 3 live-streamed matches in total; after that one match can be bought for 20 kr (live + AI analysis). Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month — an extra live match is 15 kr. Full + free streaming is 98 kr/month with live and no limit. Watching is always free. " + (PLATFORM.betaling === "apple" ? "You buy through the App Store: Apple charges the first month when you buy, then every month. You cancel under your Apple subscriptions." : "You pay with MobilePay right in the app: the first month is charged when you buy, then every month. You cancel in MobilePay. The buyer must be 18 or over.")) +
+              _b("Price", "If you are in a club, the club pays — and free streaming can be added on top for 49 kr/month. Basic is free and includes 3 AI analyses and 3 live-streamed matches in total; after that one match can be bought for 20 kr (live + AI analysis). Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month — an extra live match is 15 kr. Full + free streaming is 98 kr/month with live and no limit. Watching is always free. " + (PLATFORM.betaling === "apple" ? "You buy through the App Store: Apple charges the first month when you buy, then every month. You cancel under your Apple subscriptions." : "You pay with MobilePay right in the app: the first month is charged when you buy, then every month. You cancel in MobilePay. The buyer must be 18 or over.")) +
               _b("Leaving", "Log out wipes the phone. Under Your account you can delete the account yourself — everything is deleted at once" + (PLATFORM.betaling === "apple" ? ". A subscription bought in the App Store does not stop by itself — cancel it under your Apple subscriptions. It cannot be undone." : ", including a subscription in MobilePay. It cannot be undone."))
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
               _b("Sikkerhedskopien", "Jeres kampe (hver bold, resultatet, analysen) og udviklingsbrevet gemmes læsbart hos os — uden modstandernes navne og uden jeres noter — så de kommer tilbage med kontoen alene. Navne og noter gemmes kun i en boks, der er låst med jeres kodeord; den kan vi ikke åbne.") +
-              _b("Hvad klubben ser", "Med en klubnøgle ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig. Er du på et hold i klubbens træningsprogram, kan din klub skrive et træningspas i din log, når du er mødt \u2014 dato og længde.") +
+              _b("Hvad klubben ser", "Er du med i en klub, ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig. Er du på et hold i klubbens træningsprogram, kan din klub skrive et træningspas i din log, når du er mødt \u2014 dato og længde. Skriver din træner evalueringen på et andet sprog end dit, oversættes den af den samme tjeneste, der skriver kampanalysen \u2014 med dit navn fjernet, før den sendes, og sat på igen bagefter.") +
               _b("Hvad venner ser", "Kaldenavn, brugernavn, avatar, de få ord I selv skriver om jer (vises kun for venner — aldrig i søgning), streaken og — mens en kamp er live — stillingen. Aldrig jeres beskeder. Deler I en kamp (live eller fra arkivet), rejser stillingen, turneringen og modstanderens navn med — venner ser modstanderen forkortet.") +
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
               _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises brugernavn, klub og årgang. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
               _b("Beskeder", "En besked forsvinder et døgn efter, din ven har læst den — aldrig før. Højst 200 pr. samtale, og senest efter 30 dage. Slet fjerner for jer begge. Notifikationer viser navn og sted — aldrig indhold.") +
-              _b("Prisen", "Med klubnøgle betaler klubben — og fri streaming kan lægges oven på for 49 kr/md. Basis er gratis og rummer 3 AI-analyser og 3 live-delte kampe i alt; derefter kan én kamp købes for 20 kr (live + AI-analyse). Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — en ekstra live-kamp koster 15 kr. Fuld + fri streaming koster 98 kr/md med live uden loft. At se med er altid gratis. " + (PLATFORM.betaling === "apple" ? "I køber gennem App Store: Apple trækker første måned, når I køber, og derefter hver måned. I opsiger under jeres Apple-abonnementer." : "I betaler med MobilePay direkte i appen: første måned trækkes, når I køber, og derefter hver måned. I opsiger i MobilePay. Den, der køber, skal være fyldt 18.")) +
+              _b("Prisen", "Er du med i en klub, betaler klubben — og fri streaming kan lægges oven på for 49 kr/md. Basis er gratis og rummer 3 AI-analyser og 3 live-delte kampe i alt; derefter kan én kamp købes for 20 kr (live + AI-analyse). Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — en ekstra live-kamp koster 15 kr. Fuld + fri streaming koster 98 kr/md med live uden loft. At se med er altid gratis. " + (PLATFORM.betaling === "apple" ? "I køber gennem App Store: Apple trækker første måned, når I køber, og derefter hver måned. I opsiger under jeres Apple-abonnementer." : "I betaler med MobilePay direkte i appen: første måned trækkes, når I køber, og derefter hver måned. I opsiger i MobilePay. Den, der køber, skal være fyldt 18.")) +
               _b("Vejen ud", "Log ud rydder telefonen. Under Din konto kan du slette kontoen selv — alt slettes med det samme" + (PLATFORM.betaling === "apple" ? ". Et abonnement købt i App Store stopper ikke af sig selv — opsig det under dine Apple-abonnementer. Det kan ikke fortrydes." : ", også et abonnement i MobilePay. Det kan ikke fortrydes."))) +
           '<p class="lille" style="margin:4px 0 0;opacity:.6">StreakTennis · SportsAInalytics · CVR 40524002<br>' + HANDEL.mail + ' \u00b7 ' + HANDEL.tlf + '</p>' +
           '<p class="lille" style="margin:8px 0 0"><a href="' + HANDEL.url + '" target="_blank" rel="noopener" data-handelsbetingelser="2" style="color:var(--is)">' + (S.sprog === "en" ? "Terms of sale \u2192" : "Handelsbetingelser \u2192") + '</a></p>' +

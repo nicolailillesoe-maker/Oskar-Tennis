@@ -563,6 +563,27 @@ try { const _kn = lager.hent("klubnavn", ""); if (_kn) KONFIG.klub = _kn; } catc
 // ══════════════════════════════════════════════════════════════════════
 const SYNC_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/spiller-sync";
 const EVAL_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-evaluering";
+const OVERSAET_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-oversaet";   /* v6.16.5 · evalueringen på spillerens sprog */
+// ⭐ v6.16.5 · EVALUERINGEN OVERSÆTTES VED AFSENDELSE (Nicolai 10/10, Julie OK samme dag). Udkastet skrives på trænerens
+//   sprog; er spillernes sprog (EVALSPROG) et andet, går teksten gennem analyse-oversaet v2 med trænerens nøgle — med
+//   spillerens navne maskeret (⟦N⟧ = fulde navn, ⟦M⟧ = fornavn) og sat på igen her. Fejler kaldet, sendes intet (35).
+async function oversaetEvaluering(tekst, n, til) {
+  var klub = lager.hent("klubkode", ""); if (!klub) return { fejl: "mangler-klubkode" };
+  var fornavn = String(n || "").split(" ")[0]; var masket = String(tekst);
+  if (n) masket = masket.split(String(n)).join("\u27e6N\u27e7");
+  if (fornavn) masket = masket.split(fornavn).join("\u27e6M\u27e7");
+  var st = new AbortController(); var ur = setTimeout(function(){ st.abort(); }, 60000);
+  try {
+    var r = await fetch(OVERSAET_URL, { method: "POST", headers: { "content-type": "application/json", "x-klub-noegle": klub },
+      body: JSON.stringify({ handling: "oversaet", til: til, art: "evaluering", tekst: masket.slice(0, 8000) }), signal: st.signal });
+    clearTimeout(ur);
+    var d = await r.json().catch(function(){ return {}; });
+    if (!r.ok || !d || !d.tekst) return { fejl: (d && d.kode) || ("http-" + r.status) };
+    var ud = String(d.tekst).split("\u27e6N\u27e7").join(String(n || fornavn)).split("\u27e6M\u27e7").join(fornavn);
+    ud += "\n\n" + (til === "en" ? "Translated from Danish." : "Oversat fra engelsk.");
+    return { tekst: ud };
+  } catch (_e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+}
 // ⭐⭐ v4.0.0 · NOEGLEBUNDEN HAR FAAET SIN EGEN MOTOR (30/8).
 //   `spiller-sync`s tre noegle-handlinger haardkoder `traener:false` og
 //   kan hverken se, udstede eller spaerre traenernoegler. `klub-noegler`
@@ -787,7 +808,7 @@ async function hentEvalUdkast(n) {
     const r = await fetch(EVAL_URL, {
       method: "POST",
       headers: { "content-type": "application/json", "x-klub-noegle": klub },
-      body: JSON.stringify({ sprog: EVALSPROG, spiller: sp }),
+      body: JSON.stringify({ sprog: SPROG, spiller: sp }),   /* v6.16.5 · udkastet på trænerens eget sprog */
       signal: styring.signal,
     });
     clearTimeout(ur);
@@ -1130,7 +1151,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.16.4 \u00b7 9. oktober 2026";
+const VERSION = "v6.16.5 \u00b7 10. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1475,7 +1496,10 @@ var EN = {
 "🌐 SPROG · LANGUAGE": "🌐 LANGUAGE · SPROG",
 "Skærmen": "The screen",
 "Evalueringer til spillerne": "Evaluations to the players",
-"Skærmens sprog følger denne telefon. Evalueringerne skrives i det sprog, spillerne læser — det behøver ikke være dit.": "The screen language follows this phone. Evaluations are written in the language the players read — it doesn't have to be yours.",
+"Skærmens sprog følger denne telefon, og udkastet til en evaluering skrives på det. Er spillernes sprog et andet, oversættes evalueringen, når du trykker Godkend & send.": "The screen language follows this phone, and the evaluation draft is written in it. If the players' language is different, the evaluation is translated when you tap Approve & send.",
+"⏳ Oversættes til spillerens sprog og sendes …": "⏳ Translating to the player's language and sending …",
+"Spillerens navn rejser ikke med — det sættes på igen her.": "The player's name does not travel — it is put back here.",
+"Oversættelsen kunne ikke hentes ({x}) — intet er sendt. Prøv Godkend & send igen.": "The translation could not be fetched ({x}) — nothing was sent. Try Approve & send again.",
 "Dansk": "Danish",
 "Engelsk": "English",
 "Alle spillere": "All players",
@@ -3922,7 +3946,7 @@ function indstSprog(){   /* v6.8.0 · 🌐 sprog: skærmen og evalueringerne */
     var ev = function(v, tekst){ return '<button class="knap valg' + (EVALSPROG === v ? ' til' : '') + '" style="flex:1;min-height:40px;padding:6px 10px;font-size:12.5px" data-act="evalsprog-saet" data-v="' + v + '">' + tekst + '</button>'; };
     h += '<div class="kort" style="--tone:var(--kant)">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83c\udf10 SPROG \u00b7 LANGUAGE</div>' +
-      '<p class="lille" style="margin:6px 0 8px">Sk\u00e6rmens sprog f\u00f8lger denne telefon. Evalueringerne skrives i det sprog, spillerne l\u00e6ser \u2014 det beh\u00f8ver ikke v\u00e6re dit.</p>' +
+      '<p class="lille" style="margin:6px 0 8px">Sk\u00e6rmens sprog f\u00f8lger denne telefon, og udkastet til en evaluering skrives p\u00e5 det. Er spillernes sprog et andet, overs\u00e6ttes evalueringen, n\u00e5r du trykker Godkend & send.</p>' +
       '<div class="lille" style="font-weight:700;margin-bottom:4px">Sk\u00e6rmen</div>' + sprogVaelger(false) +
       '<div class="lille" style="font-weight:700;margin:10px 0 4px">Evalueringer til spillerne</div>' +
       '<div style="display:flex;gap:6px">' + ev("da", "\ud83c\udde9\ud83c\uddf0 Dansk") + ev("en", "\ud83c\uddec\ud83c\udde7 English") + '</div></div>';
@@ -4526,6 +4550,10 @@ function traenerKvartal(t){
     return h;
   }
   const n = S.kvartalUdkast, s = DATA.spillere[n], fornavn = n.split(" ")[0];
+  if (S.kvartalSender) {   /* v6.16.5 */
+    return '<div class="kort" style="text-align:center"><h3 style="margin:0">⏳ Oversættes til spillerens sprog og sendes …</h3>' +
+      '<p class="lille" style="margin:6px 0 0">Spillerens navn rejser ikke med — det sættes på igen her.</p></div>';
+  }
   if (S.kvartalHenter) {
     return '<button class="knap valg" style="margin-bottom:10px;flex:none;padding:8px 14px" data-act="luk-kvartal">‹ Alle spillere</button>' +
       '<div class="kort" style="text-align:center"><h3 style="margin:0">⏳ Udkastet skrives …</h3>' +
@@ -4537,16 +4565,16 @@ function traenerKvartal(t){
   } else {
     // Fald-tilbage: den lokale skabelon (som før AI-koblingen 19/8)
     // v5.0.0: skabelonen følger EVALSPROG, og måneden er den, vi er i (før stod der «juni» året rundt)
-    var _md = new Date(), _mdNavn = (EVALSPROG === "en"
+    var _md = new Date(), _mdNavn = (SPROG === "en"
       ? ["January","February","March","April","May","June","July","August","September","October","November","December"]
       : ["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"])[_md.getMonth()];
-    tekst = (EVALSPROG === "en"
+    tekst = (SPROG === "en"
       ? "Hi "+fornavn+"\n\nHere is your evaluation from "+_mdNavn+" "+_md.getFullYear()+"\n\nPlayer: "+n+"\nCoach: "+t.navn+"\n"
       : "Hej "+fornavn+"\n\nHermed evaluering fra "+_mdNavn+" "+_md.getFullYear()+"\n\nSpiller: "+n+"\nTræner: "+t.navn+"\n");
     KONFIG.omraader.forEach(function(o){
       const v = (s.vurdering||{})[o.id]; if (!v) return;
       const b = skala(v.score);
-      tekst += "\n"+TE(o.navn)+"\n"+b.emoji+" "+b.min+"-"+b.max+" = "+TE(b.label)+". "+TE(v.tekst)+"\n";
+      tekst += "\n"+T(o.navn)+"\n"+b.emoji+" "+b.min+"-"+b.max+" = "+T(b.label)+". "+T(v.tekst)+"\n";   /* v6.16.5 · skabelonen på skærmens sprog */
     });
   }
   S.kvartalTekst = tekst;
@@ -4843,7 +4871,19 @@ document.addEventListener("click", function(e){
   else if (act==="luk-omraade"){ S.vurderOmraade=null; S.vurderGruppe=null; render(); }
   else if (act==="kvartal-gen"){ hentEvalUdkast(v); }
   else if (act==="luk-kvartal"){ S.kvartalUdkast=null; render(); }
-  else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekst=(ta&&ta.value)||S.kvartalTekst||""; const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } S.evalueringer=S.evalueringer||{}; S.evalueringer[n]={tekst:tekst,dato:new Date().toISOString().slice(0,10)}; lager.gem("evalueringer", S.evalueringer);
+  else if (act==="kvartal-godkend"){ const n=S.kvartalUdkast; const ta=el("evalTekst"); const tekstRaa=(ta&&ta.value)||S.kvartalTekst||"";
+    /* ⭐ v6.16.5 · spillernes sprog er et andet end skærmens → oversæt FØRST; fejler det, sendes intet, og udkastet står */
+    if (EVALSPROG !== SPROG && (S.noegler||{})[n] && !S.kvartalOversat) {
+      if (S.kvartalSender) return; S.kvartalSender = true; S.syncBesked = null; render();
+      oversaetEvaluering(tekstRaa, n, EVALSPROG).then(function(o){
+        S.kvartalSender = false;
+        if (o.fejl) { S.kvartalNote = "Oversættelsen kunne ikke hentes (" + o.fejl + ") — intet er sendt. Prøv Godkend & send igen."; render(); return; }
+        S.kvartalOversat = o.tekst; S.kvartalNote = null; render(); var _kn = document.querySelector('[data-act="kvartal-godkend"]'); if (_kn) _kn.click();
+      });
+      return;
+    }
+    const tekst = S.kvartalOversat || tekstRaa; S.kvartalOversat = null;
+    const d=DATA.spillere[n]; if(d){ d.evalSendt=tekst; d.evalNy=true; } S.evalueringer=S.evalueringer||{}; S.evalueringer[n]={tekst:tekst,dato:new Date().toISOString().slice(0,10)}; lager.gem("evalueringer", S.evalueringer);
     // v2.5 (18/8): har spilleren en NØGLE, sendes evalueringen RIGTIGT til
     // spillerens app via evaluering-gem. Uden nøgle er det demo-flowet som før.
     var _noegle = (S.noegler||{})[n];

@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.12.1 · 11. oktober 2026";
+const VERSION = "v5.12.2 · 11. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -9802,8 +9802,8 @@ function _kontoRum(kk, m, EN) {
   if (live) f += _kontoFlise("live", "kontoRum", "📡", (EN ? "LIVE MATCHES" : "LIVE-KAMPE"), (EN ? klar + " ready" : klar + " klar"), liveTalTekst(EN), "dev-kant-guld", ' data-v="live"');
   f += _kontoFlise("kopi", "kontoRum", "💾", (EN ? "BACKUP" : "SIKKERHEDSKOPI"), S.skyLaast ? (EN ? "⚠️ locked" : "⚠️ låst") : (EN ? "Automatic" : "Automatisk"),
     S.skyLaast ? (EN ? "Log in again to unlock" : "Log ind igen for at låse op") : (EN ? "Locked on this phone" : "Låst på telefonen"), S.skyLaast ? "dev-kant-roed" : "dev-kant-gron", ' data-v="kopi"');   /* v5.12.1 · et rum, ikke et hop */
-  f += _kontoFlise("kode", "kodeAabn2", "🔑", (EN ? "PASSWORD" : "KODEORD"), (EN ? "Change password" : "Skift kodeord"), (EN ? "Your login" : "Dit login"), "dev-kant-staal");
-  if (!S.logUdSpoerg) f += _kontoFlise("logud", "logUdSpoerg", "🚪", (EN ? "LOG OUT" : "LOG UD"), "", (EN ? "Everything follows your account" : "Alt følger din konto"), "dev-kant-staal");
+  f += _kontoFlise("kode", "kodeAabn2", "🔑", (EN ? "PASSWORD" : "KODEORD"), (EN ? "Change password" : "Skift kodeord"), (EN ? "Your login" : "Dit login"), "dev-kant-grus");
+  if (!S.logUdSpoerg) f += _kontoFlise("logud", "logUdSpoerg", "🚪", (EN ? "LOG OUT" : "LOG UD"), "", (EN ? "Everything follows your account" : "Alt følger din konto"), "dev-kant-grus");
   return hoved + '<div class="dev-grid" data-kontofliser="1" style="margin:4px 0 6px">' + f + '</div>' + (S.logUdSpoerg ? logud : '') + besked + slet;
 }
 /* ⭐ v5.10.4 · RUMMET SOM EGEN SKÆRM — samme ramme som betalingsskærmen (over alt andet, egen rulning). Tegnes KUN i den render,
@@ -13040,20 +13040,22 @@ function _tegn() {
       //   åbne noget. Åbnet flise spænder over begge kolonner, præcis som
       //   en åben modstander. Indholdet i hver folder er URØRT.
       const _kort = {};   /* v4.158.0 · kortene samles her og udskrives i rækkefølgen: profil · konto · klub · team · telefonen · hjælp */
+      /* ⭐⭐ v5.12.2 · INDSTILLINGERNE SOM FLISER MED FARVE OG RUM (Nicolai 11/10: «fliserne der skal gå igen i layoutet igennem hele appen»
+         · «Ikke som fliser men som en liste underneden»). Flisen står altid lukket i gitteret; det åbne korts indhold tegnes i det fælles
+         rum (#rum-skaerm) med «‹ Indstillinger» øverst — kortets krop er urørt. Farven pr. kort: */
+      const _opsKant = { spillerprofil: "dev-kant-is", konto: "dev-kant-gron", klub: "dev-kant-guld", familie: "dev-kant-is", beskeder: "dev-kant-grus",
+        hjaelp: "dev-kant-grus", profil: "dev-kant-guld", klubber: "dev-kant-guld", ejer: "dev-kant-gron", anmeld: "dev-kant-roed" };
       const _opsKort = function(id, ikon, titel, status, statusFarve, krop){
         const aaben = S.opsAaben === id;
-        return '<div class="kort dev-kant' + (aaben ? ' dev-kant-is' : '') + '" style="padding:0;overflow:hidden;margin:0;border-radius:16px' + (aaben ? ';grid-column:1/-1;border-color:var(--is)' : '') + '">' +
-          '<button data-a="opsFold" data-v="' + id + '" style="width:100%;display:flex;' +
-            (aaben ? 'flex-direction:row;align-items:center;gap:10px;min-height:52px;padding:13px 14px'
-                   : 'flex-direction:column;align-items:flex-start;gap:3px;min-height:96px;padding:15px 13px 13px') +
-            ';background:none;border:0;text-align:left;cursor:pointer;color:inherit;font:inherit">' +
-            '<span style="flex:none;font-size:' + (aaben ? '15px' : '22px') + ';line-height:1.1">' + ikon + '</span>' +
-            '<span style="' + (aaben ? 'flex:1;min-width:0;' : '') + 'font-size:' + (aaben ? '10px' : '10.5px') + ';font-weight:800;letter-spacing:1.4px;color:var(--grus);line-height:1.3">' + titel + '</span>' +
-            '<span class="lille" style="flex:none;margin:0;line-height:1.3;color:' + statusFarve + '">' + status + '</span>' +
-            (aaben ? '<span style="flex:none;color:var(--daempet);font-size:11px">\u25be</span>' : '') +
-          '</button>' +
-          (aaben ? '<div style="padding:0 14px 14px">' + krop + '</div>' : '') +
-          '</div>';
+        if (aaben) _rumAaben = { id: "ops-" + id, a: "opsFold", v: "", tilbage: (EN ? "\u2039 Settings" : "\u2039 Indstillinger"),
+          titel: ikon + " " + titel, html: '<div class="kort" style="padding:14px">' + krop + '</div>' };
+        /* flisen er en .dev-flise som i TRÆN/STATS/Din konto — IKKE et .kort: .kort's tone-regel (5.11.4) ligger efter .dev-kant-* i CSS'en
+           og åd farven (målt på skærmbilledet 11/10: klassen stod der, farven gjorde ikke) */
+        return '<button class="dev-flise dev-kant ' + (_opsKant[id] || "dev-kant-grus") + '" data-a="opsFold" data-v="' + id + '" style="min-height:96px">' +
+            '<span class="dev-ikon">' + ikon + '</span>' +
+            '<b style="font-size:11px;letter-spacing:1.4px;color:var(--grus)">' + titel + '</b>' +
+            '<small style="margin:0;color:' + statusFarve + '">' + status + '</small>' +
+          '</button>';
       };
 
       // ⭐⭐ v4.90.0 · SKIFT VISNING (Nicolai 31/8: «Som team-medlem

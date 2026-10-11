@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.11.5 · 11. oktober 2026";
+const VERSION = "v5.11.6 · 11. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -4283,19 +4283,6 @@ const A = {
   jServer: (v) => { S.j.server = v === "1"; render(); },fysSletSpoerg: (i) => { S.fysSletB = +i; render(); },
   fysSletFortryd: () => { S.fysSletB = null; render(); },
   fysSlet: (i) => { S.fysLog.splice(+i, 1); S.fysSletB = null; lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog)); render(); },
-  fysEksport: () => {
-    const nye = S.fysLog.filter((e) => !e.x);
-    if (!nye.length) { S.fysEks = "(Ingen nye pas siden sidste eksport — alt er allerede sendt.)"; render(); return; }
-    const antal = [0, 0, 0]; nye.forEach((e) => { if (antal[e.p] !== undefined) antal[e.p] += 1; });
-    const alt = [0, 0, 0]; S.fysLog.forEach((e) => { if (alt[e.p] !== undefined) alt[e.p] += 1; });
-    S.fysEks = ("FYSISK TRÆNING — "+SPILLER+" (nyt siden sidste eksport)\n") +
-      nye.map((e) => e.d + " · " + fysTekst(e, false)).join("\n") +
-      "\nDelta: " + nye.length + " pas (Pas 1: " + antal[0] + " · Pas 2: " + antal[1] + " · Pas 3: " + antal[2] + ")" +
-      "\nSamlet i appen: " + S.fysLog.length + " pas (Pas 1: " + alt[0] + " · Pas 2: " + alt[1] + " · Pas 3: " + alt[2] + ")";
-    S.fysLog.forEach((e) => { e.x = 1; });
-    lager.gem("sai-fysisk-log", JSON.stringify(S.fysLog));
-    render();
-  },
   fyMinJust: (v) => { S.fyMin = Math.max(10, Math.min(240, S.fyMin + (+v))); render(); },
   fyKvalVaelg: (v) => { S.fyKval = +v; render(); },
   fyTypeVaelg: (v) => { S.fyType = +v; render(); },
@@ -4715,19 +4702,6 @@ const A = {
       S.gendanBesked = "OK:" + S.gemte.length + ":" + S.fysLog.length + ":" + S.ttLog.length;
       S.gendanAaben = false; S.gendanTekst = "";
     } catch (e) { S.gendanBesked = "FEJL"; }
-    render();
-  },
-  ttEksport: () => {
-    const nye = S.ttLog.filter((e) => !e.x);
-    if (!nye.length) { S.ttEks = "(Ingen nye træninger siden sidste eksport — alt er allerede sendt.)"; render(); return; }
-    const dm = nye.reduce((a, e) => a + e.m, 0), dk = (nye.reduce((a, e) => a + e.k, 0) / nye.length).toFixed(1);
-    const tm = S.ttLog.reduce((a, e) => a + e.m, 0), tk = (S.ttLog.reduce((a, e) => a + e.k, 0) / S.ttLog.length).toFixed(1);
-    S.ttEks = ("TENNISTRÆNING — "+SPILLER+" (nyt siden sidste eksport)\n") +
-      nye.map((e) => e.d + " · " + e.m + " min · " + (e.t===1 ? "selv" : e.t===2 ? "m. træner" : "type uoplyst") + " · kvalitet " + e.k + "/10" + (e.n ? " · " + e.n : "")).join("\n") +
-      "\nDelta: " + nye.length + " træninger · " + (dm / 60).toFixed(1) + " timer · Ø " + dk + "/5 · " + nye.filter((e)=>e.t===2).length + " m. træner / " + nye.filter((e)=>e.t===1).length + " selv" +
-      "\nSamlet i appen: " + S.ttLog.length + " træninger · " + (tm / 60).toFixed(1) + " timer · Ø " + tk + "/5";
-    S.ttLog.forEach((e) => { e.x = 1; });
-    lager.gem("sai-tennis-log", JSON.stringify(S.ttLog));
     render();
   },
   vaelgHaand: (hd) => { if (hd === "venstre" || hd === "hoejre") { S.haand = hd; lager.gem("sai-haand", hd); render(); } },
@@ -13766,8 +13740,8 @@ function _tegn() {
           S.skyLaast ? "var(--tabt)" : "var(--is)",
           _budKrop(EN) +
           '<p class="lille" style="margin:0">' + (EN
-            ? "This phone holds a team key: it enters and sees data."
-            : "Denne telefon har en team-n\u00f8gle: den taster og ser data.") + '</p>' +
+            ? "You are on the team: you enter and see the player’s matches, training and analyses."
+            : "Du er med p\u00e5 teamet: du taster og ser spillerens kampe, tr\u00e6ning og analyser.") + '</p>' +   /* v5.11.6 · ingen nøgle at sende rundt (97) */
           (S.spejlVenter ? '<p class="lille" style="margin:6px 0 0;color:var(--guld)">🪞 ' + esc(S.spejlVenter.t) + '</p>' : '') +
           // ⭐ v4.146.0 · hent spillerens nyeste HER — det er teamets kort (flyttet fra SKIFT VISNING)
           (VISNING === "team"
@@ -14563,7 +14537,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
               (erKlubPost(e) ? '' : S.ttSletB === i
                 ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="ttSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="ttSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="ttSletSpoerg" data-v="'+i+'">🗑</button>') + '</div>'; }).join("") +
-          '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="ttEksport">📤 '+(EN?"Export new":"Eksportér nye")+' ('+S.ttLog.filter(function(e){return !e.x;}).length+')</button></div>';
+          '</div>';   /* v5.11.6 · eksport-knappen er væk (sende-reglen) */
         h += (function(){ var f = (S.ttLog||[]).filter(function(x){ return x._fjern; }).length;
           return f ? '<p class="lille" style="margin:6px 0 0;padding-top:6px;border-top:1px dashed var(--kant);opacity:.85">\ud83d\udcf1 '
             + f + (EN ? " session(s) came from another phone \u2014 date and length only."
@@ -14571,7 +14545,6 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         h += (S.ttLog||[]).some(erKlubPost) ? '<p class="lille" id="klubpost-forklaring" style="margin:6px 0 0;opacity:.85">🏟 ' + (EN
           ? "Sessions from your club can't be deleted here — your club corrects the attendance."
           : "Pas fra din klub kan ikke slettes her — klubben retter fremmødet.") + '</p>' : '';
-        if (S.ttEks) h += '<p class="lille">'+(EN?"Select, copy and share with your coach:":"Markér, kopiér og del med træneren:")+'</p><textarea readonly onfocus="this.select()" style="height:110px">'+esc(S.ttEks)+'</textarea>' + eksportKnapper('ttEks', EN);
       }
     
 
@@ -14606,8 +14579,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
                 ? '<button class="knap" style="flex:none;padding:5px 10px;background:var(--tabt);font-size:11px" data-a="fysSlet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="fysSletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
                 : '<button class="knap" style="flex:none;padding:5px 8px;background:transparent;border:1px solid var(--tabt);color:var(--tabt);font-size:11px" data-a="fysSletSpoerg" data-v="'+i+'">🗑</button>') +
               '</div>'; }).join("") +
-          '<button class="knap" style="flex:none;padding:8px 14px;background:transparent;border:1.5px solid var(--is);color:var(--is);font-size:12px;margin-top:4px" data-a="fysEksport">📤 '+(EN?"Export new":"Eksportér nye")+' ('+S.fysLog.filter(function(e){return !e.x;}).length+')</button></div>';
-        if (S.fysEks) h += '<p class="lille">'+(EN?"Select, copy and share with your coach:":"Markér, kopiér og del med træneren:")+'</p><textarea readonly onfocus="this.select()" style="height:100px">'+esc(S.fysEks)+'</textarea>' + eksportKnapper('fysEks', EN);
+          '</div>';   /* v5.11.6 · eksport-knappen er væk (sende-reglen) */
       }
       }
 

@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.12.3 · 11. oktober 2026";
+const VERSION = "v5.12.4 · 11. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -2676,6 +2676,34 @@ function egenNoegle() { try { return window.localStorage.getItem("sai-spillernoe
 // ⭐ v5.11.0 · DIN TRÆNING (trin 3) — klubbens program for spilleren. traening · mit-program med spillernøglen.
 const TRAENING_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/traening";
 function traeningNoegle() { return VISNING === "team" ? String(S.spillerNoegle || "") : egenNoegle(); }   /* v5.11.2 · teamet spørger for SPILLEREN */
+/* ⭐⭐ v5.12.4 · SÆSONEN — motoren `saeson` (liste · gem · slet). Samme dør som træningen: spillerens nøgle, teamets fam-nøgle løses op
+   til spillerens (familien ER teamet og retter selv — Nicolai 11/10). Ugen regnes af SERVEREN. */
+const SAESON_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/saeson";
+async function saesonKald(handling, krop) {
+  const sn = traeningNoegle();
+  if (!sn) return { fejl: "mangler-noegle" };
+  const st = new AbortController(); const ur = setTimeout(() => st.abort(), 20000);
+  try {
+    const r = await fetch(SAESON_URL, { method: "POST", signal: st.signal,
+      headers: { "content-type": "application/json", "x-spiller-noegle": sn },
+      body: JSON.stringify(Object.assign({ handling }, krop || {})) });
+    clearTimeout(ur);
+    const d = await r.json().catch(() => ({}));
+    return r.ok ? d : { fejl: d.kode || "ukendt", tekst: d.fejl || "", status: r.status };
+  } catch (_e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+}
+function _saesonDK(iso) { const d = String(iso || "").slice(0, 10).split("-"); return d.length === 3 ? (+d[2]) + "/" + (+d[1]) : ""; }
+/* det, der kræver en hånd: den nærmeste frist på noget, der ikke er tilmeldt — ellers den næste kamp, der er */
+function _saesonNaeste(rk, EN) {
+  const idag = dkDato(0);
+  const frist = (rk || []).filter(function(r){ return r.frist && r.frist >= idag && (r.status === "mulig" || r.status === "valgt"); })
+    .sort(function(a, b){ return a.frist < b.frist ? -1 : 1; })[0];
+  if (frist) return { slags: "frist", r: frist, kort: (EN ? "deadline " : "frist ") + _saesonDK(frist.frist) + " · " + frist.titel };
+  const naeste = (rk || []).filter(function(r){ return (r.slut || r.dato) >= idag && (r.status === "tilmeldt" || r.status === "inde" || r.slags === "holdkamp"); })
+    .sort(function(a, b){ return a.dato < b.dato ? -1 : 1; })[0];
+  if (naeste) return { slags: "naeste", r: naeste, kort: naeste.titel + " · " + _saesonDK(naeste.dato) };
+  return null;
+}
 async function traeningKald(handling, krop) {
   const sn = traeningNoegle();
   if (!sn) return { fejl: "mangler-noegle" };
@@ -2690,6 +2718,15 @@ async function traeningKald(handling, krop) {
   } catch (_e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
 }
 // Hvert udfald sin egen sætning (75) — «ingen forbindelse» KUN om netværket (94).
+function saesonFejltekst(r, EN) {
+  const k = r && r.fejl;
+  if (k === "netvaerk") return EN ? "No connection — your season couldn't be saved." : "Ingen forbindelse — sæsonen kunne ikke gemmes.";
+  if (k === "en-pr-uge") return EN ? "One tournament a week (DTF rule) — set the other one back to possible first." : "Én turnering pr. uge (DTF's regel) — sæt den anden tilbage til mulig først.";
+  if (k === "dato") return EN ? "The date must be like 2026-11-07." : "Datoen skal være som 2026-11-07.";
+  if (k === "loft") return EN ? "Your season is full — remove something old first." : "Sæsonen er fuld — slet noget gammelt først.";
+  if (k === "titel") return EN ? "The tournament needs a name." : "Turneringen skal have et navn.";
+  return EN ? "Your season couldn't be saved right now." : "Sæsonen kunne ikke gemmes lige nu.";
+}
 function traeningFejltekst(k, EN) {
   if (k === "netvaerk") return EN ? "No connection — your programme couldn't be fetched." : "Ingen forbindelse — programmet kunne ikke hentes.";
   return EN ? "Your programme couldn't be fetched right now." : "Programmet kunne ikke hentes lige nu.";
@@ -4359,6 +4396,63 @@ const A = {
     ugeplanGem();
     S.ugForm = false;
     S.ugBesked = { fejl: false, t: dag + " " + ugTid(st, EN) + "–" + ugTid(sl, EN) + (EN ? " is in your week ✅" : " er lagt i din uge ✅") };
+    render();
+  },
+  /* ⭐⭐ v5.12.4 · SÆSONEN */
+  saesonHent: async () => {
+    if (S.saesonHenter) return;
+    S.saesonHenter = true; S.saesonTid = Date.now();
+    const r = await saesonKald("liste", {});
+    S.saesonHenter = false;
+    if (r && !r.fejl) { S.saeson = Array.isArray(r.raekker) ? r.raekker : []; S.saesonFejl = null; }
+    else if (r && (r.fejl === "adgang" || r.fejl === "afventer-godkendelse" || r.fejl === "mangler-noegle")) { S.saeson = []; S.saesonFejl = null; }
+    else { S.saesonFejl = (r && r.fejl) || "ukendt"; }
+    render();
+  },
+  saesonIgen: () => { S.saesonFejl = null; S.saeson = undefined; render(); },
+  saesonNy: () => { S.saesonNyAaben = !S.saesonNyAaben; S.saesonBesked = null; if (S.saesonNyAaben && !S.saesonSlags) S.saesonSlags = "turnering"; render(); },
+  saesonSlagsVaelg: (v) => { S.saesonSlags = v; render(); },
+  saesonGem: async () => {
+    const EN = S.sprog === "en";
+    const krop = { titel: String(S.saesonTitel || "").trim(), dato: String(S.saesonDato || "").trim(), slags: S.saesonSlags || "turnering" };
+    if (String(S.saesonSlut || "").trim()) krop.slut = String(S.saesonSlut).trim();
+    if (String(S.saesonRaekke || "").trim()) krop.raekke = String(S.saesonRaekke).trim();
+    if (String(S.saesonFrist || "").trim()) krop.frist = String(S.saesonFrist).trim();
+    if (krop.slags === "holdkamp") krop.status = "tilmeldt";
+    if (krop.slags === "fri" || krop.slags === "ferie") krop.status = "fri";
+    if (!krop.titel || !krop.dato) { S.saesonBesked = { fejl: true, t: EN ? "A name and a date, then it can be saved." : "Et navn og en dato — så kan den gemmes." }; render(); return; }
+    S.saesonSender = true; render();
+    const r = await saesonKald("gem", krop);
+    S.saesonSender = false;
+    if (r && r.raekke) {
+      S.saeson = (S.saeson || []).filter(function(x){ return x.id !== r.raekke.id; }).concat([r.raekke]).sort(function(a, b){ return a.dato < b.dato ? -1 : 1; });
+      S.saesonNyAaben = false; S.saesonTitel = ""; S.saesonDato = ""; S.saesonSlut = ""; S.saesonRaekke = ""; S.saesonFrist = "";
+      S.saesonBesked = { fejl: false, t: EN ? "Added to your season ✓" : "Lagt i din sæson ✓" };
+    } else S.saesonBesked = { fejl: true, t: saesonFejltekst(r, EN) };
+    render();
+  },
+  /* et tryk på chippen: mulig → valgt → tilmeldt → mulig. Holdkampe og fri uger skifter ikke. */
+  saesonStatus: async (id) => {
+    const EN = S.sprog === "en";
+    const r0 = (S.saeson || []).find(function(x){ return x.id === id; }); if (!r0) return;
+    if (r0.slags !== "turnering") return;
+    const naeste = { mulig: "valgt", valgt: "tilmeldt", tilmeldt: "mulig", inde: "mulig", spillet: "spillet", fri: "mulig" }[r0.status] || "mulig";
+    if (naeste === r0.status) return;
+    S.saesonBesked = null; S.saesonSender = true; render();
+    const r = await saesonKald("gem", { id: id, status: naeste });
+    S.saesonSender = false;
+    if (r && r.raekke) { S.saeson = (S.saeson || []).map(function(x){ return x.id === id ? r.raekke : x; }); }
+    else S.saesonBesked = { fejl: true, t: saesonFejltekst(r, EN) };
+    render();
+  },
+  saesonSletSpoerg: (id) => { S.saesonSletB = S.saesonSletB === id ? null : id; S.saesonBesked = null; render(); },
+  saesonSlet: async (id) => {
+    const EN = S.sprog === "en";
+    S.saesonSender = true; render();
+    const r = await saesonKald("slet", { id: id });
+    S.saesonSender = false; S.saesonSletB = null;
+    if (r && r.ok) { S.saeson = (S.saeson || []).filter(function(x){ return x.id !== id; }); S.saesonBesked = { fejl: false, t: EN ? "Removed from your season." : "Fjernet fra din sæson." }; }
+    else S.saesonBesked = { fejl: true, t: saesonFejltekst(r, EN) };
     render();
   },
   klubProgramHent: async () => {   /* ⭐ v5.11.0 · trin 3 */
@@ -14732,6 +14826,10 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       /* ⭐ v5.12.0 · klubbens program hentes HER, ikke først når UGEN åbnes (fund 11/10: flisen sagde 1/3, rummet 4/5) */
       var _ugeHenter = !!traeningNoegle() && S.klubProgram === undefined && !S.klubProgramFejl;
       if (_ugeHenter && !S.klubProgramHenter) setTimeout(function(){ A.klubProgramHent(); }, 0);
+      /* ⭐ v5.12.4 · sæsonen hentes HER, som programmet */
+      var _saesonHenter = !!traeningNoegle() && S.saeson === undefined && !S.saesonFejl;
+      if (_saesonHenter && !S.saesonHenter) setTimeout(function(){ A.saesonHent(); }, 0);
+      var _saesonN = _saesonHenter ? null : _saesonNaeste(S.saeson || [], EN);
       var _tflise = function(v, ik, titel, tal, kant) {
         return '<button class="dev-flise dev-kant' + (_tp === v ? ' dev-kant-is' : (kant ? ' ' + kant : '')) + '"'
           + ' style="min-height:92px' + (_tp === v ? ';border-color:var(--is)' : '') + '"'
@@ -14748,6 +14846,10 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         + _tflise("uge", "\ud83d\udcc5", (EN?"THE WEEK":"UGEN"),
             _ugeHenter ? (EN?"loading\u2026":"henter\u2026") : (_uM.denneUge + "/" + _uM.MAAL + (EN?" \u00b7 weekly goal":" \u00b7 ugens m\u00e5l")),   /* v5.12.0 · 83: nævneren flytter sig ikke på skærmen */
             (!_ugeHenter && _uM.denneUge >= _uM.MAAL) ? "dev-kant-gron" : "dev-kant-is")
+        + _tflise("saeson", "📆", (EN?"THE SEASON":"SÆSONEN"),   /* v5.12.4 */
+            _saesonHenter ? (EN?"loading…":"henter…") : S.saesonFejl ? (EN?"couldn’t be fetched":"kunne ikke hentes")
+              : _saesonN ? _saesonN.kort : (EN?"plan your season":"læg din sæson ind"),
+            _saesonN && _saesonN.slags === "frist" ? "dev-kant-guld" : "dev-kant-grus")
         + (S.klubKode ? _tflise("coach", "\ud83e\uddd1\u200d\ud83c\udfeb", (EN?"YOUR COACH":"DIN TR\u00c6NER"),
             (EN?"focus & ratings":"fokus & vurderinger"), "dev-kant-guld") : '')
         + '</div>';
@@ -14867,6 +14969,66 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
 
       }
 
+      if (_tp === "saeson") {   /* ⭐⭐ v5.12.4 · SÆSONEN som rum */
+        const rk = (S.saeson || []).slice().sort(function(a, b){ return a.dato < b.dato ? -1 : 1; });
+        const idag = dkDato(0);
+        const STATUSTEKST = { mulig: EN ? "possible" : "mulig", valgt: EN ? "chosen" : "valgt", tilmeldt: EN ? "entered" : "tilmeldt", inde: EN ? "in" : "inde", spillet: EN ? "played" : "spillet", fri: EN ? "free" : "fri" };
+        const STATUSFARVE = { mulig: "var(--daempet)", valgt: "var(--guld)", tilmeldt: "var(--vundet)", inde: "var(--vundet)", spillet: "var(--daempet)", fri: "var(--is)" };
+        if (S.saesonFejl) {
+          h += '<div class="kort" style="--tone:var(--tabt)" data-saeson-fejl="1"><p style="margin:0;font-size:13px">' + esc(saesonFejltekst({ fejl: S.saesonFejl }, EN).replace(/gemmes|saved/, EN ? "fetched" : "hentes")) + '</p>' +
+            '<div class="raekke" style="margin-top:8px"><button class="knap valg" style="flex:none;padding:8px 14px" data-a="saesonIgen">' + (EN ? "Try again" : "Prøv igen") + '</button></div></div>';
+        } else if (_saesonHenter) {
+          h += '<p class="lille" style="margin:4px 0 10px">' + (EN ? "Fetching your season…" : "Henter din sæson…") + '</p>';
+        } else {
+          /* helten: det, der kræver en hånd */
+          if (_saesonN && _saesonN.slags === "frist") {
+            h += '<div class="kort" style="--tone:var(--guld)" data-saeson-helt="frist"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">⏰ ' + (EN ? "DEADLINE " : "FRIST ") + _saesonDK(_saesonN.r.frist) + '</div>' +
+              '<div style="font-size:15px;font-weight:800;margin-top:3px">' + esc(_saesonN.r.titel) + (_saesonN.r.raekke ? ' <span style="font-weight:600;color:var(--daempet)">· ' + esc(_saesonN.r.raekke) + '</span>' : '') + '</div>' +
+              '<p class="lille" style="margin:4px 0 0">' + (_saesonN.r.status === "valgt" ? (EN ? "Chosen — not entered yet." : "Valgt — ikke tilmeldt endnu.") : (EN ? "Possible — decide before the deadline." : "Mulig — beslut før fristen.")) + '</p></div>';
+          } else if (_saesonN) {
+            h += '<div class="kort" style="--tone:var(--vundet)" data-saeson-helt="naeste"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:var(--vundet)">🎾 ' + (EN ? "NEXT UP" : "NÆSTE") + '</div>' +
+              '<div style="font-size:15px;font-weight:800;margin-top:3px">' + esc(_saesonN.r.titel) + '</div><p class="lille" style="margin:4px 0 0">' + _saesonDK(_saesonN.r.dato) + (_saesonN.r.slut && _saesonN.r.slut !== _saesonN.r.dato ? "–" + _saesonDK(_saesonN.r.slut) : "") + (_saesonN.r.raekke ? " · " + esc(_saesonN.r.raekke) : "") + '</p></div>';
+          } else if (!rk.length) {
+            h += '<div class="kort" style="--tone:var(--grus)" data-saeson-helt="tom"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">📆 ' + (EN ? "YOUR SEASON" : "DIN SÆSON") + '</div>' +
+              '<p style="margin:6px 0 0;font-size:13.5px;line-height:1.5">' + (EN ? "Tournaments, team matches and free weeks — week by week, with the deadlines on top. Add the first one below." : "Turneringer, holdkampe og fri uger — uge for uge, med fristerne øverst. Læg den første ind nedenfor.") + '</p></div>';
+          }
+          /* + Tilføj */
+          h += '<div class="raekke" style="margin:2px 0 10px"><button class="knap ' + (S.saesonNyAaben ? 'valg' : '') + '" style="flex:none;min-height:42px;padding:8px 16px" data-a="saesonNy">' + (S.saesonNyAaben ? (EN ? "✕ Close" : "✕ Luk") : (EN ? "+ Add" : "+ Tilføj")) + '</button></div>';
+          if (S.saesonNyAaben) {
+            const sl = S.saesonSlags || "turnering";
+            const chip = function(v, t) { return '<button class="knap valg ' + (sl === v ? 'til' : '') + '" style="flex:0 1 auto;padding:7px 11px;font-size:12px" data-a="saesonSlagsVaelg" data-v="' + v + '">' + t + '</button>'; };
+            h += '<div class="kort" data-saeson-form="1" style="--tone:var(--grus)">' +
+              '<div class="raekke" style="flex-wrap:wrap;gap:6px;margin-bottom:8px">' + chip("turnering", EN ? "Tournament" : "Turnering") + chip("holdkamp", EN ? "Team match" : "Holdkamp") + chip("fri", EN ? "Free week" : "Fri uge") + chip("ferie", EN ? "Holiday" : "Ferie") + '</div>' +
+              '<input data-felt="saesonTitel" value="' + esc(S.saesonTitel || "") + '" placeholder="' + (EN ? "Name (e.g. HRT Cup 45)" : "Navn (fx HRT Cup 45)") + '" maxlength="80" style="margin-bottom:6px">' +
+              '<div class="raekke" style="gap:6px;margin-bottom:6px"><input data-felt="saesonDato" value="' + esc(S.saesonDato || "") + '" placeholder="' + (EN ? "From 2026-11-07" : "Fra 2026-11-07") + '" inputmode="numeric" maxlength="10">' +
+              '<input data-felt="saesonSlut" value="' + esc(S.saesonSlut || "") + '" placeholder="' + (EN ? "To (optional)" : "Til (valgfri)") + '" inputmode="numeric" maxlength="10"></div>' +
+              (sl === "turnering" || sl === "holdkamp" ? '<div class="raekke" style="gap:6px;margin-bottom:6px"><input data-felt="saesonRaekke" value="' + esc(S.saesonRaekke || "") + '" placeholder="' + (EN ? "Draw (e.g. U14 Cat. 1)" : "Række (fx U14 Kat. 1)") + '" maxlength="40">' +
+                (sl === "turnering" ? '<input data-felt="saesonFrist" value="' + esc(S.saesonFrist || "") + '" placeholder="' + (EN ? "Deadline (optional)" : "Frist (valgfri)") + '" inputmode="numeric" maxlength="10">' : '') + '</div>' : '') +
+              '<button class="knap" style="width:100%;min-height:46px;background:var(--grus)"' + (S.saesonSender ? ' disabled' : '') + ' data-a="saesonGem">' + (S.saesonSender ? '⏳ …' : (EN ? "Save" : "Gem")) + '</button></div>';
+          }
+          if (S.saesonBesked) h += '<p class="lille" style="margin:0 0 8px;color:' + (S.saesonBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '" data-saeson-besked="1">' + esc(S.saesonBesked.t) + '</p>';
+          /* listen — uge for uge, det næste først; det, der er spillet, nederst og dæmpet */
+          const kommende = rk.filter(function(r){ return (r.slut || r.dato) >= idag; }), forbi = rk.filter(function(r){ return (r.slut || r.dato) < idag; });
+          const linje = function(r, gammel) {
+            const ik = r.slags === "holdkamp" ? "🤝" : r.slags === "fri" ? "🛋" : r.slags === "ferie" ? "🏖" : "🏆";
+            const kanSkifte = r.slags === "turnering" && !gammel;
+            return '<div class="kort" data-saeson-raekke="' + r.id + '" style="padding:10px 12px;margin:0 0 6px;--tone:' + (gammel ? 'transparent' : STATUSFARVE[r.status] || 'transparent') + (gammel ? ';opacity:.6' : '') + '">' +
+              '<div style="display:flex;align-items:center;gap:9px">' +
+              '<span style="flex:none;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--daempet);width:38px">' + (EN ? "WK " : "UGE ") + r.uge + '</span>' +
+              '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + ik + ' ' + esc(r.titel) + '</div>' +
+              '<div class="lille" style="margin:0">' + _saesonDK(r.dato) + (r.slut && r.slut !== r.dato ? "–" + _saesonDK(r.slut) : "") + (r.raekke ? " · " + esc(r.raekke) : "") +
+              (r.frist && !gammel && (r.status === "mulig" || r.status === "valgt") ? ' · <span style="color:var(--guld)">' + (EN ? "deadline " : "frist ") + _saesonDK(r.frist) + '</span>' : '') +
+              (r.kilde === "klub" ? ' · <span style="color:var(--is)">' + (EN ? "recommended by your club" : "anbefalet af klubben") + '</span>' : '') + '</div></div>' +
+              '<button class="knap valg" style="flex:none;padding:5px 10px;font-size:11px;min-height:30px;color:' + (STATUSFARVE[r.status] || 'inherit') + '"' + (kanSkifte && !S.saesonSender ? '' : ' disabled') + ' data-a="saesonStatus" data-v="' + r.id + '">' + (STATUSTEKST[r.status] || r.status) + '</button>' +
+              '<button class="knap valg" style="flex:none;padding:5px 8px;min-height:30px;font-size:12px" data-a="saesonSletSpoerg" data-v="' + r.id + '" title="' + (EN ? "Remove" : "Fjern") + '">🗑</button></div>' +
+              (S.saesonSletB === r.id ? '<div class="raekke" style="margin-top:8px;gap:6px"><button class="knap" style="background:var(--tabt);flex:none;padding:7px 12px;font-size:12px" data-a="saesonSlet" data-v="' + r.id + '">' + (EN ? "Remove from the season" : "Fjern fra sæsonen") + '</button><button class="knap valg" style="flex:none;padding:7px 12px;font-size:12px" data-a="saesonSletSpoerg" data-v="' + r.id + '">' + (EN ? "Keep" : "Behold") + '</button></div>' : '') +
+              '</div>';
+          };
+          h += kommende.map(function(r){ return linje(r, false); }).join("");
+          if (forbi.length) h += '<p class="lille" style="margin:10px 0 6px;letter-spacing:1.2px;font-weight:800">' + (EN ? "PLAYED" : "SPILLET") + '</p>' + forbi.slice().reverse().map(function(r){ return linje(r, true); }).join("");
+          if (rk.length) h += '<p class="lille" style="margin-top:8px">' + (EN ? "Tap the status to move a tournament: possible → chosen → entered. One tournament a week (DTF)." : "Tryk på status for at flytte en turnering: mulig → valgt → tilmeldt. Én turnering pr. uge (DTF).") + '</p>';
+        }
+      }
       if (_tp === "coach") {
       // ══ DIN TRÆNER · absorberet 22/8 ("Absorbere tænker jeg :)") ═════
       // Kun med klub — uden klub findes der ingen træner at spejle, og saa
@@ -14897,7 +15059,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       if (_tp) {   /* ⭐ v5.12.0 · panelet er et RUM, ikke en liste under gitteret */
         var _traenRumHtml = h.slice(_traenRumStart); h = h.slice(0, _traenRumStart);
         _rumAaben = { id: "traen-" + _tp, a: "traenPanel", v: "", tilbage: (EN ? "\u2039 Train" : "\u2039 Tr\u00e6n"),
-          titel: ({ tennis: "\ud83c\udfbe " + (EN?"TENNIS":"TENNIS"), fys: "\ud83d\udcaa " + (EN?"FITNESS":"FYSISK"), uge: "\ud83d\udcc5 " + (EN?"THE WEEK":"UGEN"), coach: "\ud83e\uddd1\u200d\ud83c\udfeb " + (EN?"YOUR COACH":"DIN TR\u00c6NER") })[_tp] || "",
+          titel: ({ tennis: "\ud83c\udfbe " + (EN?"TENNIS":"TENNIS"), fys: "\ud83d\udcaa " + (EN?"FITNESS":"FYSISK"), uge: "\ud83d\udcc5 " + (EN?"THE WEEK":"UGEN"), saeson: "📆 " + (EN?"THE SEASON":"SÆSONEN"), coach: "\ud83e\uddd1\u200d\ud83c\udfeb " + (EN?"YOUR COACH":"DIN TR\u00c6NER") })[_tp] || "",
           html: _traenRumHtml };
       }
 

@@ -492,7 +492,11 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.12.2 · 11. oktober 2026";
+const VERSION = "v5.12.3 · 11. oktober 2026";
+/* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
+const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
+  return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
+});
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -14628,6 +14632,16 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           })() : '') + '</div>';
       });
       h += '</div>';
+    } else {
+      /* ⭐ v5.12.3 · TOM SKÆRM ER OGSÅ EN PÅSTAND (84). Før første kamp stod her ingenting — nu står der, hvad skærmen bliver, og vejen derhen. */
+      h += '<div class="kort" data-rival-tom="1" style="--tone:var(--guld);padding:16px 14px">' +
+        '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83c\udfaf ' + (EN ? "YOUR OPPONENTS" : "DINE MODSTANDERE") + '</div>' +
+        '<p style="margin:8px 0 0;font-size:13.5px;line-height:1.5">' + (EN
+          ? "Every opponent you have played ends up here \u2014 what each of them demands of you, match by match, and a plan for the next time you meet."
+          : "Hver modstander, du har spillet mod, samles her \u2014 hvad hver is\u00e6r kr\u00e6ver af dig, kamp for kamp, og en plan til n\u00e6ste gang I m\u00f8des.") + '</p>' +
+        '<p class="lille" style="margin:8px 0 0">' + (EN ? "It starts with your first match." : "Det starter med din f\u00f8rste kamp.") + '</p>' +
+        '<div class="raekke" style="margin-top:12px"><button class="knap" style="min-height:46px;background:var(--grus)" data-a="devgaa" data-v="udv:kamp">\ud83c\udfbe ' + (EN ? "Register a match" : "Registr\u00e9r en kamp") + '</button></div>' +
+        '</div>';
     }
   }
 
@@ -15442,7 +15456,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   //     ikke indad i appen. En pilotfamilie læser den her linje 8/9.
   //   Den nye tekst siger de tre ting, der ER sande, og ikke mere.
   if (S.tab !== "chat" && S.tab !== "rumsnak") h += '<p class="fod">'+(EN
-    ? "StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION+SKAL
+    ? "StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION_EN+SKAL   /* v5.12.3 · «11 October 2026» */
     : "StreakTennis \u00b7 SportsAInalytics \u00b7 "+VERSION+SKAL)+'</p>';   /* v4.139.0: hvor det gemmes står på betingelses-siden, ikke i foden */   // ⭐ v4.115.0 · princip 79
   h += '<i hidden data-bundnav="1"></i>';   /* ⭐ v4.135.0 · markør: denne skærm bærer bjælken */
   el.innerHTML = h;

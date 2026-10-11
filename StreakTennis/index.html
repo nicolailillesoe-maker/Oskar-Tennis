@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.11.6 · 11. oktober 2026";
+const VERSION = "v5.12.0 · 11. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -9529,7 +9529,21 @@ function _gaveUdkastH(h) {
 }
 /* ⭐⭐ v5.10.3 · DIN KONTO SOM FLISER (Nicolai 4/10: «Skal abonnementer ligge under "din profil"?» → tegningen → «Lets go»).
    Delene er bygget som før; her skæres de ud ved mærkerne og lægges i hvert sit rum. Fliserne har status i underteksten (64/70). */
-let _kontoRumAaben = null;   /* ⭐ v5.10.4 · det åbne rum (titel + indhold) — tegnes som egen skærm af _kontoRumSkaerm() */
+let _kontoRumAaben = null;
+/* ⭐⭐ v5.12.0 · ET RUM FOR HELE APPEN (Nicolai 11/10: «fliserne der skal gå igen i layoutet igennem hele appen» · «Ikke som fliser
+   men som en liste underneden»). Samme mekanik som Din kontos rum: en flise åbner sit rum som egen skærm over alt andet, med
+   «‹ tilbage» og rummets navn øverst; fliserne står urørte bagved. {tilbage, titel, html, a, v, id} sættes af fanen, der tegner. */
+let _rumAaben = null;
+function _rumSkaerm(EN) {
+  const r = _rumAaben; _rumAaben = null;
+  if (!r) return "";
+  return '<div id="rum-skaerm" data-rum-skaerm="' + r.id + '" style="position:fixed;inset:0;z-index:60;background:var(--dyb);overflow:auto;padding:max(12px,env(safe-area-inset-top)) 0 max(24px,env(safe-area-inset-bottom))">' +
+    '<div class="wrap" style="padding-top:0">' +
+    '<div style="display:flex;align-items:center;gap:10px;margin:0 0 12px">' +
+    '<button class="knap valg" data-rum-tilbage="1" style="flex:none;min-height:40px;margin:0;padding:6px 14px" data-a="' + r.a + '" data-v="' + (r.v || "") + '">' + r.tilbage + '</button>' +
+    '<span style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">' + r.titel + '</span></div>' +
+    r.html + '</div></div>';
+}   /* ⭐ v5.10.4 · det åbne rum (titel + indhold) — tegnes som egen skærm af _kontoRumSkaerm() */
 function _kontoFlise(rum, a, ik, titel, status, lille, kant, ekstra) {
   return '<button class="dev-flise ' + kant + '" data-kontorum="' + rum + '" data-a="' + a + '"' + (ekstra || '') + '>' +
     '<span class="dev-ikon">' + ik + '</span><b>' + titel + '</b>' +
@@ -14490,6 +14504,9 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       var _tp = S.traenPanel;
       var _nFys = (S.fysLog || []).length, _nTt = (S.ttLog || []).length;
       var _uM = ugeMaalVis();   /* ⭐ v5.6.0 · din uge */
+      /* ⭐ v5.12.0 · klubbens program hentes HER, ikke først når UGEN åbnes (fund 11/10: flisen sagde 1/3, rummet 4/5) */
+      var _ugeHenter = !!traeningNoegle() && S.klubProgram === undefined && !S.klubProgramFejl;
+      if (_ugeHenter && !S.klubProgramHenter) setTimeout(function(){ A.klubProgramHent(); }, 0);
       var _tflise = function(v, ik, titel, tal, kant) {
         return '<button class="dev-flise dev-kant' + (_tp === v ? ' dev-kant-is' : (kant ? ' ' + kant : '')) + '"'
           + ' style="min-height:92px' + (_tp === v ? ';border-color:var(--is)' : '') + '"'
@@ -14500,16 +14517,17 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       };
       h += '<div class="dev-grid" style="margin:12px 0">'
         + _tflise("tennis", "\ud83c\udfbe", (EN?"TENNIS":"TENNIS"),
-            _nTt ? (_nTt + " " + (EN ? (_nTt===1?"session":"sessions") : "pas")) : (EN?"log your first":"log dit f\u00f8rste"))
+            _nTt ? (_nTt + " " + (EN ? (_nTt===1?"session":"sessions") : "pas")) : (EN?"log your first":"log dit f\u00f8rste"), "dev-kant-gron")   /* v5.12.0 · farve */
         + _tflise("fys", "\ud83d\udcaa", (EN?"FITNESS":"FYSISK"),
-            _nFys ? (_nFys + " " + (EN ? (_nFys===1?"session":"sessions") : "pas")) : (EN?"log your first":"log dit f\u00f8rste"))
+            _nFys ? (_nFys + " " + (EN ? (_nFys===1?"session":"sessions") : "pas")) : (EN?"log your first":"log dit f\u00f8rste"), "dev-kant-guld")
         + _tflise("uge", "\ud83d\udcc5", (EN?"THE WEEK":"UGEN"),
-            _uM.denneUge + "/" + _uM.MAAL + (EN?" \u00b7 weekly goal":" \u00b7 ugens m\u00e5l"),
-            _uM.denneUge >= _uM.MAAL ? "dev-kant-gron" : "")
+            _ugeHenter ? (EN?"loading\u2026":"henter\u2026") : (_uM.denneUge + "/" + _uM.MAAL + (EN?" \u00b7 weekly goal":" \u00b7 ugens m\u00e5l")),   /* v5.12.0 · 83: nævneren flytter sig ikke på skærmen */
+            (!_ugeHenter && _uM.denneUge >= _uM.MAAL) ? "dev-kant-gron" : "dev-kant-is")
         + (S.klubKode ? _tflise("coach", "\ud83e\uddd1\u200d\ud83c\udfeb", (EN?"YOUR COACH":"DIN TR\u00c6NER"),
             (EN?"focus & ratings":"fokus & vurderinger"), "dev-kant-guld") : '')
         + '</div>';
 
+      var _traenRumStart = h.length;   /* ⭐ v5.12.0 · herfra og til blokkens slutning er rummets indhold */
       if (_tp === "tennis") {
       const ttTot = S.ttLog.reduce(function(a, e){ return a + e.m; }, 0);
       const _ttK = S.ttLog.filter(function(e){ return e && e.k > 0; });   /* v5.4.0 · et pas uden bedømmelse er 0 — og 0 er ikke en score */
@@ -14650,6 +14668,12 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
               : "Dit laveste tal lige nu er <b>" + OMR2[svag].i + " " + OMR2[svag].n + "</b> (" + (seneste[svag].s || 0) + "/10) — det er her, træneren sætter fokus. Følg med her, om det flytter sig.") + '</p></div>';
         })();
       }
+      }
+      if (_tp) {   /* ⭐ v5.12.0 · panelet er et RUM, ikke en liste under gitteret */
+        var _traenRumHtml = h.slice(_traenRumStart); h = h.slice(0, _traenRumStart);
+        _rumAaben = { id: "traen-" + _tp, a: "traenPanel", v: "", tilbage: (EN ? "\u2039 Train" : "\u2039 Tr\u00e6n"),
+          titel: ({ tennis: "\ud83c\udfbe " + (EN?"TENNIS":"TENNIS"), fys: "\ud83d\udcaa " + (EN?"FITNESS":"FYSISK"), uge: "\ud83d\udcc5 " + (EN?"THE WEEK":"UGEN"), coach: "\ud83e\uddd1\u200d\ud83c\udfeb " + (EN?"YOUR COACH":"DIN TR\u00c6NER") })[_tp] || "",
+          html: _traenRumHtml };
       }
 
   }
@@ -15389,7 +15413,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   // ⭐ v4.34.0 · Ikke i venne-chatten. Der er skrivefeltet det sidste,
   // der staar — en fod under det ville skubbe det op igen.
   // ⭐ v4.40.0 · Billedet ligger OVER alt andet — derfor sidst i strengen.
-  h += _kontoRumSkaerm(EN);   /* ⭐ v5.10.4 · Din kontos rum som egen skærm */
+  h += _rumSkaerm(EN);        /* ⭐ v5.12.0 · fanernes rum som egen skærm */
+  h += _kontoRumSkaerm(EN);   /* ⭐ v5.10.4 · Din kontos rum som egen skærm (over fanernes rum) */
   h += _koebSkaerm(EN);   /* ⭐ v5.10.1 · betalingsskærmen — over alt andet (også over rummet) */
   h += _bilVis(EN);
   // ⛔⛔ v4.87.0 · FODNOTEN LØJ OM DATA — OG DEN STÅR PÅ HVER ENESTE SKÆRM.

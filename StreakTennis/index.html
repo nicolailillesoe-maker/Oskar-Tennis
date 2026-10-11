@@ -491,7 +491,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.11.2 · 10. oktober 2026";
+const VERSION = "v5.11.3 · 11. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -671,29 +671,53 @@ const fysTekst = (e, EN) => e.p !== undefined
 const DTFRANG = {};
 const OSKARRANG = {};
 const BENCHMARKS = {
-  sinner:   { navn: "Sinner",   emoji: "🧊", s1in: 64, s1won: 79, s2won: 58, bpSave: 74, bpConv: 46, df: 1.2, fokusMaal: { felt: "bal", label: "Skabt-balance pr. kamp", maal: 0, ned: false, forklaring: "Skabt minus foræret — motorens eget hovedtal. Sinners margin ligger i, at regnskabet er positivt: flere vindere og fremtvungne fejl end gratis fejl. Hold den over nul." },
+  sinner:   { navn: "Sinner",   emoji: "🧊", s1in: 64, s1won: 79, s2won: 58, bpSave: 74, bpConv: 46, df: 1.2, fokusMaal: { felt: "bal", label: "Skabt-balance pr. kamp", labelEn: "Created-balance per match", maal: 0, ned: false, forklaring: "Skabt minus foræret — motorens eget hovedtal. Sinners margin ligger i, at regnskabet er positivt: flere vindere og fremtvungne fejl end gratis fejl. Hold den over nul.", forklaringEn: "Created minus given away — the engine's own headline number. Sinner's margin is a positive balance: more winners and forced errors than free points. Keep it above zero." },
     dna: "Tempo og præcision — afslutter dueller tidligt, næsten ingen gratis fejl. Marginen ligger i timing, ikke risiko.",
+    dnaEn: "Pace and precision — ends rallies early, almost no free points. The margin lives in timing, not risk.",
+    budEn: [["I","Take the ball on the rise","Stand on or inside the baseline. Pace comes from TIMING — taking the ball early, not from swinging harder."],
+          ["II","Depth, not lines","Aim for the back third with good clearance over the net. The margin lives in the height over the net."],
+          ["III","Cross-court is the default","The cross-court ball is longer, crosses the lowest part of the net and closes the court. Change direction only on the short ball."],
+          ["IV","The first two balls go IN","Every rally starts with two balls without risk: deep serve/return + deep cross-court."],
+          ["V","Same face at 40-0 and 0-40","Nobody should be able to tell whether you are ahead or behind. Back straight, eyes on the strings."]],
     bud: [["I","Tag bolden på vej op","Stå på eller inde i baglinjen. Tempoet kommer fra TIMING — at tage bolden tidligt, ikke fra at slå hårdere."],
           ["II","Dybde, ikke linjer","Sigt efter den bageste tredjedel med god luft over nettet. Marginen ligger i højden over nettet."],
           ["III","Cross er standard","Crossbolden er længere, går over nettets laveste punkt og lukker banen. Skift kun retning på den korte bold."],
           ["IV","De to første bolde skal IND","Hver duel starter med to bolde uden risiko: dyb serv/retur + dyb cross."],
           ["V","Samme ansigt ved 40-0 og 0-40","Ingen må kunne se, om du fører eller er bagud. Ryggen rank, blikket på strengene."]] },
-  alcaraz:  { navn: "Alcaraz",  emoji: "🔥", s1in: 67, s1won: 76, s2won: 55, bpSave: 68, bpConv: 44, df: 2.0, fokusMaal: { felt: "vin", label: "Vindere pr. kamp — tag initiativet", maal: 25, ned: false, forklaring: "Alcaraz vinder ved at diktere. Sigt efter mange vindere — vær den, der afslutter duellen, ikke den der venter." },
+  alcaraz:  { navn: "Alcaraz",  emoji: "🔥", s1in: 67, s1won: 76, s2won: 55, bpSave: 68, bpConv: 44, df: 2.0, fokusMaal: { felt: "vin", label: "Vindere pr. kamp — tag initiativet", labelEn: "Winners per match — take the initiative", maal: 25, ned: false, forklaring: "Alcaraz vinder ved at diktere. Sigt efter mange vindere — vær den, der afslutter duellen, ikke den der venter.", forklaringEn: "Alcaraz wins by dictating. Aim for plenty of winners — be the one who ends the rally, not the one who waits." },
     dna: "Eksplosiv allrounder — variation, drop-shots og løb frem. Vinder ved at tage initiativet og bruge hele banen.",
+    dnaEn: "Explosive all-rounder — variation, drop shots and running forward. Wins by taking the initiative and using the whole court.",
+    budEn: [["I","Take the initiative FIRST","Don't wait — be the one who dictates. The first attack wins the rally."],
+          ["II","Variation is the weapon","Mix pace, height and drop shots. The opponent must never find a rhythm."],
+          ["III","Use the whole court","Angles open the court. Pull the opponent wide and hit the open space."],
+          ["IV","Come to the net","Finish short balls at the net — it rewards the aggressive choice."],
+          ["V","Energy as a weapon","Celebrate the big points, use the crowd and your legs. Physical surplus wears the opponent down."]],
     bud: [["I","Tag initiativet FØRST","Vent ikke — vær den, der dikterer. Første angreb vinder duellen."],
           ["II","Variation er våbnet","Bland tempo, højde og drop-shots. Modstanderen må aldrig finde rytmen."],
           ["III","Brug hele banen","Vinkler åbner banen. Træk modstanderen ud og ram det åbne rum."],
           ["IV","Kom til nettet","Afslut korte bolde ved nettet — belønner det aggressive valg."],
           ["V","Energi som våben","Fejr de store point, brug publikum og benene. Fysisk overskud nedbryder."]] },
-  zverev:   { navn: "Zverev",   emoji: "🎯", s1in: 72, s1won: 75, s2won: 52, bpSave: 70, bpConv: 40, df: 3.5, fokusMaal: { felt: "s1", label: "1. serv i spil — fundamentet", maal: 70, ned: false, forklaring: "Zverevs spil starter med serven. 1. serv i spil over 70 % — byg hvert point på en stor første serv." },
+  zverev:   { navn: "Zverev",   emoji: "🎯", s1in: 72, s1won: 75, s2won: 52, bpSave: 70, bpConv: 40, df: 3.5, fokusMaal: { felt: "s1", label: "1. serv i spil — fundamentet", labelEn: "1st serve in — the foundation", maal: 70, ned: false, forklaring: "Zverevs spil starter med serven. 1. serv i spil over 70 % — byg hvert point på en stor første serv.", forklaringEn: "Zverev's game starts with the serve. First serve in above 70 % — build every point on a big first serve." },
     dna: "Servemaskine og tålmodig baglinje — verdens højeste 1.serv-procent. Venter på modstanderens fejl.",
+    dnaEn: "Serving machine and patient baseliner — the highest first-serve percentage in the world. Waits for the opponent's error.",
+    budEn: [["I","The serve is the foundation","First serve in above 70 %. Build every point on a big first serve."],
+          ["II","Patience wins","Keep the ball in play, play deep, wait for the short ball. No forced errors."],
+          ["III","The backhand is the anchor","The heavy, deep cross-court backhand keeps you in any rally."],
+          ["IV","Body serve under pressure","On big points: serve into the body and take the rhythm out of the return."],
+          ["V","Calm shoulders","Stay calm in the long rallies — whoever stresses first loses."]],
     bud: [["I","Serven er fundamentet","1.serv i spil over 70 %. Byg hvert point på en stor første serv."],
           ["II","Tålmodighed vinder","Hold bolden i spil, spil dybt, vent på den korte bold. Ingen forcerede fejl."],
           ["III","Baghånden er ankeret","Den tunge, dybe baghånd cross holder dig i enhver duel."],
           ["IV","Kropsserv under pres","På store point: serv på kroppen og tag rytmen fra returneringen."],
           ["V","Rolige skuldre","Hold roen i de lange dueller — den, der stresser først, taber."]] },
-  djokovic: { navn: "Djokovic", emoji: "🧱", s1in: 65, s1won: 74, s2won: 56, bpSave: 72, bpConv: 45, df: 2.2, fokusMaal: { felt: "s2", label: "Vundet på 2. serven — ingen svag anden", maal: 54, ned: false, forklaring: "Djokovic taber næsten intet på 2. serven. Vind over 54 % — placering og dybde gør den til et våben, ikke en svaghed." },
+  djokovic: { navn: "Djokovic", emoji: "🧱", s1in: 65, s1won: 74, s2won: 56, bpSave: 72, bpConv: 45, df: 2.2, fokusMaal: { felt: "s2", label: "Vundet på 2. serven — ingen svag anden", labelEn: "Won on 2nd serve — no weak second", maal: 54, ned: false, forklaring: "Djokovic taber næsten intet på 2. serven. Vind over 54 % — placering og dybde gør den til et våben, ikke en svaghed.", forklaringEn: "Djokovic gives almost nothing away on the second serve. Win above 54 % — placement and depth make it a weapon, not a weakness." },
     dna: "Historiens bedste returspiller — elastik, 2.serv-vinder og mental mur. Neutraliserer alt og vender pres til fordel.",
+    dnaEn: "The best returner in history — elastic, second-serve winner and mental wall. Neutralises everything and turns pressure into advantage.",
+    budEn: [["I","The return is a weapon","Stand in and take the return early — put the server under pressure from ball one."],
+          ["II","Defence becomes attack","Reach everything, slide into the ball, turn defence into counter-attack with depth."],
+          ["III","The second serve must dare","Win points on the second serve — placement and depth over raw power."],
+          ["IV","Elastic in the court","Use the width defensively, always recover to the middle. No ball is lost."],
+          ["V","Mental iron cage","The big points are won with calm. Be at your best when it matters most."]],
     bud: [["I","Returen er et våben","Stå og tag returen tidligt — sæt serveren under pres fra bold ét."],
           ["II","Forsvar bliver angreb","Nå alt, glid i bolden, vend forsvar til modangreb med dybde."],
           ["III","2.serven skal turde","Vind point på 2.serven — placering og dybde over ren kraft."],
@@ -1242,6 +1266,8 @@ function ugeMaalVis() {
   }
   const dage = [];
   ugeplanSorter(plan.slice()).forEach(function(p){ if (dage.indexOf(p.dag) < 0) dage.push(p.dag); });
+  klubPas.forEach(function(p){ const d = +p.ugedag; if (d >= 1 && d <= 7 && dage.indexOf(d) < 0) dage.push(d); });   /* v5.11.3 · klubbens dage med i målet */
+  dage.sort(function(a, b){ return a - b; });
   return { denneUge, MAAL, streak, minUge: true, dage };
 }
 
@@ -1761,7 +1787,7 @@ function anbefalinger(EN) {
     { label: EN ? "Won on 2nd serve" : "Vundet på 2. serven", f: felt("s2"), maal: 50, ned: false, enhed: " %", sinner: ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].s2won+" %":"58 %"), hvorfor: EN ? "The key number separating the top from the rest — 50 %+ means the serve holds under pressure." : "Nøgletallet, der skiller toppen fra resten — 50 %+ betyder, serven holder under pres." },
     { label: EN ? "Break points converted" : "Breakbolde udnyttet", f: felt("bpF"), maal: 40, ned: false, enhed: " %", sinner: ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].bpConv+" %":"46 %"), hvorfor: EN ? "Convert the big points. Tight matches are decided on these." : "Veksl de store point. Tætte kampe afgøres på disse." },
     { label: EN ? "Break points saved" : "Breakbolde afværget", f: felt("bpM"), maal: 60, ned: false, enhed: " %", sinner: ((typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].bpSave+" %":"74 %"), hvorfor: EN ? "Defend your own service games when it matters most." : "Forsvar egne servepartier, når det gælder mest." },
-    (function(){ const B = (typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark]:null; const fm = B&&B.fokusMaal?B.fokusMaal:{felt:"bal",label:(EN?"Created-balance per match":"Skabt-balance pr. kamp"),maal:0,ned:false,forklaring:""}; return { label: fm.label, f: felt(fm.felt), maal: fm.maal, ned: fm.ned, enhed: fm.felt==="s1"||fm.felt==="s2"?" %":"", sinner: "", benchForklaring: fm.forklaring }; })(),
+    (function(){ const B = (typeof BENCHMARKS!=="undefined"&&S&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark]:null; const fm = B&&B.fokusMaal?B.fokusMaal:{felt:"bal",label:(EN?"Created-balance per match":"Skabt-balance pr. kamp"),maal:0,ned:false,forklaring:""}; return { label: (EN && fm.labelEn) ? fm.labelEn : fm.label, f: felt(fm.felt), maal: fm.maal, ned: fm.ned, enhed: fm.felt==="s1"||fm.felt==="s2"?" %":"", sinner: "", benchForklaring: (EN && fm.forklaringEn) ? fm.forklaringEn : fm.forklaring }; })(),
   ];
   const virker = [], arbejd = [];
   M.forEach(function(m){
@@ -1842,7 +1868,7 @@ function rivalUdvidet(navn, liste, rec, dummy) {
   ht += emne("🕵️ " + (EN ? "SCOUTING — your own notes" : "SCOUTING — jeres egne noter"));
   ht += '<p class="lille" style="margin:2px 0 4px">' + (EN ? "Style:" : "Spillestil:") + '</p><div class="raekke" style="flex-wrap:wrap;gap:5px">' +
     [["baseliner", EN?"Aggr. baseliner":"Aggr. baseliner"],["grinder","Grinder"],["net",EN?"Net player":"Net-spiller"],["allcourt","All-court"],["pusher","Pusher"]].map(function(x){ return chip("scoutStil", esc(navn) + "|" + x[0], x[1], sc.stil === x[0]); }).join("") + '</div>';
-  const EGN = [["baghaand",EN?"Backhand":"Baghånd"],["forhaand",EN?"Forehand":"Forhånd"],["serv","Serv"],["retur","Retur"],["bevaegelse",EN?"Movement":"Bevægelse"],["nettet",EN?"Net":"Nettet"],["mental","Mentalt"],["lange",EN?"Long rallies":"Lange dueller"]];
+  const EGN = [["baghaand",EN?"Backhand":"Baghånd"],["forhaand",EN?"Forehand":"Forhånd"],["serv",EN?"Serve":"Serv"],["retur",EN?"Return":"Retur"],["bevaegelse",EN?"Movement":"Bevægelse"],["nettet",EN?"Net":"Nettet"],["mental",EN?"Mental":"Mentalt"],["lange",EN?"Long rallies":"Lange dueller"]];
   ht += '<p class="lille" style="margin:8px 0 4px">' + (EN ? "Weaknesses:" : "Svagheder:") + '</p><div class="raekke" style="flex-wrap:wrap;gap:5px">' +
     EGN.map(function(x){ return chip("scoutEgn", esc(navn) + "|svag|" + x[0], x[1], (sc.svag || []).indexOf(x[0]) >= 0); }).join("") + '</div>';
   ht += '<p class="lille" style="margin:8px 0 4px">' + (EN ? "Strengths:" : "Styrker:") + '</p><div class="raekke" style="flex-wrap:wrap;gap:5px">' +
@@ -2685,8 +2711,8 @@ function klubBudFejltekst(r) {
   if (k === "ukendt") return EN ? "That invitation is gone — or already answered." : "Invitationen findes ikke længere — eller er allerede besvaret.";
   if (k === "afvist") return EN ? "The club has declined your access." : "Klubben har afvist adgangen.";
   if (k === "traenernoegle") return EN ? "That is a coach key — it cannot be used as a player." : "Det er en trænernøgle — den kan ikke bruges som spiller.";
-  if (k === "adgang") return EN ? "The club key was rejected — it is blocked, expired or unknown." : "Klubnøglen blev afvist — den er spærret, udløbet eller ukendt.";
-  if (k === "format") return EN ? "That is not a club key." : "Det er ikke en klubnøgle.";
+  if (k === "adgang") return EN ? "The club's code was rejected — it is blocked, expired or unknown." : "Klubbens kode blev afvist — den er spærret, udløbet eller ukendt.";
+  if (k === "format") return EN ? "That is not a code from a club." : "Det er ikke en kode fra en klub.";
   if (k === "kraever-spillernoegle") return EN ? "A club is joined by the player — not from the team view." : "En klub tilknyttes af spilleren selv — ikke fra team-visningen.";
   return EN ? "No connection — try again." : "Ingen forbindelse — prøv igen.";
 }
@@ -3589,9 +3615,9 @@ function analyseFejltekst(kode, status, EN) {
     ? "Your access is waiting for a yes. We will say when it is approved \u2014 you do not need to do anything."
     : "Din adgang venter p\u00e5 et ja. Vi siger til, s\u00e5 snart den er godkendt \u2014 du skal ikke g\u00f8re noget.";
   if (kode === "kraever-invitation" || status === 403) return EN
-    ? "StreakTennis needs an invitation: a club key from your club under \u2699 Your club \u2014 or ask whoever invited you."
-    : "StreakTennis kr\u00e6ver en invitation: en klubnøgle fra din klub under \u2699 DIN KLUB \u2014 eller sp\u00f8rg den, der inviterede dig.";
-  if (kode === "adgang" || status === 401) return EN ? "The club key was not accepted. Check it under \u2699 Club key." : "Klubnøglen blev ikke godkendt. Tjek den under \u2699 Klubnøgle.";
+    ? "StreakTennis needs an invitation: your club invites you by username \u2014 or ask whoever invited you."
+    : "StreakTennis kr\u00e6ver en invitation: din klub inviterer dig p\u00e5 dit brugernavn \u2014 eller sp\u00f8rg den, der inviterede dig.";
+  if (kode === "adgang" || status === 401) return EN ? "The club's code was not accepted. Check it under \u2699 Your club." : "Klubbens kode blev ikke godkendt. Tjek den under \u2699 Din klub.";
   if (kode === "loft" || status === 429) return EN ? "Too many analyses in a short time. Try again in a little while." : "For mange analyser p\u00e5 kort tid. Pr\u00f8v igen om lidt.";
   if (kode === "validering" || status === 422) return EN ? "The match data was rejected by the safety check." : "Kampdata blev afvist af sikkerhedsvagten.";
   if (status === 502 || kode === "opstroem" || kode === "tom") return EN ? "The analysis could not be fetched right now. Try again." : "Analysen kunne ikke hentes lige nu. Pr\u00f8v igen.";
@@ -8339,7 +8365,7 @@ const A = {
         r.fejl === "hold-fra"      ? (EN?"Your team hasn't turned the streak on yet.":"Dit hold har ikke sl\u00e5et streaken til endnu.") :
         r.fejl === "ikke-godkendt" ? (EN?"Awaiting the club's approval.":"Afventer klubbens godkendelse.") :
         r.fejl === "mangler-klubkode" || r.fejl === "mangler-spillernoegle"
-          ? (EN?"Enter the club key under \u2699 Settings first.":"Indtast klubn\u00f8glen under \u2699 Indstillinger f\u00f8rst.")
+          ? (EN?"You are not in a club yet \u2014 your club invites you by username.":"Du er ikke med i en klub endnu \u2014 din klub inviterer dig p\u00e5 dit brugernavn.")
           : (EN?"No connection \u2014 try again.":"Ingen forbindelse \u2014 pr\u00f8v igen.") };
     } else {
       S.stigeData = { hold: r.hold, spillere: r.spillere || [], hentet: new Date().toISOString() };
@@ -8445,7 +8471,7 @@ const A = {
     S.syncHenter = false;
     if (ned.fejl) {
       S.syncBesked = { fejl: true, t:
-        ned.fejl === "mangler-klubkode" ? (EN?"Enter the club key first.":"Indtast klubnøglen f\u00f8rst.") :
+        ned.fejl === "mangler-klubkode" ? (EN?"You are not in a club yet \u2014 your club invites you by username.":"Du er ikke med i en klub endnu \u2014 din klub inviterer dig p\u00e5 dit brugernavn.") :
         ned.fejl === "adgang" ? (EN?"The key was rejected.":"N\u00f8glen blev afvist.") :
         ned.fejl === "validering" ? (EN?"Rejected by the guard.":"Afvist af sikkerhedsvagten.") :
         (EN?"No connection \u2014 try again.":"Ingen forbindelse \u2014 pr\u00f8v igen.") };
@@ -8469,7 +8495,7 @@ const A = {
     const EN = S.sprog === "en";
     const navne = String(arg).split("~~").filter(Boolean);
     if (!navne.length || S.rivalHenter) return;
-    if (!S.klubKode) { S.kodeAaben = true; S.rivalBesked = { fejl: true, t: EN ? "Enter the club key first." : "Indtast klubnøglen først." }; render(); return; }
+    if (!S.klubKode) { S.kodeAaben = true; S.rivalBesked = { fejl: true, t: EN ? "You are not in a club yet — your club invites you by username." : "Du er ikke med i en klub endnu — din klub inviterer dig på dit brugernavn." }; render(); return; }
     const grupper = {};
     S.gemte.forEach(function(k){ (grupper[k.modstander] = grupper[k.modstander] || []).push(k); });
     const rivaler = navne.map(function(n){
@@ -9124,7 +9150,7 @@ const A = {
     if (!k) return;
     // ⭐ v4.7.9: klubkoden er ikke laengere den eneste vej ind. Har man
     // hverken klubkode ELLER spillerkode, er der stadig ingen adgang.
-    if (!S.klubKode && !S.spillerNoegle) { S.kodeAaben = true; S.kodeUdkast = ""; S.hentBesked = { i: n, fejl: true, t: EN ? "Enter the club key first \u2014 you only do this once on this device." : "Indtast klubnøglen f\u00f8rst \u2014 det g\u00f8res kun \u00e9n gang p\u00e5 denne enhed." }; render(); return; }
+    if (!S.klubKode && !S.spillerNoegle) { S.kodeAaben = true; S.kodeUdkast = ""; S.hentBesked = { i: n, fejl: true, t: EN ? "You are not in a club yet \u2014 your club invites you by username." : "Du er ikke med i en klub endnu \u2014 din klub inviterer dig p\u00e5 dit brugernavn." }; render(); return; }
     if (S.henter !== null) return;
     S.henter = n; S.hentBesked = null; render(); analysePulsStart();
     const nyttelast = byggAnalysePayload(k);
@@ -9173,7 +9199,7 @@ const A = {
     });
   },
   klubKodeAabn: () => { S.kodeAaben = !S.kodeAaben; S.kodeUdkast = ""; S.hentBesked = null; render(); },
-  klubKodeGem: () => { const v = (S.kodeUdkast || "").trim(); if (!v) return; S.klubKode = v; lager.gem("sai-klubkode", v); S.kodeAaben = false; S.nyKodeAaben = false; S.kodeUdkast = ""; S.hentBesked = { i: -1, fejl: false, t: S.sprog === "en" ? "Club key saved on this device." : "Klubnøglen er gemt p\u00e5 denne enhed." }; render(); },
+  klubKodeGem: () => { const v = (S.kodeUdkast || "").trim(); if (!v) return; S.klubKode = v; lager.gem("sai-klubkode", v); S.kodeAaben = false; S.nyKodeAaben = false; S.kodeUdkast = ""; S.hentBesked = { i: -1, fejl: false, t: S.sprog === "en" ? "The club's code is saved on this device." : "Klubbens kode er gemt p\u00e5 denne enhed." }; render(); },
   klubKodeRyd: () => { S.klubKode = ""; lager.gem("sai-klubkode", ""); S.kodeAaben = false; S.nyKodeAaben = false; S.kodeUdkast = ""; render(); },
   eksport: (i) => { S.eksport = lavEksport(S.gemte[+i]); S._sf = S._sf || {}; S._sf["1"] = true; render();
     setTimeout(function(){ var b = document.getElementById("eksport-boks"); if (b) b.scrollIntoView({behavior:"smooth", block:"center"}); }, 60); },
@@ -13693,7 +13719,7 @@ function _tegn() {
           '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 13px;font-size:12px;color:var(--daempet)" data-a="klubKodeRyd">' + (EN?"Disconnect":"Fjern klub") + '</button></div>';
       } else {
         _kKlub = '<p class="lille" style="margin:0 0 8px">' + (S.klubKode
-            ? (EN?"Enter the new club key.":"Indtast den nye klubnøgle.")
+            ? (EN?"Enter the new code from the club.":"Indtast den nye kode fra klubben.")
             : (EN
                // ⛔⛔ v4.89.0 · TO FEJL I ÉN SÆTNING.
                //   Den gamle tekst: «Uden klubkode kører appen for sig selv
@@ -13710,20 +13736,20 @@ function _tegn() {
                //     ikke adgang til en anden spillers data. Tastes en vens
                //     eller et barns kode ind, sendes ens EGNE kampe til
                //     DERES klubs trænerlag. Det stod ingen steder.
-               ? "Optional. <b>A club key signs YOU into that club</b> — your own matches and training are then shared with the club’s coaches. It does <b>not</b> give you access to another player’s data. Without one the app still works, and only your first name and training streak leave the phone (for friends)."
-               : "Frivillig. <b>En klubnøgle melder DIG ind i klubben</b> — dine egne kampe og din træning deles så med klubbens trænere. Den giver <b>ikke</b> adgang til en anden spillers data. Uden klubnøgle virker appen stadig, og kun dit fornavn og din træningsstreak forlader telefonen (til vennerne).")) + '</p>' +
+               ? "Optional. <b>Your club invites you by username</b> — the invitation shows up in the app, and one tap says yes. Then your own matches and training are shared with the club’s coaches; it does <b>not</b> give you access to another player’s data. Without a club the app still works, and only your first name and training streak leave the phone (for friends). Has the club given you a code instead? Enter it here."
+               : "Frivillig. <b>Din klub inviterer dig på dit brugernavn</b> — invitationen dukker op i appen, og ét tryk siger ja. Så deles dine egne kampe og din træning med klubbens trænere; det giver <b>ikke</b> adgang til en anden spillers data. Uden klub virker appen stadig, og kun dit fornavn og din træningsstreak forlader telefonen (til vennerne). Har klubben givet dig en kode i stedet? Tast den her.")) + '</p>' +
           (S.rolle === "familie"
             // v4.90.0: i TEAM-visningen er det PRAECIS spillerens klubkode,
             // der skal ind her — advarslen ville forbyde det rigtige.
             ? '<p class="lille" style="margin:-4px 0 8px;padding:8px 10px;background:rgba(230,176,69,.10);border-radius:8px">' + (EN
-              ? "Here you enter <b>the player's own club key</b>, so the team phone can share with the player's club."
-              : "Her sættes <b>spillerens egen klubnøgle</b> ind, så team-telefonen kan dele med spillerens klub.") + '</p>'
+              ? "Here you enter <b>the player's own code from the club</b>, so the team phone can share with the player's club."
+              : "Her sættes <b>spillerens egen kode fra klubben</b> ind, så team-telefonen kan dele med spillerens klub.") + '</p>'
             : '<p class="lille" style="margin:-4px 0 8px;padding:8px 10px;background:rgba(230,176,69,.10);border-radius:8px">' + (EN
               ? "⚠️ Got a code from a friend or your child? <b>Do not enter it here.</b> That would move you into their club. Use ❤️ friends instead."
               : "⚠️ Har du fået en kode af en ven eller dit barn? <b>Tast den ikke her.</b> Så flytter du dig selv over i deres klub. Brug ❤️ venner i stedet.") + '</p>') +
           '<div style="display:flex;gap:6px;align-items:stretch">' +
           '<input class="felt" style="flex:1;min-width:0;-webkit-text-security:' + (S.visKode?"none":"disc") + '" data-felt="kodeUdkast" value="' + esc(S.kodeUdkast||"") +
-          '" placeholder="' + (EN?"club key":"klubnøgle") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
+          '" placeholder="' + (EN?"code from the club":"kode fra klubben") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
           '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;font-size:13px" data-a="visSkift" data-v="visKode">' + (S.visKode ? "🙈" : "👁") + '</button></div>' +
           '<div class="raekke" style="margin-top:7px">' +
           '<button class="knap" style="min-height:44px;background:var(--grus)" data-a="klubKodeGem">' + (EN?"Save":"Gem") + '</button>' +
@@ -14263,8 +14289,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       }).join("") + '</div>';
     h += '<div class="kort" style="border-left:3px solid var(--is);background:linear-gradient(90deg,rgba(90,160,200,.10),transparent 60%)">' +
       '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--is);margin-bottom:3px">'+B.emoji+' '+(EN?B.navn.toUpperCase()+" DNA":B.navn.toUpperCase()+"-DNA")+'</div>' +
-      '<p style="font-size:12.5px;margin:0;line-height:1.6">'+esc(B.dna)+'</p></div>';
-    h += B.bud.map(function(b){ return '<div class="kort" style="display:flex;gap:12px"><div style="font-size:22px;font-weight:800;color:var(--gruslys);width:30px;text-align:center;flex-shrink:0">'+b[0]+'</div><div><h3 style="text-transform:uppercase;letter-spacing:.5px">'+esc(b[1])+'</h3><p>'+esc(b[2])+'</p></div></div>'; }).join("");
+      '<p style="font-size:12.5px;margin:0;line-height:1.6">'+esc((EN && B.dnaEn) ? B.dnaEn : B.dna)+'</p></div>';
+    h += ((EN && B.budEn) ? B.budEn : B.bud).map(function(b){ return '<div class="kort" style="display:flex;gap:12px"><div style="font-size:22px;font-weight:800;color:var(--gruslys);width:30px;text-align:center;flex-shrink:0">'+b[0]+'</div><div><h3 style="text-transform:uppercase;letter-spacing:.5px">'+esc(b[1])+'</h3><p>'+esc(b[2])+'</p></div></div>'; }).join("");
     (function(){
       const V = VAABEN[S.haand] || VAABEN.venstre;
       const moenstre = EN ? V.moenstreEn : V.moenstre;
@@ -14602,8 +14628,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '<div style="font-size:16px;font-weight:800;margin:5px 0 7px">'+(naaet ? '🎉 '+(EN?"Goal reached — "+m.denneUge+"/"+m.MAAL+" sessions!":"Ugens mål nået — "+m.denneUge+"/"+m.MAAL+" pas!") : m.denneUge+'/'+m.MAAL+' '+(EN?"sessions this week":"pas denne uge"))+'</div>' +
           '<div style="position:relative;background:var(--dyb);border-radius:5px;height:10px"><div style="background:'+(naaet?'var(--vundet)':'var(--is)')+';height:100%;width:'+pct+'%;border-radius:5px"></div></div>' +
           (naaet ? '' : '<p class="lille" style="margin-top:6px">'+(m.minUge
-            ? (EN ? "Goal: your week — " + m.MAAL + (m.MAAL === 1 ? " session" : " sessions") + " (" + m.dage.map(function(x){ return UG_DAG.en[x]; }).join(", ") + "). Every session you log counts — tennis or fitness."
-                  : "Målet er din uge: " + m.MAAL + " pas (" + m.dage.map(function(x){ return UG_DAG.da[x].toLowerCase(); }).join(", ").replace(/, ([^,]*)$/, " og $1") + "). Hvert pas, du logger — tennis eller fysisk — tæller.")
+            ? (EN ? "Goal: your week — " + m.MAAL + (m.MAAL === 1 ? " session" : " sessions") + (m.dage.length ? " (" + m.dage.map(function(x){ return UG_DAG.en[x]; }).join(", ") + ")" : "") + ". Every session you log counts — tennis or fitness."
+                  : "Målet er din uge: " + m.MAAL + " pas" + (m.dage.length ? " (" + m.dage.map(function(x){ return UG_DAG.da[x].toLowerCase(); }).join(", ").replace(/, ([^,]*)$/, " og $1") + ")" : "") + ". Hvert pas, du logger — tennis eller fysisk — tæller.")
             : (EN?"Goal: 3 sessions a week — running, strength or footwork. Every logged session counts.":"Målet er 3 pas om ugen — løb, styrke eller benarbejde. Hvert registreret pas tæller."))+'</p>') + '</div>';
       })();
       // ══ TRÆNING · SENESTE UGER · spejlet af trænerens kort (1:1) ═════
@@ -14622,7 +14648,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:6px 0">' +
             '<span style="flex:none;width:52px;font-size:12px;font-weight:700">' + (EN?"Wk ":"Uge ") + (w.u % 100) + '</span>' +
             '<span style="flex:1;font-size:12.5px">🎾 ' + (w.t || 0) + ' · 💪 ' + (w.f || 0) + ' · ' + timer + ' t</span>' +
-            '<span style="flex:none;font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px;background:var(--flade);color:' + (ialt >= 6 ? 'var(--vundet)' : ialt >= 3 ? 'var(--guld)' : 'var(--daempet)') + '">' + ialt + ' pas</span></div>';
+            '<span style="flex:none;font-size:11px;font-weight:800;padding:2px 8px;border-radius:8px;background:var(--flade);color:' + (ialt >= 6 ? 'var(--vundet)' : ialt >= 3 ? 'var(--guld)' : 'var(--daempet)') + '">' + ialt + (EN ? (ialt === 1 ? ' session' : ' sessions') : ' pas') + '</span></div>';
         });
         h += '</div>';
       })();

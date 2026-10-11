@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.12.0 · 11. oktober 2026";
+const VERSION = "v5.12.1 · 11. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -6912,7 +6912,7 @@ const A = {
   // ⭐ v4.88.0 · døren fra Indstillinger til sikkerhedskopien. Sætter
   //   BEGGE dele — fanen og panelet — så man lander på indholdet og ikke
   //   på en flise, man skal trykke på én gang til.
-  gaaKopi: () => { S.statPanel = "backup"; A.tab("historik"); },
+  gaaKopi: () => { S.tab = "opsaet"; S.opsAaben = "konto"; S.kontoRum = "kopi"; S.kontoBesked = null; render(); try { window.scrollTo(0, 0); } catch (_e) {} },   /* ⭐ v5.12.1 · Din konto → rummet, ikke STATS */
   traenPanel: (v) => { S.traenPanel = (S.traenPanel === v ? null : v); render(); },
   kampePanel: (v) => { S.kampePanel = (S.kampePanel === v ? null : v); render(); },
   grHent: async () => {
@@ -9544,6 +9544,214 @@ function _rumSkaerm(EN) {
     '<span style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">' + r.titel + '</span></div>' +
     r.html + '</div></div>';
 }   /* ⭐ v5.10.4 · det åbne rum (titel + indhold) — tegnes som egen skærm af _kontoRumSkaerm() */
+/* ⭐⭐ v5.12.1 · SIKKERHEDSKOPIEN BOR I DIN KONTO (Nicolai 31/8: «Kopi og backup — tænker det er et område til indstillinger»; kortet
+   11/10: flisen under Din konto HOPPEDE til STATS). Panelet er skåret ud af STATS ved måling og uændret — spillerens egen udgave
+   og teamets. Vises af rummet «kopi». */
+function _kopiHtml(EN) {
+  var h = ""; var _sp = "backup";
+    if (_sp === "backup" && teamKunStreaks()) {
+      // ⭐⭐ v4.96.0 · SPEJLET, SET FRA TEAMET. Ingen manuel backup, ingen
+      //   sletning herfra — kun hent, og sandheden om hvad der rejser.
+      const _harB = !!lager.hent("sai-sky-noegle");
+      const _sk = S.skyStatus;
+      h += '<div class="kort" style="--tone:' + (S.skyLaast ? 'var(--tabt)' : _harB ? 'var(--is)' : 'var(--guld)') + '">' +
+        '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83d\udd04 ' + (EN ? "FROM " : "FRA ") + esc(String(SPILLER || (EN ? "the player" : "spilleren")).toUpperCase()) + (EN ? " \u00b7 MATCHES, TRAINING & ANALYSES" : " \u00b7 KAMPE, TR\u00c6NING OG ANALYSER") + '</div>' +   /* ⭐ v4.133.0 */
+        '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
+          ? "Matches, every ball, the training log and the analyses come from the player’s own encrypted backup. <b>The key came locked from the player</b> — the server still cannot open the box. What you enter here is put back into the same box, so the player sees it too."
+          : "Kampe, hver bold, træningsloggen og analyserne kommer fra spillerens egen krypterede sikkerhedskopi. <b>Nøglen kom låst fra spilleren</b> — serveren kan stadig ikke åbne boksen. Det, du taster her, lægges tilbage i samme boks, så spilleren også ser det.") + '</p>' +
+        '<p class="lille" style="margin:8px 0 0;line-height:1.5;opacity:.85">' + (EN
+          ? "Honest limits: new matches and sessions travel both ways; an edit of a match already on the other phone can appear as a second copy, and a deletion does not travel."
+          : "\u00c6rlige gr\u00e6nser: nye kampe og pas rejser begge veje; retter man en kamp, den anden telefon allerede har, kan den dukke op som en kopi \u2014 og en sletning rejser ikke.") + '</p>' +
+        (!_harB ? '<p class="lille" style="margin:8px 0 0;color:var(--guld)">' + (EN
+          ? "This phone has no key to the backup yet" + (S.spejlVenter ? " \u2014 the mirror arrives the next time the player opens the app." : " \u2014 the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM).")
+          : "Telefonen har ingen n\u00f8gle til sikkerhedskopien endnu" + (S.spejlVenter ? " \u2014 spejlet kommer, n\u00e6ste gang spilleren \u00e5bner sin app." : " \u2014 spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET).")) + '</p>' : '') +
+        (_sk && _sk.har && _sk.opdateret ? '<p class="lille" style="margin:7px 0 0;opacity:.6">' + (EN ? "Player’s box from " : "Spillerens boks fra ") + esc(new Date(_sk.opdateret).toLocaleString("da-DK")) + (_sk.bytes ? ' \u00b7 ' + Math.max(1, Math.round(_sk.bytes / 1024)) + ' KB' : '') + '</p>' : '') +
+        '<div class="raekke" style="margin-top:9px;gap:6px">' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' + (S.skySender || !_harB ? ' disabled' : '') + ' data-a="skyHentNu">' +
+          (S.skySender ? '\u23f3 \u2026' : '\ud83d\udd04 ' + _hentFraNavn(EN)) + '</button></div>' +   /* ⭐ v4.133.0 */
+        (S.skyBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>' : '') +
+        '</div>';
+    } else if (_sp === "backup") {
+    // ══════════════════════════════════════════════════════════════════
+    // ⭐⭐⭐ v4.79.0 · DEN AUTOMATISKE KOPI STÅR ØVERST.
+    //   Den manuelle nedenunder er stadig der og virker — men den, ingen
+    //   husker at tage, er ikke en sikkerhedskopi. Denne tager sig selv.
+    // ══════════════════════════════════════════════════════════════════
+    {
+      const _sk = S.skyStatus, _harN = !!lager.hent("sai-sky-noegle");
+      const _tid = _sk && _sk.opdateret ? new Date(_sk.opdateret) : null;
+      const _siden = _tid ? Math.max(0, Math.round((Date.now() - _tid.getTime()) / 60000)) : null;
+      const _naar = _siden === null ? "" : (_siden < 2 ? (EN ? "just now" : "lige nu")
+        : _siden < 60 ? (EN ? _siden + " min ago" : "for " + _siden + " min siden")
+        : _siden < 1440 ? (EN ? Math.round(_siden / 60) + " h ago" : "for " + Math.round(_siden / 60) + " timer siden")
+        : _tid.toLocaleDateString("da-DK"));
+      // ⭐ v4.84.0 · FANGET PÅ ET SKÆRMBILLEDE: kortet sagde «ikke endnu»
+      //   ØVERST og «kopien her er låst» tre linjer nede. To sætninger om
+      //   det samme, der ikke kunne passe begge. Er boksen låst, siger
+      //   hovedet dét — og intet andet.
+      h += '<div class="kort" style="--tone:' +
+        (S.skyLaast ? 'var(--tabt)' : (_sk && _sk.har) ? 'var(--vundet)' : 'var(--guld)') + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+          '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\u2601\ufe0f ' +
+          (EN ? "AUTOMATIC BACKUP" : "AUTOMATISK SIKKERHEDSKOPI") + '</div>' +
+          '<span class="lille" style="color:' + (S.skyLaast ? 'var(--tabt)' : (_sk && _sk.har) ? 'var(--vundet)' : 'var(--daempet)') + '">' +
+          (S.skySender ? '\u23f3 \u2026' : S.skyLaast ? '\ud83d\udd12 ' + (EN ? "locked" : "låst")
+            : (_sk && _sk.har) ? '\u2713 ' + _naar : (EN ? "not yet" : "ikke endnu")) + '</span></div>';
+      // ⭐ v4.105.0 · ORMEHULLET: postkassen fra teamet. Kun på spillerens
+      //   egen telefon, kun når nøgleparret findes (dvs. en nøgle er udstedt).
+      if (S.minKonto && lager.hent("sai-post-privat")) {
+        h += '<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><button class="knap valg" style="flex:none;min-height:40px;padding:0 12px;font-size:12px" data-a="postHent">' + (S.postHenter ? "⏳ …" : "🕳️ " + (EN ? "Check the wormhole" : "Se i ormehullet")) + '</button>' +
+          '<span class="lille" style="margin:0">' + (EN ? "Matches your team enters without the mirror land here." : "Kampe, dit team taster uden spejl, lander her.") + '</span></div>';
+      }
+      if (S.postBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.postBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.postBesked.t) + '</p>';
+      if (!S.minKonto) {
+        // ⛔ Uden konto er der ingen at gemme for — og ingen vej tilbage.
+        h += '<p class="lille" style="margin:8px 0 0">' + (EN
+          ? "You need an account for this."
+          : "Det kr\u00e6ver en konto.") + '</p>';
+      } else {
+        h += '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
+          ? "Your matches, every ball, your training log and your analyses are copied automatically. <b>The balls, results and analyses are kept readable in the archive</b>, so they come back with your account alone \u2014 even if you forget your password. <b>Opponents\u2019 names and your notes are locked on this phone before they are sent</b>: the server keeps a box it cannot open, and they come back with your password. Log in on a new phone, and it all comes back."
+          : "Dine kampe, hver bold, din tr\u00e6ningslog og dine analyser kopieres automatisk. <b>Boldene, resultaterne og analyserne gemmes l\u00e6sbart i arkivet</b>, s\u00e5 de kommer tilbage med din konto alene \u2014 ogs\u00e5 hvis du glemmer dit kodeord. <b>Modstandernes navne og dine noter l\u00e5ses p\u00e5 denne telefon, f\u00f8r de sendes</b>: serveren opbevarer en boks, den ikke kan \u00e5bne, og de kommer tilbage med dit kodeord. Log ind p\u00e5 en ny telefon, og det hele kommer tilbage.") + '</p>';
+        // ⚠️⚠️ PRISEN, SAGT HVOR DEN GÆLDER. Der findes ingen bagdør, og
+        //   det er hele pointen — så det må ikke stå med småt et andet sted.
+        h += '<p class="lille" style="margin:9px 0 0;padding:8px 10px;--tone:var(--guld);border-radius:10px;line-height:1.5">' + (EN
+          ? "<b>Remember your password.</b> The box is locked with it. If you forget it <i>and</i> lose the phone, no one can open the box \u2014 not even us: opponents\u2019 names and your notes are gone. Your matches, balls and analyses come back from the archive anyway."
+          : "<b>Husk dit kodeord.</b> Boksen er l\u00e5st med det. Glemmer du det <i>og</i> mister telefonen, kan ingen \u00e5bne boksen \u2014 heller ikke vi: modstandernes navne og dine noter er v\u00e6k. Dine kampe, bolde og analyser kommer tilbage fra arkivet alligevel.") + '</p>';
+        // ⭐ v5.7.1 · teamene, sagt ét ad gangen (princip 75)
+        try {
+          const _tfm = teamFoelgerMed();
+          if (_tfm.length && teamKunStreaks()) {
+            h += '<p class="lille" style="margin:8px 0 0;color:var(--guld)">👥 ' + (EN
+              ? "Your teams travel with your account from your own view — switch to your own player first."
+              : "Dine teams følger med kontoen fra din egen visning — skift til din egen spiller først.") + '</p>';
+          } else if (_tfm.length) {
+            _tfm.forEach(function (x) {
+              h += '<p class="lille" style="margin:6px 0 0;color:' + (x.u === "ok" ? 'var(--vundet)' : 'var(--guld)') + '">👥 ' + esc("Team " + x.navn) + ' — ' + (x.u === "ok"
+                ? (EN ? "travels with your account to a new phone ✓" : "følger med kontoen til en ny telefon ✓")
+                : x.u === "mangler"
+                  ? (EN ? "does not travel: the team key is missing on this phone." : "følger ikke med: team-nøglen mangler på denne telefon.")
+                  : (EN ? "does not travel: the team key has an unknown form (" + x.l + " characters" + (x.fam ? ", fam-" : "") + ")." : "følger ikke med: team-nøglen har en ukendt form (" + x.l + " tegn" + (x.fam ? ", fam-" : "") + ").")) + '</p>';
+            });
+          }
+        } catch (_e) {}
+        if (_sk && _sk.har && _sk.bytes) {
+          h += '<p class="lille" style="margin:7px 0 0;opacity:.6">' +
+            Math.max(1, Math.round(_sk.bytes / 1024)) + ' KB' + (_sk.enhed ? ' \u00b7 ' + esc(_sk.enhed) : '') + '</p>';
+        }
+        h += '<div class="raekke" style="margin-top:9px;gap:6px">' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' +
+            (S.skySender ? ' disabled' : '') + ' data-a="skySikNu">' +
+            (S.skySender ? '\u23f3 \u2026' : (EN ? "\u2601\ufe0f Save now" : "\u2601\ufe0f Gem nu")) + '</button>' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-a="skyHentNu">' +
+            (EN ? "\u267b\ufe0f Fetch it" : "\u267b\ufe0f Hent den") + '</button>' +
+          (_sk && _sk.har ? '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px;' +
+            (S.skySlet ? 'background:var(--tabt);border-color:var(--tabt);color:#fff' : 'color:var(--tabt);border-color:rgba(210,72,78,.5)') +
+            '" data-a="' + (S.skySlet ? 'skySlet' : 'skySletSpoerg') + '">' +
+            (S.skySlet ? (EN ? "\u26a0\ufe0f Tap again" : "\u26a0\ufe0f Tryk igen") : (EN ? "Delete" : "Slet")) + '</button>' : '') +
+          '</div>';
+        if (!_harN) {
+          h += '<p class="lille" style="margin:8px 0 0;color:var(--guld)">' + (EN
+            ? "Log out and in again once \u2014 the key is made from your password, and it is only there at login."
+            : "Log ud og ind \u00e9n gang \u2014 n\u00f8glen laves ud af dit kodeord, og det findes kun ved login.") + '</p>';
+        }
+      }
+      // ⭐⭐⭐ v4.84.0 · DEN LÅSTE BOKS HAR NU EN DØR.
+      if (S.skyLaast) {
+        // ⭐⭐ v5.7.2 · DØREN SIGER SANDHEDEN: det er telefonens nøgle, der ikke passer — og DIT kodeord åbner den.
+        h += '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--kant)">' +
+          '<p class="lille" style="margin:0 0 7px;color:var(--guld);font-weight:700">🔒 ' + (EN
+            ? "The key on this phone does not fit what your account has saved. Nothing has been overwritten — and nothing new is saved from here until it is opened."
+            : "Nøglen på denne telefon passer ikke til det, din konto har gemt. Der er ikke overskrevet noget — og der gemmes ikke nyt herfra, før den er åbnet.") + '</p>';
+        if (!S.skyLaasOpAaben) {
+          h += '<button class="knap valg" style="width:100%;min-height:44px" data-a="skyLaasOpAabn">🔑 ' +
+            (EN ? "Open it with your password" : "Åbn med dit kodeord") + '</button>';
+        } else {
+          h += '<div style="display:flex;gap:6px;align-items:stretch">' +
+            '<input type="password" class="felt" style="flex:1;min-width:0" autocomplete="current-password" data-felt="skyGammelKode" value="' + esc(S.skyGammelKode || "") +
+            '" placeholder="' + (EN ? "your password" : "dit kodeord") + '"></div>' +
+            '<div class="raekke" style="margin-top:7px">' +
+            '<button class="knap" style="min-height:44px;background:var(--grus)"' + (S.skySender ? ' disabled' : '') + ' data-a="skyLaasOp">' +
+              (S.skySender ? "⏳ …" : (EN ? "Open" : "Åbn")) + '</button>' +
+            '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;font-size:12px" data-a="skyLaasOpAabn">' + (EN ? "Cancel" : "Annullér") + '</button></div>' +
+            '<p class="lille" style="margin:6px 0 0">' + (EN
+              ? "Your current password opens it. Changed it lately and it does not work? Try the one you had before."
+              : "Dit nuværende kodeord åbner den. Har du skiftet kodeord, og virker det ikke? Så prøv det, du havde før.") + '</p>' +
+            // ⭐ v5.7.2 · vejen, når INTET gammelt kodeord virker: slet den, og lav en ny herfra — låst med dit NUVÆRENDE kodeord (feltet ovenfor)
+            '<p class="lille" style="margin:10px 0 5px">' + (EN
+              ? "Remember none of them? Delete it and make a new one from this phone with your current password in the field above — everything on THIS phone comes along."
+              : "Kan du ingen af dem huske? Slet den, og lav en ny fra denne telefon med dit nuværende kodeord i feltet ovenfor — alt på DENNE telefon kommer med.") + '</p>' +
+            '<button class="knap valg" style="width:100%;min-height:44px;' + (S.skyLaasNySpoerg ? 'background:var(--tabt);border-color:var(--tabt);color:#fff' : 'color:var(--tabt);border-color:rgba(210,72,78,.5)') + '"' +
+              (S.skySender ? ' disabled' : '') + ' data-a="skyLaasNy">' + (S.skyLaasNySpoerg
+              ? (EN ? "⚠️ Tap again — the old one cannot be fetched afterwards" : "⚠️ Tryk igen — den gamle kan ikke hentes bagefter")
+              : (EN ? "🗑 Delete it and make a new one here" : "🗑 Slet den, og lav en ny herfra")) + '</button>';
+        }
+        h += '</div>';
+      }
+      if (S.skyBesked) h += '<p class="lille" style="margin:8px 0 0;color:' +
+        (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>';
+      h += '</div>';
+    }
+    // ⭐⭐⭐ v4.113.0 · ARKIVET — det, der kommer tilbage UDEN kodeordet.
+    if (S.spillerNoegle && S.rolle !== "familie" && !teamKunStreaks()) {
+      var _as = S.kamparkivStatus, _sendtA = 0;
+      try { _sendtA = Object.keys(JSON.parse(lager.hent("sai-kamparkiv-sendt") || "{}") || {}).filter(function(k){ return k !== "_udvikling"; }).length; } catch (_e) {}
+      h += '<div class="kort" style="--tone:var(--is)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
+          '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83d\udcda ' + (EN ? "MATCH ARCHIVE" : "KAMPARKIVET") + '</div>' +
+          '<span class="lille" style="color:var(--daempet)">' + (S.kamparkivSender || S.kamparkivHenter ? '\u23f3 \u2026'
+            : (_as ? (_as.kampe + (EN ? " on the server" : " p\u00e5 serveren")) : (_sendtA ? (_sendtA + (EN ? " sent" : " sendt")) : (EN ? "readable \u00b7 no names" : "l\u00e6sbart \u00b7 uden navne")))) + '</span></div>' +
+        '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
+          ? "The balls, results, analyses and your development letter are kept <b>readable</b> here \u2014 without opponents\u2019 names and without your notes. They come back with your account alone, even on a new phone with a new password. Opponents\u2019 names live only in the locked box above."
+          : "Boldene, resultaterne, analyserne og dit udviklingsbrev gemmes <b>l\u00e6sbart</b> her \u2014 uden modstandernes navne og uden dine noter. De kommer tilbage med din konto alene, ogs\u00e5 p\u00e5 en ny telefon med et nyt kodeord. Modstandernes navne bor kun i den l\u00e5ste boks ovenfor.") + '</p>' +
+        '<div class="raekke" style="margin-top:9px;gap:6px">' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' + (S.kamparkivSender ? ' disabled' : '') + ' data-a="kamparkivSikNu">' + (S.kamparkivSender ? '\u23f3 \u2026' : (EN ? "\ud83d\udcda Save now" : "\ud83d\udcda Gem nu")) + '</button>' +
+          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' + (S.kamparkivHenter ? ' disabled' : '') + ' data-a="kamparkivHentNu">' + (S.kamparkivHenter ? '\u23f3 \u2026' : (EN ? "\u267b\ufe0f Fetch the archive" : "\u267b\ufe0f Hent arkivet")) + '</button>' +
+        '</div>';
+      if (S.kamparkivBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.kamparkivBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.kamparkivBesked.t) + '</p>';
+      h += '</div>';
+    }
+    h += '<div class="kort">';
+    h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">💾 '+(EN?"Backup":"Sikkerhedskopi")+'</h2>' +
+      '<p class="lille" style="margin:-4px 0 9px">' + (EN
+        ? "The manual copy \u2014 for moving to another browser, or for keeping a copy somewhere of your own."
+        : "Den manuelle kopi \u2014 til at flytte til en anden browser, eller til at gemme et sted, du selv bestemmer.") + '</p>' +
+      '<div class="raekke"><button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="backupLav">💾 '+(EN?"Create full backup":"Lav fuld backup")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="gendanToggle">♻️ '+(EN?"Restore":"Gendan")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--vundet);color:var(--vundet)" data-a="fletToggle">'+(EN?"🔀 Merge device":"🔀 Flet enhed")+'</button></div>';
+    if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and keep it somewhere safe — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den et sikkert sted — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>' + eksportKnapper('backupTekst', EN);
+    if (S.gendanAaben) {
+      h += '<p class="lille">'+(EN?"Paste a backup text below. NOTE: restoring REPLACES all data on this device.":"Indsæt en backup-tekst herunder. OBS: Gendannelse ERSTATTER alle data på denne enhed.")+'</p>' +
+        '<textarea data-felt="gendanTekst" placeholder="TEAMOSKAR-BACKUP-V1 ..." style="height:80px;color:var(--kridt)">'+esc(S.gendanTekst)+'</textarea>' +
+        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--tabt)" data-a="gendanKoer">'+(EN?"Restore — REPLACES current data":"Gendan — ERSTATTER nuværende data")+'</button></div>';
+    }
+    if (S.fletAaben) {
+      h += '<p class="lille" style="margin-top:8px">'+(EN?"Paste an export/backup from ANOTHER phone. Matches are MERGED in (duplicates skipped) — nothing is deleted.":"Indsæt en eksport/backup fra en ANDEN telefon. Kampene FLETTES ind (dubletter springes over) — intet slettes.")+'</p>' +
+        '<textarea data-felt="fletTekst" placeholder="TEAMOSKAR-BACKUP-V1 ..." style="height:80px;color:var(--kridt)">'+esc(S.fletTekst)+'</textarea>' +
+        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--vundet);color:var(--dyb)" data-a="fletKoer">'+(EN?"🔀 Merge in":"🔀 Flet ind")+'</button></div>';
+    }
+    if (S.fletBesked && S.fletBesked.indexOf("OK") === 0) h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Merged in "+S.fletBesked.split(":")[1]+" new matches ✓":"Flettede "+S.fletBesked.split(":")[1]+" nye kampe ind ✓")
+      + (S.fletNavngivet ? (EN ? " \u00b7 " + S.fletNavngivet + " match(es) from the archive got their opponent\u2019s name" : " \u00b7 " + S.fletNavngivet + " kamp(e) fra arkivet fik modstanderens navn") : '') + '</p>';   // ⭐ v4.113.0
+    // ⛔⭐ v4.81.0 · OG HVIS NOGET BLEV KASSERET, SIGES DET.
+    //   Nicolai 30/8: «når jeg fletter hans kampe kommer de ikke med».
+    //   `rensKamp` kræver et `point`-array — en kamp, der kun er ført
+    //   ind som et RESULTAT, har ikke ét, og blev smidt ud i stilhed.
+    //   Nu står der, hvor mange og hvorfor, så ingen leder efter en
+    //   fejl, der ikke findes.
+    if (S.fletBesked && S.fletBesked.indexOf("OK") === 0 && S.fletBesked.split(":")[2])
+      h += '<p class="lille" style="color:var(--guld);font-weight:700;margin-top:4px">' + (EN
+        ? S.fletBesked.split(":")[2] + " match(es) in the text could NOT be read \u2014 they have no ball-by-ball recording, only a result. They stay where they are."
+        : S.fletBesked.split(":")[2] + " kampe i teksten kunne IKKE l\u00e6ses \u2014 de har ingen bold-for-bold-registrering, kun et resultat. De bliver, hvor de er.") + '</p>';
+    // ⭐ v4.84.0 · og hvad der ELLERS kom med. Princip 70: et løfte, der kun
+    //   gemmes, er ikke givet — så det, kopien nu bærer, skal også SES.
+    if (S.fletBesked && S.fletBesked.indexOf("OK") === 0 && (S.fletEkstra || []).length)
+      h += '<p class="lille" style="color:var(--vundet);margin-top:4px">' + (EN ? "Also came along: " : "Med kom også: ") + esc(S.fletEkstra.join(", ")) + '</p>';
+    if (S.fletBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read that text.":"Kunne ikke læse teksten.")+'</p>';
+    if (S.gendanBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read the backup text — check that everything was copied.":"Kunne ikke læse backup-teksten — tjek at alt kom med.")+'</p>';
+    if (S.gendanBesked && S.gendanBesked.indexOf("OK:") === 0) { const t = S.gendanBesked.split(":"); h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Restored: ":"Gendannet: ")+t[1]+' '+(EN?"matches":"kampe")+' · '+t[2]+' '+(EN?"running sessions":"løbepas")+' · '+t[3]+' '+(EN?"tennis sessions":"tennistræninger")+'</p>'; }
+    if (S.eksport) h += '<p class="lille" style="margin-top:10px">'+(EN?"Select, copy and share with your coach:":"Markér, kopiér og del med træneren:")+'</p><textarea id="eksport-boks" readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>' + eksportKnapper('eksport', EN);
+  }
+    h += '</div>';
+  return h;
+}
 function _kontoFlise(rum, a, ik, titel, status, lille, kant, ekstra) {
   return '<button class="dev-flise ' + kant + '" data-kontorum="' + rum + '" data-a="' + a + '"' + (ekstra || '') + '>' +
     '<span class="dev-ikon">' + ik + '</span><b>' + titel + '</b>' +
@@ -9567,6 +9775,7 @@ function _kontoRum(kk, m, EN) {
   if (rum === "plan") _kontoRumAaben = { rum: "plan", titel: "PLAN", html: plan + fortryd + besked };
   else if (rum === "live" && live) _kontoRumAaben = { rum: "live", titel: (EN ? "LIVE MATCHES" : "LIVE-KAMPE"), html: live + besked };
   else if (rum === "kode") _kontoRumAaben = { rum: "kode", titel: (EN ? "PASSWORD" : "KODEORD"), html: kode + besked };
+  else if (rum === "kopi") _kontoRumAaben = { rum: "kopi", titel: "\ud83d\udcbe " + (EN ? "BACKUP" : "SIKKERHEDSKOPI"), html: _kopiHtml(EN), raa: true };   /* ⭐ v5.12.1 · raa: panelet er selv kort — ingen ramme om rammen */
   /* fliserne */
   const pl = S.minPlan;
   const venter = !!(S.portStatus && S.portStatus.kendt && S.portStatus.status !== "godkendt");
@@ -9591,8 +9800,8 @@ function _kontoRum(kk, m, EN) {
   const k = S.koebKlar || { kamp: 0, live: 0 }; const klar = (k.kamp || 0) + (k.live || 0);
   let f = _kontoFlise("plan", "kontoRum", "🎟️", (EN ? "PLAN" : "PLAN"), planStatus, (!S.betalAfvist && aftLille) ? aftLille : planLille, planRoed ? "dev-kant-roed" : "dev-kant-grus", ' data-v="plan"');
   if (live) f += _kontoFlise("live", "kontoRum", "📡", (EN ? "LIVE MATCHES" : "LIVE-KAMPE"), (EN ? klar + " ready" : klar + " klar"), liveTalTekst(EN), "dev-kant-guld", ' data-v="live"');
-  f += _kontoFlise("kopi", "gaaKopi", "💾", (EN ? "BACKUP" : "SIKKERHEDSKOPI"), S.skyLaast ? (EN ? "⚠️ locked" : "⚠️ låst") : (EN ? "Automatic" : "Automatisk"),
-    S.skyLaast ? (EN ? "Log in again to unlock" : "Log ind igen for at låse op") : (EN ? "Locked on this phone" : "Låst på telefonen"), S.skyLaast ? "dev-kant-roed" : "dev-kant-gron");
+  f += _kontoFlise("kopi", "kontoRum", "💾", (EN ? "BACKUP" : "SIKKERHEDSKOPI"), S.skyLaast ? (EN ? "⚠️ locked" : "⚠️ låst") : (EN ? "Automatic" : "Automatisk"),
+    S.skyLaast ? (EN ? "Log in again to unlock" : "Log ind igen for at låse op") : (EN ? "Locked on this phone" : "Låst på telefonen"), S.skyLaast ? "dev-kant-roed" : "dev-kant-gron", ' data-v="kopi"');   /* v5.12.1 · et rum, ikke et hop */
   f += _kontoFlise("kode", "kodeAabn2", "🔑", (EN ? "PASSWORD" : "KODEORD"), (EN ? "Change password" : "Skift kodeord"), (EN ? "Your login" : "Dit login"), "dev-kant-staal");
   if (!S.logUdSpoerg) f += _kontoFlise("logud", "logUdSpoerg", "🚪", (EN ? "LOG OUT" : "LOG UD"), "", (EN ? "Everything follows your account" : "Alt følger din konto"), "dev-kant-staal");
   return hoved + '<div class="dev-grid" data-kontofliser="1" style="margin:4px 0 6px">' + f + '</div>' + (S.logUdSpoerg ? logud : '') + besked + slet;
@@ -9607,7 +9816,7 @@ function _kontoRumSkaerm(EN) {
     '<div style="display:flex;align-items:center;gap:10px;margin:0 0 12px">' +
     '<button class="knap valg" data-kontorum-tilbage="1" style="flex:none;min-height:40px;margin:0;padding:6px 14px" data-a="kontoRum" data-v="">‹ ' + (EN ? "Your account" : "Din konto") + '</button>' +
     '<span style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">' + r.titel + '</span></div>' +
-    '<div class="kort dev-kant dev-kant-is" style="padding:14px">' + r.html + '</div>' +
+    (r.raa ? r.html : '<div class="kort dev-kant dev-kant-is" style="padding:14px">' + r.html + '</div>') +   /* v5.12.1 · raa */
     '</div></div>';
 }
 function _planNavn(p, EN) {
@@ -14733,24 +14942,21 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       + _stflise("form", "\ud83d\udcc8", (EN?"FORM":"FORMKURVEN"),
           S.kampeLaast ? (EN?"\u26a0\ufe0f could not be read":"\u26a0\ufe0f kunne ikke læses")
             : _nKamp ? (_nKamp + " " + (EN ? (_nKamp===1?"match":"matches") : (_nKamp===1?"kamp":"kampe"))) : (EN?"no matches yet":"ingen kampe endnu"),
-          S.kampeLaast ? "dev-kant-roed" : "")
+          S.kampeLaast ? "dev-kant-roed" : "dev-kant-is")   /* v5.12.1 · farve */
       + _stflise("kampe", "\ud83c\udfbe", (EN?"MATCHES":"KAMPENE"),
           S.kampeLaast ? (EN?"\u26a0\ufe0f could not be read":"\u26a0\ufe0f kunne ikke læses")
             : _nKamp ? (EN?"tap to open":"tryk for at åbne") : (EN?"register your first":"registrér din første"),
-          S.kampeLaast ? "dev-kant-roed" : "")
+          S.kampeLaast ? "dev-kant-roed" : "dev-kant-gron")
       + _stflise("traen", "\ud83c\udfc3", (EN?"TRAINING":"TR\u00c6NINGEN"),
-          _nTraen ? (_nTraen + " " + (EN ? (_nTraen===1?"session":"sessions") : (_nTraen===1?"pas":"pas"))) : (EN?"log your first":"log dit f\u00f8rste"))
+          _nTraen ? (_nTraen + " " + (EN ? (_nTraen===1?"session":"sessions") : (_nTraen===1?"pas":"pas"))) : (EN?"log your first":"log dit f\u00f8rste"), "dev-kant-guld")
       // ⭐⭐ v4.84.0 · en låst kopi må kunne SES fra flisen. Før stod den
       //   ærlige besked nede i panelet — og en familie, der ikke åbnede
       //   det, fik aldrig at vide, at der ikke blev gemt mere.
       // ⭐ v4.96.0 · hos teamet er flisen SPEJLET — samme boks, set fra den anden side.
-      + (teamKunStreaks()
-        ? ""   /* v5.11.5 · teamet har ingen boks-flise under STATS — spejlets status står på TEAMET-flisen */
-        : _stflise("backup", "\ud83d\udcbe", (EN?"BACKUP":"SIKKERHEDSKOPI"),
-          (S.skyLaast ? (EN?"\u26a0\ufe0f locked \u2014 open it":"\u26a0\ufe0f låst — åbn den") : (EN?"save & move":"gem & flyt")),
-          S.skyLaast ? "dev-kant-roed" : ""))
+      /* v5.12.1 · SIKKERHEDSKOPI bor i Din konto — ingen flise her (v5.11.5: teamet havde allerede ingen) */
       + '</div>';
 
+      var _statRumStart = h.length;   /* ⭐ v5.12.1 · herfra og til blokkens slutning er rummets indhold */
       if (_sp === "form") {
       h += '<div class="kort">';
     h += grafVT(EN);
@@ -14770,11 +14976,11 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     if (S.retBesked && S.retKamp === null) h += '<p class="lille" style="margin:0 0 8px;padding:9px 11px;--tone:var(--vundet);border-radius:10px;line-height:1.5;color:var(--vundet)">⚙ ' + esc(S.retBesked.t) + '</p>';   // ⭐ v4.118.0
     var _navnLaas = (S.gemte || []).filter(function(k){ return k && k.navnLaas; }).length;
     if (_navnLaas) h += '<p class="lille" style="margin:0 0 8px;padding:8px 10px;--tone:var(--is);border-radius:10px;line-height:1.5">\ud83d\udd12 ' + (EN
-      ? _navnLaas + " match(es) came from the archive without the opponent\u2019s name \u2014 the names are in your locked backup. \u2699\ufe0f \u2192 BACKUP \u2192 <b>Fetch it</b> with your password brings them back."
-      : _navnLaas + " kamp(e) kom fra arkivet uden modstanderens navn \u2014 navnene ligger i din l\u00e5ste sikkerhedskopi. \u2699\ufe0f \u2192 SIKKERHEDSKOPI \u2192 <b>Hent den</b> med dit kodeord giver dem tilbage.") + '</p>';
+      ? _navnLaas + " match(es) came from the archive without the opponent\u2019s name \u2014 the names are in your locked backup. \u2699\ufe0f \u2192 YOUR ACCOUNT \u2192 BACKUP \u2192 <b>Fetch it</b> with your password brings them back."
+      : _navnLaas + " kamp(e) kom fra arkivet uden modstanderens navn \u2014 navnene ligger i din l\u00e5ste sikkerhedskopi. \u2699\ufe0f \u2192 DIN KONTO \u2192 SIKKERHEDSKOPI \u2192 <b>Hent den</b> med dit kodeord giver dem tilbage.") + '</p>';
     var _kp = S.kampePanel;
-    var _kflise = function(v, ik, titel, tal) {
-      return '<button class="dev-flise dev-kant' + (_kp === v ? ' dev-kant-is' : '') + '"'
+    var _kflise = function(v, ik, titel, tal, kant) {   /* v5.12.1 · kant: farven */
+      return '<button class="dev-flise dev-kant' + (_kp === v ? ' dev-kant-is' : (kant ? ' ' + kant : '')) + '"'
         + ' style="min-height:74px;padding:12px 12px 11px' + (_kp === v ? ';border-color:var(--is)' : '') + '"'
         + ' data-a="kampePanel" data-v="' + v + '">'
         + '<span class="dev-ikon" style="font-size:17px;margin-bottom:2px">' + ik + '</span>'
@@ -14783,9 +14989,9 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     };
     h += '<p class="lille" style="margin:0 0 6px;letter-spacing:1.4px;font-weight:800;color:var(--daempet)">\u21b3 ' + (EN?"PICK AN AREA":"V\u00c6LG ET OMR\u00c5DE") + '</p>';
     h += '<div class="dev-grid" style="margin:2px 0 12px">'
-      + (S.gemte.length >= 2 ? _kflise("mod", "\ud83e\udded", (EN?"LATEST":"SENESTE"), (EN?"vs the previous one":"mod forrige kamp")) : '')
-      + _kflise("trend", "\ud83d\udcc8", (EN?"TREND":"UDVIKLING"), (EN?"match by match":"kamp for kamp"))
-      + _kflise("bench", "\ud83c\udd9a", (EN?"BENCHMARK":"BENCHMARK"), (EN?"vs ":"mod ") + ((typeof BENCHMARKS!=="undefined"&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner"))
+      + (S.gemte.length >= 2 ? _kflise("mod", "\ud83e\udded", (EN?"LATEST":"SENESTE"), (EN?"vs the previous one":"mod forrige kamp"), "dev-kant-gron") : '')
+      + _kflise("trend", "\ud83d\udcc8", (EN?"TREND":"UDVIKLING"), (EN?"match by match":"kamp for kamp"), "dev-kant-is")
+      + _kflise("bench", "\ud83c\udd9a", (EN?"BENCHMARK":"BENCHMARK"), (EN?"vs ":"mod ") + ((typeof BENCHMARKS!=="undefined"&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner"), "dev-kant-guld")
       + '</div>';
     if (_kp === "mod" && S.gemte.length >= 2) {
       const sa = statistik(S.gemte[0]), sb = statistik(S.gemte[1]);
@@ -15155,207 +15361,12 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     }
     h += '</div>';
     }
-    if (_sp === "backup" && teamKunStreaks()) {
-      // ⭐⭐ v4.96.0 · SPEJLET, SET FRA TEAMET. Ingen manuel backup, ingen
-      //   sletning herfra — kun hent, og sandheden om hvad der rejser.
-      const _harB = !!lager.hent("sai-sky-noegle");
-      const _sk = S.skyStatus;
-      h += '<div class="kort" style="--tone:' + (S.skyLaast ? 'var(--tabt)' : _harB ? 'var(--is)' : 'var(--guld)') + '">' +
-        '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83d\udd04 ' + (EN ? "FROM " : "FRA ") + esc(String(SPILLER || (EN ? "the player" : "spilleren")).toUpperCase()) + (EN ? " \u00b7 MATCHES, TRAINING & ANALYSES" : " \u00b7 KAMPE, TR\u00c6NING OG ANALYSER") + '</div>' +   /* ⭐ v4.133.0 */
-        '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
-          ? "Matches, every ball, the training log and the analyses come from the player’s own encrypted backup. <b>The key came locked from the player</b> — the server still cannot open the box. What you enter here is put back into the same box, so the player sees it too."
-          : "Kampe, hver bold, træningsloggen og analyserne kommer fra spillerens egen krypterede sikkerhedskopi. <b>Nøglen kom låst fra spilleren</b> — serveren kan stadig ikke åbne boksen. Det, du taster her, lægges tilbage i samme boks, så spilleren også ser det.") + '</p>' +
-        '<p class="lille" style="margin:8px 0 0;line-height:1.5;opacity:.85">' + (EN
-          ? "Honest limits: new matches and sessions travel both ways; an edit of a match already on the other phone can appear as a second copy, and a deletion does not travel."
-          : "\u00c6rlige gr\u00e6nser: nye kampe og pas rejser begge veje; retter man en kamp, den anden telefon allerede har, kan den dukke op som en kopi \u2014 og en sletning rejser ikke.") + '</p>' +
-        (!_harB ? '<p class="lille" style="margin:8px 0 0;color:var(--guld)">' + (EN
-          ? "This phone has no key to the backup yet" + (S.spejlVenter ? " \u2014 the mirror arrives the next time the player opens the app." : " \u2014 the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM).")
-          : "Telefonen har ingen n\u00f8gle til sikkerhedskopien endnu" + (S.spejlVenter ? " \u2014 spejlet kommer, n\u00e6ste gang spilleren \u00e5bner sin app." : " \u2014 spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET).")) + '</p>' : '') +
-        (_sk && _sk.har && _sk.opdateret ? '<p class="lille" style="margin:7px 0 0;opacity:.6">' + (EN ? "Player’s box from " : "Spillerens boks fra ") + esc(new Date(_sk.opdateret).toLocaleString("da-DK")) + (_sk.bytes ? ' \u00b7 ' + Math.max(1, Math.round(_sk.bytes / 1024)) + ' KB' : '') + '</p>' : '') +
-        '<div class="raekke" style="margin-top:9px;gap:6px">' +
-          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' + (S.skySender || !_harB ? ' disabled' : '') + ' data-a="skyHentNu">' +
-          (S.skySender ? '\u23f3 \u2026' : '\ud83d\udd04 ' + _hentFraNavn(EN)) + '</button></div>' +   /* ⭐ v4.133.0 */
-        (S.skyBesked ? '<p class="lille" style="margin:8px 0 0;color:' + (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>' : '') +
-        '</div>';
-    } else if (_sp === "backup") {
-    // ══════════════════════════════════════════════════════════════════
-    // ⭐⭐⭐ v4.79.0 · DEN AUTOMATISKE KOPI STÅR ØVERST.
-    //   Den manuelle nedenunder er stadig der og virker — men den, ingen
-    //   husker at tage, er ikke en sikkerhedskopi. Denne tager sig selv.
-    // ══════════════════════════════════════════════════════════════════
-    {
-      const _sk = S.skyStatus, _harN = !!lager.hent("sai-sky-noegle");
-      const _tid = _sk && _sk.opdateret ? new Date(_sk.opdateret) : null;
-      const _siden = _tid ? Math.max(0, Math.round((Date.now() - _tid.getTime()) / 60000)) : null;
-      const _naar = _siden === null ? "" : (_siden < 2 ? (EN ? "just now" : "lige nu")
-        : _siden < 60 ? (EN ? _siden + " min ago" : "for " + _siden + " min siden")
-        : _siden < 1440 ? (EN ? Math.round(_siden / 60) + " h ago" : "for " + Math.round(_siden / 60) + " timer siden")
-        : _tid.toLocaleDateString("da-DK"));
-      // ⭐ v4.84.0 · FANGET PÅ ET SKÆRMBILLEDE: kortet sagde «ikke endnu»
-      //   ØVERST og «kopien her er låst» tre linjer nede. To sætninger om
-      //   det samme, der ikke kunne passe begge. Er boksen låst, siger
-      //   hovedet dét — og intet andet.
-      h += '<div class="kort" style="--tone:' +
-        (S.skyLaast ? 'var(--tabt)' : (_sk && _sk.har) ? 'var(--vundet)' : 'var(--guld)') + '">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-          '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\u2601\ufe0f ' +
-          (EN ? "AUTOMATIC BACKUP" : "AUTOMATISK SIKKERHEDSKOPI") + '</div>' +
-          '<span class="lille" style="color:' + (S.skyLaast ? 'var(--tabt)' : (_sk && _sk.har) ? 'var(--vundet)' : 'var(--daempet)') + '">' +
-          (S.skySender ? '\u23f3 \u2026' : S.skyLaast ? '\ud83d\udd12 ' + (EN ? "locked" : "låst")
-            : (_sk && _sk.har) ? '\u2713 ' + _naar : (EN ? "not yet" : "ikke endnu")) + '</span></div>';
-      // ⭐ v4.105.0 · ORMEHULLET: postkassen fra teamet. Kun på spillerens
-      //   egen telefon, kun når nøgleparret findes (dvs. en nøgle er udstedt).
-      if (S.minKonto && lager.hent("sai-post-privat")) {
-        h += '<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><button class="knap valg" style="flex:none;min-height:40px;padding:0 12px;font-size:12px" data-a="postHent">' + (S.postHenter ? "⏳ …" : "🕳️ " + (EN ? "Check the wormhole" : "Se i ormehullet")) + '</button>' +
-          '<span class="lille" style="margin:0">' + (EN ? "Matches your team enters without the mirror land here." : "Kampe, dit team taster uden spejl, lander her.") + '</span></div>';
+      if (_sp === "form" || _sp === "kampe" || _sp === "traen") {   /* ⭐ v5.12.1 · panelet er et RUM, ikke en liste under gitteret */
+        var _statRumHtml = h.slice(_statRumStart); h = h.slice(0, _statRumStart);
+        _rumAaben = { id: "stat-" + _sp, a: "statPanel", v: "", tilbage: "\u2039 Stats",
+          titel: ({ form: "\ud83d\udcc8 " + (EN?"FORM":"FORMKURVEN"), kampe: "\ud83c\udfbe " + (EN?"MATCHES":"KAMPENE"), traen: "\ud83c\udfc3 " + (EN?"TRAINING":"TR\u00c6NINGEN") })[_sp],
+          html: _statRumHtml };
       }
-      if (S.postBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.postBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.postBesked.t) + '</p>';
-      if (!S.minKonto) {
-        // ⛔ Uden konto er der ingen at gemme for — og ingen vej tilbage.
-        h += '<p class="lille" style="margin:8px 0 0">' + (EN
-          ? "You need an account for this."
-          : "Det kr\u00e6ver en konto.") + '</p>';
-      } else {
-        h += '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
-          ? "Your matches, every ball, your training log and your analyses are copied automatically. <b>The balls, results and analyses are kept readable in the archive</b>, so they come back with your account alone \u2014 even if you forget your password. <b>Opponents\u2019 names and your notes are locked on this phone before they are sent</b>: the server keeps a box it cannot open, and they come back with your password. Log in on a new phone, and it all comes back."
-          : "Dine kampe, hver bold, din tr\u00e6ningslog og dine analyser kopieres automatisk. <b>Boldene, resultaterne og analyserne gemmes l\u00e6sbart i arkivet</b>, s\u00e5 de kommer tilbage med din konto alene \u2014 ogs\u00e5 hvis du glemmer dit kodeord. <b>Modstandernes navne og dine noter l\u00e5ses p\u00e5 denne telefon, f\u00f8r de sendes</b>: serveren opbevarer en boks, den ikke kan \u00e5bne, og de kommer tilbage med dit kodeord. Log ind p\u00e5 en ny telefon, og det hele kommer tilbage.") + '</p>';
-        // ⚠️⚠️ PRISEN, SAGT HVOR DEN GÆLDER. Der findes ingen bagdør, og
-        //   det er hele pointen — så det må ikke stå med småt et andet sted.
-        h += '<p class="lille" style="margin:9px 0 0;padding:8px 10px;--tone:var(--guld);border-radius:10px;line-height:1.5">' + (EN
-          ? "<b>Remember your password.</b> The box is locked with it. If you forget it <i>and</i> lose the phone, no one can open the box \u2014 not even us: opponents\u2019 names and your notes are gone. Your matches, balls and analyses come back from the archive anyway."
-          : "<b>Husk dit kodeord.</b> Boksen er l\u00e5st med det. Glemmer du det <i>og</i> mister telefonen, kan ingen \u00e5bne boksen \u2014 heller ikke vi: modstandernes navne og dine noter er v\u00e6k. Dine kampe, bolde og analyser kommer tilbage fra arkivet alligevel.") + '</p>';
-        // ⭐ v5.7.1 · teamene, sagt ét ad gangen (princip 75)
-        try {
-          const _tfm = teamFoelgerMed();
-          if (_tfm.length && teamKunStreaks()) {
-            h += '<p class="lille" style="margin:8px 0 0;color:var(--guld)">👥 ' + (EN
-              ? "Your teams travel with your account from your own view — switch to your own player first."
-              : "Dine teams følger med kontoen fra din egen visning — skift til din egen spiller først.") + '</p>';
-          } else if (_tfm.length) {
-            _tfm.forEach(function (x) {
-              h += '<p class="lille" style="margin:6px 0 0;color:' + (x.u === "ok" ? 'var(--vundet)' : 'var(--guld)') + '">👥 ' + esc("Team " + x.navn) + ' — ' + (x.u === "ok"
-                ? (EN ? "travels with your account to a new phone ✓" : "følger med kontoen til en ny telefon ✓")
-                : x.u === "mangler"
-                  ? (EN ? "does not travel: the team key is missing on this phone." : "følger ikke med: team-nøglen mangler på denne telefon.")
-                  : (EN ? "does not travel: the team key has an unknown form (" + x.l + " characters" + (x.fam ? ", fam-" : "") + ")." : "følger ikke med: team-nøglen har en ukendt form (" + x.l + " tegn" + (x.fam ? ", fam-" : "") + ").")) + '</p>';
-            });
-          }
-        } catch (_e) {}
-        if (_sk && _sk.har && _sk.bytes) {
-          h += '<p class="lille" style="margin:7px 0 0;opacity:.6">' +
-            Math.max(1, Math.round(_sk.bytes / 1024)) + ' KB' + (_sk.enhed ? ' \u00b7 ' + esc(_sk.enhed) : '') + '</p>';
-        }
-        h += '<div class="raekke" style="margin-top:9px;gap:6px">' +
-          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' +
-            (S.skySender ? ' disabled' : '') + ' data-a="skySikNu">' +
-            (S.skySender ? '\u23f3 \u2026' : (EN ? "\u2601\ufe0f Save now" : "\u2601\ufe0f Gem nu")) + '</button>' +
-          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-a="skyHentNu">' +
-            (EN ? "\u267b\ufe0f Fetch it" : "\u267b\ufe0f Hent den") + '</button>' +
-          (_sk && _sk.har ? '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px;' +
-            (S.skySlet ? 'background:var(--tabt);border-color:var(--tabt);color:#fff' : 'color:var(--tabt);border-color:rgba(210,72,78,.5)') +
-            '" data-a="' + (S.skySlet ? 'skySlet' : 'skySletSpoerg') + '">' +
-            (S.skySlet ? (EN ? "\u26a0\ufe0f Tap again" : "\u26a0\ufe0f Tryk igen") : (EN ? "Delete" : "Slet")) + '</button>' : '') +
-          '</div>';
-        if (!_harN) {
-          h += '<p class="lille" style="margin:8px 0 0;color:var(--guld)">' + (EN
-            ? "Log out and in again once \u2014 the key is made from your password, and it is only there at login."
-            : "Log ud og ind \u00e9n gang \u2014 n\u00f8glen laves ud af dit kodeord, og det findes kun ved login.") + '</p>';
-        }
-      }
-      // ⭐⭐⭐ v4.84.0 · DEN LÅSTE BOKS HAR NU EN DØR.
-      if (S.skyLaast) {
-        // ⭐⭐ v5.7.2 · DØREN SIGER SANDHEDEN: det er telefonens nøgle, der ikke passer — og DIT kodeord åbner den.
-        h += '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--kant)">' +
-          '<p class="lille" style="margin:0 0 7px;color:var(--guld);font-weight:700">🔒 ' + (EN
-            ? "The key on this phone does not fit what your account has saved. Nothing has been overwritten — and nothing new is saved from here until it is opened."
-            : "Nøglen på denne telefon passer ikke til det, din konto har gemt. Der er ikke overskrevet noget — og der gemmes ikke nyt herfra, før den er åbnet.") + '</p>';
-        if (!S.skyLaasOpAaben) {
-          h += '<button class="knap valg" style="width:100%;min-height:44px" data-a="skyLaasOpAabn">🔑 ' +
-            (EN ? "Open it with your password" : "Åbn med dit kodeord") + '</button>';
-        } else {
-          h += '<div style="display:flex;gap:6px;align-items:stretch">' +
-            '<input type="password" class="felt" style="flex:1;min-width:0" autocomplete="current-password" data-felt="skyGammelKode" value="' + esc(S.skyGammelKode || "") +
-            '" placeholder="' + (EN ? "your password" : "dit kodeord") + '"></div>' +
-            '<div class="raekke" style="margin-top:7px">' +
-            '<button class="knap" style="min-height:44px;background:var(--grus)"' + (S.skySender ? ' disabled' : '') + ' data-a="skyLaasOp">' +
-              (S.skySender ? "⏳ …" : (EN ? "Open" : "Åbn")) + '</button>' +
-            '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;font-size:12px" data-a="skyLaasOpAabn">' + (EN ? "Cancel" : "Annullér") + '</button></div>' +
-            '<p class="lille" style="margin:6px 0 0">' + (EN
-              ? "Your current password opens it. Changed it lately and it does not work? Try the one you had before."
-              : "Dit nuværende kodeord åbner den. Har du skiftet kodeord, og virker det ikke? Så prøv det, du havde før.") + '</p>' +
-            // ⭐ v5.7.2 · vejen, når INTET gammelt kodeord virker: slet den, og lav en ny herfra — låst med dit NUVÆRENDE kodeord (feltet ovenfor)
-            '<p class="lille" style="margin:10px 0 5px">' + (EN
-              ? "Remember none of them? Delete it and make a new one from this phone with your current password in the field above — everything on THIS phone comes along."
-              : "Kan du ingen af dem huske? Slet den, og lav en ny fra denne telefon med dit nuværende kodeord i feltet ovenfor — alt på DENNE telefon kommer med.") + '</p>' +
-            '<button class="knap valg" style="width:100%;min-height:44px;' + (S.skyLaasNySpoerg ? 'background:var(--tabt);border-color:var(--tabt);color:#fff' : 'color:var(--tabt);border-color:rgba(210,72,78,.5)') + '"' +
-              (S.skySender ? ' disabled' : '') + ' data-a="skyLaasNy">' + (S.skyLaasNySpoerg
-              ? (EN ? "⚠️ Tap again — the old one cannot be fetched afterwards" : "⚠️ Tryk igen — den gamle kan ikke hentes bagefter")
-              : (EN ? "🗑 Delete it and make a new one here" : "🗑 Slet den, og lav en ny herfra")) + '</button>';
-        }
-        h += '</div>';
-      }
-      if (S.skyBesked) h += '<p class="lille" style="margin:8px 0 0;color:' +
-        (S.skyBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.skyBesked.t) + '</p>';
-      h += '</div>';
-    }
-    // ⭐⭐⭐ v4.113.0 · ARKIVET — det, der kommer tilbage UDEN kodeordet.
-    if (S.spillerNoegle && S.rolle !== "familie" && !teamKunStreaks()) {
-      var _as = S.kamparkivStatus, _sendtA = 0;
-      try { _sendtA = Object.keys(JSON.parse(lager.hent("sai-kamparkiv-sendt") || "{}") || {}).filter(function(k){ return k !== "_udvikling"; }).length; } catch (_e) {}
-      h += '<div class="kort" style="--tone:var(--is)">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-          '<div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--grus)">\ud83d\udcda ' + (EN ? "MATCH ARCHIVE" : "KAMPARKIVET") + '</div>' +
-          '<span class="lille" style="color:var(--daempet)">' + (S.kamparkivSender || S.kamparkivHenter ? '\u23f3 \u2026'
-            : (_as ? (_as.kampe + (EN ? " on the server" : " p\u00e5 serveren")) : (_sendtA ? (_sendtA + (EN ? " sent" : " sendt")) : (EN ? "readable \u00b7 no names" : "l\u00e6sbart \u00b7 uden navne")))) + '</span></div>' +
-        '<p class="lille" style="margin:8px 0 0;line-height:1.55">' + (EN
-          ? "The balls, results, analyses and your development letter are kept <b>readable</b> here \u2014 without opponents\u2019 names and without your notes. They come back with your account alone, even on a new phone with a new password. Opponents\u2019 names live only in the locked box above."
-          : "Boldene, resultaterne, analyserne og dit udviklingsbrev gemmes <b>l\u00e6sbart</b> her \u2014 uden modstandernes navne og uden dine noter. De kommer tilbage med din konto alene, ogs\u00e5 p\u00e5 en ny telefon med et nyt kodeord. Modstandernes navne bor kun i den l\u00e5ste boks ovenfor.") + '</p>' +
-        '<div class="raekke" style="margin-top:9px;gap:6px">' +
-          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' + (S.kamparkivSender ? ' disabled' : '') + ' data-a="kamparkivSikNu">' + (S.kamparkivSender ? '\u23f3 \u2026' : (EN ? "\ud83d\udcda Save now" : "\ud83d\udcda Gem nu")) + '</button>' +
-          '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px"' + (S.kamparkivHenter ? ' disabled' : '') + ' data-a="kamparkivHentNu">' + (S.kamparkivHenter ? '\u23f3 \u2026' : (EN ? "\u267b\ufe0f Fetch the archive" : "\u267b\ufe0f Hent arkivet")) + '</button>' +
-        '</div>';
-      if (S.kamparkivBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.kamparkivBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.kamparkivBesked.t) + '</p>';
-      h += '</div>';
-    }
-    h += '<div class="kort">';
-    h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">💾 '+(EN?"Backup":"Sikkerhedskopi")+'</h2>' +
-      '<p class="lille" style="margin:-4px 0 9px">' + (EN
-        ? "The manual copy \u2014 for moving to another browser, or for keeping a copy somewhere of your own."
-        : "Den manuelle kopi \u2014 til at flytte til en anden browser, eller til at gemme et sted, du selv bestemmer.") + '</p>' +
-      '<div class="raekke"><button class="knap" style="background:transparent;border:1.5px solid var(--is);color:var(--is)" data-a="backupLav">💾 '+(EN?"Create full backup":"Lav fuld backup")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--kant);color:var(--daempet)" data-a="gendanToggle">♻️ '+(EN?"Restore":"Gendan")+'</button><button class="knap" style="background:transparent;border:1.5px solid var(--vundet);color:var(--vundet)" data-a="fletToggle">'+(EN?"🔀 Merge device":"🔀 Flet enhed")+'</button></div>';
-    if (S.backupTekst) h += '<p class="lille">'+(EN?"Copy this text and keep it somewhere safe — it contains ALL matches and training data on this device:":"Kopiér teksten og gem den et sikkert sted — den indeholder ALLE kampe og træningsdata på denne enhed:")+'</p><textarea readonly onfocus="this.select()" style="height:90px">'+esc(S.backupTekst)+'</textarea>' + eksportKnapper('backupTekst', EN);
-    if (S.gendanAaben) {
-      h += '<p class="lille">'+(EN?"Paste a backup text below. NOTE: restoring REPLACES all data on this device.":"Indsæt en backup-tekst herunder. OBS: Gendannelse ERSTATTER alle data på denne enhed.")+'</p>' +
-        '<textarea data-felt="gendanTekst" placeholder="TEAMOSKAR-BACKUP-V1 ..." style="height:80px;color:var(--kridt)">'+esc(S.gendanTekst)+'</textarea>' +
-        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--tabt)" data-a="gendanKoer">'+(EN?"Restore — REPLACES current data":"Gendan — ERSTATTER nuværende data")+'</button></div>';
-    }
-    if (S.fletAaben) {
-      h += '<p class="lille" style="margin-top:8px">'+(EN?"Paste an export/backup from ANOTHER phone. Matches are MERGED in (duplicates skipped) — nothing is deleted.":"Indsæt en eksport/backup fra en ANDEN telefon. Kampene FLETTES ind (dubletter springes over) — intet slettes.")+'</p>' +
-        '<textarea data-felt="fletTekst" placeholder="TEAMOSKAR-BACKUP-V1 ..." style="height:80px;color:var(--kridt)">'+esc(S.fletTekst)+'</textarea>' +
-        '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--vundet);color:var(--dyb)" data-a="fletKoer">'+(EN?"🔀 Merge in":"🔀 Flet ind")+'</button></div>';
-    }
-    if (S.fletBesked && S.fletBesked.indexOf("OK") === 0) h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Merged in "+S.fletBesked.split(":")[1]+" new matches ✓":"Flettede "+S.fletBesked.split(":")[1]+" nye kampe ind ✓")
-      + (S.fletNavngivet ? (EN ? " \u00b7 " + S.fletNavngivet + " match(es) from the archive got their opponent\u2019s name" : " \u00b7 " + S.fletNavngivet + " kamp(e) fra arkivet fik modstanderens navn") : '') + '</p>';   // ⭐ v4.113.0
-    // ⛔⭐ v4.81.0 · OG HVIS NOGET BLEV KASSERET, SIGES DET.
-    //   Nicolai 30/8: «når jeg fletter hans kampe kommer de ikke med».
-    //   `rensKamp` kræver et `point`-array — en kamp, der kun er ført
-    //   ind som et RESULTAT, har ikke ét, og blev smidt ud i stilhed.
-    //   Nu står der, hvor mange og hvorfor, så ingen leder efter en
-    //   fejl, der ikke findes.
-    if (S.fletBesked && S.fletBesked.indexOf("OK") === 0 && S.fletBesked.split(":")[2])
-      h += '<p class="lille" style="color:var(--guld);font-weight:700;margin-top:4px">' + (EN
-        ? S.fletBesked.split(":")[2] + " match(es) in the text could NOT be read \u2014 they have no ball-by-ball recording, only a result. They stay where they are."
-        : S.fletBesked.split(":")[2] + " kampe i teksten kunne IKKE l\u00e6ses \u2014 de har ingen bold-for-bold-registrering, kun et resultat. De bliver, hvor de er.") + '</p>';
-    // ⭐ v4.84.0 · og hvad der ELLERS kom med. Princip 70: et løfte, der kun
-    //   gemmes, er ikke givet — så det, kopien nu bærer, skal også SES.
-    if (S.fletBesked && S.fletBesked.indexOf("OK") === 0 && (S.fletEkstra || []).length)
-      h += '<p class="lille" style="color:var(--vundet);margin-top:4px">' + (EN ? "Also came along: " : "Med kom også: ") + esc(S.fletEkstra.join(", ")) + '</p>';
-    if (S.fletBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read that text.":"Kunne ikke læse teksten.")+'</p>';
-    if (S.gendanBesked === "FEJL") h += '<p class="lille" style="color:var(--tabt);font-weight:700">'+(EN?"Could not read the backup text — check that everything was copied.":"Kunne ikke læse backup-teksten — tjek at alt kom med.")+'</p>';
-    if (S.gendanBesked && S.gendanBesked.indexOf("OK:") === 0) { const t = S.gendanBesked.split(":"); h += '<p class="lille" style="color:var(--vundet);font-weight:700">'+(EN?"Restored: ":"Gendannet: ")+t[1]+' '+(EN?"matches":"kampe")+' · '+t[2]+' '+(EN?"running sessions":"løbepas")+' · '+t[3]+' '+(EN?"tennis sessions":"tennistræninger")+'</p>'; }
-    if (S.eksport) h += '<p class="lille" style="margin-top:10px">'+(EN?"Select, copy and share with your coach:":"Markér, kopiér og del med træneren:")+'</p><textarea id="eksport-boks" readonly onfocus="this.select()">'+esc(S.eksport)+'</textarea>' + eksportKnapper('eksport', EN);
-  }
-    h += '</div>';
     }
       if (!LAAST && S.tab === "status") {
     h += '<div class="raekke"><div class="kort" style="flex:1;text-align:center;margin-bottom:0"><div style="font-size:26px;font-weight:800;color:var(--guld)">'+PROFIL.u14rang+'.</div><div style="font-size:11px;color:var(--daempet)">'+(EN?"U14 Boys (of ":"U14 Drenge (af ")+PROFIL.u14af+')</div><div style="font-weight:700;margin-top:2px">'+PROFIL.u14pt+' pt</div></div>' +

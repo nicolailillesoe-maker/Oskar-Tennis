@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.11.4 · 11. oktober 2026";
+const VERSION = "v5.11.5 · 11. oktober 2026";
 // ⭐ v5.3.0 · BETALINGSLINKENE. Tomme, indtil Nicolai har oprettet dem (Stripe/MobilePay).
 //   Tomt = knappen «Betal her →» tegnes ikke. (v5.3.7: betalingen går gennem betaling-start — BETALINGSLINK er historie.)
 const BETALINGSLINK = { fuld: "", fri: "" };
@@ -13759,7 +13759,11 @@ function _tegn() {
       // ⭐ FAMILIEN (v4.2, "byg 4"): mor og far taster og ser data — aldrig
       // beskeder. Noeglen vises EN gang; kun hash paa serveren.
       if (S.rolle === "familie") {
-        _kort.familie = _opsKort("familie", "👪", (EN?"THE TEAM":"TEAMET"), (EN?"team key":"team-nøgle"), "var(--is)",
+        _kort.familie = _opsKort("familie", "👪", (EN?"THE TEAM":"TEAMET"),
+          (S.skyLaast ? (EN?"\u26a0\ufe0f key no longer fits":"\u26a0\ufe0f nøglen passer ikke")
+            : !lager.hent("sai-sky-noegle") ? (EN?"waiting for the player":"venter på spilleren")
+            : (S.skyStatus && S.skyStatus.har) ? (EN?"\u2713 fetched":"\u2713 hentet") : (EN?"automatic":"automatisk")),   /* v5.11.5 · status, ikke «team-nøgle» (97) · «automatisk» = nøglen er der, intet hentet i denne session endnu */
+          S.skyLaast ? "var(--tabt)" : "var(--is)",
           _budKrop(EN) +
           '<p class="lille" style="margin:0">' + (EN
             ? "This phone holds a team key: it enters and sees data."
@@ -13905,15 +13909,7 @@ function _tegn() {
       //     dage før pilotstart (køreplanens §7). Der bygges en DØR, så
       //     app og vejledning siger det samme. Flisen under STATS bliver
       //     stående; den, der leder dér, finder den også.
-      if (S.rolle === "familie") h += _opsKort("kopi", "\ud83d\udcbe", (EN?"BACKUP":"SIKKERHEDSKOPI"),   /* v4.158.0 · kun teamet — spilleren har den i DIN KONTO */
-        (S.skyLaast ? (EN?"\u26a0\ufe0f locked":"\u26a0\ufe0f l\u00e5st")
-          : (EN?"automatic \u00b7 locked on this phone":"automatisk \u00b7 l\u00e5st p\u00e5 telefonen")),
-        (S.skyLaast ? "var(--tabt)" : "var(--vundet)"),
-        '<p class="lille" style="margin:0 0 9px">' + (EN
-          ? "Your matches, every ball, your training log and your analyses are copied automatically. <b>The balls, results and analyses are kept readable in the archive</b>, so they come back with your account alone \u2014 even if you forget your password. <b>Opponents\u2019 names and your notes are locked on this phone before they are sent</b>: the server keeps a box it cannot open, and they come back with your password. Log in on a new phone, and it all comes back."
-          : "Dine kampe, hver bold, din tr\u00e6ningslog og dine analyser kopieres automatisk. <b>Boldene, resultaterne og analyserne gemmes l\u00e6sbart i arkivet</b>, s\u00e5 de kommer tilbage med din konto alene \u2014 ogs\u00e5 hvis du glemmer dit kodeord. <b>Modstandernes navne og dine noter l\u00e5ses p\u00e5 denne telefon, f\u00f8r de sendes</b>: serveren opbevarer en boks, den ikke kan \u00e5bne, og de kommer tilbage med dit kodeord. Log ind p\u00e5 en ny telefon, og det hele kommer tilbage.") + '</p>' +
-        '<button class="knap" style="width:100%;min-height:48px;background:var(--grus)" data-a="gaaKopi">' +
-        (EN?"Open backup \u2192":"\u00c5bn sikkerhedskopien \u2192") + '</button>');
+      /* v5.11.5 · teamets SIKKERHEDSKOPI-kort er væk (Nicolai 11/10) — status og «Hent det nyeste» bor under TEAMET */
 
       // ── SÅDAN VIRKER STREAKTENNIS (v4.140.0) ─────────────────────
       //   Nicolai 12/9: «Meget high level, så folk ved, hvad den gør og
@@ -14753,11 +14749,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       //   det, fik aldrig at vide, at der ikke blev gemt mere.
       // ⭐ v4.96.0 · hos teamet er flisen SPEJLET — samme boks, set fra den anden side.
       + (teamKunStreaks()
-        ? _stflise("backup", "\ud83d\udd04", (EN ? "FROM " : "FRA ") + String(SPILLER || (EN ? "the player" : "spilleren")).toUpperCase(),   /* ⭐ v4.133.0 */
-            (S.skyLaast ? (EN?"\u26a0\ufe0f key no longer fits":"\u26a0\ufe0f nøglen passer ikke")
-              : !lager.hent("sai-sky-noegle") ? (EN?"waiting for the player":"venter på spilleren")
-              : (S.skyStatus && S.skyStatus.har) ? (EN?"\u2713 fetched":"\u2713 hentet") : (EN?"tap to fetch":"tryk for at hente")),
-            S.skyLaast ? "dev-kant-roed" : "")
+        ? ""   /* v5.11.5 · teamet har ingen boks-flise under STATS — spejlets status står på TEAMET-flisen */
         : _stflise("backup", "\ud83d\udcbe", (EN?"BACKUP":"SIKKERHEDSKOPI"),
           (S.skyLaast ? (EN?"\u26a0\ufe0f locked \u2014 open it":"\u26a0\ufe0f låst — åbn den") : (EN?"save & move":"gem & flyt")),
           S.skyLaast ? "dev-kant-roed" : ""))

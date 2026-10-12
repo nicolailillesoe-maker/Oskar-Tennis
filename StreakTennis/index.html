@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.13.0 · 12. oktober 2026";
+const VERSION = "v5.13.1 · 12. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -505,7 +505,7 @@ const HANDEL = { url: "https://tennis.sportsainalytics.com/handelsbetingelser.ht
 /* ⭐⭐ v5.3.7 · ÉN UDTJEKNING, TO STEDER (Din konto og rejsen). Alt, man køber, står her — og der er ÉN knap:
    «Betal med MobilePay» → betaling-start → MobilePay. Nicolai 24/9: «Det skal bare være direkte betaling.» */
 function _udtjekBoks(plan, kilde, EN) {
-  var p = plan === "fri" ? 98 : 49;
+  var p = plan === "fri" ? 99 : 49;   /* v5.13.1 · 99 overalt (Nicolai 12/10) */
   var _ap = PLATFORM.betaling === "apple";   /* ⭐ v5.10.0 · i appen: Apples pris, Apples vilkår, Apples knap */
   /* ⭐ v5.8.8 · klubfri = fri streaming oven på klubbens plan (betaling-start v6) */
   var navn = plan === "fri" ? (EN ? "🚀 FULL + FREE STREAMING" : "🚀 FULD + FRI STREAMING") : plan === "klubfri" ? (EN ? "🚀 FREE STREAMING" : "🚀 FRI STREAMING") : (EN ? "⭐ FULL ACCESS" : "⭐ FULD ADGANG");
@@ -4056,7 +4056,7 @@ function _gaveTekst(EN) {
   const til = g.gave_til ? String(g.gave_til).slice(0, 10) : null;
   // ⭐ v4.137.0 · BAGERENS REGEL (Nicolai 12/9): man får lov at smage — og
   //   får at vide, at det er for en periode, og hvad det koster bagefter.
-  const pris = g.plan === "fri" ? (EN ? "98 kr/mo" : "98 kr/md") : (EN ? "49 kr/mo" : "49 kr/md");
+  const pris = g.plan === "fri" ? (EN ? "99 kr/mo" : "99 kr/md") : (EN ? "49 kr/mo" : "49 kr/md");
   let dage = null; if (til) { dage = Math.ceil((new Date(til + "T23:59:59Z").getTime() - Date.now()) / 86400000); }
   const snart = dage !== null && dage <= 14;
   return '<div class="lille" style="margin:2px 0 8px;padding:9px 11px;--tone:' + (snart ? "var(--tabt)" : "var(--guld)") + ';background:rgba(240,207,97,.07);border-radius:10px;line-height:1.55">\ud83c\udf81 <b>' +
@@ -11452,7 +11452,7 @@ function _tegn() {
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
               _b("Search", "Approved players can find you by searching your username — the result shows username, club and birth year. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
               _b("Messages", "A message disappears a day after your friend has read it — never before. At most 200 per conversation, and after 30 days at the latest. Delete removes it for both of you. Notifications show a name and a place — never content.") +
-              _b("Price", "If you are in a club, the club pays — and free streaming can be added on top for 49 kr/month. Basic is free and includes 3 AI analyses and 3 live-streamed matches in total; after that one match can be bought for 20 kr (live + AI analysis). Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month — an extra live match is 15 kr. Full + free streaming is 98 kr/month with live and no limit. Watching is always free. " + (PLATFORM.betaling === "apple" ? "You buy through the App Store: Apple charges the first month when you buy, then every month. You cancel under your Apple subscriptions." : "You pay with MobilePay right in the app: the first month is charged when you buy, then every month. You cancel in MobilePay. The buyer must be 18 or over.")) +
+              _b("Price", "If you are in a club, the club pays — and free streaming can be added on top for 49 kr/month. Basic is free and includes 3 AI analyses and 3 live-streamed matches in total; after that one match can be bought for 20 kr (live + AI analysis). Full access is 49 kr/month with 40 AI analyses a month, incl. 3 live-streamed matches per month — an extra live match is 15 kr. Full + free streaming is 99 kr/month with live and no limit. Watching is always free. " + (PLATFORM.betaling === "apple" ? "You buy through the App Store: Apple charges the first month when you buy, then every month. You cancel under your Apple subscriptions." : "You pay with MobilePay right in the app: the first month is charged when you buy, then every month. You cancel in MobilePay. The buyer must be 18 or over.")) +
               _b("Leaving", "Log out wipes the phone. Under Your account you can delete the account yourself — everything is deleted at once" + (PLATFORM.betaling === "apple" ? ". A subscription bought in the App Store does not stop by itself — cancel it under your Apple subscriptions. It cannot be undone." : ", including a subscription in MobilePay. It cannot be undone."))
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
               _b("Sikkerhedskopien", "Jeres kampe (hver bold, resultatet, analysen) og udviklingsbrevet gemmes læsbart hos os — uden modstandernes navne og uden jeres noter — så de kommer tilbage med kontoen alene. Navne og noter gemmes kun i en boks, der er låst med jeres kodeord; den kan vi ikke åbne.") +
@@ -11461,7 +11461,7 @@ function _tegn() {
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
               _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises brugernavn, klub og årgang. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
               _b("Beskeder", "En besked forsvinder et døgn efter, din ven har læst den — aldrig før. Højst 200 pr. samtale, og senest efter 30 dage. Slet fjerner for jer begge. Notifikationer viser navn og sted — aldrig indhold.") +
-              _b("Prisen", "Er du med i en klub, betaler klubben — og fri streaming kan lægges oven på for 49 kr/md. Basis er gratis og rummer 3 AI-analyser og 3 live-delte kampe i alt; derefter kan én kamp købes for 20 kr (live + AI-analyse). Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — en ekstra live-kamp koster 15 kr. Fuld + fri streaming koster 98 kr/md med live uden loft. At se med er altid gratis. " + (PLATFORM.betaling === "apple" ? "I køber gennem App Store: Apple trækker første måned, når I køber, og derefter hver måned. I opsiger under jeres Apple-abonnementer." : "I betaler med MobilePay direkte i appen: første måned trækkes, når I køber, og derefter hver måned. I opsiger i MobilePay. Den, der køber, skal være fyldt 18.")) +
+              _b("Prisen", "Er du med i en klub, betaler klubben — og fri streaming kan lægges oven på for 49 kr/md. Basis er gratis og rummer 3 AI-analyser og 3 live-delte kampe i alt; derefter kan én kamp købes for 20 kr (live + AI-analyse). Fuld adgang koster 49 kr/md med 40 AI-analyser om måneden, inkl. 3 live-delte kampe pr. måned — en ekstra live-kamp koster 15 kr. Fuld + fri streaming koster 99 kr/md med live uden loft. At se med er altid gratis. " + (PLATFORM.betaling === "apple" ? "I køber gennem App Store: Apple trækker første måned, når I køber, og derefter hver måned. I opsiger under jeres Apple-abonnementer." : "I betaler med MobilePay direkte i appen: første måned trækkes, når I køber, og derefter hver måned. I opsiger i MobilePay. Den, der køber, skal være fyldt 18.")) +
               _b("Vejen ud", "Log ud rydder telefonen. Under Din konto kan du slette kontoen selv — alt slettes med det samme" + (PLATFORM.betaling === "apple" ? ". Et abonnement købt i App Store stopper ikke af sig selv — opsig det under dine Apple-abonnementer. Det kan ikke fortrydes." : ", også et abonnement i MobilePay. Det kan ikke fortrydes."))) +
           '<p class="lille" style="margin:4px 0 0;opacity:.6">StreakTennis · SportsAInalytics · CVR 40524002<br>' + HANDEL.mail + ' \u00b7 ' + HANDEL.tlf + '</p>' +
           '<p class="lille" style="margin:8px 0 0"><a href="' + HANDEL.url + '" target="_blank" rel="noopener" data-handelsbetingelser="2" style="color:var(--is)">' + (S.sprog === "en" ? "Terms of sale \u2192" : "Handelsbetingelser \u2192") + '</a></p>' +
@@ -11622,7 +11622,7 @@ function _tegn() {
             // ⭐⭐ v4.65.0 · FRI STREAMING — «+49 kr/md for uendelig»
             // fra prisbeslutningen 29/8, vist som TOTALEN (49+49), fordi
             // ingen skal regne ved fordoeren.
-            _pkort("fri", "🚀", (S.sprog === "en" ? "FULL ACCESS + FREE STREAMING" : "FULD ADGANG + FRI STREAMING"), (S.sprog === "en" ? "98 kr/mo" : "98 kr/md"),
+            _pkort("fri", "🚀", (S.sprog === "en" ? "FULL ACCESS + FREE STREAMING" : "FULD ADGANG + FRI STREAMING"), (S.sprog === "en" ? "99 kr/mo" : "99 kr/md"),
               (S.sprog === "en"
                 ? "Everything in Full access — and <b>live with no limit</b>. Stream every single match, all season."
                 : "Alt i Fuld adgang — og <b>live uden loft</b>. Stream hver eneste kamp, hele sæsonen."), false) +
@@ -13160,7 +13160,7 @@ function _tegn() {
               '<span class="lille" style="display:block;opacity:.7">' + esc(v.klub || "") + ' \u00b7 ' + _ventet(v.oprettet) + '</span>' +
               /* ⭐ v5.2.0 · ØNSKET (ejer-port v9 `oensket`): det, Luk ind sætter. Intet valg → Basis. */
               '<span class="lille" style="display:block;margin-top:2px;color:var(--guld)">' + (v.oensket
-                ? (EN ? "wants " : "ønsker ") + esc(_planNavn(v.oensket, EN)) + (v.oensket === "fuld" ? " · 49 kr/md" : v.oensket === "fri" ? " · 98 kr/md" : (EN ? " · free" : " · gratis"))
+                ? (EN ? "wants " : "ønsker ") + esc(_planNavn(v.oensket, EN)) + (v.oensket === "fuld" ? " · 49 kr/md" : v.oensket === "fri" ? " · 99 kr/md" : (EN ? " · free" : " · gratis"))
                 : (EN ? "no plan chosen yet → Basis" : "har ikke valgt plan endnu → Basis")) + '</span></div></div>' +
               // \u2b50\u2b50 v4.36.0 \u00b7 HILSNEN. Den staar mellem navnet og
               // knapperne, fordi det er DEN, beslutningen traeffes paa \u2014
@@ -13766,7 +13766,7 @@ function _tegn() {
                 _kk += '<div style="margin:4px 0 8px">' +
                   _pv("gaest", "🎟", "BASIS", (EN ? "free" : "gratis"), (EN ? "3 AI analyses · 3 live matches in total" : "3 AI-analyser · 3 live-kampe i alt")) +
                   _pv("fuld", "⭐", (EN ? "FULL ACCESS" : "FULD ADGANG"), (EN ? "49 kr/mo" : "49 kr/md"), (EN ? "40 AI analyses a month · live, 3 matches a month included" : "40 AI-analyser om måneden · live, 3 kampe om måneden er med")) +
-                  _pv("fri", "🚀", (EN ? "FULL + FREE STREAMING" : "FULD + FRI STREAMING"), (EN ? "98 kr/mo" : "98 kr/md"), (EN ? "live with no limit" : "live uden loft")) +
+                  _pv("fri", "🚀", (EN ? "FULL + FREE STREAMING" : "FULD + FRI STREAMING"), (EN ? "99 kr/mo" : "99 kr/md"), (EN ? "live with no limit" : "live uden loft")) +
                   '<p class="lille" style="margin:8px 0 0;opacity:.7">' + (PLATFORM.betaling === "apple"
                     ? (EN ? "Full and Free are bought through the App Store right here. Basis is free and applies at once." : "Fuld og Fri købes gennem App Store lige her. Basis er gratis og gælder med det samme.")
                     : (EN ? "Full and Free are paid with MobilePay right here. Basis is free and applies at once." : "Fuld og Fri betales med MobilePay lige her. Basis er gratis og gælder med det samme.")) + '</p>' +
@@ -13882,7 +13882,7 @@ function _tegn() {
         /* ⭐ v5.3.0 · BETAL HER — kun på en ubetalt Fuld/Fri, og kun når linket findes (tomt i dag) */
         if ((S.minPlan === "fuld" || S.minPlan === "fri") && !S.betaltTil && !(S.gaveInfo && S.gaveInfo.gave) && BETALINGSLINK[S.minPlan]) {
           _kk += '<a class="knap" href="' + esc(BETALINGSLINK[S.minPlan]) + '" target="_blank" rel="noopener" style="display:block;text-align:center;min-height:44px;line-height:44px;margin-top:8px;text-decoration:none">💳 ' +
-            (EN ? "Pay here" : "Betal her") + ' · ' + (S.minPlan === "fuld" ? "49" : "98") + ' kr/md →</a>';
+            (EN ? "Pay here" : "Betal her") + ' · ' + (S.minPlan === "fuld" ? "49" : "99") + ' kr/md →</a>';
         }
         if (_m) _m.i = _kk.length;   /* ⭐ v5.10.3 · sikkerhedskopien (bliver en flise) */
         /* v5.12.5 · afsnittet om sikkerhedskopien er væk — DINE DATA er en flise (se _kontoRum) */

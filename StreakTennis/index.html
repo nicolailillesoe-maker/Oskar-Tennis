@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.12.6 · 11. oktober 2026";
+const VERSION = "v5.12.7 · 12. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -12147,8 +12147,8 @@ function _tegn() {
         h += '<div class="kort" style="margin-top:10px">';
         if (!bs.length) {
           h += '<p class="lille" style="margin:0;text-align:center;padding:10px 0">' + (S.rolle === "familie"
-            ? (EN ? "The stand belongs to the player and the friends — the team key sees the match, not the messages."
-                  : "Tribunen er spillerens og vennernes — team-nøglen ser kampen, ikke beskederne.")
+            ? (EN ? "The stand belongs to the player and the friends — the team sees the match, not the messages."
+                  : "Tribunen er spillerens og vennernes — teamet ser kampen, ikke beskederne.")
             : (EN ? "Nobody has said anything yet. Be the first — tap a reaction."
                   : "Ingen har sagt noget endnu. Vær den første — tryk en reaktion.")) + '</p>';
         } else {

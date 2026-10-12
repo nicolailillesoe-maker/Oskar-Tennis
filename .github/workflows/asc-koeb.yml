@@ -1,0 +1,37 @@
+# StreakTennis · App Store-værktøjet (ordre-121026-01 · 12/10-2026)
+# Engangskøbene og abonnementsgruppens navn gennem App Store Connect API'et — samme hemmeligheder og samme mønster som testflight-grupper.yml, ingen nye.
+# Kør «status» FØRST. «opret» opretter kun det, der mangler, og kan køres igen uden skade.
+# Værktøjet kan ikke slette (ingen DELETE) og sender intet til review. Family Sharing og Billing Grace Period røres ikke.
+# Nøglen og token'et skrives aldrig i loggen: hemmelighederne går ind som miljøvariabler, ikke i kommandolinjen.
+# pull_request: når værktøjet selv ændres, kører KUN «status» (læser, ændrer intet) — så det er målt grønt før merge.
+name: asc-koeb
+on:
+  workflow_dispatch:
+    inputs:
+      handling:
+        description: "Handling"
+        required: true
+        type: choice
+        options: [status, opret]
+        default: status
+  pull_request:
+    paths:
+      - ".github/workflows/asc-koeb.yml"
+      - ".github/scripts/asc-koeb.mjs"
+permissions:
+  contents: read
+jobs:
+  koer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: App Store · ${{ github.event.inputs.handling || 'status' }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          HANDLING: ${{ github.event.inputs.handling || 'status' }}
+        run: node .github/scripts/asc-koeb.mjs

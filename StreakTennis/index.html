@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.12.5 · 11. oktober 2026";
+const VERSION = "v5.12.6 · 11. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -5404,7 +5404,7 @@ const A = {
       const krypt = await postLaas({ v: 1, kamp: ren, fra: _fra, tid: new Date().toISOString() }, til);
       const r = await skyKald("post-laeg", { krypt, fra: _fra.slice(0, 40) });
       S.postBesked = r && !r.fejl
-        ? { fejl: false, t: EN ? "The match was sent home to the player through the wormhole 🕳️" : "Kampen er sendt hjem til spilleren gennem ormehullet 🕳️" }
+        ? { fejl: false, t: EN ? "The match was sent to the player \u2713" : "Kampen er sendt til spilleren \u2713" }
         : { fejl: true, t: r && r.fejl === "fuld"
             ? (EN ? "The player’s mailbox is full — it empties when the app is opened there." : "Spillerens postkasse er fuld — den tømmes, når appen åbnes dér.")
             : (EN ? "The match could not be sent right now — try again." : "Kampen kunne ikke sendes lige nu — prøv igen.") };
@@ -5569,7 +5569,7 @@ const A = {
     S.kamparkivStatus = { kampe: (r.kampe || []).length, brev: !!r.udvikling };
     if (nye || brev) { S._kamparkivHjem = nye; }
     if (!stille) S.kamparkivBesked = { fejl: false, t: nye
-      ? (EN ? nye + " match(es) came home from the archive" + (kampe.length ? " \u2014 opponents\u2019 names are in your locked backup" : "") : nye + " kamp(e) kom hjem fra arkivet" + " \u2014 modstandernes navne ligger i din l\u00e5ste sikkerhedskopi")
+      ? (EN ? nye + " match(es) came back" + (kampe.length ? " \u2014 opponents\u2019 names are locked with your password" : "") : nye + " kamp(e) kom tilbage" + " \u2014 modstandernes navne er l\u00e5st med dit kodeord")
       : (EN ? "Nothing new \u2014 the archive holds " + (r.kampe || []).length + " match(es), all already on this phone." : "Intet nyt \u2014 arkivet har " + (r.kampe || []).length + " kamp(e), og de er alle p\u00e5 telefonen.") };
     if (!stille || nye || brev) render();
     return nye + (brev ? 1 : 0) + (foer < 0 ? 0 : 0);
@@ -5668,18 +5668,18 @@ const A = {
       const foer = await skyKald("hent", {});
       if (!foer || foer.fejl || foer.tom) {
         if (!stille) S.skyBesked = { fejl: false, t: (foer && foer.tom && teamKunStreaks())
-          ? (EN ? "The player has no backup yet — the mirror waits for it." : "Spilleren har ingen sikkerhedskopi endnu — spejlet venter på den.")
+          ? (EN ? "The player has not saved anything yet." : "Spilleren har ikke gemt noget endnu.")
           : (foer && foer.fejl === "adgang" && teamKunStreaks())
-            ? (EN ? "The team key is blocked or unknown — ask the player for a new link." : "Team-nøglen er spærret eller ukendt — bed spilleren om et nyt link.")
+            ? (EN ? "The access is blocked or unknown — ask the player to invite you again." : "Adgangen er spærret eller ukendt — bed spilleren invitere dig igen.")
             : (foer && foer.fejl === "netvaerk")
               ? (EN ? "No connection — try again." : "Ingen forbindelse — prøv igen.")   /* ⭐ v5.7.2 · 94 */
-              : (EN ? "No backup found." : "Der er ingen sikkerhedskopi.") };
+              : (EN ? "Nothing saved yet." : "Der er intet gemt endnu.") };
         return 0;
       }
       if (foer.tom === false && teamKunStreaks() && !lager.hent("sai-sky-noegle") && !kode) {
         if (!stille) S.skyBesked = { fejl: true, t: EN
-          ? "This phone does not hold the key to the player’s backup — ask the player to share the mirror from the app (\u2699\ufe0f \u2192 THE TEAM)."
-          : "Telefonen har ikke nøglen til spillerens sikkerhedskopi — bed spilleren dele spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET)." };
+          ? "This phone has no access to the player\u2019s data \u2014 ask the player to open for you in the app (\u2699\ufe0f \u2192 THE TEAM)."
+          : "Denne telefon har ikke adgang til spillerens data \u2014 bed spilleren \u00e5bne for dig i sin app (\u2699\ufe0f \u2192 TEAMET)." };
         return 0;
       }
       // Nøglen udledes af DET salt, boksen kom med — ikke af telefonens.
@@ -5696,8 +5696,8 @@ const A = {
         // ⭐ v4.96.0 · hos teamet er der intet kodeord at prøve: nøglen
         //   fra linket passer ikke længere (spilleren har skiftet kodeord).
         if (teamKunStreaks()) { S.skyBesked = { fejl: true, t: EN
-          ? "The mirror key no longer fits the player’s backup (the password was changed). It arrives again the next time the player opens the app — nothing has been overwritten."
-          : "Spejl-nøglen passer ikke længere til spillerens sikkerhedskopi (kodeordet er skiftet). Den kommer igen, næste gang spilleren åbner sin app — der er ikke overskrevet noget." }; return 0; }
+          ? "The access no longer fits (the player changed the password). It comes again the next time the player opens the app — nothing has been overwritten."
+          : "Adgangen passer ikke længere (spilleren har skiftet kodeord). Den kommer igen, næste gang spilleren åbner sin app — intet er overskrevet." }; return 0; }
         S.skyBesked = kode ? { fejl: true, t: EN
           ? "That password does not open it. Changed your password lately? Try the one you had before — nothing has been overwritten."
           : "Det kodeord åbner den ikke. Har du skiftet kodeord for nylig, så prøv det, du havde før — der er ikke overskrevet noget." } : null;   /* ⭐ v5.7.2 · uden kodeord siger døren det — én gang */
@@ -5719,8 +5719,8 @@ const A = {
               ? (EN ? (n + " match" + (n === 1 ? "" : "es") + " came home from " + _sp + ".") : (n + " kamp" + (n === 1 ? "" : "e") + " kom hjem fra " + _sp + "."))
               : (EN ? ("Nothing new from " + _sp + " \u2014 you have it all.") : ("Intet nyt hos " + _sp + " \u2014 du har det hele.")))
           : (EN
-              ? (n + " match" + (n === 1 ? "" : "es") + " came back from your backup.")
-              : (n + " kamp" + (n === 1 ? "" : "e") + " kom tilbage fra din sikkerhedskopi.")) };
+              ? (n + " match" + (n === 1 ? "" : "es") + " came back from your account.")
+              : (n + " kamp" + (n === 1 ? "" : "e") + " kom tilbage fra din konto.")) };
       }
       return n;
     } catch (_e) { return 0; }
@@ -5837,7 +5837,7 @@ const A = {
       //   sikres igen — der er ikke længere noget at skrive oven i.
       S.skyLaast = false;
       try { lager.slet("sai-sky-aftryk"); lager.slet("sai-sky-tid"); lager.slet("sai-sky-laast"); } catch (_e) {}
-      S.skyBesked = { fejl: false, t: S.sprog === "en" ? "The backup is deleted." : "Sikkerhedskopien er slettet." };
+      S.skyBesked = { fejl: false, t: S.sprog === "en" ? "The saved data is deleted \u2014 saving starts over from this phone." : "Det gemte er slettet \u2014 der gemmes forfra fra denne telefon." };
     } else S.skyBesked = { fejl: true, t: S.sprog === "en" ? "Could not delete." : "Kunne ikke slette." };
     render();
   },
@@ -7233,8 +7233,8 @@ const A = {
     if (S.famSpejl !== false && !lager.hent("sai-sky-noegle") && !S.skyLaast) {
       const _kode = String(S.famKode || "");
       if (!_kode) { S.famKodeSpoerg = true; S.famBesked = { t: EN
-        ? "To share the mirror, the backup must exist first — type your password once, and it is made."
-        : "For at dele spejlet skal sikkerhedskopien findes først — skriv dit kodeord én gang, så laves den." }; render(); return; }
+        ? "Type your password once — then the team can see your matches."
+        : "Skriv dit kodeord én gang — så kan teamet se dine kampe." }; render(); return; }
       S.famHenter = true; S.famBesked = null; render();
       const _navn = String(S.mitNavn || lager.hent("sai-brugernavn") || "").trim();
       const _lr = await A.kontoKald("login", { navn: _navn, kode: _kode });
@@ -7256,7 +7256,7 @@ const A = {
     S.famHenter = false;
     S.famNySpejl = S.famSpejl !== false && !!lager.hent("sai-sky-noegle") && !S.skyLaast;
     if (r.fejl) S.famBesked = { t: r.status === 429
-      ? (S.sprog === "en" ? "At most 6 team keys." : "Højst 6 team-nøgler.")
+      ? (S.sprog === "en" ? "At most 6 on the team." : "Højst 6 på teamet.")
       : (S.sprog === "en" ? "The key could not be made right now." : "Nøglen kunne ikke laves lige nu.") };
     else { S.famNyKode = r.kode; S.famEtiket = ""; A.famHent(); }
     render();
@@ -7393,8 +7393,8 @@ const A = {
     if (S.famSpejl !== false && !lager.hent("sai-sky-noegle") && !S.skyLaast) {
       const _kode = String(S.famKode || "");
       if (!_kode) { S.famKodeSpoerg = true; S.budBesked = { fejl: false, t: EN
-        ? "To share the mirror, the backup must exist first — type your password once, and it is made."
-        : "For at dele spejlet skal sikkerhedskopien findes først — skriv dit kodeord én gang, så laves den." }; render(); return; }
+        ? "Type your password once — then the team can see your matches."
+        : "Skriv dit kodeord én gang — så kan teamet se dine kampe." }; render(); return; }
       S.budSender = true; S.budBesked = null; render();
       const _navn = String(S.mitNavn || lager.hent("sai-brugernavn") || "").trim();
       const _lr = await A.kontoKald("login", { navn: _navn, kode: _kode });
@@ -7476,7 +7476,7 @@ const A = {
       const liste = teamsListe(); liste.push({ ns, navn: r.fornavn || "", spejl: !!r.spejl, id: r.id || null }); teamsGem(liste);
     } catch (_e) {}
     S.budBesked = { fejl: false, t: (EN ? "You are on Team " : "Du er med på Team ") + (r.fornavn || "") + (r.spejl
-      ? (EN ? ". The mirror arrives the next time the player opens the app." : ". Spejlet kommer, næste gang spilleren åbner sin app.")
+      ? (EN ? ". The access arrives the next time the player opens the app." : ". Adgangen kommer, næste gang spilleren åbner sin app.")
       : ""), ns };
     A.teamBudHent(true); render();
   },
@@ -7509,7 +7509,7 @@ const A = {
     lager.gem("sai-spejl-sendt", bits);
     if ((r.venter || []).length || forny) A.famHent();
   },
-  spejlFornyNu: async () => { S.famBesked = null; await A.spejlSend(true); S.budBesked = { fejl: false, t: S.sprog === "en" ? "The mirror was shared again with everyone on the team." : "Spejlet er delt igen med alle på teamet." }; render(); },
+  spejlFornyNu: async () => { S.famBesked = null; await A.spejlSend(true); S.budBesked = { fejl: false, t: S.sprog === "en" ? "Opened again for everyone on the team." : "Der er åbnet igen for alle på teamet." }; render(); },
   // ⭐⭐ SPEJLET, MEDLEMMETS SIDE (team-visningen): konvolutten hentes med
   //   team-nøglen og åbnes med EGEN private nøgle (rå — den bor hos egen spiller).
   spejlHent: async () => {
@@ -7523,11 +7523,11 @@ const A = {
     if (r.fejl) return;
     if (r.post_pub && !lager.hent("sai-post-til")) lager.gem("sai-post-til", r.post_pub);
     if (!r.spejl) { lager.slet("sai-spejl-venter"); S.spejlVenter = null; render(); return; }
-    if (!r.konvolut || (laast && r.lagt && r.lagt === lager.hent("sai-spejl-lagt"))) { S.spejlVenter = { t: EN ? "The mirror arrives the next time the player opens the app." : "Spejlet kommer, næste gang spilleren åbner sin app." }; render(); return; }
+    if (!r.konvolut || (laast && r.lagt && r.lagt === lager.hent("sai-spejl-lagt"))) { S.spejlVenter = { t: EN ? "The access arrives the next time the player opens the app." : "Adgangen kommer, næste gang spilleren åbner sin app." }; render(); return; }
     let priv = null; try { priv = window.localStorage.getItem("sai-post-privat"); } catch (_e) {}
-    if (!priv) { S.spejlVenter = { t: EN ? "This phone has no key for the mirror — ask the player to invite you again." : "Telefonen har ingen nøgle til spejlet — bed spilleren invitere dig igen." }; render(); return; }
+    if (!priv) { S.spejlVenter = { t: EN ? "This phone has no access yet — ask the player to invite you again." : "Denne telefon har ingen adgang endnu — bed spilleren invitere dig igen." }; render(); return; }
     const d = await postAab(r.konvolut, priv);
-    if (!d || !d.sky) { S.spejlVenter = { t: EN ? "The mirror could not be opened." : "Spejlet kunne ikke åbnes." }; render(); return; }
+    if (!d || !d.sky) { S.spejlVenter = { t: EN ? "The access could not be opened." : "Adgangen kunne ikke åbnes." }; render(); return; }
     lager.gem("sai-sky-noegle", d.sky); lager.slet("sai-spejl-venter"); try { lager.slet("sai-sky-aftryk"); } catch (_e) {}
     if (r.lagt) lager.gem("sai-spejl-lagt", r.lagt);
     S.skyLaast = false; try { lager.slet("sai-sky-laast"); } catch (_e) {}
@@ -7563,7 +7563,7 @@ const A = {
     const raa = String(S.famIndloesUdkast || "").trim();
     const m = /fam-[0-9a-f]{32}/.exec(raa.toLowerCase());
     if (!m) {
-      S.famBesked = { t: (S.sprog === "en" ? "That does not look like a team key (fam-…). Paste the whole link or the key itself." : "Det ligner ikke en team-nøgle (fam-…). Sæt hele linket eller selve nøglen ind.") };
+      S.famBesked = { t: (S.sprog === "en" ? "That does not look like an invitation from a player. Paste the whole link." : "Det ligner ikke en invitation fra en spiller. Sæt hele linket ind.") };
       render(); return;
     }
     const j = raa.indexOf("familie="); const frag = j >= 0 ? raa.slice(j) : "familie=" + m[0];
@@ -7592,8 +7592,8 @@ const A = {
     const m = /fam-[0-9a-f]{32}/.exec(String(S.famIndloesUdkast || "").toLowerCase());
     if (!m) {
       S.famBesked = { t: (S.sprog === "en"
-        ? "That does not look like a team key (fam-…). Paste the whole link or the key itself."
-        : "Det ligner ikke en team-nøgle (fam-…). Sæt hele linket eller selve nøglen ind.") };
+        ? "That does not look like an invitation from a player. Paste the whole link."
+        : "Det ligner ikke en invitation fra en spiller. Sæt hele linket ind.") };
       render(); return;
     }
     S.famTilbud = m[0]; S.famSkyBits = skyBitsFra(S.famIndloesUdkast); S.famPostPub = postPubFra(S.famIndloesUdkast); S.famIndloesUdkast = ""; S.famBesked = null;
@@ -9692,8 +9692,8 @@ function _dataHtml(EN) {
       ? "The player\u2019s matches, training and analyses are fetched when you open the app \u2014 and what you enter here is saved to the player."
       : "Spillerens kampe, tr\u00e6ning og analyser hentes, n\u00e5r du \u00e5bner appen \u2014 og det, du taster her, gemmes hos spilleren.") + '</p>';
     if (!_harB) h += '<p class="lille" style="margin:8px 0 0;color:var(--guld)">' + (EN
-      ? "This phone cannot see names and notes yet" + (S.spejlVenter ? " \u2014 they arrive the next time the player opens the app." : " \u2014 the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM).")
-      : "Denne telefon kan ikke se navne og noter endnu" + (S.spejlVenter ? " \u2014 de kommer, n\u00e6ste gang spilleren \u00e5bner sin app." : " \u2014 spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET).")) + '</p>';
+      ? "This phone cannot see names and notes yet" + (S.spejlVenter ? " \u2014 they arrive the next time the player opens the app." : " \u2014 the player opens for you in the app (\u2699\ufe0f \u2192 THE TEAM).")
+      : "Denne telefon kan ikke se navne og noter endnu" + (S.spejlVenter ? " \u2014 de kommer, n\u00e6ste gang spilleren \u00e5bner sin app." : " \u2014 spilleren \u00e5bner for dig i sin app (\u2699\ufe0f \u2192 TEAMET).")) + '</p>';
   } else if (!S.minKonto) {
     h += '<p class="lille" style="margin:8px 0 0">' + (EN ? "You need an account for this." : "Det kr\u00e6ver en konto.") + '</p>';
   } else {
@@ -11058,9 +11058,9 @@ function _budKrop(EN) {
   let r = "";
   (S.budInd || []).forEach(function (b) {
     r += '<div style="margin:0 0 10px;padding:11px;border:1.5px solid var(--guld);border-radius:12px;background:rgba(240,207,97,.06)">' +
-      '<p class="lille" style="margin:0 0 8px"><b>' + esc(b.fra || "") + '</b> ' + (EN ? "wants you on the team" : "vil have dig med på sit team") + ' ' + (b.spejl ? "🪞" : "🕳️") + '<br>' +
-      (b.spejl ? (EN ? "With the mirror: you see the matches, training and analyses — and what you enter lands with the player." : "Med spejlet: du ser kampe, træning og analyser — og det, du taster, lander hos spilleren.")
-               : (EN ? "Without the mirror: you see the streaks and can enter matches — they are sent home through the wormhole." : "Uden spejl: du ser streaks og kan taste kampe — de sendes hjem gennem ormehullet.")) +
+      '<p class="lille" style="margin:0 0 8px"><b>' + esc(b.fra || "") + '</b> ' + (EN ? "wants you on the team" : "vil have dig med på sit team") + '<br>' +
+      (b.spejl ? (EN ? "You see the matches, training and analyses — and what you enter lands with the player." : "Du ser kampe, træning og analyser — og det, du taster, lander hos spilleren.")
+               : (EN ? "You see the streaks and can enter matches — they land with the player." : "Du ser streaks og kan taste kampe — de lander hos spilleren.")) +
       '</p>' +
       '<div class="raekke"><button class="knap" style="min-height:44px;background:var(--grus)" data-a="budSvar" data-v="' + esc(String(b.id)) + ':ja">' + (S.budSender ? "⏳ …" : (EN ? "Yes, I’m in" : "Ja, jeg er med")) + '</button>' +
       '<button class="knap valg" style="min-height:44px" data-a="budSvar" data-v="' + esc(String(b.id)) + ':nej">' + (EN ? "No thanks" : "Nej tak") + '</button></div></div>';
@@ -11281,8 +11281,8 @@ function _tegn() {
       '<div class="kort" style="margin:40px 16px 0;border-color:var(--guld)">' +
       '<h2 style="color:var(--guld);font-size:16px;margin:0 0 10px">\ud83d\udd12 ' + (EN ? "The key is closed" : "N\u00f8glen er lukket") + '</h2>' +
       '<p class="lille" style="margin:0 0 12px">' + (EN
-        ? esc(_navn) + " has closed the team key this phone uses. What you entered here stays on the phone \u2014 but you cannot see anything new or send anything until you get a new key."
-        : esc(_navn) + " har lukket den team-n\u00f8gle, denne telefon bruger. Du kan ikke se nyt eller sende noget, f\u00f8r du f\u00e5r en ny n\u00f8gle.") + '</p>' +
+        ? esc(_navn) + " has closed this phone\u2019s access. What you entered here stays on the phone \u2014 but you cannot see anything new or send anything until you are invited again."
+        : esc(_navn) + " har lukket denne telefons adgang. Du kan ikke se nyt eller sende noget, f\u00f8r du bliver inviteret igen.") + '</p>' +
       '<p class="lille" style="margin:0 0 6px"><b>' + (EN ? "Want back in? Ask the player to invite you again from ⚙️ → THE TEAM in the app." : "Vil du med igen? Bed spilleren invitere dig igen fra \u2699\ufe0f \u2192 TEAMET i appen.") + '</b></p>' +
       (_egetNavn ? '<button class="knap valg" style="margin-top:14px;width:100%;min-height:44px" data-a="profilSkift" data-v="egen">' + (EN ? "Switch to my own player" : "Skift til min egen spiller") + " (" + esc(_egetNavn) + ")" + '</button>' : '') +
       (S.teamForladSpoerg
@@ -11332,8 +11332,8 @@ function _tegn() {
             : "Denne telefon bliver en del af teamet: du taster og ser data.")) + '</p>' +
         // ⭐ v4.96.0 · spejlet: siger på forhånd, om linket bærer boksens nøgle.
         '<p class="lille" style="margin:0 0 12px;color:' + (S.famSkyBits ? 'var(--is)' : 'var(--guld)') + '">' + (S.famSkyBits
-          ? (S.sprog === "en" ? "The link also carries the key to the player\u2019s backup: matches, training and analyses are mirrored here." : "Linket b\u00e6rer ogs\u00e5 n\u00f8glen til spillerens sikkerhedskopi: kampe, tr\u00e6ning og analyser spejles herover.")
-          : (S.sprog === "en" ? "The player has not turned the backup on yet — the mirror of matches and training waits for that. Streaks work already." : "Spilleren har ikke slået sikkerhedskopien til endnu — spejlet af kampe og træning venter på det. Streaks virker allerede.")) + '</p>' +
+          ? (S.sprog === "en" ? "You see the player\u2019s matches, training and analyses here." : "Du ser spillerens kampe, tr\u00e6ning og analyser her.")
+          : (S.sprog === "en" ? "The player must open the app once before matches and training can be seen here. Streaks work already." : "Spilleren skal \u00e5bne sin app \u00e9n gang, f\u00f8r kampe og tr\u00e6ning kan ses her. Streaks virker allerede.")) + '</p>' +
         '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="famBliv">' + (S.famHenter ? "⏳ …" : (S.sprog === "en" ? "Join the team" : "Bliv en del af teamet")) + '</button>' +
         '<button class="knap valg" data-a="famAfvis">' + (S.sprog === "en" ? "Not now" : "Ikke nu") + '</button></div>' +
         (S.famBesked ? '<p class="lille" style="margin:8px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '') + '</div>';
@@ -13068,7 +13068,7 @@ function _tegn() {
           let _laast = false; try { _laast = !!window.localStorage.getItem(t.ns + "-sai-team-lukket"); } catch (_e) {}
           return (_laast ? '<p class="lille" style="margin:6px 0 4px;color:var(--guld)">\ud83d\udd12 ' + (EN ? "The player has closed the key \u2014 Team " + esc(t.navn || "") + " is locked." : "Spilleren har lukket n\u00f8glen \u2014 Team " + esc(t.navn || "") + " er l\u00e5st.") + '</p>' : '') +
             '<button class="knap" style="width:100%;min-height:44px;margin-top:6px;background:var(--grus)" data-a="profilSkift" data-v="' + teamKontakt(t.ns) + '">' +
-            (EN ? "Switch to" : "Skift til") + " Team " + esc(t.navn || "") + (t.spejl ? " 🪞" : "") + '</button>';
+            (EN ? "Switch to" : "Skift til") + " Team " + esc(t.navn || "") + (t.spejl ? (EN ? " · sees everything" : " · ser alt") : "") + '</button>';
         };
         if (VISNING === "team") {
           let _egetNavn = ""; try { _egetNavn = window.localStorage.getItem("sai-spiller") || ""; } catch(_e) {}
@@ -13898,8 +13898,8 @@ function _tegn() {
         //   team-nøglen, og analyser hentes på hans adgang (analyse-lov v4).
         //   Ingen kode at taste — og ingen advarsel om at taste den.
         _kKlub = '<p class="lille" style="margin:0 0 6px">' + (EN
-            ? "Follows the player. The team key already carries the club — matches, training and analyses run on <b>the player’s</b> access. Nothing to enter here."
-            : "Følger spilleren. Team-nøglen bærer allerede klubben — kampe, træning og analyser kører på <b>spillerens</b> adgang. Du skal ikke taste noget her.") + '</p>' +
+            ? "Follows the player. The club comes along from the player — matches, training and analyses run on <b>the player’s</b> access. Nothing to enter here."
+            : "Følger spilleren. Klubben følger med fra spilleren — kampe, træning og analyser kører på <b>spillerens</b> adgang. Du skal ikke taste noget her.") + '</p>' +
           '<p class="lille" style="margin:0;opacity:.7">' + (EN
             ? "Not in the team view yet: opponent analyses — they still need the club’s key."
             : "Endnu ikke i team-visningen: modstander-analyser — de kræver stadig klubbens nøgle.") + '</p>';
@@ -13959,7 +13959,7 @@ function _tegn() {
           '<p class="lille" style="margin:0">' + (EN
             ? "You are on the team: you enter and see the player’s matches, training and analyses."
             : "Du er med p\u00e5 teamet: du taster og ser spillerens kampe, tr\u00e6ning og analyser.") + '</p>' +   /* v5.11.6 · ingen nøgle at sende rundt (97) */
-          (S.spejlVenter ? '<p class="lille" style="margin:6px 0 0;color:var(--guld)">🪞 ' + esc(S.spejlVenter.t) + '</p>' : '') +
+          (S.spejlVenter ? '<p class="lille" style="margin:6px 0 0;color:var(--guld)">👥 ' + esc(S.spejlVenter.t) + '</p>' : '') +
           // ⭐ v4.146.0 · hent spillerens nyeste HER — det er teamets kort (flyttet fra SKIFT VISNING)
           (VISNING === "team"
             ? '<button class="knap valg" style="width:100%;min-height:44px;margin-top:9px" data-a="skyHentNu"' + (S.skySender ? ' disabled' : '') + '>' +
@@ -13986,13 +13986,13 @@ function _tegn() {
           '<input style="flex:1;min-width:0" data-felt="teamInvUdkast" placeholder="' + (EN?"username":"brugernavn") + '" value="' + esc(S.teamInvUdkast || "") + '" autocapitalize="off" spellcheck="false" autocomplete="off">' +
           '<button class="knap valg" style="flex:none;min-height:44px;padding:8px 12px;font-size:13px" data-a="budTjekNavn">🔍</button></div>' +
           '<div class="raekke" style="margin-top:8px;gap:6px">' +
-            '<button class="knap valg' + (S.famSpejl !== false ? " til" : "") + '" style="flex:1;min-height:44px;font-size:12px" data-a="famSpejlSaet" data-v="1">🪞 ' + (EN?"Share the mirror":"Del spejlet") + '</button>' +
-            '<button class="knap valg' + (S.famSpejl === false ? " til" : "") + '" style="flex:1;min-height:44px;font-size:12px" data-a="famSpejlSaet" data-v="0">🕳️ ' + (EN?"No mirror":"Uden spejl") + '</button></div>' +
+            '<button class="knap valg' + (S.famSpejl !== false ? " til" : "") + '" style="flex:1;min-height:44px;font-size:12px" data-a="famSpejlSaet" data-v="1">👀 ' + (EN?"Sees everything":"Ser alt") + '</button>' +
+            '<button class="knap valg' + (S.famSpejl === false ? " til" : "") + '" style="flex:1;min-height:44px;font-size:12px" data-a="famSpejlSaet" data-v="0">🔥 ' + (EN?"Streaks only":"Ser kun streaks") + '</button></div>' +
           '<p class="lille" style="margin:6px 0 0">' + (S.famSpejl !== false
-            ? (EN ? "With the mirror they see your matches, training and analyses — and what they enter lands with you. The mirror key travels locked — the server cannot open it."
-                  : "Med spejlet ser de dine kampe, træning og analyser — og det, de taster, lander hos dig. Spejl-nøglen rejser låst — serveren kan ikke åbne den.")
-            : (EN ? "Without the mirror they see your streaks and can enter matches — those are sent home to you through the wormhole. They cannot see yours."
-                  : "Uden spejlet ser de dine streaks og kan taste kampe — dem sendes hjem til dig gennem ormehullet. De kan ikke se dine.")) + '</p>' +
+            ? (EN ? "They see your matches, training and analyses — and what they enter lands with you. Only the two of you can read it — not the server."
+                  : "De ser dine kampe, træning og analyser — og det, de taster, lander hos dig. Kun I to kan læse det — ikke serveren.")
+            : (EN ? "They see your streaks and can enter matches — those land with you. They cannot see your matches."
+                  : "De ser dine streaks og kan taste kampe — dem lander hos dig. De kan ikke se dine kampe.")) + '</p>' +
           (S.famKodeSpoerg ? '<input class="felt" style="margin-top:7px" type="password" data-felt="famKode" value="' + esc(S.famKode || "") + '" placeholder="' + (EN?"your password (once)":"dit kodeord (én gang)") + '" autocomplete="current-password">' : '') +
           '<button class="knap" style="margin-top:7px;width:100%;min-height:44px;background:var(--grus)" data-a="teamBudSend">' + (S.budSender ? "⏳ …" : "📨 " + (EN?"Invite":"Inviter")) + '</button>' +
           (S.budBesked ? '<p class="lille" style="margin:6px 0 0;color:' + (S.budBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.budBesked.t) + '</p>' : '');
@@ -14002,7 +14002,7 @@ function _tegn() {
           famKrop += '<p class="lille" style="margin:10px 0 2px;font-weight:700">' + (EN ? "Waiting for an answer" : "Venter på svar") + '</p>';
           _aabne.forEach(function (b) {
             famKrop += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--kant)">' +
-              '<div class="lille" style="flex:1;min-width:0;margin:0">' + esc(b.til || "") + ' · ' + (b.spejl ? "🪞" : "🕳️") + '</div>' +
+              '<div class="lille" style="flex:1;min-width:0;margin:0">' + esc(b.til || "") + ' · ' + (b.spejl ? (EN ? "sees everything" : "ser alt") : (EN ? "streaks only" : "ser kun streaks")) + '</div>' +
               '<button class="knap valg" style="flex:none;min-height:40px;padding:0 11px;font-size:12px;color:var(--daempet)" data-a="budTraek" data-v="' + esc(String(b.id)) + '">' + (EN?"Withdraw":"Træk tilbage") + '</button></div>';
           });
         }
@@ -14010,14 +14010,14 @@ function _tegn() {
         else if (S.famKoder.length) S.famKoder.forEach(function(f){
           famKrop += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--kant)">' +
             '<div class="lille" style="flex:1;min-width:0;margin:0">' + esc(f.etiket || (EN?"(no label)":"(uden etiket)")) +
-            (f.spejl ? ' · 🪞' + (f.spejl_delt ? '' : ' <span style="color:var(--guld)">' + (EN?"(mirror on its way)":"(spejlet er på vej)") + '</span>') : ' · 🕳️') +
+            (f.spejl ? ' · ' + (EN ? "sees everything" : "ser alt") + (f.spejl_delt ? '' : ' <span style="color:var(--guld)">' + (EN?"(access on its way)":"(adgang på vej)") + '</span>') : ' · ' + (EN ? "streaks only" : "ser kun streaks")) +
             (f.i_appen ? '' : ' · <span style="opacity:.7">' + (EN?"via link":"via link") + '</span>') +
             (f.status === "spaerret" ? ' · <span style="color:var(--tabt)">' + (EN?"blocked":"spærret") + '</span>' : '') + '</div>' +
             (f.status === "aktiv" ? '<button class="knap valg" style="flex:none;min-height:40px;padding:0 11px;font-size:12px;color:var(--daempet)" data-a="famSpaer" data-v="' + esc(f.id) + '">' + (EN?"Remove":"Fjern") + '</button>' : '') + '</div>';
         });
         else famKrop += '<p class="lille" style="margin:8px 0 0;opacity:.7">' + (EN?"No one on the team yet.":"Ingen på teamet endnu.") + '</p>';
         if (S.famKoder && S.famKoder.some(function (f) { return f.spejl && f.status === "aktiv" && f.i_appen; }) && lager.hent("sai-sky-noegle") && !S.skyLaast)
-          famKrop += '<button class="knap valg" style="margin-top:8px;width:100%;min-height:44px;font-size:12px" data-a="spejlFornyNu">🪞 ' + (EN ? "Share the mirror again (after a password change)" : "Del spejlet igen (efter et kodeordsskift)") + '</button>';
+          famKrop += '<button class="knap valg" style="margin-top:8px;width:100%;min-height:44px;font-size:12px" data-a="spejlFornyNu">👀 ' + (EN ? "Open for the team again (after a password change)" : "Åbn for teamet igen (efter et kodeordsskift)") + '</button>';
         famKrop += (S.famBesked ? '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(S.famBesked.t) + '</p>' : '');
         const famAntal = S.famKoder ? S.famKoder.filter(function(f){ return f.status === "aktiv"; }).length : 0;
         // ⭐⭐⭐ v4.123.0 · team-buddet står ØVERST i kortet — det er det,
@@ -14978,8 +14978,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       h += '<div class="kort" style="border:1.5px solid var(--tabt);background:rgba(210,72,78,.08)">' +
         '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--tabt)">\u26d4 ' + (EN?"YOUR MATCHES COULD NOT BE READ":"DINE KAMPE KUNNE IKKE LÆSES") + '</div>' +
         '<p style="margin:6px 0 0;font-size:13px">' + (EN
-          ? "Something in this browser's storage is unreadable. <b>Nothing is deleted</b> \u2014 we do not write on top of it, and no backup is sent while this is showing. Take the raw text below and keep it, then contact us."
-          : "Noget i denne browsers lager kan ikke læses. <b>Intet er slettet</b> \u2014 vi skriver ikke oven i det, og der sendes ingen sikkerhedskopi, så længe det her står. Tag den rå tekst nedenfor og gem den, og sig til.") + '</p>' +
+          ? "Something in this browser's storage is unreadable. <b>Nothing is deleted</b> \u2014 we do not write on top of it, and nothing is saved to your account while this is showing. Take the raw text below and keep it, then contact us."
+          : "Noget i denne browsers lager kan ikke læses. <b>Intet er slettet</b> \u2014 vi skriver ikke oven i det, og intet gemmes på din konto, så længe det her står. Tag den rå tekst nedenfor og gem den, og sig til.") + '</p>' +
         '<div class="raekke" style="margin-top:8px"><button class="knap" style="background:transparent;border:1.5px solid var(--tabt);color:var(--tabt);font-size:12px" data-a="kampeRaaVis">' +
           (S.kampeRaaVis ? (EN?"Hide the raw text":"Skjul den rå tekst") : (EN?"Show the raw text":"Vis den rå tekst")) + '</button></div>' +
         (S.kampeRaaVis ? '<textarea readonly onfocus="this.select()" style="height:110px;margin-top:8px">' + esc(String(S.kampeRaa || "")) + '</textarea>' + eksportKnapper('kampeRaa', EN) : '') +
@@ -15003,11 +15003,11 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     };
     // ⭐ v4.100.0 · teamet uden spejl-nøgle: sandheden står FØRST, ikke i et panel.
     if (teamKunStreaks() && !lager.hent("sai-sky-noegle") && lager.hent("sai-post-til")) h += '<p class="lille" style="margin:8px 0 2px;padding:8px 10px;--tone:var(--is);border-radius:10px">' + (EN
-      ? "No mirror on this key — matches you finish here go home to the player through the wormhole 🕳️."
-      : "Intet spejl på denne nøgle — kampe, du afslutter her, går hjem til spilleren gennem ormehullet 🕳️.") + '</p>';
+      ? "Matches you finish here land with the player."
+      : "Kampe, du afslutter her, lander hos spilleren.") + '</p>';
     else if (teamKunStreaks() && !lager.hent("sai-sky-noegle")) h += '<p class="lille" style="margin:8px 0 2px;padding:8px 10px;--tone:var(--guld);border-radius:10px">' + (EN
-      ? "What you enter here reaches the player" + (S.spejlVenter ? " the next time the player opens the app." : " once the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM) \u2014 and his matches come here.")
-      : "Det, du taster her, n\u00e5r spilleren" + (S.spejlVenter ? ", n\u00e6ste gang spilleren \u00e5bner sin app." : ", n\u00e5r spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET) \u2014 og hans kampe kommer hertil.")) + '</p>';
+      ? "What you enter here reaches the player" + (S.spejlVenter ? " the next time the player opens the app." : " once the player opens for you in the app (\u2699\ufe0f \u2192 THE TEAM) \u2014 and the matches come here.")
+      : "Det, du taster her, n\u00e5r spilleren" + (S.spejlVenter ? ", n\u00e6ste gang spilleren \u00e5bner sin app." : ", s\u00e5 snart spilleren \u00e5bner for dig i sin app (\u2699\ufe0f \u2192 TEAMET) \u2014 og kampene kommer hertil.")) + '</p>';
     h += '<div class="dev-grid" style="margin:12px 0">'
       // ⭐ v4.84.0 · er kamplisten låst, må fliserne ikke sige «ingen kampe
       //   endnu» ved siden af et kort, der siger, at de ikke kunne læses.
@@ -15181,17 +15181,17 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     if (teamKunStreaks() && S.postBesked) h += '<p class="lille" style="margin:2px 0 8px;padding:8px 10px;--tone:' + (S.postBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + ';border-radius:10px">' + esc(S.postBesked.t) + '</p>';
     if (teamKunStreaks()) h += (lager.hent("sai-sky-noegle")
       ? '<p class="lille" style="margin:2px 0 10px">' + (EN
-        ? "Matches, training and analyses here are the player’s mirror — shared by the player through the team key. Analyses are fetched on the player’s access; no code needed here."
-        : "Kampe, træning og analyser her er spillerens spejl — delt af spilleren gennem team-nøglen. Analyser hentes på spillerens adgang; ingen kode her.") + '</p>'
+        ? "Matches, training and analyses here are the player’s — the player has opened for you. Analyses are fetched on the player’s access; no code needed here."
+        : "Kampe, træning og analyser her er spillerens — spilleren har åbnet for dig. Analyser hentes på spillerens adgang; ingen kode her.") + '</p>'
       // ⭐ v4.100.0 · uden spejl-nøgle: sandheden om, hvor kampene bor.
       // ⭐ v4.105.0 · …og med ormehullet: kampene rejser hjem, én ad gangen.
       : lager.hent("sai-post-til")
       ? '<p class="lille" style="margin:2px 0 10px;padding:8px 10px;--tone:var(--is);border-radius:10px">' + (EN
-        ? "No mirror on this key: you cannot see the player’s matches. Every match you finish here is sent home to the player through the wormhole 🕳️ — and stays here too."
-        : "Intet spejl på denne nøgle: du kan ikke se spillerens kampe. Hver kamp, du afslutter her, sendes hjem til spilleren gennem ormehullet 🕳️ — og bliver også stående her.") + '</p>'
+        ? "You cannot see the player’s matches. Every match you finish here lands with the player — and stays here too."
+        : "Du kan ikke se spillerens kampe. Hver kamp, du afslutter her, lander hos spilleren — og bliver også stående her.") + '</p>'
       : '<p class="lille" style="margin:2px 0 10px;padding:8px 10px;--tone:var(--guld);border-radius:10px">' + (EN
-        ? "What you enter here reaches the player" + (S.spejlVenter ? " the next time the player opens the app." : " once the player shares the mirror from the app (\u2699\ufe0f \u2192 THE TEAM) \u2014 and his matches come here.")
-        : "Det, du taster her, n\u00e5r spilleren" + (S.spejlVenter ? ", n\u00e6ste gang spilleren \u00e5bner sin app." : ", n\u00e5r spilleren deler spejlet fra sin app (\u2699\ufe0f \u2192 TEAMET) \u2014 og hans kampe kommer hertil.")) + '</p>');
+        ? "What you enter here reaches the player" + (S.spejlVenter ? " the next time the player opens the app." : " once the player opens for you in the app (\u2699\ufe0f \u2192 THE TEAM) \u2014 and the matches come here.")
+        : "Det, du taster her, n\u00e5r spilleren" + (S.spejlVenter ? ", n\u00e6ste gang spilleren \u00e5bner sin app." : ", s\u00e5 snart spilleren \u00e5bner for dig i sin app (\u2699\ufe0f \u2192 TEAMET) \u2014 og kampene kommer hertil.")) + '</p>');
     // ⛔⭐⭐ v4.124.0 · CHIPPEN ER VÆK — DEN LØJ. Den sagde «Skal indtastes
     //   én gang for at hente analyser», men kampanalyser og udviklingsbrevet
     //   har ikke krævet en klubkode siden v4.7.9 (23/8). `analyse-lov`
@@ -15204,7 +15204,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     //     desuden sit eget kort i Indstillinger — chippen var en dublet.
     else { /* ingen chip: klubkoden har intet med kampanalyser at gøre */ }
     if (S.kodeAaben) {
-      h += '<div class="kort" style="border-color:var(--guld)"><p class="lille" style="margin:0 0 6px">'+(EN?"Your password opens the backup.":"Dit kodeord åbner sikkerhedskopien.")+'</p>';
+      h += '<div class="kort" style="border-color:var(--guld)"><p class="lille" style="margin:0 0 6px">'+(EN?"Your password opens your names and notes.":"Dit kodeord åbner dine navne og noter.")+'</p>';
       h += '<input type="password" autocomplete="off" data-felt="kodeUdkast" placeholder="'+(EN?'Password':'Kodeord')+'" value="'+esc(S.kodeUdkast)+'">';
       h += '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="klubKodeGem">💾 '+(EN?"Save":"Gem")+'</button>'+(S.klubKode?'<button class="knap" data-a="klubKodeRyd">'+(EN?"Remove":"Fjern")+'</button>':'')+'</div>';
       h += '</div>';
@@ -15262,7 +15262,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
               : '') +
             // ⭐ v4.96.0 · sandheden om, hvem der kan se den — begge steder.
             (teamKunStreaks()
-              ? '<p class="lille" style="margin:6px 0 0;opacity:.7">' + (EN ? "Shared by the player through the team key." : "Delt af spilleren gennem team-nøglen.") + '</p>'
+              ? '<p class="lille" style="margin:6px 0 0;opacity:.7">' + (EN ? "Opened by the player." : "Åbnet af spilleren.") + '</p>'
               : ((S.famKoder || []).some(function (x) { return x && x.status === "aktiv"; })
                 ? '<p class="lille" style="margin:6px 0 0;opacity:.7">' + (EN ? "Your team can see this." : "Dit team kan se den.") + '</p>' : '')) +
             '</div>'

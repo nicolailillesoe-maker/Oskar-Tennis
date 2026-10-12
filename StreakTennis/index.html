@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.12.7 · 12. oktober 2026";
+const VERSION = "v5.13.0 · 12. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -4934,7 +4934,8 @@ const A = {
     S.tab = "historik"; render();
   },
   puls: (v) => { S.puls = S.puls === v ? null : v; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
-  kampFold: (i) => { const n = +i; S.kampAaben[n] = !S.kampAaben[n]; S._sf = S._sf || {}; S._sf["1"] = true; render(); },
+  kampFold: (i) => { const n = +i; const aab = !S.kampAaben[n]; S.kampAaben = {}; if (aab) S.kampAaben[n] = true; S.kampMere = null; S._sf = S._sf || {}; S._sf["1"] = true; render(); if (aab) _oversaetHvisFremmed(n); try { window.scrollTo(0, 0); } catch (_e) {} },   /* v5.13.0 · én kamp ad gangen — den er et rum */
+  kampMere: (i) => { const n = +i; S.kampMere = S.kampMere === n ? null : n; render(); },   /* v5.13.0 · «⋯ Mere» */
   analyseFold: (i) => { const n = +i; S.analyseAaben[n] = !S.analyseAaben[n]; S._sf = S._sf || {}; S._sf["1"] = true; render(); if (S.analyseAaben[n]) _oversaetHvisFremmed(n); },   /* ⭐ v5.9.2 */
   delAabn: () => { S.delAaben = !S.delAaben; S.liveBesked = null; S.liveOvertag = null; render(); A.liveTjek(); },
   liveFortryd: () => { S.liveOvertag = null; render(); },
@@ -7009,7 +7010,7 @@ const A = {
     }, 40); }
   },
   // ⭐ STATISTIK ER FLISER (v4.7.4): ét panel ad gangen, som i zonen.
-  statPanel: (v) => { S.statPanel = (S.statPanel === v ? null : v); render(); },
+  statPanel: (v) => { S.statPanel = (S.statPanel === v ? null : v); S.kampMere = null; render(); if (S.statPanel === "seneste") _oversaetHvisFremmed(0); },   /* v5.13.0 */
   // ⭐ v4.88.0 · døren fra Indstillinger til sikkerhedskopien. Sætter
   //   BEGGE dele — fanen og panelet — så man lander på indholdet og ikke
   //   på en flise, man skal trykke på én gang til.
@@ -9752,6 +9753,50 @@ function _dataHtml(EN) {
   h += '</div>';
   return h;
 }
+/* ⭐⭐ v5.13.0 · ANBEFALINGERNE — én kilde. _visAlle: STATS' rum ARBEJDSPUNKTER viser begge kort uden fliserne (intet fanehop). */
+function _anbefalHtml(EN, _visAlle) {
+  var h = "", _intro = "";
+    const R = anbefalinger(EN);
+    if (!R) h += '<div class="kort"><p class="lille" style="margin:0">'+(EN?"Recommendations appear after 2+ matches.":"Anbefalinger vises, når der er registreret mindst 2 kampe.")+'</p></div>';
+    else {
+      h += '<p class="lille">'+(EN?"Auto-generated from ":"Genereret automatisk af ")+R.antal+(EN?" matches — recent 3 vs own average. Updates with every match.":" kampe — de 3 seneste mod eget snit. Opdateres ved hver ny kamp.")+(R.dummy?' 🟡 DUMMY':'')+'</p>';
+      _intro = h;
+      /* v5.0.1 · FLISER (Nicolai 14/9: «Fliser — der skal være fliser»). De to kort blev foldet til bjælker af devFoldning.
+         Nu: to fliser i gitteret, og KUN det valgte kort tegnes under — ét kort → devFoldning rører det ikke. */
+      const _av = S.anbefalVis || null;
+      const _fl = function(v, ik, titel, tekst){
+        return '<button class="dev-flise dev-kant ' + (_av === v ? "dev-kant-guld" : "dev-kant-staal") + '" data-a="anbefalVis" data-v="' + v + '">' +
+          '<span class="dev-ikon">' + ik + '</span><b>' + titel + '</b><small>' + tekst + '</small></button>';
+      };
+      h += '<div class="dev-grid">' +
+        _fl("arbejd", "🔧", (EN?"Work on":"Arbejdspunkter"), R.arbejd.length + (EN ? (R.arbejd.length === 1 ? " point · focus now" : " points · focus now") : (R.arbejd.length === 1 ? " punkt · fokus nu" : " punkter · fokus nu"))) +
+        _fl("virker", "✅", (EN?"Working":"Det virker"), R.virker.length + (EN ? (R.virker.length === 1 ? " goal met · keep it" : " goals met · keep it") : (R.virker.length === 1 ? " mål nået · behold det" : " mål nået · behold det"))) +
+        '</div>';
+      const _hFoer = h; h = '';
+      h += '<div class="kort" style="--tone:var(--grus)"><h3><span class="badge-ai">AI</span> 🔧 '+(EN?"WORK ON — focus next period":"ARBEJDSPUNKTER — fokus den næste periode")+'</h3>';
+      if (!R.arbejd.length) h += '<p class="lille" style="margin:0">'+(EN?"Nothing burning — all goals met!":"Intet brænder — alle mål er nået!")+'</p>';
+      R.arbejd.forEach(function(m, i){
+        { const aab = S.rkAaben === "A_" + m.label;
+        h += '<div data-a="rkToggle" data-v="A_'+esc(m.label)+'" style="padding:8px 0;border-top:'+(i?'1px solid var(--kant)':'none')+';cursor:pointer">' +
+          '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><b style="font-size:13px">'+(i===0?'🎯 ':'')+m.label+' <span style="opacity:.55;font-size:10px">'+(aab?"▲":"ⓘ")+'</span></b>' +
+          '<span style="font-size:12px;font-weight:800;color:'+(m.trendGodt?'var(--vundet)':'var(--tabt)')+'">'+(m.trendGodt?'▲ '+(EN?'improving':'på vej frem'):'▼ '+(EN?'slipping':'går den forkerte vej'))+'</span></div>' +
+          '<div style="font-size:11.5px;color:var(--daempet);margin-top:2px">'+(EN?'Now ':'Nu ')+m.nu+m.enhed+' ('+(EN?'avg ':'snit ')+m.snit+m.enhed+') · '+(EN?'GOAL: ':'I MÅL NÅR: ')+m.maalTekst+(EN?' in 2 of last 3':' i 2 af de 3 seneste')+' — '+(EN?'now ':'lige nu ')+m.senesteOK+'/'+m.antal+'</div>' +
+          '<div style="font-size:10px;color:var(--daempet);margin-top:3px">🎯 '+(EN?'Goal':'Mål')+' '+(m.maalTekst)+' · 🏔 '+(EN?'Sinner':'Sinner')+' '+(m.sinner||"—")+'</div>' +
+          (aab ? '<p style="font-size:11.5px;line-height:1.6;margin:6px 0 0;color:var(--kridt)">'+esc(m.hvorfor||"")+'</p>' : '') + '</div>'; }
+      });
+      h += '</div>'; const _kArbejd = h; h = '';
+      h += '<div class="kort" style="--tone:var(--vundet)"><h3><span class="badge-ai">AI</span> ✅ '+(EN?"WORKING — keep it up":"DET VIRKER — behold det")+'</h3>';
+      if (!R.virker.length) h += '<p class="lille" style="margin:0">'+(EN?"Goals not met yet — see above.":"Ingen mål nået endnu — se arbejdspunkterne.")+'</p>';
+      R.virker.forEach(function(m, i){
+        h += '<div style="padding:7px 0;border-top:'+(i?'1px solid var(--kant)':'none')+';display:flex;justify-content:space-between;align-items:baseline;gap:8px">' +
+          '<span style="font-size:12.5px;font-weight:700">'+m.label+'</span>' +
+          '<span style="font-size:11.5px;color:var(--daempet)">'+m.nu+m.enhed+' · '+m.senesteOK+'/'+m.antal+' '+(EN?'recent in goal':'seneste i mål')+' '+(m.trendGodt?'<span style="color:var(--vundet)">▲</span>':'<span style="color:var(--guld)">▼</span>')+'</span></div>';
+      });
+      h += '</div>'; const _kVirker = h;
+      h = _visAlle ? _intro + _kArbejd + _kVirker : _hFoer + (_av === "arbejd" ? _kArbejd : _av === "virker" ? _kVirker : '');   /* v5.13.0 · i STATS står begge kort */   /* v5.0.1 · kun det valgte kort */
+    }
+  return h;
+}
 function _kontoFlise(rum, a, ik, titel, status, lille, kant, ekstra) {
   return '<button class="dev-flise ' + kant + '" data-kontorum="' + rum + '" data-a="' + a + '"' + (ekstra || '') + '>' +
     '<span class="dev-ikon">' + ik + '</span><b>' + titel + '</b>' +
@@ -10420,9 +10465,12 @@ function render() {
     const r = document.getElementById("snak-rul");
     if (r) { _rPos = r.scrollTop; _rNed = (r.scrollHeight - r.scrollTop - r.clientHeight) < 48; }
   }
+  var _stRul = null;   /* ⭐ v5.13.0 · STATS' rum beholder rullen, så længe det er SAMME rum */
+  { const q = document.getElementById("rum-skaerm"); const id = q ? (q.getAttribute("data-rum-skaerm") || "") : ""; if (id.indexOf("stat-") === 0) _stRul = { id: id, top: q.scrollTop }; }
   _tegn();
   _bundNavTegn();   /* ⭐ v4.135.0 */
   _fladeMaal();
+  if (_stRul) { const q = document.getElementById("rum-skaerm"); if (q && q.getAttribute("data-rum-skaerm") === _stRul.id) { try { q.scrollTop = _stRul.top; } catch (_e) {} } }
   {
     const r = document.getElementById("snak-rul");
     if (r) { try { r.scrollTop = _rNed ? r.scrollHeight : _rPos; } catch (_e) {} }
@@ -14634,44 +14682,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   }
 
   if (!LAAST && S.tab === "anbefal") {
-    const R = anbefalinger(EN);
-    if (!R) h += '<div class="kort"><p class="lille" style="margin:0">'+(EN?"Recommendations appear after 2+ matches.":"Anbefalinger vises, når der er registreret mindst 2 kampe.")+'</p></div>';
-    else {
-      h += '<p class="lille">'+(EN?"Auto-generated from ":"Genereret automatisk af ")+R.antal+(EN?" matches — recent 3 vs own average. Updates with every match.":" kampe — de 3 seneste mod eget snit. Opdateres ved hver ny kamp.")+(R.dummy?' 🟡 DUMMY':'')+'</p>';
-      /* v5.0.1 · FLISER (Nicolai 14/9: «Fliser — der skal være fliser»). De to kort blev foldet til bjælker af devFoldning.
-         Nu: to fliser i gitteret, og KUN det valgte kort tegnes under — ét kort → devFoldning rører det ikke. */
-      const _av = S.anbefalVis || null;
-      const _fl = function(v, ik, titel, tekst){
-        return '<button class="dev-flise dev-kant ' + (_av === v ? "dev-kant-guld" : "dev-kant-staal") + '" data-a="anbefalVis" data-v="' + v + '">' +
-          '<span class="dev-ikon">' + ik + '</span><b>' + titel + '</b><small>' + tekst + '</small></button>';
-      };
-      h += '<div class="dev-grid">' +
-        _fl("arbejd", "🔧", (EN?"Work on":"Arbejdspunkter"), R.arbejd.length + (EN ? (R.arbejd.length === 1 ? " point · focus now" : " points · focus now") : (R.arbejd.length === 1 ? " punkt · fokus nu" : " punkter · fokus nu"))) +
-        _fl("virker", "✅", (EN?"Working":"Det virker"), R.virker.length + (EN ? (R.virker.length === 1 ? " goal met · keep it" : " goals met · keep it") : (R.virker.length === 1 ? " mål nået · behold det" : " mål nået · behold det"))) +
-        '</div>';
-      const _hFoer = h; h = '';
-      h += '<div class="kort" style="--tone:var(--grus)"><h3><span class="badge-ai">AI</span> 🔧 '+(EN?"WORK ON — focus next period":"ARBEJDSPUNKTER — fokus den næste periode")+'</h3>';
-      if (!R.arbejd.length) h += '<p class="lille" style="margin:0">'+(EN?"Nothing burning — all goals met!":"Intet brænder — alle mål er nået!")+'</p>';
-      R.arbejd.forEach(function(m, i){
-        { const aab = S.rkAaben === "A_" + m.label;
-        h += '<div data-a="rkToggle" data-v="A_'+esc(m.label)+'" style="padding:8px 0;border-top:'+(i?'1px solid var(--kant)':'none')+';cursor:pointer">' +
-          '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><b style="font-size:13px">'+(i===0?'🎯 ':'')+m.label+' <span style="opacity:.55;font-size:10px">'+(aab?"▲":"ⓘ")+'</span></b>' +
-          '<span style="font-size:12px;font-weight:800;color:'+(m.trendGodt?'var(--vundet)':'var(--tabt)')+'">'+(m.trendGodt?'▲ '+(EN?'improving':'på vej frem'):'▼ '+(EN?'slipping':'går den forkerte vej'))+'</span></div>' +
-          '<div style="font-size:11.5px;color:var(--daempet);margin-top:2px">'+(EN?'Now ':'Nu ')+m.nu+m.enhed+' ('+(EN?'avg ':'snit ')+m.snit+m.enhed+') · '+(EN?'GOAL: ':'I MÅL NÅR: ')+m.maalTekst+(EN?' in 2 of last 3':' i 2 af de 3 seneste')+' — '+(EN?'now ':'lige nu ')+m.senesteOK+'/'+m.antal+'</div>' +
-          '<div style="font-size:10px;color:var(--daempet);margin-top:3px">🎯 '+(EN?'Goal':'Mål')+' '+(m.maalTekst)+' · 🏔 '+(EN?'Sinner':'Sinner')+' '+(m.sinner||"—")+'</div>' +
-          (aab ? '<p style="font-size:11.5px;line-height:1.6;margin:6px 0 0;color:var(--kridt)">'+esc(m.hvorfor||"")+'</p>' : '') + '</div>'; }
-      });
-      h += '</div>'; const _kArbejd = h; h = '';
-      h += '<div class="kort" style="--tone:var(--vundet)"><h3><span class="badge-ai">AI</span> ✅ '+(EN?"WORKING — keep it up":"DET VIRKER — behold det")+'</h3>';
-      if (!R.virker.length) h += '<p class="lille" style="margin:0">'+(EN?"Goals not met yet — see above.":"Ingen mål nået endnu — se arbejdspunkterne.")+'</p>';
-      R.virker.forEach(function(m, i){
-        h += '<div style="padding:7px 0;border-top:'+(i?'1px solid var(--kant)':'none')+';display:flex;justify-content:space-between;align-items:baseline;gap:8px">' +
-          '<span style="font-size:12.5px;font-weight:700">'+m.label+'</span>' +
-          '<span style="font-size:11.5px;color:var(--daempet)">'+m.nu+m.enhed+' · '+m.senesteOK+'/'+m.antal+' '+(EN?'recent in goal':'seneste i mål')+' '+(m.trendGodt?'<span style="color:var(--vundet)">▲</span>':'<span style="color:var(--guld)">▼</span>')+'</span></div>';
-      });
-      h += '</div>'; const _kVirker = h;
-      h = _hFoer + (_av === "arbejd" ? _kArbejd : _av === "virker" ? _kVirker : '');   /* v5.0.1 · kun det valgte kort */
-    }
+    h += _anbefalHtml(EN, false);   /* ⭐ v5.13.0 · samme kilde som STATS → ARBEJDSPUNKTER */
   }
 
   if (!LAAST && S.tab === "s2026") {
@@ -14962,7 +14973,12 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   if (!LAAST && S.tab === "historik") {
     // v3.0.15: Indsigter flyttet hertil fra forsiden. Den er beregnet af
     // spillerens egne kampe — den hoerer hjemme oven paa tallene.
-    h += '<button class="dev-hero dev-kant dev-kant-is" data-a="tab" data-v="anbefal" style="margin:2px 0 12px"><span style="font-size:27px">💡</span><span><b>' + (EN?"INSIGHTS":"INDSIGTER") + '</b><br><small>' + (EN?"what the numbers say \u2014 and what to do about it":"hvad tallene siger \u2014 og hvad du g\u00f8r ved det") + '</small></span><span class="dev-pil">\u2192</span></button>';
+    /* ⭐⭐ v5.13.0 · HELTEN = SENESTE KAMP (Nicolai 12/10: «STATS = helt + fire fliser, intet dybere end 3 tryk»). Indsigterne bor i ARBEJDSPUNKTER — intet fanehop. */
+    h += ((S.gemte || []).length && !S.kampeLaast) ? (function(){
+      var k0 = S.gemte[0], s0 = statistik(k0), v0 = typeof k0.facitVandt === "boolean" ? k0.facitVandt : (s0.setsO > s0.setsM);
+      return '<button class="dev-hero dev-kant dev-kant-is" data-a="statPanel" data-v="seneste" data-stat-helt="seneste" style="margin:2px 0 12px"><span style="font-size:27px">🧭</span><span><b>' + (EN ? "LATEST MATCH" : "SENESTE KAMP") + '</b><br><small>' +
+        (v0 ? (EN ? "Won" : "Vundet") : (EN ? "Lost" : "Tabt")) + ' · ' + esc(k0.modstander || "") + (k0.resultat ? ' · ' + esc(k0.resultat) : '') + '</small></span><span class="dev-pil">→</span></button>';
+    })() : '<button class="dev-hero dev-kant dev-kant-is" data-a="devgaa" data-v="udv:kamp" data-stat-helt="foerste" style="margin:2px 0 12px"><span style="font-size:27px">🎾</span><span><b>' + (teamKunStreaks() ? (EN ? "FIRST MATCH" : "FØRSTE KAMP") : (EN ? "YOUR FIRST MATCH" : "DIN FØRSTE KAMP")) + '</b><br><small>' + (teamKunStreaks() ? (EN ? "register it — it lands with the player" : "registrér den — den lander hos spilleren") : (EN ? "register it — the numbers start here" : "registrér den — tallene starter her")) + '</small></span><span class="dev-pil">→</span></button>';
     // ══════════════════════════════════════════════════════════════
     // ⭐ STATISTIK-FLISERNE (v4.7.4) — "vi skal have lavet ALT om til
     // tiles." Fire fliser, ét tal hver, ét panel ad gangen. Ingen
@@ -14991,8 +15007,11 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         : " gemte kampe har ingen bold-for-bold-registrering og vises ikke her. De er ikke slettet.") + '</p>';
     }
     var _sp = S.statPanel;
+    var _aabenI = -1; if (_sp === "kampe") { for (var _q = 0; _q < (S.gemte || []).length; _q++) { if (S.kampAaben[_q]) { _aabenI = _q; break; } } }   /* ⭐ v5.13.0 · en kamp = sit eget rum */
     var _nKamp = (S.gemte || []).length;
     var _nTraen = (S.ttLog || []).length + (S.fysLog || []).length;
+    var _stR = null; try { _stR = anbefalinger(EN); } catch (_e) {}   /* v5.13.0 · flisens status = rummets indhold (70) */
+    var _stBench = (typeof BENCHMARKS !== "undefined" && BENCHMARKS[S.benchmark]) ? BENCHMARKS[S.benchmark].navn : "Sinner";
     var _stflise = function(v, ik, titel, tal, kant) {
       return '<button class="dev-flise dev-kant' + (_sp === v ? ' dev-kant-is' : (kant ? ' ' + kant : '')) + '"'
         + ' style="min-height:92px' + (_sp === v ? ';border-color:var(--is)' : '') + '"'
@@ -15011,16 +15030,15 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     h += '<div class="dev-grid" style="margin:12px 0">'
       // ⭐ v4.84.0 · er kamplisten låst, må fliserne ikke sige «ingen kampe
       //   endnu» ved siden af et kort, der siger, at de ikke kunne læses.
-      + _stflise("form", "\ud83d\udcc8", (EN?"FORM":"FORMKURVEN"),
-          S.kampeLaast ? (EN?"\u26a0\ufe0f could not be read":"\u26a0\ufe0f kunne ikke læses")
-            : _nKamp ? (_nKamp + " " + (EN ? (_nKamp===1?"match":"matches") : (_nKamp===1?"kamp":"kampe"))) : (EN?"no matches yet":"ingen kampe endnu"),
-          S.kampeLaast ? "dev-kant-roed" : "dev-kant-is")   /* v5.12.1 · farve */
-      + _stflise("kampe", "\ud83c\udfbe", (EN?"MATCHES":"KAMPENE"),
-          S.kampeLaast ? (EN?"\u26a0\ufe0f could not be read":"\u26a0\ufe0f kunne ikke læses")
-            : _nKamp ? (EN?"tap to open":"tryk for at åbne") : (EN?"register your first":"registrér din første"),
+      + _stflise("kampe", "🎾", (EN?"MATCHES":"KAMPENE"),
+          S.kampeLaast ? (EN?"⚠️ could not be read":"⚠️ kunne ikke læses")
+            : _nKamp ? (_nKamp + " " + (EN ? (_nKamp===1?"match":"matches") : (_nKamp===1?"kamp":"kampe"))) : (EN?"register your first":"registrér din første"),
           S.kampeLaast ? "dev-kant-roed" : "dev-kant-gron")
-      + _stflise("traen", "\ud83c\udfc3", (EN?"TRAINING":"TR\u00c6NINGEN"),
-          _nTraen ? (_nTraen + " " + (EN ? (_nTraen===1?"session":"sessions") : (_nTraen===1?"pas":"pas"))) : (EN?"log your first":"log dit f\u00f8rste"), "dev-kant-guld")
+      + _stflise("udvikling", "📈", (EN?"PROGRESS":"UDVIKLING"),
+          _nKamp >= 3 ? (EN?"match by match":"kamp for kamp") : (EN?"from 3 matches · " + _nKamp + " so far":"fra 3 kampe · " + _nKamp + " indtil nu"), "dev-kant-is")
+      + _stflise("punkter", "🎯", (EN?"WORK ON":"ARBEJDSPUNKTER"),
+          _stR ? (_stR.arbejd.length + (EN ? (_stR.arbejd.length === 1 ? " point · focus now" : " points · focus now") : (_stR.arbejd.length === 1 ? " punkt · fokus nu" : " punkter · fokus nu"))) : (EN?"from 2 matches":"fra 2 kampe"), "dev-kant-guld")
+      + _stflise("pejl", "🆚", _stBench.toUpperCase(), (EN?"you vs the best":"dig mod de bedste"), "dev-kant-grus")   /* v5.13.0 · TRÆNINGEN bor under TRÆN */
       // ⭐⭐ v4.84.0 · en låst kopi må kunne SES fra flisen. Før stod den
       //   ærlige besked nede i panelet — og en familie, der ikke åbnede
       //   det, fik aldrig at vide, at der ikke blev gemt mere.
@@ -15029,12 +15047,10 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       + '</div>';
 
       var _statRumStart = h.length;   /* ⭐ v5.12.1 · herfra og til blokkens slutning er rummets indhold */
-      if (_sp === "form") {
-      h += '<div class="kort">';
-    h += grafVT(EN);
-    h += '</div>';
+      if (_sp === "udvikling") {   /* v5.13.0 · formkurven bor i UDVIKLING */
+    h += grafVT(EN);   /* v5.13.0 · ingen ramme om rammen — grafVT er sit eget kort */
     }
-    if (_sp === "kampe") {
+    if (_sp === "kampe" || _sp === "seneste" || _sp === "udvikling" || _sp === "pejl") {   /* v5.13.0 · samme blok, fire rum */
     // ══════════════════════════════════════════════════════════════════
     // ⭐⭐⭐ v4.83.0 · OGSÅ STATISTIK-OMRÅDERNES INDHOLD ER FLISER.
     //   Nicolai 30/8: «Det samme med de statistisk områder.»
@@ -15050,7 +15066,9 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     if (_navnLaas) h += '<p class="lille" style="margin:0 0 8px;padding:8px 10px;--tone:var(--is);border-radius:10px;line-height:1.5">\ud83d\udd12 ' + (EN
       ? _navnLaas + " match(es) came back without the opponent\u2019s name \u2014 the names are locked with your password. \u2699\ufe0f \u2192 YOUR ACCOUNT \u2192 YOUR DATA \u2192 <b>Fetch the names</b>."
       : _navnLaas + " kamp(e) kom tilbage uden modstanderens navn \u2014 navnene er l\u00e5st med dit kodeord. \u2699\ufe0f \u2192 DIN KONTO \u2192 DINE DATA \u2192 <b>Hent navnene</b>.") + '</p>';   /* v5.12.5 */
-    var _kp = S.kampePanel;
+    var _kp = _sp === "seneste" ? "mod" : _sp === "udvikling" ? "trend" : _sp === "pejl" ? "bench" : null;   /* v5.13.0 · rummet bestemmer indholdet — ingen små fliser i rummet */
+    var _visKamp = function(i){ return (_sp === "seneste" && i === 0) || (_sp === "kampe" && (_aabenI < 0 || i === _aabenI)); };
+    var _kampMere = function(i){ return S.kampMere === i || S.sletBekraeft === i || S.flettKamp === i || S.retKamp === i || S.flytKamp === i || S.kortLaver === i; };
     var _kflise = function(v, ik, titel, tal, kant) {   /* v5.12.1 · kant: farven */
       return '<button class="dev-flise dev-kant' + (_kp === v ? ' dev-kant-is' : (kant ? ' ' + kant : '')) + '"'
         + ' style="min-height:74px;padding:12px 12px 11px' + (_kp === v ? ';border-color:var(--is)' : '') + '"'
@@ -15059,12 +15077,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         + '<b style="font-size:11.5px;letter-spacing:1.1px">' + titel + '</b>'
         + '<small style="color:' + (_kp === v ? 'var(--is)' : 'var(--daempet)') + '">' + tal + '</small></button>';
     };
-    h += '<p class="lille" style="margin:0 0 6px;letter-spacing:1.4px;font-weight:800;color:var(--daempet)">\u21b3 ' + (EN?"PICK AN AREA":"V\u00c6LG ET OMR\u00c5DE") + '</p>';
-    h += '<div class="dev-grid" style="margin:2px 0 12px">'
-      + (S.gemte.length >= 2 ? _kflise("mod", "\ud83e\udded", (EN?"LATEST":"SENESTE"), (EN?"vs the previous one":"mod forrige kamp"), "dev-kant-gron") : '')
-      + _kflise("trend", "\ud83d\udcc8", (EN?"TREND":"UDVIKLING"), (EN?"match by match":"kamp for kamp"), "dev-kant-is")
-      + _kflise("bench", "\ud83c\udd9a", (EN?"BENCHMARK":"BENCHMARK"), (EN?"vs ":"mod ") + ((typeof BENCHMARKS!=="undefined"&&BENCHMARKS[S.benchmark])?BENCHMARKS[S.benchmark].navn:"Sinner"), "dev-kant-guld")
-      + '</div>';
+    /* v5.13.0 · «VÆLG ET OMRÅDE» og de tre små fliser er væk — SENESTE er helten, UDVIKLING og benchmark er fliser i STATS */
     if (_kp === "mod" && S.gemte.length >= 2) {
       const sa = statistik(S.gemte[0]), sb = statistik(S.gemte[1]);
       const frem = [], skaerp = [];
@@ -15178,8 +15191,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     // ⭐ v4.94.0 · I team-visningen findes der ingen kode at taste: analyser
     //   hentes på spillerens adgang gennem team-nøglen (analyse-lov v4).
     // ⭐ v4.105.0 · ormehullets kvittering står her, hvor Afslut lander (STATS).
-    if (teamKunStreaks() && S.postBesked) h += '<p class="lille" style="margin:2px 0 8px;padding:8px 10px;--tone:' + (S.postBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + ';border-radius:10px">' + esc(S.postBesked.t) + '</p>';
-    if (teamKunStreaks()) h += (lager.hent("sai-sky-noegle")
+    if (_sp === "kampe" && teamKunStreaks() && S.postBesked) h += '<p class="lille" style="margin:2px 0 8px;padding:8px 10px;--tone:' + (S.postBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + ';border-radius:10px">' + esc(S.postBesked.t) + '</p>';
+    if (_sp === "kampe" && _aabenI < 0 && teamKunStreaks()) h += (lager.hent("sai-sky-noegle")
       ? '<p class="lille" style="margin:2px 0 10px">' + (EN
         ? "Matches, training and analyses here are the player’s — the player has opened for you. Analyses are fetched on the player’s access; no code needed here."
         : "Kampe, træning og analyser her er spillerens — spilleren har åbnet for dig. Analyser hentes på spillerens adgang; ingen kode her.") + '</p>'
@@ -15220,11 +15233,12 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     //   Åbnet flise spænder over begge kolonner (grid-column:1/-1), præcis
     //   som en åben modstander — indholdet er URØRT.
     // ══════════════════════════════════════════════════════════════
-    if (S.gemte.length) h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">\ud83c\udfbe ' + (EN?"Matches played":"Afviklede kampe") + ' \u00b7 ' + S.gemte.length + '</h2>';
-    h += '<div class="dev-grid" style="margin:2px 0 10px">' + S.gemte.map((k,i) => {
+    if (S.gemte.length && _sp === "kampe" && _aabenI < 0) h += '<h2 style="font-size:15px;color:var(--is);margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">\ud83c\udfbe ' + (EN?"Matches played":"Afviklede kampe") + ' \u00b7 ' + S.gemte.length + '</h2>';
+    if (_sp === "kampe" || _sp === "seneste") h += '<div class="dev-grid" style="margin:2px 0 10px">' + S.gemte.map((k,i) => {
+      if (!_visKamp(i)) return '';   /* v5.13.0 */
       const s = statistik(k);
-      const aaben = !!S.kampAaben[i];
-      const aAaben = !!S.analyseAaben[i];
+      const aaben = (_sp === "seneste" && i === 0) || (_sp === "kampe" && i === _aabenI);   /* v5.13.0 · åben = kampens eget rum */
+      const aAaben = true;   /* v5.13.0 · analysen står åben i rummet */
       /* ⭐ v5.9.2 · hvad kortet viser: oversættelsen, hvis analysen står på det andet sprog og den findes i telefonen */
       const _aTil = EN ? "en" : "da";
       const _aFremmed = !!(k.analyse && (k.aSprog === "en" || k.aSprog === "da") && k.aSprog !== _aTil);
@@ -15234,19 +15248,18 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       const kantKl = vandt ? "dev-kant-gron" : "dev-kant-roed";
       const farve  = vandt ? "var(--vundet)" : "var(--tabt)";
       // Hovedet er knappen: hele flisen folder kampen ud og i.
-      const hoved = '<div data-a="kampFold" data-v="'+i+'" style="display:flex;align-items:center;gap:9px;cursor:pointer">' +
+      const hoved = '<div' + (aaben ? '' : ' data-a="kampFold" data-v="'+i+'"') + ' style="display:flex;align-items:center;gap:9px' + (aaben ? '' : ';cursor:pointer') + '">' +   /* v5.13.0 · i rummet lukker «‹ Kampene» */
         '<span style="font-size:12px;font-weight:800;background:'+farve+';color:var(--dyb);padding:3px 9px;border-radius:10px;flex:none">'+(vandt?(EN?'W':'V'):(EN?'L':'T'))+'</span>' +
         '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;line-height:1.25;word-break:break-word">'+esc(k.modstander)+'</div>' +
         '<div style="font-size:11px;color:var(--daempet);line-height:1.35">'+(k.analyse?'📝 ':'')+esc(k.dato)+(k.resultat?'<br><span style="color:var(--is);white-space:nowrap">'+esc(k.resultat)+'</span>':'')+'</div></div>' +
-        '<span style="color:var(--daempet);font-size:11px;flex:none">'+(aaben?'▲':'▼')+'</span></div>';
+        (aaben ? '' : '<span style="color:var(--daempet);font-size:11px;flex:none">▼</span>') + '</div>';   /* v5.13.0 · i rummet er der ingen fold — ingen pil, der ikke svarer (35) */
       if (!aaben) return '<div class="kort dev-kant '+kantKl+'" style="cursor:pointer;padding:13px;margin:0;border-radius:16px">' + hoved + '</div>';
       return '<div class="kort dev-kant '+kantKl+'" style="padding:13px;margin:0;border-radius:16px;grid-column:1/-1">' + hoved +
         (k.turnering?'<p style="margin:2px 0 2px;font-size:11px;color:var(--daempet)">'+esc(k.turnering)+'</p>':'')+statTabel(s,EN)+saetTabel(s,EN)+pulsKort(k,EN)+
         (k.analyse && S.redigerA !== i
           ? '<div style="border:1.5px solid var(--guld);border-radius:10px;padding:10px 12px;margin:10px 0 4px">' +
             '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-              '<b data-a="analyseFold" data-v="'+i+'" style="color:var(--guld);font-size:11px;letter-spacing:.06em;cursor:pointer;flex:1">'+(aAaben?'▾':'▸')+' 📝 '+(EN?"ANALYSIS":"ANALYSE")+'</b>' +
-              '<span data-a="analyseAabn" data-v="'+i+'" title="'+(EN?"Edit or clear":"Ret eller ryd")+'" style="cursor:pointer;font-size:13px;opacity:.65">✏️</span>' +
+              '<b style="color:var(--guld);font-size:11px;letter-spacing:.06em;flex:1">📝 '+(EN?"ANALYSIS":"ANALYSE")+'</b>' +
             '</div>' +
             (aAaben
               ? '<p class="lille" style="margin:8px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(_aVis) + '</p>'
@@ -15272,7 +15285,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           '<button class="knap" style="flex:none;padding:8px 14px;background:var(--grus);font-size:12px'+(S.henter!==null&&S.henter!==i?';opacity:.45':'')+'" data-a="hentAnalyse" data-v="'+i+'">'+(S.henter===i?(EN?"⏳ Analysing…":"⏳ Analyserer…"):(EN?"🧠 Get analysis":"🧠 Hent analyse"))+'</button>') +
         (S.henter===i ? '<div id="analyse-puls" style="width:100%;margin:9px 0 2px"></div>' : '') +
 
-        (S.sletBekraeft === i
+        (_kampMere(i) ? ((S.sletBekraeft === i
           ? '<button class="knap" style="flex:none;padding:8px 14px;background:var(--tabt);font-size:12px" data-a="slet" data-v="'+i+'">'+(EN?"Delete PERMANENTLY":"Slet PERMANENT")+'</button><button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--kant);color:var(--daempet);font-size:12px" data-a="sletFortryd">'+(EN?"Cancel":"Fortryd")+'</button>'
           : '<button class="knap" style="flex:none;padding:8px 12px;background:transparent;border:1.5px solid var(--tabt);color:var(--tabt);font-size:12px" data-a="sletSpoerg" data-v="'+i+'">🗑 '+(EN?"Delete":"Slet")+'</button>') +
         // ⭐⭐ v4.117.0 · «Slå sammen med kampen under». Vises KUN, når der
@@ -15293,7 +15306,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         // ⭐⭐ v4.28.0 · KAMPKORTET. Billedet laves paa telefonen og gaar
         // ingen steder, foer barnet selv vaelger hvorhen.
         '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12px" data-a="kortDel" data-v="'+i+'">' +
-          (S.kortLaver === i ? '\u23f3 \u2026' : '\ud83d\udce4 ' + (EN?"Match card":"Kampkort")) + '</button>' +
+          (S.kortLaver === i ? '\u23f3 \u2026' : '\ud83d\udce4 ' + (EN?"Match card":"Kampkort")) + '</button>')
+          : '<button class="knap valg" style="flex:none;padding:8px 14px;font-size:12px" data-a="kampMere" data-v="'+i+'">\u22ef ' + (EN?"More":"Mere") + '</button>') +   /* v5.13.0 · værktøjerne bag «⋯ Mere» */
         '</div>' +
         // ⭐⭐⭐ v4.117.0 · SAMMENLÆGNINGS-PANELET. Begge kampe står med
         //   dato, resultat og antal bolde, og det siges HVILKEN der lægges
@@ -15409,13 +15423,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           (S.hentBesked.koeb ? koebKnap("kamp", S.hentBesked.koeb.pris, "a:" + _kampNoegle(k, i), EN) : '') : '') +   /* ⭐ v5.8.0 */
         '</div>';
     }).join("") + '</div>';
-    if (S.redigerA !== null && S.gemte[S.redigerA]) {
-      h += '<p class="lille" style="margin-top:10px">'+(EN?"Analysis of the match vs ":"Analyse af kampen mod ")+esc(S.gemte[S.redigerA].modstander)+(EN?" — paste from the chat:":" — indsæt fra chatten:")+'</p>';
-      h += '<textarea data-felt="aTekst" placeholder="'+(EN?'Paste the analysis here…':'Indsæt analysen her…')+'" style="height:120px;border-color:var(--guld);color:var(--kridt)">'+esc(S.aTekst)+'</textarea>';
-      h += '<div class="raekke" style="margin-top:6px"><button class="knap" style="background:var(--grus)" data-a="analyseGem" data-v="'+S.redigerA+'">💾 '+(EN?"Save analysis to match":"Gem analysen på kampen")+'</button><button class="knap" data-a="analyseAnnuller">'+(EN?"Cancel":"Annullér")+'</button></div>';
-      h += '<div class="raekke" style="margin-top:4px"><button class="knap" style="flex:none;padding:7px 11px;background:transparent;border:1px solid var(--kant);color:var(--daempet);font-size:11px" data-a="hentAnalyse" data-v="'+S.redigerA+'">'+(S.henter===S.redigerA?(EN?'⏳ Fetching…':'⏳ Henter…'):(EN?'🔄 Fetch again — overwrites':'🔄 Hent igen — overskriver'))+'</button></div>';
-      h += '<p class="lille" style="margin:4px 0 0">'+(EN?'Only needed if the analysis is wrong or the engine has changed.':'Kun nødvendigt hvis analysen er skæv, eller motoren er ændret.')+'</p>';
-    }
+    /* v5.13.0 · udviklerdøren fra august (analysen rettet i hånden) er væk */
     }
     if (_sp === "traen") {
     h += '<div class="kort">';
@@ -15433,11 +15441,15 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     }
     h += '</div>';
     }
-      if (_sp === "form" || _sp === "kampe" || _sp === "traen") {   /* ⭐ v5.12.1 · panelet er et RUM, ikke en liste under gitteret */
+    if (_sp === "punkter") h += _anbefalHtml(EN, true);   /* ⭐ v5.13.0 · intet fanehop */
+      if (_sp === "seneste" || _sp === "kampe" || _sp === "udvikling" || _sp === "punkter" || _sp === "pejl") {   /* ⭐ v5.13.0 · fem rum */
         var _statRumHtml = h.slice(_statRumStart); h = h.slice(0, _statRumStart);
         _rumAaben = { id: "stat-" + _sp, a: "statPanel", v: "", tilbage: "\u2039 Stats",
-          titel: ({ form: "\ud83d\udcc8 " + (EN?"FORM":"FORMKURVEN"), kampe: "\ud83c\udfbe " + (EN?"MATCHES":"KAMPENE"), traen: "\ud83c\udfc3 " + (EN?"TRAINING":"TR\u00c6NINGEN") })[_sp],
+          titel: ({ seneste: "\ud83e\udded " + (EN?"LATEST MATCH":"SENESTE KAMP"), kampe: "\ud83c\udfbe " + (EN?"MATCHES":"KAMPENE"), udvikling: "\ud83d\udcc8 " + (EN?"PROGRESS":"UDVIKLING"),
+                   punkter: "\ud83c\udfaf " + (EN?"WORK ON":"ARBEJDSPUNKTER"), pejl: "\ud83c\udd9a " + _stBench.toUpperCase() })[_sp],
           html: _statRumHtml };
+        if (_sp === "kampe" && _aabenI >= 0 && S.gemte[_aabenI]) _rumAaben = { id: "stat-kamp", a: "kampFold", v: String(_aabenI), tilbage: "\u2039 " + (EN ? "Matches" : "Kampene"),
+          titel: "\ud83c\udfbe " + esc(S.gemte[_aabenI].modstander || ""), html: _statRumHtml };   /* ⭐ v5.13.0 · en kamp = sit eget rum */
       }
     }
       if (!LAAST && S.tab === "status") {

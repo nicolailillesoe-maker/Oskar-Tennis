@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.13.1 · 12. oktober 2026";
+const VERSION = "v5.13.2 · 13. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -11842,9 +11842,10 @@ function _tegn() {
             (S.sprog === "en" ? "New here? Start here" : "Ny her? Start her") + ' →</button>' +
           // ⭐ v4.78.0 · En vej til vejledningen HELT fremme. Den, der er
           //   i tvivl, er i tvivl foer hun logger ind — ikke bagefter.
-          '<p class="lille sai-op" style="animation-delay:.28s;margin:14px auto 0">' +
+          (PLATFORM.app ? '' :   /* v5.13.2 · vejledningen er web-installationen */
+            '<p class="lille sai-op" style="animation-delay:.28s;margin:14px auto 0">' +
             '<a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700">' +
-            (S.sprog === "en" ? "How does this work? \u2197" : "Hvordan virker det? \u2197") + '</a></p>' +
+            (S.sprog === "en" ? "How does this work? \u2197" : "Hvordan virker det? \u2197") + '</a></p>') +
           '<p class="lille sai-op" style="animation-delay:.3s;margin:10px auto 0;opacity:.45;font-size:10.5px">' + VERSION + SKAL + '</p>' +
         '</div>';
       return;
@@ -14515,7 +14516,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
     }
   }
 
-  if (S.tab === "guide") h += '<p class="lille">'+(EN?'How StreakTennis works — built for one thumb and bright sun.':'Sådan virker StreakTennis — bygget til én tommelfinger og skarp sol.')+'</p>' + (EN?GUIDE_EN:GUIDE).map(g => '<div class="kort"><h3 style="color:var(--is)">'+esc(g[0])+'</h3><p>'+esc(g[1])+'</p></div>').join("");
+  if (S.tab === "guide") h += '<p class="lille">'+(EN?'How StreakTennis works — built for one thumb and bright sun.':'Sådan virker StreakTennis — bygget til én tommelfinger og skarp sol.')+'</p>' + (EN?GUIDE_EN:GUIDE).filter(g => !(PLATFORM.app && /^\ud83d\udcf2/.test(g[0]))).map(g => '<div class="kort"><h3 style="color:var(--is)">'+esc(g[0])+'</h3><p>'+esc(g[1])+'</p></div>').join("");
   if (!LAAST && S.tab === "stil") {
     const B = BENCHMARKS[S.benchmark] || BENCHMARKS.sinner;
     h += '<p class="lille">'+(EN?'Pick the role model your game is measured against. The rules, the benchmark numbers in STATS and the whole style change with your choice.':'Vælg det forbillede, dit spil måles mod. Budene, benchmark-tallene i STATS og hele stilen skifter med valget.')+'</p>';

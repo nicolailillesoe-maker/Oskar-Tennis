@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.14.0 · 13. oktober 2026";
+const VERSION = "v5.14.1 · 14. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -3420,6 +3420,15 @@ function liveSend(nu) {
 // Sender et kamp-RESUMÉ op — fem tal pr. kamp, aldrig boldene — og henter
 // trænerens vurderinger og fokuspunkter ned.
 // ══════════════════════════════════════════════════════════════════════
+/* ⭐ v5.14.1 · handlingerne, spiller-sync tillader uden klubkode (PRIVAT_TILLADT, målt i den kørende kilde 14/10) */
+const SYNC_PRIVAT = ["gem", "hent", "live-gem", "live-slut", "venne-kode", "venne-indloes", "venne-hent", "venne-fjern", "rum-skriv", "rum-hent",
+  "arkiv-hent", "arkiv-rum", "arkiv-slet", "familie-kode", "familie-liste", "familie-spaer", "familie-indloes", "chat-hent", "chat-skriv", "chat-anmeld",
+  "gruppe-opret", "gruppe-kode", "gruppe-indloes", "gruppe-hent", "gruppe-forlad", "gruppe-fjern"];
+function klubKodeDoedTekst(EN) {
+  return S.klubKodeGrund === "spaerret"
+    ? (EN ? "Your club's code on this phone is blocked \u2014 talk to your coach. What you log is still saved." : "Din klubs kode p\u00e5 telefonen er sp\u00e6rret \u2014 tal med din tr\u00e6ner. Det, du logger, gemmes stadig.")
+    : (EN ? "Your club no longer knows this phone's code \u2014 ask your coach to invite you again. What you log is still saved." : "Din klub kender ikke telefonens kode l\u00e6ngere \u2014 bed din tr\u00e6ner invitere dig igen. Det, du logger, gemmes stadig.");
+}
 async function sync(handling, krop) {
   // Klubnøglen er VALGFRI fra v3.0.23. Sendes den ikke, kører kaldet i
   // serverens private tilstand, hvor kun familiens eget, venne-laget og
@@ -3431,10 +3440,16 @@ async function sync(handling, krop) {
     const r = await fetch(SYNC_URL, { method: "POST", signal: st.signal,
       headers: Object.assign({ "content-type": "application/json",
                  "x-spiller-noegle": S.spillerNoegle },
-                 S.klubKode ? { "x-klub-noegle": S.klubKode } : {}),
+                 (S.klubKode && S.klubKode !== S.klubKodeDoed) ? { "x-klub-noegle": S.klubKode } : {}),   /* ⭐ v5.14.1 · en død kode sendes ikke igen */
       body: JSON.stringify({ handling, ...krop }) });
     clearTimeout(ur);
     const d = await r.json().catch(function(){ return {}; });
+    /* ⭐⭐ v5.14.1 · DEN DØDE KLUBKODE: basen kender ikke koden (eller har spærret den) → samme kald igen UDEN den, så spillerens
+       egne data stadig gemmes. Kun for handlinger, motoren tillader uden klub (spiller-sync PRIVAT_TILLADT). */
+    if (!r.ok && r.status === 401 && S.klubKode && S.klubKode !== S.klubKodeDoed && (d.fejl === "ugyldig klubkode" || d.fejl === "klubkoden er spærret eller udløbet") && SYNC_PRIVAT.indexOf(handling) >= 0) {
+      S.klubKodeDoed = S.klubKode; S.klubKodeGrund = d.fejl === "ugyldig klubkode" ? "ukendt" : "spaerret";
+      return sync(handling, krop);
+    }
     return r.ok ? d : { fejl: d.kode || "netvaerk", status: r.status, detaljer: d.detaljer, pris: d.pris, koeb: d.koeb, brugt: d.brugt, af: d.af };   /* ⭐ v5.8.0 */
   } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
 }
@@ -8613,7 +8628,7 @@ const A = {
       // for at lade som om der bare ikke var skrevet noget.
       fletPasUdefra((ned.spiller || {}).traeningslog);   // v4.112.0 · én funktion, to veje
       lager.gem("sai-traenerdata", JSON.stringify(S.traenerData));
-      S.syncBesked = { fejl: false, t: (S._nyeUdefra
+      S.syncBesked = (S.klubKodeDoed && S.klubKodeDoed === S.klubKode) ? { fejl: true, t: klubKodeDoedTekst(EN) } : { fejl: false, t: (S._nyeUdefra
         ? (EN ? "Synced \u2713 \u2014 " + S._nyeUdefra + " session(s) from another device"
               : "Synkroniseret \u2713 \u2014 " + S._nyeUdefra + " pas fra en anden enhed")
         : (EN ? "Synced with the coach \u2713" : "Synkroniseret med tr\u00e6neren \u2713")) };
@@ -14163,8 +14178,8 @@ function _tegn() {
       if (S.klubBudBesked) _kBud += '<p class="lille" style="margin:0 0 8px;color:' + (S.klubBudBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.klubBudBesked.t) + '</p>';
       var _budN = (S.rolle !== "familie" && S.klubBud) ? S.klubBud.length : 0;
       if (VISNING !== "team") _kort.klub = _opsKort("klub", "\ud83c\udfdb", (EN?"YOUR CLUB":"DIN KLUB"),
-        (_portTekst ? _portTekst : (S.klubKode ? (S.minKlub ? esc(S.minKlub) + " \u2713" : (EN?"connected ✓":"forbundet ✓")) : (_budN ? (_budN + (EN ? " invitation" : " invitation") + (_budN > 1 ? (EN ? "s" : "er") : "")) : (EN?"no club":"ingen klub")))),
-        (_portFarve ? _portFarve : (S.klubKode ? "var(--vundet)" : (_budN ? "var(--guld)" : "var(--daempet)"))), _kBud + _portStribe + _kKlub + _stigeKrop);
+        (_portTekst ? _portTekst : (S.klubKode ? ((S.klubKodeDoed && S.klubKodeDoed === S.klubKode) ? (S.klubKodeGrund === "spaerret" ? (EN?"the code is blocked":"koden er sp\u00e6rret") : (EN?"the club no longer knows the code":"klubben kender ikke koden")) : S.minKlub ? esc(S.minKlub) + " \u2713" : (EN?"connected ✓":"forbundet ✓")) : (_budN ? (_budN + (EN ? " invitation" : " invitation") + (_budN > 1 ? (EN ? "s" : "er") : "")) : (EN?"no club":"ingen klub")))),
+        (_portFarve ? _portFarve : (S.klubKode ? ((S.klubKodeDoed && S.klubKodeDoed === S.klubKode) ? "var(--tabt)" : "var(--vundet)") : (_budN ? "var(--guld)" : "var(--daempet)"))), _kBud + _portStribe + _kKlub + _stigeKrop);
 
       /* v4.151.0 · DINE DATA-kortet er væk — det, appen deler, står i betingelserne, og de har nu en knap nederst i Indstillinger */
       // 🏛 JERES KLUB udgik i v4.146.0 (Nicolai 12/9: «Enig») — klubbens navn

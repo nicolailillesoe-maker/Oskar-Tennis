@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.13.2 · 13. oktober 2026";
+const VERSION = "v5.14.0 · 13. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -2704,6 +2704,27 @@ function _saesonNaeste(rk, EN) {
   if (naeste) return { slags: "naeste", r: naeste, kort: naeste.titel + " · " + _saesonDK(naeste.dato) };
   return null;
 }
+/* ⭐⭐ v5.14.0 · KONTROLLEN (K2): en valgt turnering, der ikke er bekræftet tilmeldt — hvor tæt er fristen? */
+function _saesonKontrol(r) {
+  if (!r || r.status !== "valgt" || !r.frist) return null;
+  const idag = dkDato(0);
+  if (r.frist < idag) return "over";
+  const d = Math.round((Date.parse(r.frist + "T12:00:00Z") - Date.parse(idag + "T12:00:00Z")) / 86400000);
+  return d <= 3 ? "snart" : null;
+}
+/* ⭐⭐ v5.14.0 · flisens undertekst — det, der kræver en hånd først: trænerens forslag → en frist i fare → det næste */
+function _saesonStatusKort(rk, EN) {
+  const idag = dkDato(0);
+  const forslag = (rk || []).filter(function(r){ return r.kilde === "klub" && r.status === "mulig" && (r.slut || r.dato) >= idag; }).length;
+  if (forslag) return { t: forslag + (EN ? (forslag === 1 ? " suggestion from your coach" : " suggestions from your coach") : (forslag === 1 ? " forslag fra træneren" : " forslag fra træneren")), kant: "dev-kant-guld" };
+  const over = (rk || []).filter(function(r){ return _saesonKontrol(r) === "over" && (r.slut || r.dato) >= idag; })[0];
+  if (over) return { t: (EN ? "deadline passed · " : "fristen er gået · ") + over.titel, kant: "dev-kant-roed" };
+  const snart = (rk || []).filter(function(r){ return _saesonKontrol(r) === "snart"; }).sort(function(a, b){ return a.frist < b.frist ? -1 : 1; })[0];
+  if (snart) return { t: (EN ? "enter by " : "tilmeld inden ") + _saesonDK(snart.frist) + " · " + snart.titel, kant: "dev-kant-guld" };
+  const n = _saesonNaeste(rk, EN);
+  if (n) return { t: n.kort, kant: n.slags === "frist" ? "dev-kant-guld" : "dev-kant-grus" };
+  return { t: EN ? "plan your season" : "læg din sæson ind", kant: "dev-kant-grus" };
+}
 async function traeningKald(handling, krop) {
   const sn = traeningNoegle();
   if (!sn) return { fejl: "mangler-noegle" };
@@ -2725,6 +2746,7 @@ function saesonFejltekst(r, EN) {
   if (k === "dato") return EN ? "The date must be like 2026-11-07." : "Datoen skal være som 2026-11-07.";
   if (k === "loft") return EN ? "Your season is full — remove something old first." : "Sæsonen er fuld — slet noget gammelt først.";
   if (k === "titel") return EN ? "The tournament needs a name." : "Turneringen skal have et navn.";
+  if (k === "link") return EN ? "The link must be the entry page on DTF (tournamentsoftware.com)." : "Linket skal være tilmeldingssiden hos DTF (tournamentsoftware.com).";   /* v5.14.0 · K3 */
   return EN ? "Your season couldn't be saved right now." : "Sæsonen kunne ikke gemmes lige nu.";
 }
 function traeningFejltekst(k, EN) {
@@ -4418,6 +4440,7 @@ const A = {
     if (String(S.saesonSlut || "").trim()) krop.slut = String(S.saesonSlut).trim();
     if (String(S.saesonRaekke || "").trim()) krop.raekke = String(S.saesonRaekke).trim();
     if (String(S.saesonFrist || "").trim()) krop.frist = String(S.saesonFrist).trim();
+    if (String(S.saesonLink || "").trim()) krop.link = String(S.saesonLink).trim();   /* v5.14.0 · kun DTF (K3) */
     if (krop.slags === "holdkamp") krop.status = "tilmeldt";
     if (krop.slags === "fri" || krop.slags === "ferie") krop.status = "fri";
     if (!krop.titel || !krop.dato) { S.saesonBesked = { fejl: true, t: EN ? "A name and a date, then it can be saved." : "Et navn og en dato — så kan den gemmes." }; render(); return; }
@@ -4426,7 +4449,7 @@ const A = {
     S.saesonSender = false;
     if (r && r.raekke) {
       S.saeson = (S.saeson || []).filter(function(x){ return x.id !== r.raekke.id; }).concat([r.raekke]).sort(function(a, b){ return a.dato < b.dato ? -1 : 1; });
-      S.saesonNyAaben = false; S.saesonTitel = ""; S.saesonDato = ""; S.saesonSlut = ""; S.saesonRaekke = ""; S.saesonFrist = "";
+      S.saesonNyAaben = false; S.saesonTitel = ""; S.saesonDato = ""; S.saesonSlut = ""; S.saesonRaekke = ""; S.saesonFrist = ""; S.saesonLink = "";
       S.saesonBesked = { fejl: false, t: EN ? "Added to your season ✓" : "Lagt i din sæson ✓" };
     } else S.saesonBesked = { fejl: true, t: saesonFejltekst(r, EN) };
     render();
@@ -4436,12 +4459,42 @@ const A = {
     const EN = S.sprog === "en";
     const r0 = (S.saeson || []).find(function(x){ return x.id === id; }); if (!r0) return;
     if (r0.slags !== "turnering") return;
-    const naeste = { mulig: "valgt", valgt: "tilmeldt", tilmeldt: "mulig", inde: "mulig", spillet: "spillet", fri: "mulig" }[r0.status] || "mulig";
+    const naeste = { mulig: "valgt", valgt: "mulig", nej: "mulig", fri: "mulig" }[r0.status] || r0.status;   /* v5.14.0 · K1: aldrig tilmeldt med ét tryk */
     if (naeste === r0.status) return;
     S.saesonBesked = null; S.saesonSender = true; render();
     const r = await saesonKald("gem", { id: id, status: naeste });
     S.saesonSender = false;
     if (r && r.raekke) { S.saeson = (S.saeson || []).map(function(x){ return x.id === id ? r.raekke : x; }); }
+    else S.saesonBesked = { fejl: true, t: saesonFejltekst(r, EN) };
+    render();
+  },
+  /* ⭐⭐ v5.14.0 · SÆSONEN fra HJEM (Nicolais valg B) · svarene på et forslag · tilmeldingen bekræftes (K1) */
+  saesonAabn: () => { S.traenPanel = "saeson"; A.tab("fysisk"); },
+  saesonSvar: async (v) => {
+    const EN = S.sprog === "en";
+    const p = String(v || "").split("|"); const id = p[0], hvad = p[1];
+    const r0 = (S.saeson || []).find(function(x){ return x.id === id; }); if (!r0) return;
+    const ny = { ja: "valgt", nej: "nej", fortryd: "mulig", ikkeTilmeldt: "valgt" }[hvad]; if (!ny) return;
+    S.saesonBesked = null; S.saesonBekraeft = null; S.saesonSender = true; render();
+    const r = await saesonKald("gem", { id: id, status: ny });
+    S.saesonSender = false;
+    if (r && r.raekke) {
+      S.saeson = (S.saeson || []).map(function(x){ return x.id === id ? r.raekke : x; });
+      S.saesonBesked = { fejl: false, t: hvad === "ja"
+        ? (EN ? "Chosen ✓ — now enter on DTF, then tap «I’m entered»." : "Valgt ✓ — tilmeld dig nu hos DTF, og tryk så «Jeg er tilmeldt».")
+        : hvad === "nej" ? (EN ? "Not this time — it stays below, and you can undo it." : "Ikke denne gang — den står nedenfor, og du kan fortryde.")
+        : hvad === "ikkeTilmeldt" ? (EN ? "It stays as chosen — SÆSONEN says when the deadline gets close." : "Den står stadig som valgt — SÆSONEN siger til, når fristen nærmer sig.")
+        : (EN ? "Back to possible." : "Tilbage til mulig.") };
+    } else S.saesonBesked = { fejl: true, t: saesonFejltekst(r, EN) };
+    render();
+  },
+  saesonTilmeldt: (id) => { S.saesonBekraeft = S.saesonBekraeft === id ? null : id; S.saesonBesked = null; render(); },
+  saesonBekraeft: async (id) => {
+    const EN = S.sprog === "en";
+    S.saesonBesked = null; S.saesonSender = true; render();
+    const r = await saesonKald("gem", { id: id, status: "tilmeldt" });
+    S.saesonSender = false; S.saesonBekraeft = null;
+    if (r && r.raekke) { S.saeson = (S.saeson || []).map(function(x){ return x.id === id ? r.raekke : x; }); S.saesonBesked = { fejl: false, t: EN ? "Entered ✓ — good luck!" : "Tilmeldt ✓ — held og lykke!" }; }
     else S.saesonBesked = { fejl: true, t: saesonFejltekst(r, EN) };
     render();
   },
@@ -11447,7 +11500,7 @@ function _tegn() {
           (S.sprog === "en"
             ? _b("What lives on the phone", "Your notes and all free text stay on the phone. Analyses are computed from numbers — never from what you write.") +
               _b("The backup", "Your matches (every ball, the result, the analysis) and your development letter are kept readable with us — without opponents’ names and without your notes — so they come back with your account alone. Names and notes are kept only in a box locked with your password; we cannot open it.") +
-              _b("What the club sees", "If you are in a club, your club\u2019s coach sees the full name you write under Your profile \u2014 and your matches, training and assessments. Without a club, nobody sees the full name. Friends never do. If you're on a squad in the club's training programme, your club can write a training session into your log when you've attended \u2014 date and length. If your coach writes the evaluation in a language other than yours, it is translated by the same service that writes the match analysis \u2014 with your name removed before it is sent, and put back afterwards.") +
+              _b("What the club sees", "If you are in a club, your club\u2019s coach sees the full name you write under Your profile \u2014 and your matches, training and assessments. Without a club, nobody sees the full name. Friends never do. If you're on a squad in the club's training programme, your club can write a training session into your log when you've attended \u2014 date and length. If your coach writes the evaluation in a language other than yours, it is translated by the same service that writes the match analysis \u2014 with your name removed before it is sent, and put back afterwards. Your club's coaches can see your tournament plan and suggest tournaments \u2014 you decide yourself.") +
               _b("What friends see", "Your nickname, your username, your avatar, the few words you may write about yourself (never shown to anyone but friends), your streak and — while a match is live — the score. Never your messages. If you share a match (live or from the archive), the score, tournament and opponent travel with it; friends see the opponent shortened.") +
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
               _b("Search", "Approved players can find you by searching your username — the result shows username, club and birth year. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
@@ -11456,7 +11509,7 @@ function _tegn() {
               _b("Leaving", "Log out wipes the phone. Under Your account you can delete the account yourself — everything is deleted at once" + (PLATFORM.betaling === "apple" ? ". A subscription bought in the App Store does not stop by itself — cancel it under your Apple subscriptions. It cannot be undone." : ", including a subscription in MobilePay. It cannot be undone."))
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
               _b("Sikkerhedskopien", "Jeres kampe (hver bold, resultatet, analysen) og udviklingsbrevet gemmes læsbart hos os — uden modstandernes navne og uden jeres noter — så de kommer tilbage med kontoen alene. Navne og noter gemmes kun i en boks, der er låst med jeres kodeord; den kan vi ikke åbne.") +
-              _b("Hvad klubben ser", "Er du med i en klub, ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig. Er du på et hold i klubbens træningsprogram, kan din klub skrive et træningspas i din log, når du er mødt \u2014 dato og længde. Skriver din træner evalueringen på et andet sprog end dit, oversættes den af den samme tjeneste, der skriver kampanalysen \u2014 med dit navn fjernet, før den sendes, og sat på igen bagefter.") +
+              _b("Hvad klubben ser", "Er du med i en klub, ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig. Er du på et hold i klubbens træningsprogram, kan din klub skrive et træningspas i din log, når du er mødt \u2014 dato og længde. Skriver din træner evalueringen på et andet sprog end dit, oversættes den af den samme tjeneste, der skriver kampanalysen \u2014 med dit navn fjernet, før den sendes, og sat på igen bagefter. Klubbens trænere kan se din turneringsplan og foreslå turneringer \u2014 du bestemmer selv.") +
               _b("Hvad venner ser", "Kaldenavn, brugernavn, avatar, de få ord I selv skriver om jer (vises kun for venner — aldrig i søgning), streaken og — mens en kamp er live — stillingen. Aldrig jeres beskeder. Deler I en kamp (live eller fra arkivet), rejser stillingen, turneringen og modstanderens navn med — venner ser modstanderen forkortet.") +
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
               _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises brugernavn, klub og årgang. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
@@ -12046,6 +12099,7 @@ function _tegn() {
       //   Begge kort bor nu i Indstillinger → 👪 TEAMET (`_budKrop`), og
       //   byggescriptet måler, at de ikke er her.
       h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"START MATCH":"START KAMP") + '</b><br><small id="hero-sub">' + (EN?"register points live from the court":"registrér point live fra banen") + '</small></span><span class="dev-pil">→</span></button>';
+      if (traeningNoegle() && S.saeson === undefined && !S.saesonFejl && !S.saesonHenter) setTimeout(function(){ A.saesonHent(); }, 0);   /* ⭐ v5.14.0 · flisens status */
       h += '<div class="dev-grid">' +
         // "Din træner"-flisen UDGIK 22/8 — indholdet er absorberet i TRÆN
         // ("Absorbere tænker jeg :)"). _traenerStatus lever videre derinde.
@@ -12063,6 +12117,9 @@ function _tegn() {
         _flise("tab","fysisk","💪",(EN?"Train":"Træn"),(S.klubKode ? (EN?"overview, log & your coach":"overblik, log & din træner") : (EN?"overview & your log":"overblik & din log")),"dev-kant-guld") +
         _flise("tab","historik","📊",(EN?"Statistics":"Statistik"),S.gemte.length+(EN?" matches · trends":" kampe · tendenser"),"dev-kant-staal") +
         _flise("tab","planer","🎯",(EN?"Rivals":"Modstandere"),(EN?"plans & notes":"planer & noter"),"dev-kant-staal") +
+        /* ⭐ v5.14.0 · SÆSONEN på HJEM — Nicolais udtrykkelige ja 13/10 («B»). Status i underteksten (70). */
+        (function(){ const _sk = S.saesonFejl ? { t: (EN?"couldn’t be fetched":"kunne ikke hentes"), kant: "dev-kant-grus" } : S.saeson === undefined ? { t: (EN?"loading…":"henter…"), kant: "dev-kant-grus" } : _saesonStatusKort(S.saeson, EN);
+          return _flise("saesonAabn","","📆",(EN?"Season":"Sæsonen"),_sk.t,_sk.kant); })() +
         _flise("tab","hb-hjem","📘",(EN?"Handbook":"Håndbog"),(EN?"guide, style & routines":"guide, stil & rutiner"),"dev-kant-staal") +
         // ⭐ v4.20.0 · #75 · VENTER DER NOGEN, SIGER FLISEN DET.
         // En familie, der venter forgæves, sletter appen. Flisen er det
@@ -14754,8 +14811,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
             (!_ugeHenter && _uM.denneUge >= _uM.MAAL) ? "dev-kant-gron" : "dev-kant-is")
         + _tflise("saeson", "📆", (EN?"THE SEASON":"SÆSONEN"),   /* v5.12.4 */
             _saesonHenter ? (EN?"loading…":"henter…") : S.saesonFejl ? (EN?"couldn’t be fetched":"kunne ikke hentes")
-              : _saesonN ? _saesonN.kort : (EN?"plan your season":"læg din sæson ind"),
-            _saesonN && _saesonN.slags === "frist" ? "dev-kant-guld" : "dev-kant-grus")
+              : _saesonStatusKort(S.saeson || [], EN).t,
+            _saesonHenter || S.saesonFejl ? "dev-kant-grus" : _saesonStatusKort(S.saeson || [], EN).kant)
         + (S.klubKode ? _tflise("coach", "\ud83e\uddd1\u200d\ud83c\udfeb", (EN?"YOUR COACH":"DIN TR\u00c6NER"),
             (EN?"focus & ratings":"fokus & vurderinger"), "dev-kant-guld") : '')
         + '</div>';
@@ -14887,7 +14944,13 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
           h += '<p class="lille" style="margin:4px 0 10px">' + (EN ? "Fetching your season…" : "Henter din sæson…") + '</p>';
         } else {
           /* helten: det, der kræver en hånd */
-          if (_saesonN && _saesonN.slags === "frist") {
+          const _kHelt = rk.filter(function(r){ return (r.slut || r.dato) >= idag && _saesonKontrol(r); }).sort(function(a, b){ return a.frist < b.frist ? -1 : 1; })[0];
+          if (_kHelt) {   /* ⭐ v5.14.0 · K2 */
+            const _over = _saesonKontrol(_kHelt) === "over";
+            h += '<div class="kort" style="--tone:' + (_over ? 'var(--tabt)' : 'var(--guld)') + '" data-saeson-helt="kontrol"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:' + (_over ? 'var(--tabt)' : 'var(--guld)') + '">⏰ ' + (_over ? (EN ? "DEADLINE PASSED" : "FRISTEN ER GÅET") : (EN ? "DEADLINE " : "FRIST ") + _saesonDK(_kHelt.frist)) + '</div>' +
+              '<div style="font-size:15px;font-weight:800;margin-top:3px">' + esc(_kHelt.titel) + '</div>' +
+              '<p class="lille" style="margin:4px 0 0">' + (_over ? (EN ? "Chosen, but not confirmed entered — did you make it?" : "Valgt, men ikke bekræftet tilmeldt — nåede du det?") : (EN ? "Chosen — not confirmed entered on DTF yet." : "Valgt — endnu ikke bekræftet tilmeldt hos DTF.")) + '</p></div>';
+          } else if (_saesonN && _saesonN.slags === "frist") {
             h += '<div class="kort" style="--tone:var(--guld)" data-saeson-helt="frist"><div style="font-size:10px;font-weight:800;letter-spacing:1.4px;color:var(--guld)">⏰ ' + (EN ? "DEADLINE " : "FRIST ") + _saesonDK(_saesonN.r.frist) + '</div>' +
               '<div style="font-size:15px;font-weight:800;margin-top:3px">' + esc(_saesonN.r.titel) + (_saesonN.r.raekke ? ' <span style="font-weight:600;color:var(--daempet)">· ' + esc(_saesonN.r.raekke) + '</span>' : '') + '</div>' +
               '<p class="lille" style="margin:4px 0 0">' + (_saesonN.r.status === "valgt" ? (EN ? "Chosen — not entered yet." : "Valgt — ikke tilmeldt endnu.") : (EN ? "Possible — decide before the deadline." : "Mulig — beslut før fristen.")) + '</p></div>';
@@ -14910,29 +14973,56 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
               '<input data-felt="saesonSlut" value="' + esc(S.saesonSlut || "") + '" placeholder="' + (EN ? "To (optional)" : "Til (valgfri)") + '" inputmode="numeric" maxlength="10"></div>' +
               (sl === "turnering" || sl === "holdkamp" ? '<div class="raekke" style="gap:6px;margin-bottom:6px"><input data-felt="saesonRaekke" value="' + esc(S.saesonRaekke || "") + '" placeholder="' + (EN ? "Draw (e.g. U14 Cat. 1)" : "Række (fx U14 Kat. 1)") + '" maxlength="40">' +
                 (sl === "turnering" ? '<input data-felt="saesonFrist" value="' + esc(S.saesonFrist || "") + '" placeholder="' + (EN ? "Deadline (optional)" : "Frist (valgfri)") + '" inputmode="numeric" maxlength="10">' : '') + '</div>' : '') +
+              (sl === "turnering" ? '<input data-felt="saesonLink" value="' + esc(S.saesonLink || "") + '" placeholder="' + (EN ? "Link to the entry on DTF (optional)" : "Link til tilmeldingen hos DTF (valgfri)") + '" inputmode="url" maxlength="300" style="margin-bottom:6px">' : '') +
               '<button class="knap" style="width:100%;min-height:46px;background:var(--grus)"' + (S.saesonSender ? ' disabled' : '') + ' data-a="saesonGem">' + (S.saesonSender ? '⏳ …' : (EN ? "Save" : "Gem")) + '</button></div>';
           }
           if (S.saesonBesked) h += '<p class="lille" style="margin:0 0 8px;color:' + (S.saesonBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '" data-saeson-besked="1">' + esc(S.saesonBesked.t) + '</p>';
-          /* listen — uge for uge, det næste først; det, der er spillet, nederst og dæmpet */
+          /* ⭐⭐ v5.14.0 · listen i fire dele: TRÆNEREN ANBEFALER · DIN PLAN · IKKE DENNE GANG · SPILLET */
           const kommende = rk.filter(function(r){ return (r.slut || r.dato) >= idag; }), forbi = rk.filter(function(r){ return (r.slut || r.dato) < idag; });
+          const forslag = kommende.filter(function(r){ return r.kilde === "klub" && r.status === "mulig"; });
+          const nejtak = kommende.filter(function(r){ return r.status === "nej"; });
+          const plan = kommende.filter(function(r){ return forslag.indexOf(r) < 0 && nejtak.indexOf(r) < 0; });
+          const STATUSTEKST2 = Object.assign({}, STATUSTEKST, { nej: EN ? "not this time" : "ikke denne gang" });
+          const knapS = function(v, tekst, stil) { return '<button class="knap ' + (stil === "valg" ? "valg" : "") + '" style="flex:1;min-height:40px;padding:7px 10px;font-size:12.5px' + (stil && stil !== "valg" ? ';background:' + stil : '') + '"' + (S.saesonSender ? ' disabled' : '') + ' data-a="saesonSvar" data-v="' + v + '">' + tekst + '</button>'; };
           const linje = function(r, gammel) {
             const ik = r.slags === "holdkamp" ? "🤝" : r.slags === "fri" ? "🛋" : r.slags === "ferie" ? "🏖" : "🏆";
-            const kanSkifte = r.slags === "turnering" && !gammel;
-            return '<div class="kort" data-saeson-raekke="' + r.id + '" style="padding:10px 12px;margin:0 0 6px;--tone:' + (gammel ? 'transparent' : STATUSFARVE[r.status] || 'transparent') + (gammel ? ';opacity:.6' : '') + '">' +
+            const tur = r.slags === "turnering" && !gammel;
+            const kt = tur ? _saesonKontrol(r) : null;
+            let x = '<div class="kort" data-saeson-raekke="' + r.id + '" data-saeson-status="' + r.status + '" style="padding:10px 12px;margin:0 0 6px;--tone:' + (gammel || r.status === "nej" ? 'transparent' : kt === "over" ? 'var(--tabt)' : STATUSFARVE[r.status] || 'transparent') + (gammel || r.status === "nej" ? ';opacity:.6' : '') + '">' +
               '<div style="display:flex;align-items:center;gap:9px">' +
               '<span style="flex:none;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--daempet);width:38px">' + (EN ? "WK " : "UGE ") + r.uge + '</span>' +
               '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + ik + ' ' + esc(r.titel) + '</div>' +
               '<div class="lille" style="margin:0">' + _saesonDK(r.dato) + (r.slut && r.slut !== r.dato ? "–" + _saesonDK(r.slut) : "") + (r.raekke ? " · " + esc(r.raekke) : "") +
-              (r.frist && !gammel && (r.status === "mulig" || r.status === "valgt") ? ' · <span style="color:var(--guld)">' + (EN ? "deadline " : "frist ") + _saesonDK(r.frist) + '</span>' : '') +
-              (r.kilde === "klub" ? ' · <span style="color:var(--is)">' + (EN ? "recommended by your club" : "anbefalet af klubben") + '</span>' : '') + '</div></div>' +
-              '<button class="knap valg" style="flex:none;padding:5px 10px;font-size:11px;min-height:30px;color:' + (STATUSFARVE[r.status] || 'inherit') + '"' + (kanSkifte && !S.saesonSender ? '' : ' disabled') + ' data-a="saesonStatus" data-v="' + r.id + '">' + (STATUSTEKST[r.status] || r.status) + '</button>' +
-              '<button class="knap valg" style="flex:none;padding:5px 8px;min-height:30px;font-size:12px" data-a="saesonSletSpoerg" data-v="' + r.id + '" title="' + (EN ? "Remove" : "Fjern") + '">🗑</button></div>' +
-              (S.saesonSletB === r.id ? '<div class="raekke" style="margin-top:8px;gap:6px"><button class="knap" style="background:var(--tabt);flex:none;padding:7px 12px;font-size:12px" data-a="saesonSlet" data-v="' + r.id + '">' + (EN ? "Remove from the season" : "Fjern fra sæsonen") + '</button><button class="knap valg" style="flex:none;padding:7px 12px;font-size:12px" data-a="saesonSletSpoerg" data-v="' + r.id + '">' + (EN ? "Keep" : "Behold") + '</button></div>' : '') +
-              '</div>';
+              (r.frist && tur && (r.status === "mulig" || r.status === "valgt") ? ' · <span style="color:' + (kt === "over" ? 'var(--tabt)' : 'var(--guld)') + '">' + (EN ? "deadline " : "frist ") + _saesonDK(r.frist) + '</span>' : '') +
+              (r.kilde === "klub" ? ' · <span style="color:var(--is)">' + (EN ? "recommended by your coach" : "anbefalet af din træner") + '</span>' : '') + '</div></div>' +
+              '<span style="flex:none;font-size:10.5px;font-weight:800;letter-spacing:.5px;color:' + (STATUSFARVE[r.status] || 'var(--daempet)') + '">' + (r.status === "tilmeldt" ? "✓ " : "") + (STATUSTEKST2[r.status] || r.status).toUpperCase() + '</span>' +
+              '<button class="knap valg" style="flex:none;padding:5px 8px;min-height:30px;font-size:12px" data-a="saesonSletSpoerg" data-v="' + r.id + '" title="' + (EN ? "Remove" : "Fjern") + '">🗑</button></div>';
+            if (tur && !S.saesonSender) {
+              /* K2 · fristen, sagt på rækken */
+              if (kt === "over") x += '<p class="lille" data-saeson-kontrol="over" style="margin:7px 0 0;color:var(--tabt);font-weight:700">' + (EN ? "The deadline was " + _saesonDK(r.frist) + " — did you make it onto the entry list?" : "Fristen var d. " + _saesonDK(r.frist) + " — nåede du at komme på deltagerlisten?") + '</p>';
+              else if (kt === "snart") x += '<p class="lille" data-saeson-kontrol="snart" style="margin:7px 0 0;color:var(--guld);font-weight:700">' + (EN ? "Entries close " + _saesonDK(r.frist) + " — you are not confirmed yet." : "Tilmeldingen lukker d. " + _saesonDK(r.frist) + " — du er ikke bekræftet tilmeldt endnu.") + '</p>';
+              if (r.status === "mulig") x += '<div class="raekke" data-saeson-svar="mulig" style="gap:6px;margin-top:8px">' + knapS(r.id + "|ja", EN ? "I’ll take it" : "Den tager jeg", "var(--vundet)") + (r.kilde === "klub" ? knapS(r.id + "|nej", EN ? "Not this time" : "Ikke denne gang", "valg") : '') + '</div>';
+              else if (r.status === "valgt") {
+                x += '<div class="raekke" data-saeson-svar="valgt" style="gap:6px;margin-top:8px">' +
+                  (r.link ? '<a class="knap" href="' + esc(r.link) + '" target="_blank" rel="noopener" style="flex:1;min-height:40px;padding:7px 10px;font-size:12.5px;text-align:center;text-decoration:none;background:var(--grus)" data-saeson-link="1">' + (EN ? "Enter on DTF ↗" : "Tilmeld hos DTF ↗") + '</a>' : '') +
+                  '<button class="knap" style="flex:1;min-height:40px;padding:7px 10px;font-size:12.5px;background:var(--vundet)" data-a="saesonTilmeldt" data-v="' + r.id + '">' + (EN ? "I’m entered" : "Jeg er tilmeldt") + '</button>' +
+                  '<button class="knap valg" style="flex:none;min-height:40px;padding:7px 10px;font-size:12px" data-a="saesonSvar" data-v="' + r.id + '|fortryd">' + (EN ? "Undo" : "Fortryd") + '</button></div>';
+                if (!r.link) x += '<p class="lille" style="margin:6px 0 0">' + (EN ? "Entry happens on DTF (tournamentsoftware) — a yes here is not an entry." : "Tilmeldingen sker hos DTF (tournamentsoftware) — et ja her er ikke en tilmelding.") + '</p>';
+                if (S.saesonBekraeft === r.id) x += '<div class="kort" data-saeson-bekraeft="' + r.id + '" style="margin:8px 0 0;padding:10px 12px;--tone:var(--vundet)"><p style="margin:0 0 8px;font-size:13px;font-weight:700">' + (EN ? "Are you on the entry list on DTF?" : "Står du på deltagerlisten hos DTF?") + '</p>' +
+                  '<div class="raekke" style="gap:6px"><button class="knap" style="flex:1;min-height:40px;font-size:12.5px;background:var(--vundet)" data-a="saesonBekraeft" data-v="' + r.id + '">' + (EN ? "Yes, I’m on it" : "Ja, jeg står der") + '</button>' +
+                  '<button class="knap valg" style="flex:1;min-height:40px;font-size:12.5px" data-a="saesonSvar" data-v="' + r.id + '|ikkeTilmeldt">' + (EN ? "Not yet" : "Ikke endnu") + '</button></div></div>';
+              }
+              else if (r.status === "nej") x += '<div class="raekke" data-saeson-svar="nej" style="gap:6px;margin-top:8px">' + knapS(r.id + "|fortryd", EN ? "Undo" : "Fortryd", "valg") + '</div>';
+            }
+            if (S.saesonSletB === r.id) x += '<div class="raekke" style="margin-top:8px;gap:6px"><button class="knap" style="background:var(--tabt);flex:none;padding:7px 12px;font-size:12px" data-a="saesonSlet" data-v="' + r.id + '">' + (EN ? "Remove from the season" : "Fjern fra sæsonen") + '</button><button class="knap valg" style="flex:none;padding:7px 12px;font-size:12px" data-a="saesonSletSpoerg" data-v="' + r.id + '">' + (EN ? "Keep" : "Behold") + '</button></div>';
+            return x + '</div>';
           };
-          h += kommende.map(function(r){ return linje(r, false); }).join("");
-          if (forbi.length) h += '<p class="lille" style="margin:10px 0 6px;letter-spacing:1.2px;font-weight:800">' + (EN ? "PLAYED" : "SPILLET") + '</p>' + forbi.slice().reverse().map(function(r){ return linje(r, true); }).join("");
-          if (rk.length) h += '<p class="lille" style="margin-top:8px">' + (EN ? "Tap the status to move a tournament: possible → chosen → entered. One tournament a week (DTF)." : "Tryk på status for at flytte en turnering: mulig → valgt → tilmeldt. Én turnering pr. uge (DTF).") + '</p>';
+          const overskrift = function(navn, t) { return '<p class="lille" data-saeson-sektion="' + navn + '" style="margin:12px 0 6px;letter-spacing:1.2px;font-weight:800">' + t + '</p>'; };
+          if (forslag.length) h += overskrift("forslag", EN ? "YOUR COACH RECOMMENDS" : "TRÆNEREN ANBEFALER") + forslag.map(function(r){ return linje(r, false); }).join("");
+          if (plan.length) h += overskrift("plan", EN ? "YOUR PLAN" : "DIN PLAN") + plan.map(function(r){ return linje(r, false); }).join("");
+          if (nejtak.length) h += overskrift("nej", EN ? "NOT THIS TIME" : "IKKE DENNE GANG") + nejtak.map(function(r){ return linje(r, false); }).join("");
+          if (forbi.length) h += overskrift("spillet", EN ? "PLAYED" : "SPILLET") + forbi.slice().reverse().map(function(r){ return linje(r, true); }).join("");
+          if (rk.length) h += '<p class="lille" style="margin-top:8px">' + (EN ? "A yes here is not an entry — you enter on DTF, then tap «I’m entered». One tournament a week (DTF)." : "Et ja her er ikke en tilmelding — du tilmelder dig hos DTF og trykker så «Jeg er tilmeldt». Én turnering pr. uge (DTF).") + '</p>';
         }
       }
       if (_tp === "coach") {

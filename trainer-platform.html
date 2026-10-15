@@ -1152,7 +1152,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.19.0 \u00b7 15. oktober 2026";
+const VERSION = "v6.20.0 \u00b7 15. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1987,6 +1987,12 @@ Object.assign(EN, {   /* ⭐ v6.17.0 · WEEKENDEN */
   "Ingen forbindelse lige nu — prøv igen.": "No connection right now — try again.", "Forbind telefonen med din klub først.": "Connect the phone with your club first.",
   "Kun klubbens trænere kan se truppens sæson.": "Only the club's coaches can see the squad's season.", "Det gik ikke lige nu — prøv igen.": "That didn't work right now — try again.",
   "UGE {n}": "WEEK {n}"
+});
+Object.assign(EN, {   /* ⭐ v6.20.0 · analyser fra spillerne */
+  "📋 ANALYSER FRA SPILLEREN": "📋 ANALYSES FROM THE PLAYER", "Sendt af spilleren selv — modstanderens navn er taget ud.": "Sent by the player — the opponent's name is taken out.",
+  "🌐 Vis på engelsk": "🌐 Show in English", "⏳ Oversætter…": "⏳ Translating…", "🌐 Oversat fra dansk.": "🌐 Translated from Danish.",
+  "Dagens oversættelser er brugt — prøv igen i morgen.": "Today's translations are used up — try again tomorrow.", "Oversættelsen gik ikke — prøv igen.": "The translation did not work — try again.",
+  "📋 1 ny analyse": "📋 1 new analysis", "📋 {n} nye analyser": "📋 {n} new analyses",
 });
 Object.assign(EN, {   /* ⭐ v6.19.0 · LIVE NU-flisen + engelsk overalt, også med et program (dansk-vagten v3) */
   "Live nu": "Live now", "ingen lige nu": "none right now", "kræver din klub": "needs your club",
@@ -3175,6 +3181,7 @@ function renderTraener(){
     /* ⭐⭐ v6.18.0 · LIVE NU — hentes, når HJEM tegnes. v6.19.0: vist som flise forrest i gitteret, altid (liveFlise). */
     (function(){
       if (lager.hent("klubkode", "") && !S.liveHenter && Date.now() - (S.liveTid || 0) > 30000) setTimeout(function(){ liveHent(); }, 0);
+      if (lager.hent("klubkode", "") && !S.analyseHenter && Date.now() - (S.analyseTid || 0) > 300000) setTimeout(function(){ analyseHent(); }, 0);   /* ⭐ v6.20.0 · højst hvert 5. minut */
       var k = Array.isArray(S.liveKampe) ? S.liveKampe : [];
       /* ⭐⭐ v6.19.0 · ingen helt længere — tallet står i flisen «🔴 Live nu» forrest i gitteret (Nicolai 15/10: «Klart denne») */
     })();
@@ -3218,7 +3225,7 @@ function renderTraener(){
       /* v6.11.0 · HJEM ER KORTET, BUNDBAREN ER GENVEJEN (Nicolai 26/9: «Således er forsiden fuldkommen - navigation i bunden har
          det vigtigste»). Spillere og Program står igen forrest i guld — HJEM er den ene dør ud over bundbaren. */
       (function(){ var _nt = (lager.hent("truppen", []) || []).length;
-        return '<button class="dev-flise dev-kant dev-kant-guld" data-act="tab" data-v="grupper"><span class="dev-ikon">\ud83d\udc65</span><b>Spillere</b><small>' + (_nt ? _nt + ' i truppen' : 'truppen er tom') + '</small></button>'; })() +
+        return '<button class="dev-flise dev-kant dev-kant-guld" data-act="tab" data-v="grupper"><span class="dev-ikon">\ud83d\udc65</span><b>Spillere</b><small>' + (analyseNye() ? '📋 ' + (analyseNye() === 1 ? '1 ny analyse' : analyseNye() + ' nye analyser') : (_nt ? _nt + ' i truppen' : 'truppen er tom')) + '</small></button>';   /* v6.20.0 · nye analyser er status */ })() +
       '<button class="dev-flise dev-kant dev-kant-guld" data-act="tab" data-v="program"><span class="dev-ikon">\ud83d\udcc5</span><b>Program</b><small>ugeskemaet</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="kvartal"><span class="dev-ikon">\ud83d\udccb</span><b>Evaluering</b><small>AI-udkast \u2014 du godkender alt</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="rum"><span class="dev-ikon">\ud83d\udcac</span><b>Tr\u00e6nerrummet</b><small>klubbens tr\u00e6nere \u2014 samtalen bliver</small></button>' +
@@ -3618,6 +3625,50 @@ async function liveHent(tvang) {
 }
 /* ⭐⭐ v6.19.0 · FLISEN «🔴 Live nu» (Nicolai 15/10: «flisen altid skal være der - og man på den kan se hvor mange der så er live»).
    Dens status er et løfte (70): henter … · ingen lige nu · N spillere + hvem · en fejl siges med sit eget ord (94: «ingen forbindelse» KUN om netværket). */
+/* ⭐⭐ v6.20.0 · ANALYSER FRA SPILLERNE (Nicolai 15/10: «Bare trykke på en knap. Så er det et valg spilleren selv tager.» · «Klubbens trænere»).
+   klub-live v2 `analyser` med klubbens nøgle — kun det, spilleren selv har sendt til DENNE klub. ⟦M⟧ er modstanderen. */
+async function analyseHent(tvang) {
+  if (S.analyseHenter) return;
+  if (!tvang && Date.now() - (S.analyseTid || 0) < 300000) return;
+  var kn = lager.hent("klubkode", ""); if (!kn) return;
+  S.analyseHenter = true; S.analyseTid = Date.now();
+  var r = null;
+  try {
+    var st = new AbortController(); var ur = setTimeout(function(){ st.abort(); }, 20000);
+    var f = await fetch(LIVE_URL, { method: "POST", signal: st.signal, headers: { "content-type": "application/json", "x-klub-noegle": kn }, body: JSON.stringify({ handling: "analyser" }) });
+    clearTimeout(ur);
+    var d = await f.json().catch(function(){ return {}; });
+    r = f.ok ? d : { fejl: (d && d.kode) || ("http-" + f.status) };
+  } catch (_e) { r = { fejl: "netvaerk" }; }
+  S.analyseHenter = false;
+  var foer = JSON.stringify([S.analyser || null, S.analyseFejl || null]);
+  if (r && !r.fejl && Array.isArray(r.analyser)) { S.analyser = r.analyser; S.analyseFejl = null; }
+  else { S.analyseFejl = (r && r.fejl) || "ukendt"; if (!S.analyser) S.analyser = []; }
+  if (JSON.stringify([S.analyser || null, S.analyseFejl || null]) !== foer) render();
+}
+function analyseSet() { var x = lager.hent("analyse-set", []); return Array.isArray(x) ? x : []; }
+/* flisens tal er et løfte (70): kun analyser fra spillere i trænerens trup — dem, der har et kort, hvor analysen kan åbnes */
+function analyseNye() { var set = analyseSet(); var trup = (lager.hent("truppen", []) || []).map(function(x){ return x && x.noegle; });
+  return (S.analyser || []).filter(function(a){ return trup.indexOf(a.spiller) >= 0 && set.indexOf(a.kamp_id + "|" + a.delt) < 0; }).length; }
+function analyseTekst(t, EN) { return String(t || "").split("⟦M⟧").join(EN ? "the opponent" : "modstanderen"); }
+function analyseOversatFejlTekst(k) {
+  return ({ netvaerk: "Ingen forbindelse — prøv igen.", loft: "Dagens oversættelser er brugt — prøv igen i morgen." })[k] || "Oversættelsen gik ikke — prøv igen.";
+}
+async function analyseOversaet(id) {
+  var a = (S.analyser || []).filter(function(x){ return x.kamp_id === id; })[0]; if (!a || S.analyseOversaetter) return;
+  var kn = lager.hent("klubkode", ""); if (!kn) return;
+  S.analyseOversaetter = id; S.analyseOversatFejl = null; render();
+  try {
+    var st = new AbortController(); var ur = setTimeout(function(){ st.abort(); }, 60000);
+    var f = await fetch(OVERSAET_URL, { method: "POST", signal: st.signal, headers: { "content-type": "application/json", "x-klub-noegle": kn },
+      body: JSON.stringify({ handling: "oversaet", til: "en", art: "analyse", tekst: String(a.analyse || "").slice(0, 8000) }) });
+    clearTimeout(ur);
+    var d = await f.json().catch(function(){ return {}; });
+    if (f.ok && d && d.tekst) { S.analyseOversat = S.analyseOversat || {}; S.analyseOversat[id] = String(d.tekst); }
+    else S.analyseOversatFejl = (d && d.kode) || ("http-" + f.status);
+  } catch (_e) { S.analyseOversatFejl = "netvaerk"; }
+  S.analyseOversaetter = null; render();
+}
 function liveFlise() {
   var k = S.liveKampe, sub, roed = false;
   if (!lager.hent("klubkode", "")) sub = '<span>kræver din klub</span>';
@@ -4606,6 +4657,33 @@ function spillerDetalje(navn){
     h += '</div>';
   }
 
+  // ⭐⭐ v6.20.0 · ANALYSER FRA SPILLEREN — kun det, spilleren selv har sendt til klubben (klub-live v2 `analyser`)
+  (function(){
+    if (S.analyser === undefined && !S.analyseHenter) setTimeout(function(){ analyseHent(true); }, 0);
+    var mine = (S.analyser || []).filter(function(a){ try { return navnFor(a.spiller, a.fornavn) === navn; } catch (_e) { return false; } });
+    if (!mine.length) return;
+    var EN = SPROG === "en";
+    h += '<div class="kort" data-analyser="' + mine.length + '"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--guld);margin-bottom:2px">📋 ANALYSER FRA SPILLEREN</div>' +
+      '<p class="lille" style="margin:0 0 4px">Sendt af spilleren selv — modstanderens navn er taget ud.</p>';
+    mine.forEach(function(a){
+      var aaben = S.analyseAaben === a.kamp_id;
+      var ov = S.analyseOversat && S.analyseOversat[a.kamp_id];
+      h += '<div style="border-top:1px solid var(--kant);padding:7px 0">' +
+        '<button class="knap valg" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;min-height:44px;padding:6px 10px" data-act="analyse-aabn" data-v="' + esc(a.kamp_id) + '">' +
+        '<span style="flex:1;min-width:0"><b style="font-size:13px">' + esc(a.resultat || "—") + '</b><br><span class="lille">' + esc(a.dato || "") + (a.turnering ? ' · ' + esc(a.turnering) : '') + '</span></span>' +
+        '<span style="flex:none">' + (aaben ? '▲' : '▼') + '</span></button>';
+      if (aaben) {
+        h += '<p data-analyse-tekst="1" style="margin:8px 2px 0;white-space:pre-wrap;font-size:13px;line-height:1.45">' + esc(ov ? analyseTekst(ov, true) : analyseTekst(a.analyse, false)) + '</p>';
+        if (ov) h += '<p class="lille" style="margin:6px 2px 0;color:var(--guld)">🌐 Oversat fra dansk.</p>';
+        else if (EN) h += '<p class="lille" style="margin:6px 2px 0">' + (S.analyseOversaetter === a.kamp_id ? '<span>⏳ Oversætter…</span>'
+          : '<button class="knap" style="padding:6px 10px;font-size:12px;min-height:0;width:auto;background:var(--grus)" data-act="analyse-oversaet" data-v="' + esc(a.kamp_id) + '">🌐 Vis på engelsk</button>') +
+          (S.analyseOversatFejl && S.analyseOversaetter !== a.kamp_id ? ' <span style="color:var(--tabt)">' + esc(analyseOversatFejlTekst(S.analyseOversatFejl)) + '</span>' : '') + '</p>';
+      }
+      h += '</div>';
+    });
+    h += '</div>';
+  })();
+
   // ── VURDERINGER · SENESTE (19/8, flow-designet): trænerens hændelser og
   // spillerens egen dom (fra hans træningslog, via synken) side om side.
   // Det ER Carstens MVP: "spillerens egen vurdering ved siden af".
@@ -5357,6 +5435,11 @@ document.addEventListener("click", function(e){
   /* ⭐ v6.17.0 · WEEKENDEN */
   else if (act==="wk-hent"){ S.wkFejl = null; wkHent(); }
   else if (act==="live-hent"){ liveHent(true); }   /* ⭐ v6.18.0 */
+  else if (act==="analyse-aabn"){ S.analyseAaben = (S.analyseAaben === v ? null : v);   /* ⭐ v6.20.0 · åbnet = læst på denne telefon */
+    if (S.analyseAaben) { var _a = (S.analyser || []).filter(function(x){ return x.kamp_id === v; })[0];
+      if (_a) { var _set = analyseSet(); var _k = _a.kamp_id + "|" + _a.delt; if (_set.indexOf(_k) < 0) { _set.push(_k); lager.gem("analyse-set", _set.slice(-200)); } } }
+    render(); }
+  else if (act==="analyse-oversaet"){ analyseOversaet(v); }   /* ⭐ v6.20.0 */
   else if (act==="wk-ny"){ S.wkNy = !S.wkNy; S.wkBesked = null; render(); }
   else if (act==="wk-gem"){ wkGem(); }
   else if (act==="wk-traek"){ wkTraek(v); }

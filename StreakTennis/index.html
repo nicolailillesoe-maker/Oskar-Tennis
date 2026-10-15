@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.14.3 · 15. oktober 2026";
+const VERSION = "v5.15.0 · 15. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -922,6 +922,38 @@ const DEMOKAMP = (function(){
   return p;
 })();
 
+// ⭐⭐ v5.15.0 · ANALYSEN TIL TRÆNEREN (Nicolai 15/10: «Bare trykke på en knap. Så er det et valg spilleren selv tager.»)
+//   Hvert udfald fra motoren har sin egen sætning (75) — «ingen forbindelse» KUN om netværket (94).
+function delFejlTekst(kode, EN) {
+  return ({
+    "uden-klub": EN ? "You are not in a club yet — there is no coach to send it to." : "Du er ikke i en klub endnu — der er ingen træner at sende den til.",
+    "ukendt-kamp": EN ? "The match is not saved with us yet — try again in a moment." : "Kampen er ikke gemt hos os endnu — prøv igen om et øjeblik.",
+    "ingen-analyse": EN ? "The match has no analysis yet." : "Kampen har ingen analyse endnu.",
+    "familie": EN ? "Only the player can send the analysis." : "Kun spilleren kan sende analysen.",
+    "afventer-godkendelse": EN ? "Your access is waiting for a yes." : "Din adgang venter på et ja.",
+    "netvaerk": EN ? "No connection — try again." : "Ingen forbindelse — prøv igen."
+  })[kode] || (EN ? "It did not work — try again." : "Det gik ikke — prøv igen.");
+}
+// Under kampens analyse: send til klubbens trænere — eller sig, at den ER sendt, og træk den tilbage. Kun spilleren selv, kun med en klub.
+function analyseTilTraenerHtml(k, i, EN) {
+  if (!k || !k.id || !k.analyse || S.rolle === "familie" || !S.spillerNoegle || !S.minKlub) return "";
+  if (S.delte === undefined && !S.delteHenter) setTimeout(function(){ A.delteHent(); }, 0);
+  const d = S.delte && S.delte[k.id];
+  const f = (S.delFejl || {})[k.id];
+  const sender = S.delSender === k.id;
+  let h = '<div data-til-traener="' + (d ? "delt" : "ikke") + '" style="margin:8px 0 0;padding-top:8px;border-top:1px dashed var(--kant)">';
+  if (d) {
+    h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="lille" style="margin:0;flex:1;min-width:0;color:var(--vundet);font-weight:700">✓ ' +
+      (EN ? "Sent to " : "Sendt til ") + esc(d.til || S.minKlub) + '</span>' +
+      '<button class="knap valg" style="flex:none;min-height:40px;padding:0 12px;font-size:12px" data-a="analyseTraek" data-v="' + i + '">' + (sender ? "⏳ …" : (EN ? "Take it back" : "Træk tilbage")) + '</button></div>';
+  } else {
+    h += '<button class="knap" style="min-height:44px;font-size:13px;background:var(--grus)" data-a="analyseTilTraener" data-v="' + i + '">' +
+      (sender ? "⏳ …" : "📋 " + (EN ? "Send to the coach" : "Send til træneren")) + '</button>' +
+      '<p class="lille" style="margin:6px 0 0;opacity:.7">' + (EN ? "The club’s coaches can read it until you take it back." : "Klubbens trænere kan læse den, til du trækker den tilbage.") + '</p>';
+  }
+  if (f) h += '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">' + esc(f) + '</p>';
+  return h + '</div>';
+}
 function eksportKnapper(felt, EN) {
   const kanDele = (typeof navigator !== "undefined") && !!navigator.share;
   return '<div class="raekke" style="margin-top:6px">' +
@@ -2935,6 +2967,8 @@ async function skyKald(handling, krop) {
 const SYNC_URL    = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/spiller-sync";
 // ⭐ v4.113.0 · ARKIVET: kampene uden navne, læsbart — gendannes med kontoen alene.
 const ARKIV_URL   = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/arkiv";
+// ⭐ v5.15.0 · ANALYSEN TIL TRÆNEREN — klub-live v2: del-analyse · traek-analyse · mine-delte (spillerens nøgle)
+const KLUB_LIVE_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/klub-live";
 // ⭐ v4.7.9 · ANALYSER UDEN KLUB. Doeren til analyserne for en familie
 // uden klub: taeller forbruget pr. kamp og udsteder et kortlivet token.
 const LOV_URL     = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/analyse-lov";
@@ -4595,6 +4629,53 @@ const A = {
       if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(ok, ok); }
       else { const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); ok(); }
     } catch (e) { ok(); }
+  },
+  // ⭐⭐ v5.15.0 · ANALYSEN TIL TRÆNEREN — klub-live v2 med spillerens nøgle
+  _klubLiveKald: async (handling, krop) => {
+    if (!S.spillerNoegle) return { fejl: "mangler-noegle" };
+    const st = new AbortController(); const ur = setTimeout(() => st.abort(), 20000);
+    try {
+      const r = await fetch(KLUB_LIVE_URL, { method: "POST", signal: st.signal,
+        headers: { "content-type": "application/json", "x-spiller-noegle": S.spillerNoegle },
+        body: JSON.stringify(Object.assign({ handling }, krop || {})) });
+      clearTimeout(ur);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return { fejl: (d && d.kode) || ("http-" + r.status) };
+      return d || {};
+    } catch (_e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+  },
+  delteHent: async () => {
+    if (S.delteHenter || !S.spillerNoegle || S.rolle === "familie") return;
+    S.delteHenter = true;
+    const r = await A._klubLiveKald("mine-delte", {});
+    S.delteHenter = false;
+    const m = {};
+    if (r && !r.fejl && Array.isArray(r.delte)) r.delte.forEach(function(x){ if (x && x.kamp_id) m[x.kamp_id] = { til: x.til, tid: x.tid }; });
+    S.delte = m;   /* en fejl skjuler ikke knappen — et tryk siger selv, hvad der er galt */
+    render();
+  },
+  analyseTilTraener: async (i) => {
+    const k = (S.gemte || [])[+i]; if (!k || !k.id || !k.analyse || S.delSender) return;
+    S.delFejl = S.delFejl || {}; delete S.delFejl[k.id];
+    S.delSender = k.id; render();
+    const r = await A._klubLiveKald("del-analyse", { kamp_id: k.id });
+    S.delSender = null;
+    if (r && r.delt) { S.delte = S.delte || {}; S.delte[k.id] = { til: r.til, tid: r.tid }; }
+    else {
+      S.delFejl[k.id] = delFejlTekst(r && r.fejl, S.sprog === "en");
+      if (r && r.fejl === "ukendt-kamp") { try { A.kamparkivSik(true); } catch (_e) {} }   /* kampen sendes nu — næste tryk lykkes */
+    }
+    render();
+  },
+  analyseTraek: async (i) => {
+    const k = (S.gemte || [])[+i]; if (!k || !k.id || S.delSender) return;
+    S.delFejl = S.delFejl || {}; delete S.delFejl[k.id];
+    S.delSender = k.id; render();
+    const r = await A._klubLiveKald("traek-analyse", { kamp_id: k.id });
+    S.delSender = null;
+    if (r && typeof r.trukket === "number") { if (S.delte) delete S.delte[k.id]; }
+    else S.delFejl[k.id] = delFejlTekst(r && r.fejl, S.sprog === "en");
+    render();
   },
   delTekst: (felt) => {
     const t = S[felt]; if (!t) return;
@@ -11542,7 +11623,7 @@ function _tegn() {
           (S.sprog === "en"
             ? _b("What lives on the phone", "Your notes and all free text stay on the phone. Analyses are computed from numbers — never from what you write.") +
               _b("The backup", "Your matches (every ball, the result, the analysis) and your development letter are kept readable with us — without opponents’ names and without your notes — so they come back with your account alone. Names and notes are kept only in a box locked with your password; we cannot open it.") +
-              _b("What the club sees", "If you are in a club, your club\u2019s coach sees the full name you write under Your profile \u2014 and your matches, training and assessments. Without a club, nobody sees the full name. Friends never do. If you're on a squad in the club's training programme, your club can write a training session into your log when you've attended \u2014 date and length. If your coach writes the evaluation in a language other than yours, it is translated by the same service that writes the match analysis \u2014 with your name removed before it is sent, and put back afterwards. Your club's coaches can see your tournament plan and suggest tournaments \u2014 you decide yourself. If you share a match live, your club's coaches can follow it.") +
+              _b("What the club sees", "If you are in a club, your club\u2019s coach sees the full name you write under Your profile \u2014 and your matches, training and assessments. Without a club, nobody sees the full name. Friends never do. If you're on a squad in the club's training programme, your club can write a training session into your log when you've attended \u2014 date and length. If your coach writes the evaluation in a language other than yours, it is translated by the same service that writes the match analysis \u2014 with your name removed before it is sent, and put back afterwards. Your club's coaches can see your tournament plan and suggest tournaments \u2014 you decide yourself. If you share a match live, your club's coaches can follow it. If you send a match analysis to the coach, your club's coaches can read it until you take it back.") +
               _b("What friends see", "Your nickname, your username, your avatar, the few words you may write about yourself (never shown to anyone but friends), your streak and — while a match is live — the score. Never your messages. If you share a match (live or from the archive), the score, tournament and opponent travel with it; friends see the opponent shortened.") +
               _b("The email", "Only used to get back in if the password is forgotten. Never shown to anyone, never used for ads. If the player is under 18, the email must belong to a parent or guardian.") +
               _b("Search", "Approved players can find you by searching your username — the result shows username, club and birth year. Turn it off under Settings; exact lookups on your name or ID still work, and any find is only ever a request you accept or decline.") +
@@ -11551,7 +11632,7 @@ function _tegn() {
               _b("Leaving", "Log out wipes the phone. Under Your account you can delete the account yourself — everything is deleted at once" + (PLATFORM.betaling === "apple" ? ". A subscription bought in the App Store does not stop by itself — cancel it under your Apple subscriptions. It cannot be undone." : ", including a subscription in MobilePay. It cannot be undone."))
             : _b("Hvad der bor på telefonen", "Jeres noter og al fritekst bliver på telefonen. Analyser regnes på tal — aldrig på det, I skriver.") +
               _b("Sikkerhedskopien", "Jeres kampe (hver bold, resultatet, analysen) og udviklingsbrevet gemmes læsbart hos os — uden modstandernes navne og uden jeres noter — så de kommer tilbage med kontoen alene. Navne og noter gemmes kun i en boks, der er låst med jeres kodeord; den kan vi ikke åbne.") +
-              _b("Hvad klubben ser", "Er du med i en klub, ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig. Er du på et hold i klubbens træningsprogram, kan din klub skrive et træningspas i din log, når du er mødt \u2014 dato og længde. Skriver din træner evalueringen på et andet sprog end dit, oversættes den af den samme tjeneste, der skriver kampanalysen \u2014 med dit navn fjernet, før den sendes, og sat på igen bagefter. Klubbens trænere kan se din turneringsplan og foreslå turneringer \u2014 du bestemmer selv. Deler du en kamp live, kan klubbens trænere følge den.") +
+              _b("Hvad klubben ser", "Er du med i en klub, ser klubbens tr\u00e6ner det fulde navn, I selv skriver under Din profil \u2014 og kampene, tr\u00e6ningen og vurderingerne. Uden klub ser ingen det fulde navn. Venner ser det aldrig. Er du på et hold i klubbens træningsprogram, kan din klub skrive et træningspas i din log, når du er mødt \u2014 dato og længde. Skriver din træner evalueringen på et andet sprog end dit, oversættes den af den samme tjeneste, der skriver kampanalysen \u2014 med dit navn fjernet, før den sendes, og sat på igen bagefter. Klubbens trænere kan se din turneringsplan og foreslå turneringer \u2014 du bestemmer selv. Deler du en kamp live, kan klubbens trænere følge den. Sender du en kamps analyse til træneren, kan klubbens trænere læse den, til du trækker den tilbage.") +
               _b("Hvad venner ser", "Kaldenavn, brugernavn, avatar, de få ord I selv skriver om jer (vises kun for venner — aldrig i søgning), streaken og — mens en kamp er live — stillingen. Aldrig jeres beskeder. Deler I en kamp (live eller fra arkivet), rejser stillingen, turneringen og modstanderens navn med — venner ser modstanderen forkortet.") +
               _b("Mailen", "Bruges kun til at komme ind igen, hvis kodeordet glemmes. Vises aldrig for nogen og bruges aldrig til reklamer. Er spilleren under 18, skal mailen tilhøre en forælder eller værge.") +
               _b("Søgning", "Godkendte spillere kan finde dig ved at søge på dit brugernavn — der vises brugernavn, klub og årgang. Slå det fra under Indstillinger; eksakt opslag på navn/ID virker stadig, og et fund er altid kun en anmodning, du selv siger ja eller nej til.") +
@@ -15367,6 +15448,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
               ? '<p class="lille" style="margin:6px 0 0;opacity:.7">' + (EN ? "Opened by the player." : "Åbnet af spilleren.") + '</p>'
               : ((S.famKoder || []).some(function (x) { return x && x.status === "aktiv"; })
                 ? '<p class="lille" style="margin:6px 0 0;opacity:.7">' + (EN ? "Your team can see this." : "Dit team kan se den.") + '</p>' : '')) +
+            analyseTilTraenerHtml(k, i, EN) +   /* ⭐ v5.15.0 · send til træneren */
             '</div>'
           : '') +
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +

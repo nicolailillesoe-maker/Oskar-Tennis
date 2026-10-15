@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.14.2 · 14. oktober 2026";
+const VERSION = "v5.14.3 · 15. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -10247,36 +10247,12 @@ async function foelgHent() {
   foelgTegn();
 }
 
-function foelgTegn() {
-  const EN = S.sprog === "en";
-  const el = document.getElementById("app");
-  const k = _foelgData;
+/* ⭐⭐ v5.14.3 · KAMPTAVLEN — én tegning til følge-linket OG tribunen (Nicolai 15/10: «Helt det samme som live visningen for eksterne»).
+   Skåret ud af foelgTegn ved måling. Delene: tavle · fodspor · kurve · bolde · status — hver skærm stiller dem op selv. */
+function kampTavle(k, EN) {
   const P = ["0","15","30","40"];
-  let h = '<div style="display:flex;align-items:center;gap:10px;padding:6px 2px 14px">' +
-    '<div style="width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#F7E39A,#E6B045 55%,#8a6420);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#332B12;box-shadow:0 0 12px rgba(240,207,97,.35)">AI</div>' +
-    '<div style="line-height:1.15"><b style="letter-spacing:3px;color:var(--guld);font-size:14px;font-weight:800">' + (k ? esc((k.spiller||"").toUpperCase()) : "LIVE") + '</b>' +
-    '<span style="display:block;font-size:10px;color:var(--kridt);font-weight:700">Sports<i style="color:var(--is);font-style:normal">AI</i>nalytics</span></div>' +
-    (k && k.aktiv ? '<div style="margin-left:auto;display:flex;align-items:center;gap:6px;background:rgba(210,72,78,.12);border:1px solid rgba(210,72,78,.45);border-radius:999px;padding:5px 11px;font-size:11px;font-weight:800;letter-spacing:1.5px;color:#F3A7AA"><span style="width:8px;height:8px;border-radius:50%;background:var(--tabt);box-shadow:0 0 10px var(--tabt)"></span>LIVE</div>' : '') +
-    '</div>';
-  // ⭐ v4.142.0 · ET LIVE-LINK SIGER, AT DET ER ET LIVE-LINK (Nicolai 12/9).
-  //   Julie fik linket og troede, det var appen. Første linje siger, hvad man
-  //   kigger på — og hvad man IKKE har fået.
-  h += '<div class="banner" data-foelg-stribe="1" style="text-align:left;margin:0 0 12px;border:1px solid rgba(240,207,97,.45)">\ud83d\udcfa <b>' + (EN ? "LIVE LINK" : "LIVE-LINK") + '</b> \u00b7 ' +
-    (EN
-      ? "You are watching " + (k && k.spiller ? esc(k.spiller) + "\u2019s" : "a") + " match \u2014 one match, ball by ball. This is not the app."
-      : "Du ser med p\u00e5 " + (k && k.spiller ? esc(k.spiller) + "s" : "en") + " kamp \u2014 \u00e9n kamp, bold for bold. Det her er ikke appen.") + '</div>';
-
-  if (_foelgFejl === "ukendt") {
-    h += '<div class="kort" style="text-align:center;padding:28px 16px">' +
-      '<div style="font-size:34px;margin-bottom:8px">🎾</div>' +
-      '<h2 style="margin:0 0 6px;font-size:18px">' + (EN?"The match is over":"Kampen er slut") + '</h2>' +
-      '<p class="lille" style="margin:0">' + (EN
-        ? "This code no longer works. Ask for a new one next time."
-        : "Denne kode virker ikke længere. Bed om en ny næste gang.") + '</p></div>';
-  } else if (!k) {
-    h += '<div class="kort" style="text-align:center;padding:28px 16px">' +
-      '<p class="lille" style="margin:0">' + (EN?"Connecting…":"Forbinder…") + '</p></div>';
-  } else {
+  const D = {};
+  let h = "";
     const st = k.stilling || {};
     const modst = k.modstander || (EN?"opponent":"modspiller");
     const tb = st.tiebreak;
@@ -10309,6 +10285,7 @@ function foelgTegn() {
         '<div style="' + talC + 'color:var(--tekst2)">' + (st.partierModstander || 0) + '</div>' +
         '<div style="text-align:center;font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--tekst2)">' + pv(st.pointModstander, st.pointSpiller) + '</div>' +
       '</div>' +
+      saetLinje(st, !!k.aktiv, EN) +   /* v5.14.3 · tribunens sæt-linje — nu også her */
       // ⭐ 22/8: RESULTATET paa tavlen, naar kampen er slut. Jernreglen:
       // linket skal vaere nok — ogsaa til at faa facit. Kun paa faerdige
       // kampe; under kampen ER stillingen resultatet.
@@ -10319,6 +10296,7 @@ function foelgTegn() {
         (st.balance !== undefined ? ' · balance ' + (st.balance >= 0 ? "+" : "") + st.balance : '') + '</span></div>' +
       '</div>';
 
+    D.tavle = h; h = "";
     const fl = k.forloeb || [];
 
     // KAMPENS FODSPOR — vundne over stregen (position + fyldt/hul, aldrig kun farve)
@@ -10338,12 +10316,14 @@ function foelgTegn() {
         '<svg viewBox="0 0 360 54" style="display:block;width:100%"><line x1="4" y1="27" x2="356" y2="27" stroke="var(--fod)" stroke-width="1"/>' + dots + '</svg></div>';
     }
 
+    D.fodspor = h; h = "";
     /* ⭐⭐ v5.3.3 · FØLGE-VISNINGEN BRUGER NU HUSETS ENE KURVE.
        Før tegnede den sin egen (17 linjer, samme tal, anden streg) — to kurver,
        der kunne drive fra hinanden. Nu ser Signe i sofaen nøjagtig det samme som
        Nicolai ved banen, og de tre tal følger med (Nicolai 21/9). */
     h += tribuneForloeb(fl, st, !!k.aktiv, EN);
 
+    D.kurve = h; h = "";
     // DE SENESTE BOLDE — inkl. mod_es (v3.0.5 #19)
     const f = fl.slice(-24).reverse();
     const NAVN = { vinder:[EN?"Winner":"Vinderslag",1], es:[EN?"Ace":"Es",1],
@@ -10366,6 +10346,7 @@ function foelgTegn() {
       });
       h += '</div>';
     }
+    D.bolde = h; h = "";
     // #53-55 (16/8-2026): følgeren skal kunne se forskel på TRE ting, ikke to:
     // kampen er slut · der sker bare ikke noget lige nu · det kører. Før frds
     // stillingen bare, mens der stadig stod "opdateres automatisk" nedenunder.
@@ -10385,6 +10366,52 @@ function foelgTegn() {
     h += '<p class="lille" style="text-align:center;margin:10px 0 0">' +
       (st.bolde || fl.length) + ((st.bolde || fl.length) === 1 ? (EN?" ball":" bold") : (EN?" balls":" bolde")) +
       (_slut ? "" : (EN?" · updates automatically":" · opdateres automatisk")) + '</p>';
+    D.status = h;
+  return D;
+}
+        /* v5.0.1 · SÆT-LINJEN: det, hvert sæt blev — live med det igangværende sidst og fremhævet. Historikken rejser allerede med (saetHistorik). */
+        function saetLinje(st, live, EN){
+          const sh = (st.saetHistorik || []).map(function(x){ return String(x); });
+          const nu = live && (sh.length > 0 || (st.partierSpiller||0) + (st.partierModstander||0) > 0) ? ((st.partierSpiller||0) + "-" + (st.partierModstander||0)) : null;
+          if (!sh.length && !nu) return '';
+          const chip = function(t, farve, stor){ return '<span style="font-size:' + (stor ? "16px" : "15px") + ';font-weight:800;font-variant-numeric:tabular-nums;color:' + farve + '">' + esc(t) + '</span>'; };
+          const dele = sh.map(function(x){ return chip(x, live ? "var(--kridt)" : "var(--guld)", !live); });
+          if (nu) dele.push(chip(nu, "var(--is)", true) + '<span class="lille" style="margin:0 0 0 4px;font-size:10px;letter-spacing:1px">' + (st.tiebreak ? "TB" : (EN?"NOW":"NU")) + '</span>');
+          return '<div style="display:flex;flex-wrap:wrap;gap:4px 10px;justify-content:center;align-items:baseline;margin-top:8px;padding-top:8px;border-top:1px dashed var(--kant)">' +
+            '<span class="lille" style="margin:0 6px 0 0;font-size:10px;letter-spacing:1.3px;text-transform:uppercase">' + (EN?"Sets":"Sæt") + '</span>' + dele.join('<span style="color:var(--fod)">·</span>') + '</div>';
+        }
+function foelgTegn() {
+  const EN = S.sprog === "en";
+  const el = document.getElementById("app");
+  const k = _foelgData;
+  const P = ["0","15","30","40"];
+  let h = '<div style="display:flex;align-items:center;gap:10px;padding:6px 2px 14px">' +
+    '<div style="width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#F7E39A,#E6B045 55%,#8a6420);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#332B12;box-shadow:0 0 12px rgba(240,207,97,.35)">AI</div>' +
+    '<div style="line-height:1.15"><b style="letter-spacing:3px;color:var(--guld);font-size:14px;font-weight:800">' + (k ? esc((k.spiller||"").toUpperCase()) : "LIVE") + '</b>' +
+    '<span style="display:block;font-size:10px;color:var(--kridt);font-weight:700">Sports<i style="color:var(--is);font-style:normal">AI</i>nalytics</span></div>' +
+    (k && k.aktiv ? '<div style="margin-left:auto;display:flex;align-items:center;gap:6px;background:rgba(210,72,78,.12);border:1px solid rgba(210,72,78,.45);border-radius:999px;padding:5px 11px;font-size:11px;font-weight:800;letter-spacing:1.5px;color:#F3A7AA"><span style="width:8px;height:8px;border-radius:50%;background:var(--tabt);box-shadow:0 0 10px var(--tabt)"></span>LIVE</div>' : '') +
+    '</div>';
+  // ⭐ v4.142.0 · ET LIVE-LINK SIGER, AT DET ER ET LIVE-LINK (Nicolai 12/9).
+  //   Julie fik linket og troede, det var appen. Første linje siger, hvad man
+  //   kigger på — og hvad man IKKE har fået.
+  h += '<div class="banner" data-foelg-stribe="1" style="text-align:left;margin:0 0 12px;border:1px solid rgba(240,207,97,.45)">\ud83d\udcfa <b>' + (EN ? "LIVE LINK" : "LIVE-LINK") + '</b> \u00b7 ' +
+    (EN
+      ? "You are watching " + (k && k.spiller ? esc(k.spiller) + "\u2019s" : "a") + " match \u2014 one match, ball by ball. This is not the app."
+      : "Du ser med p\u00e5 " + (k && k.spiller ? esc(k.spiller) + "s" : "en") + " kamp \u2014 \u00e9n kamp, bold for bold. Det her er ikke appen.") + '</div>';
+
+  if (_foelgFejl === "ukendt") {
+    h += '<div class="kort" style="text-align:center;padding:28px 16px">' +
+      '<div style="font-size:34px;margin-bottom:8px">🎾</div>' +
+      '<h2 style="margin:0 0 6px;font-size:18px">' + (EN?"The match is over":"Kampen er slut") + '</h2>' +
+      '<p class="lille" style="margin:0">' + (EN
+        ? "This code no longer works. Ask for a new one next time."
+        : "Denne kode virker ikke længere. Bed om en ny næste gang.") + '</p></div>';
+  } else if (!k) {
+    h += '<div class="kort" style="text-align:center;padding:28px 16px">' +
+      '<p class="lille" style="margin:0">' + (EN?"Connecting…":"Forbinder…") + '</p></div>';
+  } else {
+    const D = kampTavle(k, EN);   /* v5.14.3 · samme tegning som tribunen */
+    h += D.tavle + D.fodspor + D.kurve + D.bolde + D.status;
   }
   if (_foelgFejl === "netvaerk") h += '<p class="lille" style="text-align:center;color:var(--tabt)">' +
     (EN?"No connection — trying again…":"Ingen forbindelse — prøver igen…") + '</p>';
@@ -12184,54 +12211,9 @@ function _tegn() {
             ? "The match was deleted — and when a match is deleted, everything in the stand goes with it."
             : "Kampen er slettet — og når en kamp slettes, følger alt på tribunen med.") + '</p></div>';
       } else {
-        // ── STILLINGEN ──────────────────────────────────────────────
-        const P = ["0","15","30","40"];
-        const pv = function(a, b){
-          if (st.tiebreak) return String(a || 0);
-          if ((a||0) >= 3 && (b||0) >= 3) return a === b ? "40" : (a > b ? "A" : "–");
-          return P[a || 0] || "40";
-        };
-        const raek = function(navn, saet, spil, pt, serv){
-          return '<div style="display:grid;grid-template-columns:1fr 34px 34px 46px;gap:8px 4px;align-items:center;padding:7px 0">' +
-            '<span style="font-size:14.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(navn) +
-            (serv ? ' <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--guld);box-shadow:0 0 8px var(--guld)"></span>' : '') + '</span>' +
-            '<span style="text-align:center;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums">' + saet + '</span>' +
-            '<span style="text-align:center;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums">' + spil + '</span>' +
-            '<span style="text-align:center;font-size:19px;font-weight:800;color:var(--guld);font-variant-numeric:tabular-nums">' + pt + '</span></div>';
-        };
-        /* v5.0.1 · efter kampen: navn + sæt, vinderen i guld */
-        const raekSlut = function(navn, saet, vandt){
-          return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0">' +
-            '<span style="font-size:15px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + (vandt ? "var(--guld)" : "var(--kridt)") + '">' + (vandt ? "🏆 " : "") + esc(navn) + '</span>' +
-            '<span style="font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:' + (vandt ? "var(--guld)" : "var(--kridt)") + '">' + saet + '</span></div>';
-        };
-        /* v5.0.1 · SÆT-LINJEN: det, hvert sæt blev — live med det igangværende sidst og fremhævet. Historikken rejser allerede med (saetHistorik). */
-        const saetLinje = function(st, live, EN){
-          const sh = (st.saetHistorik || []).map(function(x){ return String(x); });
-          const nu = live && (sh.length > 0 || (st.partierSpiller||0) + (st.partierModstander||0) > 0) ? ((st.partierSpiller||0) + "-" + (st.partierModstander||0)) : null;
-          if (!sh.length && !nu) return '';
-          const chip = function(t, farve, stor){ return '<span style="font-size:' + (stor ? "16px" : "15px") + ';font-weight:800;font-variant-numeric:tabular-nums;color:' + farve + '">' + esc(t) + '</span>'; };
-          const dele = sh.map(function(x){ return chip(x, live ? "var(--kridt)" : "var(--guld)", !live); });
-          if (nu) dele.push(chip(nu, "var(--is)", true) + '<span class="lille" style="margin:0 0 0 4px;font-size:10px;letter-spacing:1px">' + (st.tiebreak ? "TB" : (EN?"NOW":"NU")) + '</span>');
-          return '<div style="display:flex;flex-wrap:wrap;gap:4px 10px;justify-content:center;align-items:baseline;margin-top:8px;padding-top:8px;border-top:1px dashed var(--kant)">' +
-            '<span class="lille" style="margin:0 6px 0 0;font-size:10px;letter-spacing:1.3px;text-transform:uppercase">' + (EN?"Sets":"Sæt") + '</span>' + dele.join('<span style="color:var(--fod)">·</span>') + '</div>';
-        };
-        h += '<div class="kort" style="padding:14px">' +
-          '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">' +
-          '<span class="lille" style="margin:0;letter-spacing:1.3px;text-transform:uppercase">' + esc(k.turnering || (EN?"Live match":"Livekamp")) + '</span>' +
-          '<span class="lille" style="margin:0;color:' + (live ? "var(--is)" : "var(--guld)") + ';font-weight:800">' + (!live ? (EN?"FINAL":"SLUT") : st.tiebreak ? "TIEBREAK" : (((st.saetHistorik||[]).length + 1) + ". " + (EN?"SET":"SÆT"))) + '</span></div>' +   /* v5.0.1 */
-          (live
-            ? raek(k.spiller || (EN?"Player":"Spiller"), (st.saetSpiller||0), (st.partierSpiller||0), pv(st.pointSpiller, st.pointModstander), st.spillerServer === true) +
-              '<div style="height:1px;background:var(--kant)"></div>' +
-              raek(k.modstander || (EN?"Opponent":"Modstander"), (st.saetModstander||0), (st.partierModstander||0), pv(st.pointModstander, st.pointSpiller), st.spillerServer === false)
-            /* v5.0.1 · SLUT: kun navn og sæt — parti- og point-kolonnerne er tomme efter sidste bold og forvirrer. Vinderen i guld. */
-            : raekSlut(k.spiller || (EN?"Player":"Spiller"), (st.saetSpiller||0), (st.saetSpiller||0) > (st.saetModstander||0)) +
-              '<div style="height:1px;background:var(--kant)"></div>' +
-              raekSlut(k.modstander || (EN?"Opponent":"Modstander"), (st.saetModstander||0), (st.saetModstander||0) > (st.saetSpiller||0))) +
-          saetLinje(st, live, EN) +
-          (st.resultat ? '<p class="lille" style="margin:8px 0 0;padding-top:8px;border-top:1px dashed var(--kant);color:var(--guld);font-weight:700">' + esc(st.resultat) + '</p>' : '') +
-          '</div>' +
-          tribuneForloeb(k.forloeb || [], st, live, EN);   /* v5.0.1 · kampens puls + tal — også når kampen er slut */
+        // ── STILLINGEN ── v5.14.3: samme kamptavle som følge-linket (tavle · fodspor · kurve); boldene og status står under samtalen
+        const _D = kampTavle(k, EN);
+        h += _D.tavle + _D.fodspor + _D.kurve;
 
         // ── REAKTIONERNE ────────────────────────────────────────────
         // ── LÅSEN (22/8) · "som så låses og foldes sammen" ────────────
@@ -12293,6 +12275,7 @@ function _tegn() {
             '<button class="knap" style="flex:none;min-height:44px;padding:0 15px;background:var(--grus)" data-a="rumSend">' + (EN?"Send":"Send") + '</button></div>';
         }
         h += (S.rumBesked ? '<p class="lille" style="margin:6px 2px;color:var(--tabt)">' + esc(S.rumBesked.t) + '</p>' : '');
+        h += _D.bolde + _D.status;   /* v5.14.3 · de seneste bolde + «opdateres automatisk» — som på følge-linket */
         h += '<p class="lille" style="margin:10px 2px 0;opacity:.7">' + (EN
           ? "The stand locks when the match ends. Friends can see the result and what was said for 7 days — and it can be deleted at any time."
           : "Tribunen låses, når kampen slutter. Venner kan se resultatet og det, der blev sagt, i 7 dage — og den kan slettes når som helst.") + '</p>';

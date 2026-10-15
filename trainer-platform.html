@@ -69,6 +69,7 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 .dev-flise{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:16px 14px 14px;border-radius:18px;border:1px solid var(--kant);background:var(--kort);color:var(--kridt);cursor:pointer;text-align:left;min-height:98px;font-family:inherit;backdrop-filter:blur(8px)}
 .dev-flise .ik{font-size:24px;margin-bottom:4px}
 .dev-flise .dev-ikon{font-size:24px;margin-bottom:4px}
+.hjem-grid>.dev-flise{min-height:84px;padding:12px 14px 10px}.hjem-grid>.dev-flise .dev-ikon{font-size:22px;margin-bottom:2px}   /* v6.19.0 · HJEM på én skærm med syv fliser */
 /* ── FLISER som standard for valg-lister. Erstatter stablede piller. */
 .flise-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
 .flise-valg{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;
@@ -1151,7 +1152,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.18.0 \u00b7 14. oktober 2026";
+const VERSION = "v6.19.0 \u00b7 15. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1987,6 +1988,17 @@ Object.assign(EN, {   /* ⭐ v6.17.0 · WEEKENDEN */
   "Kun klubbens trænere kan se truppens sæson.": "Only the club's coaches can see the squad's season.", "Det gik ikke lige nu — prøv igen.": "That didn't work right now — try again.",
   "UGE {n}": "WEEK {n}"
 });
+Object.assign(EN, {   /* ⭐ v6.19.0 · LIVE NU-flisen + engelsk overalt, også med et program (dansk-vagten v3) */
+  "Live nu": "Live now", "ingen lige nu": "none right now", "kræver din klub": "needs your club",
+  "ingen forbindelse": "no connection", "kunne ikke hente": "couldn't fetch",
+  "Lige slut:": "Just ended:", "Næste:": "Next:",
+  "Dagens 1 pas er registreret ✓": "Today's session is registered ✓", "Dagens {n} pas er registreret ✓": "Today's {n} sessions are registered ✓",
+  "{n} pas uden fremmøde": "{n} sessions without attendance",
+  "1 spiller: {x}": "1 player: {x}", "{n} spillere: {x}": "{n} players: {x}",
+  "Teknisk": "Technical", "Taktisk": "Tactical", "Fysisk": "Physical", "Mentalt": "Mental",
+  "🎯 DATA-DREVET FOKUS": "🎯 DATA-DRIVEN FOCUS", "Laveste score er": "Lowest score is",
+  "Sæt træningsfokus her — og følg med i spillerens kamp-app, om det flytter sig.": "Set the training focus here — and follow in the player's match app whether it moves.",
+});
 Object.assign(EN, {   /* ⭐ v6.18.0 · LIVE NU */
   "🔴 Live nu": "🔴 Live now", "{n} SPILLER LIVE NU": "{n} PLAYER LIVE NOW", "{n} SPILLERE LIVE NU": "{n} PLAYERS LIVE NOW",
   "Følg med →": "Watch →", "startet {x}": "started {x}", "tiebreak": "tie-break",
@@ -2620,7 +2632,7 @@ function pasDeltagerNavne(p){
 }
 function dkIdag(){ var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
 function ugedagAf(iso){ var d = new Date(iso + "T12:00:00"); var u = d.getDay(); return u === 0 ? 7 : u; }
-function datoTekst(iso){ var m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(String(iso || "")); if (!m) return String(iso || ""); return DAGE_LANG[ugedagAf(iso)] + " " + (+m[3]) + "/" + (+m[2]); }   /* 2026-09-20 → søndag 20/9 */
+function datoTekst(iso){ var m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(String(iso || "")); if (!m) return String(iso || ""); return T(DAGE_LANG[ugedagAf(iso)]) + " " + (+m[3]) + "/" + (+m[2]); }   /* 2026-09-20 → søndag 20/9 */
 
 // ── «NU»: dagens godkendte pas med tre flag — mine · lige slut · registreret. Skærmen vælger; motoren skjuler intet.
 function nuHent(tving){
@@ -3001,7 +3013,7 @@ function traenerRegistrer(t){
         '<p class="lille" style="margin:4px 0 0">' + esc(r.gruppe) + ' · ' + esc(datoTekst(r.svar.dato)) + (r.svar.ikke_moedt ? ' · ' + r.svar.ikke_moedt + ' ikke mødt' : '') + '</p>';
     } else {
       h += '<h3 style="color:var(--vundet);margin:0">' + r.svar.moedt + (r.svar.moedt === 1 ? ' spiller' : ' spillere') + ' registreret' + (vd.sendt.length ? ' · ' + vd.sendt.length + ' vurderet' : '') + '</h3>' +
-        '<p class="lille" style="margin:4px 0 0">' + tidTekst(p3) + ' · bane ' + esc(p3.bane) + ' · ' + esc(datoTekst(r.svar.dato)) + '</p>' +
+        '<p class="lille" style="margin:4px 0 0">' + tidTekst(p3) + ' · <span>bane ' + esc(p3.bane) + '</span> · <span>' + esc(datoTekst(r.svar.dato)) + '</span></p>' +
         '<p class="lille" style="margin:6px 0 0">Passet står nu i loggen hos ' + r.svar.log_skrevet + (r.svar.log_fjernet ? ' · fjernet hos ' + r.svar.log_fjernet : '') + ' — og tæller i streaken.' + (r.svar.ikke_moedt ? ' ' + r.svar.ikke_moedt + ' ikke mødt.' : '') + '</p>';
     }
     if (vd.sendt.length) h += '<p class="lille" style="margin:6px 0 0">Vurderingen' + (r.kilde === "gruppe" ? '' : omrT) + ' står nu hos ' + vd.sendt.map(function(x){ return esc(x.split(" ")[0]); }).join(', ') + ' ✓</p>';
@@ -3019,11 +3031,11 @@ function traenerRegistrer(t){
     var antal = alle.filter(function(d){ return r.moedt[d.k]; }).length;
     var vurd = alle.filter(function(d){ return r.moedt[d.k] && r.score[d.k]; }).length, uf2 = ugensFokus();
     h += '<div class="kort" style="padding:11px 14px"><div style="display:flex;justify-content:space-between;align-items:center">';
-    if (erPas) h += '<div><div class="eyebrow">FREMMØDE OG VURDERING · ' + esc(datoTekst(r.dato || S.regDato)) + '</div><h3 style="margin:2px 0 0">' + tidTekst(p) + ' · bane ' + esc(p.bane) + '</h3><p class="lille" style="margin:2px 0 0">' + esc(pasTekst(p)) + '</p></div>';
+    if (erPas) h += '<div><div class="eyebrow">FREMMØDE OG VURDERING · ' + esc(datoTekst(r.dato || S.regDato)) + '</div><h3 style="margin:2px 0 0">' + tidTekst(p) + ' · <span>bane ' + esc(p.bane) + '</span></h3><p class="lille" style="margin:2px 0 0">' + esc(pasTekst(p)) + '</p></div>';
     else h += '<div><div class="eyebrow">VURDERING · ' + esc(datoTekst(r.dato)) + '</div><h3 style="margin:2px 0 0">' + esc(r.gruppe) + '</h3><p class="lille" style="margin:2px 0 0">' + alle.length + (alle.length === 1 ? ' spiller' : ' spillere') + ' i gruppen</p></div>';
     h += '<div style="text-align:right"><div style="font-size:22px;font-weight:800">' + antal + '/' + alle.length + '</div><div class="lille">mødt</div></div></div>';
     h += '<div class="omr-chips">' + KONFIG.omraader.map(function(o){ return '<button class="omr-chip' + (o.id === r.omraade ? ' valgt' : '') + '" data-act="reg-omraade" data-v="' + esc(o.id) + '">' + o.emoji + ' ' + esc(OMR_KORT[o.id] || o.navn) + '</button>'; }).join('') + '</div>';
-    h += '<p class="lille" style="margin:8px 0 0">' + (uf2 ? 'Scores kobles til ugens fokus: ' + UGEOMRAADER.filter(function(o){ return o.id === uf2; }).map(function(o){ return o.ikon + ' ' + o.navn.toLowerCase(); })[0] : 'Ugens fokus er ikke valgt') + ' · <span data-act="vurder-omraade" data-v="__fokus" style="color:var(--guld);cursor:pointer;font-weight:700">skift</span></p>';
+    h += '<p class="lille" style="margin:8px 0 0">' + '<span>' + (uf2 ? 'Scores kobles til ugens fokus: ' + UGEOMRAADER.filter(function(o){ return o.id === uf2; }).map(function(o){ return o.ikon + ' ' + (SPROG === "en" ? T(o.navn) : o.navn.toLowerCase()); })[0] : 'Ugens fokus er ikke valgt') + '</span> · <span data-act="vurder-omraade" data-v="__fokus" style="color:var(--guld);cursor:pointer;font-weight:700">skift</span></p>';
     h += '</div>';
     h += '<div class="kort">';
     if (!alle.length) h += '<p class="lille">' + (erPas ? 'Ingen spillere på passet — læg dem på under PROGRAM og godkend igen.' : 'Ingen spillere i gruppen — læg dem i under GRUPPER.') + '</p>';
@@ -3160,13 +3172,11 @@ function renderTraener(){
     // v6.1.0 · «Vælg, hvad du vil i gang med» og statuslinjen er ude — StreakTennis har dem ikke. Status om nye
     //   spillere står i INVITÉR-flisen (StreakTennis' mønster på Indstillinger-flisen); fejl står stadig under ⚙️.
 
-    /* ⭐⭐ v6.18.0 · LIVE NU — rød helt øverst, KUN når nogen fra truppen spiller en kamp, de selv deler live. Ellers er HJEM uændret. */
+    /* ⭐⭐ v6.18.0 · LIVE NU — hentes, når HJEM tegnes. v6.19.0: vist som flise forrest i gitteret, altid (liveFlise). */
     (function(){
       if (lager.hent("klubkode", "") && !S.liveHenter && Date.now() - (S.liveTid || 0) > 30000) setTimeout(function(){ liveHent(); }, 0);
       var k = Array.isArray(S.liveKampe) ? S.liveKampe : [];
-      if (!k.length) return;
-      h += '<button class="dev-hero dev-kant dev-kant-roed" style="background:linear-gradient(160deg,#2A1020,#150B16) padding-box,linear-gradient(135deg,#FF5A64,#C8102E) border-box !important" data-act="tab" data-v="live" data-live-helt="' + k.length + '"><span style="font-size:30px">🔴</span><span><b>' +
-        (k.length === 1 ? '1 SPILLER LIVE NU' : k.length + ' SPILLERE LIVE NU') + '</b><br><small>' + esc(liveNavne(k)) + '</small></span><span class="dev-pil">→</span></button>';
+      /* ⭐⭐ v6.19.0 · ingen helt længere — tallet står i flisen «🔴 Live nu» forrest i gitteret (Nicolai 15/10: «Klart denne») */
     })();
     // ⭐⭐⭐ v6.0.0 · REGISTRÉR ER DEN BREDE KNAP (Nicolai 19/9: «Den brede Registrer skal
     //   være fremtrædende også. Det er jo registrering af træning.»). Under den står det
@@ -3178,10 +3188,10 @@ function renderTraener(){
       if (!lager.hent("klubkode", "")) linje = 'Når telefonen er forbundet med din klub, kommer dagens pas frem her.';
       else if (S.nuFejl) linje = S.nuFejl;
       else if (!S.nu) linje = 'Henter dagens pas …';
-      else if (b) linje = (b.lige_slut ? 'Lige slut: ' : 'Næste: ') + tidTekst(b) + ' · bane ' + esc(b.bane) + (pasTekst(b) ? ' · ' + esc(pasTekst(b)) : '') + ' · ' + (b.deltagere || []).length + ' spillere';
+      else if (b) linje = '<span>' + (b.lige_slut ? 'Lige slut:' : 'Næste:') + '</span> ' + tidTekst(b) + ' · <span>bane ' + esc(b.bane) + '</span>' + (pasTekst(b) ? ' · ' + esc(pasTekst(b)) : '') + ' · <span>' + (b.deltagere || []).length + ((b.deltagere || []).length === 1 ? ' spiller' : ' spillere') + '</span>';
       else if (S.nu.pas && S.nu.pas.length) linje = 'Dagens ' + S.nu.pas.length + (S.nu.pas.length === 1 ? ' pas er registreret ✓' : ' pas er registreret ✓');
       else linje = 'Ingen pas i dag i det godkendte program.';
-      if (uf > 1) linje += ' \u00b7 <span style="color:#ff8a8f;font-weight:700">' + uf + ' pas uden fremm\u00f8de</span>';
+      if (uf > 1) linje = '<span>' + linje + '</span> \u00b7 <span style="color:#ff8a8f;font-weight:700">' + uf + ' pas uden fremm\u00f8de</span>';
       /* v6.1.0 · StreakTennis' helt (.dev-hero) — samme markup som START KAMP, ordret */
       h += '<button class="dev-hero dev-kant dev-kant-grus" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + '><span style="font-size:30px">\u26a1</span><span><b>VURD\u00c9R TR\u00c6NINGEN</b><br><small>' + linje + '</small></span><span class="dev-pil">\u2192</span></button>';
     })();
@@ -3193,7 +3203,7 @@ function renderTraener(){
       if (!_n) return;
       h += '<button class="dev-hero dev-kant dev-kant-guld" data-act="tab" data-v="grupper"><span style="font-size:30px">📥</span><span><b>' + (_n === 1 ? '1 NY SPILLER' : _n + ' NYE SPILLERE') + '</b><br><small>' + (_t.venter.length ? 'venter på jeres ja' : 'mangler i truppen') + '</small></span><span class="dev-pil">→</span></button>';
     })();
-    h += '<div class="dev-grid">' +
+    h += '<div class="dev-grid hjem-grid">' + liveFlise() +   /* ⭐⭐ v6.19.0 · LIVE NU — altid, forrest · hjem-grid = de lavere fliser */
       // ⭐⭐⭐ v4.1.0 · AFTENENS VIGTIGSTE KNAP STÅR FORREST.
       //   ⚠️ FANGET FØR DEN BLEV BYGGET: første udkast skrev
       //     `S.minRolle === "admin"`. Men `minRolle` sættes FØRST, når
@@ -3601,10 +3611,21 @@ async function liveHent(tvang) {
   if (S.tab === "live") { try { render(); } catch (_e) {} }
   const r = await liveKaldK();
   S.liveHenter = false;
-  var foer = JSON.stringify(S.liveKampe || null);
+  var foer = JSON.stringify([S.liveKampe || null, S.liveFejl || null]);   /* v6.19.0 · også fejlen */
   if (r && !r.fejl) { S.liveKampe = (Array.isArray(r.kampe) ? r.kampe : []).filter(function(x){ return x && /^[A-ZÆØÅ0-9-]{6,24}$/.test(String(x.foelgekode || "")); }); S.liveFejl = null; }
   else S.liveFejl = (r && r.fejl) || "ukendt";   /* den sidste liste bliver stående — fejlen siges i rummet */
-  if (S.tab === "live" || (S.tab === "hjem" && JSON.stringify(S.liveKampe || null) !== foer)) render();
+  if (S.tab === "live" || (S.tab === "hjem" && JSON.stringify([S.liveKampe || null, S.liveFejl || null]) !== foer)) render();
+}
+/* ⭐⭐ v6.19.0 · FLISEN «🔴 Live nu» (Nicolai 15/10: «flisen altid skal være der - og man på den kan se hvor mange der så er live»).
+   Dens status er et løfte (70): henter … · ingen lige nu · N spillere + hvem · en fejl siges med sit eget ord (94: «ingen forbindelse» KUN om netværket). */
+function liveFlise() {
+  var k = S.liveKampe, sub, roed = false;
+  if (!lager.hent("klubkode", "")) sub = '<span>kræver din klub</span>';
+  else if (!Array.isArray(k)) sub = S.liveFejl ? '<span>' + (S.liveFejl === "netvaerk" ? 'ingen forbindelse' : 'kunne ikke hente') + '</span>' : '<span>henter …</span>';
+  else if (!k.length) sub = '<span>ingen lige nu</span>';
+  else { roed = true; sub = '<span>' + (k.length === 1 ? '1 spiller' : k.length + ' spillere') + '</span> · ' + esc(liveNavne(k)); }
+  return '<button class="dev-flise dev-kant' + (roed ? '" style="background:linear-gradient(160deg,#2A1020,#150B16) padding-box,linear-gradient(135deg,#FF5A64,#C8102E) border-box !important"' : ' dev-kant-staal"') +
+    ' data-act="tab" data-v="live" data-live-flise="' + (Array.isArray(k) ? k.length : '') + '"><span class="dev-ikon"' + (roed ? '' : ' style="opacity:.45"') + '>🔴</span><b>Live nu</b><small>' + sub + '</small></button>';
 }
 function liveNavne(k) {
   var n = k.map(function(x){ try { return navnFor(x.spiller, x.fornavn); } catch (_e) { return x.fornavn || "spiller"; } });
@@ -4659,7 +4680,7 @@ function spillerDetalje(navn){
   if (omr.length){
     const svag = omr.slice().sort((a,b)=>s.vurdering[a.id].score - s.vurdering[b.id].score)[0];
     h += '<div class="kort" style="--tone:var(--grus)"><div class="eyebrow" style="color:var(--grus)">🎯 DATA-DREVET FOKUS</div>' +
-      '<p style="margin:6px 0 0;font-size:13px">Laveste score er <b>'+svag.emoji+' '+esc(svag.navn)+'</b> ('+s.vurdering[svag.id].score+'/10). Sæt træningsfokus her — og følg med i spillerens kamp-app, om det flytter sig.</p></div>';
+      '<p style="margin:6px 0 0;font-size:13px">Laveste score er <b>'+svag.emoji+' '+esc(svag.navn)+'</b> ('+s.vurdering[svag.id].score+'/10). <span>Sæt træningsfokus her — og følg med i spillerens kamp-app, om det flytter sig.</span></p></div>';
   }
   return h;
 }

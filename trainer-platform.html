@@ -1151,7 +1151,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.17.0 \u00b7 13. oktober 2026";
+const VERSION = "v6.18.0 \u00b7 14. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1972,7 +1972,7 @@ Object.assign(EN, {   /* ⭐ v6.17.0 · WEEKENDEN */
   "Har sagt ja — ikke bekræftet tilmeldt · frist {x}": "Said yes — not confirmed entered · deadline {x}",
   "Fristen er gået — ikke bekræftet tilmeldt · frist {x}": "The deadline has passed — not confirmed entered · deadline {x}",
   "+ Foreslå en turnering": "+ Suggest a tournament", "✕ Luk": "✕ Close", "Spiller": "Player", "Vælg spiller": "Choose player",
-  "Turneringens navn (fx HVT Cup)": "Tournament name (e.g. HVT Cup)", "Fra 2026-11-07": "From 2026-11-07", "Til (valgfri)": "To (optional)",
+  "Turneringens navn (fx Vinter Cup)": "Tournament name (e.g. Winter Cup)", "Fra 2026-11-07": "From 2026-11-07", "Til (valgfri)": "To (optional)",
   "Række (fx U14 Kat. 1)": "Draw (e.g. U14 Cat. 1)", "Frist (valgfri)": "Deadline (optional)", "Link til tilmeldingen hos DTF (valgfri)": "Link to the entry on DTF (optional)",
   "Send forslaget": "Send the suggestion", "⏳ sender …": "⏳ sending …",
   "Spilleren svarer i appen: Den tager jeg / Ikke denne gang. Tilmeldingen sker hos DTF — det gør spilleren selv.": "The player answers in the app: I'll take it / Not this time. The entry happens on DTF — the player does that.",
@@ -1986,6 +1986,15 @@ Object.assign(EN, {   /* ⭐ v6.17.0 · WEEKENDEN */
   "Ingen forbindelse lige nu — prøv igen.": "No connection right now — try again.", "Forbind telefonen med din klub først.": "Connect the phone with your club first.",
   "Kun klubbens trænere kan se truppens sæson.": "Only the club's coaches can see the squad's season.", "Det gik ikke lige nu — prøv igen.": "That didn't work right now — try again.",
   "UGE {n}": "WEEK {n}"
+});
+Object.assign(EN, {   /* ⭐ v6.18.0 · LIVE NU */
+  "🔴 Live nu": "🔴 Live now", "{n} SPILLER LIVE NU": "{n} PLAYER LIVE NOW", "{n} SPILLERE LIVE NU": "{n} PLAYERS LIVE NOW",
+  "Følg med →": "Watch →", "startet {x}": "started {x}", "tiebreak": "tie-break",
+  "Ingen fra truppen spiller live lige nu.": "Nobody in the squad is playing live right now.",
+  "Henter live-kampene …": "Loading the live matches …",
+  "Kun kampe, spilleren selv deler live. Det er gratis at se med.": "Only matches the player shares live. Watching is free.",
+  "Listen opdateres hvert halve minut.": "The list updates every half minute.",
+  "Kun klubbens trænere kan se truppens live-kampe.": "Only the club's coaches can see the squad's live matches."
 });
 var _ENr = {}, _ENx = [];
 (function(){
@@ -3086,7 +3095,7 @@ function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emo
     "adgang-spiller": "\ud83c\udfbe Invit\u00e9r spiller", "adgang-traener": "\ud83e\uddd1\u200d\ud83c\udfeb Invit\u00e9r tr\u00e6ner", "adgang-link": "\ud83d\udcf1 Link til appen", "adgang-klub": "\ud83d\udc65 Klubben" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen", udstil: "\ud83c\udf10 Udstil" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Spillere", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
-           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\ud83d\udcca Overblik", weekenden: "📆 Weekenden" }[tab] || "";
+           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\ud83d\udcca Overblik", weekenden: "📆 Weekenden", live: "🔴 Live nu" }[tab] || "";
 }
 // ⭐⭐ v6.12.0 · TRÆNERENS DASHBOARD (Nicolai 26/9: «de 3 tal og nyhed» + «hvad der skal ske i dag»). Står altid på HJEM.
 //   Tallene er det, telefonen VED: truppen (lager) · spillere vurderet siden mandag (S.vurderinger, dansk dato) · nye (hent-hold).
@@ -3151,6 +3160,14 @@ function renderTraener(){
     // v6.1.0 · «Vælg, hvad du vil i gang med» og statuslinjen er ude — StreakTennis har dem ikke. Status om nye
     //   spillere står i INVITÉR-flisen (StreakTennis' mønster på Indstillinger-flisen); fejl står stadig under ⚙️.
 
+    /* ⭐⭐ v6.18.0 · LIVE NU — rød helt øverst, KUN når nogen fra truppen spiller en kamp, de selv deler live. Ellers er HJEM uændret. */
+    (function(){
+      if (lager.hent("klubkode", "") && !S.liveHenter && Date.now() - (S.liveTid || 0) > 30000) setTimeout(function(){ liveHent(); }, 0);
+      var k = Array.isArray(S.liveKampe) ? S.liveKampe : [];
+      if (!k.length) return;
+      h += '<button class="dev-hero dev-kant dev-kant-roed" style="background:linear-gradient(160deg,#2A1020,#150B16) padding-box,linear-gradient(135deg,#FF5A64,#C8102E) border-box !important" data-act="tab" data-v="live" data-live-helt="' + k.length + '"><span style="font-size:30px">🔴</span><span><b>' +
+        (k.length === 1 ? '1 SPILLER LIVE NU' : k.length + ' SPILLERE LIVE NU') + '</b><br><small>' + esc(liveNavne(k)) + '</small></span><span class="dev-pil">→</span></button>';
+    })();
     // ⭐⭐⭐ v6.0.0 · REGISTRÉR ER DEN BREDE KNAP (Nicolai 19/9: «Den brede Registrer skal
     //   være fremtrædende også. Det er jo registrering af træning.»). Under den står det
     //   pas, `nu` peger på — motoren skjuler intet, skærmen vælger (princip 64).
@@ -3211,7 +3228,8 @@ function renderTraener(){
     else if (S.tab==="kvartal") h += traenerKvartal(t);
     else if (S.tab==="rum") h += traenerRummet();
     else if (S.tab==="overblik") h += traenerDash();
-    else if (S.tab==="weekenden") h += traenerWeekenden();   /* ⭐ v6.17.0 */   /* v6.13.0 · dashboardet har sit eget rum */
+    else if (S.tab==="weekenden") h += traenerWeekenden();   /* ⭐ v6.17.0 */
+    else if (S.tab==="live") h += traenerLive();   /* ⭐ v6.18.0 */   /* v6.13.0 · dashboardet har sit eget rum */
     else if (S.tab==="indst") h += traenerIndstillinger();
     else if (S.tab==="program") h += traenerProgram();      /* v6.0.0 */
     else if (S.tab==="registrer") h += traenerRegistrer(t);  /* v6.0.0 · v6.5.0: samme som VURDÉR */
@@ -3546,13 +3564,82 @@ function traenerWeekenden() {
     h += '<div class="tonet" data-wk-form="1" style="margin-top:10px;padding:12px;border-radius:12px;--tone:var(--grus)">' +
       '<select class="felt" data-felt="wkSpiller" style="margin:0 0 6px;width:100%"><option value="">Vælg spiller</option>' +
       trup.map(function(x){ return '<option value="' + esc(x.noegle) + '"' + (S.wkSpiller === x.noegle ? " selected" : "") + '>' + esc(x.navn) + '</option>'; }).join("") + '</select>' +
-      felt("wkTitel", "Turneringens navn (fx HVT Cup)", ' maxlength="80"') +
+      felt("wkTitel", "Turneringens navn (fx Vinter Cup)", ' maxlength="80"') +
       '<div style="display:flex;gap:6px">' + felt("wkDato", "Fra 2026-11-07", ' inputmode="numeric" maxlength="10"') + felt("wkSlut", "Til (valgfri)", ' inputmode="numeric" maxlength="10"') + '</div>' +
       '<div style="display:flex;gap:6px">' + felt("wkRaekke", "Række (fx U14 Kat. 1)", ' maxlength="40"') + felt("wkFrist", "Frist (valgfri)", ' inputmode="numeric" maxlength="10"') + '</div>' +
       felt("wkLink", "Link til tilmeldingen hos DTF (valgfri)", ' inputmode="url" maxlength="300"') +
       '<button class="knap" style="width:100%;min-height:46px;background:var(--grus)"' + (S.wkSender ? " disabled" : "") + ' data-act="wk-gem">' + (S.wkSender ? "⏳ sender …" : "Send forslaget") + '</button>' +
       '<p class="lille" style="margin:8px 0 0;color:var(--daempet)">Spilleren svarer i appen: Den tager jeg / Ikke denne gang. Tilmeldingen sker hos DTF — det gør spilleren selv.</p></div>';
   }
+  return h;
+}
+/* ⭐⭐ v6.18.0 · LIVE NU — motoren `klub-live` v1 med klubbens trænernøgle. Kun kampe, spilleren selv deler live; kun truppen;
+   kun rækker rørt inden for 3 timer (motoren afgør det). «Følg med» = den kendte live-visning i StreakTennis (?foelg=KODE). */
+const LIVE_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/klub-live";
+const FOELG_URL = "https://tennis.sportsainalytics.com/StreakTennis/";
+async function liveKaldK() {
+  const kn = lager.hent("klubkode", "");
+  if (!kn) return { fejl: "mangler-klubkode" };
+  const st = new AbortController(); const ur = setTimeout(() => st.abort(), 15000);
+  try {
+    const r = await fetch(LIVE_URL, { method: "POST", headers: { "content-type": "application/json", "x-klub-noegle": kn },
+      body: JSON.stringify({ handling: "liste" }), signal: st.signal });
+    clearTimeout(ur);
+    const d = await r.json().catch(() => ({}));
+    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || "netvaerk", status: r.status });
+  } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+}
+// Hvert udfald sin egen sætning (75) — «ingen forbindelse» KUN om netværket (94)
+function liveFejl(k) {
+  return { netvaerk: "Ingen forbindelse lige nu — prøv igen.", "mangler-klubkode": "Forbind telefonen med din klub først.",
+    adgang: "Kun klubbens trænere kan se truppens live-kampe." }[k] || "Det gik ikke lige nu — prøv igen.";
+}
+async function liveHent(tvang) {
+  if (S.liveHenter) return;
+  if (!tvang && Date.now() - (S.liveTid || 0) < 10000) return;
+  S.liveHenter = true; S.liveTid = Date.now();
+  if (S.tab === "live") { try { render(); } catch (_e) {} }
+  const r = await liveKaldK();
+  S.liveHenter = false;
+  var foer = JSON.stringify(S.liveKampe || null);
+  if (r && !r.fejl) { S.liveKampe = (Array.isArray(r.kampe) ? r.kampe : []).filter(function(x){ return x && /^[A-ZÆØÅ0-9-]{6,24}$/.test(String(x.foelgekode || "")); }); S.liveFejl = null; }
+  else S.liveFejl = (r && r.fejl) || "ukendt";   /* den sidste liste bliver stående — fejlen siges i rummet */
+  if (S.tab === "live" || (S.tab === "hjem" && JSON.stringify(S.liveKampe || null) !== foer)) render();
+}
+function liveNavne(k) {
+  var n = k.map(function(x){ try { return navnFor(x.spiller, x.fornavn); } catch (_e) { return x.fornavn || "spiller"; } });
+  return n.slice(0, 3).join(" · ") + (n.length > 3 ? " +" + (n.length - 3) : "");
+}
+function liveScore(st) {
+  st = st || {};
+  var hist = Array.isArray(st.saetHistorik) ? st.saetHistorik.map(String) : [];
+  var p = Array.isArray(st.partier) ? st.partier : [0, 0];
+  return hist.concat([(+p[0] || 0) + "-" + (+p[1] || 0)]).join(" · ");
+}
+function liveKl(iso) { try { return new Date(iso).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Copenhagen" }); } catch (_e) { return ""; } }
+// Opdatering: hvert 30. sekund, mens HJEM eller Live nu er fremme og skærmen er synlig
+var _liveUr = setInterval(function(){
+  try { if ((S.tab === "hjem" || S.tab === "live") && document.visibilityState === "visible" && lager.hent("klubkode", "")) liveHent(); } catch (_e) {}
+}, 30000);
+function traenerLive() {
+  var h = "";
+  if (S.liveFejl) h += '<div class="tonet" data-live-fejl="1" style="--tone:var(--tabt);padding:10px 12px;border-radius:12px;margin:0 0 10px"><p class="lille" style="margin:0">' + liveFejl(S.liveFejl) + '</p><button class="knap valg" style="margin-top:8px;min-height:36px;padding:0 14px" data-act="live-hent">Prøv igen</button></div>';
+  var k = S.liveKampe;
+  if (!Array.isArray(k)) return h + (S.liveFejl ? "" : '<p class="lille" style="color:var(--daempet)">Henter live-kampene …</p>');
+  if (!k.length) h += '<p class="lille" data-live-tom="1" style="color:var(--daempet);margin:0 0 8px">Ingen fra truppen spiller live lige nu.</p>';
+  k.forEach(function(x){
+    var url = FOELG_URL + "?foelg=" + encodeURIComponent(String(x.foelgekode));
+    h += '<div class="tonet" data-live-kamp="' + esc(x.foelgekode) + '" style="--tone:var(--tabt);padding:11px 12px;margin:0 0 8px;border-radius:14px">' +
+      '<div style="display:flex;align-items:center;gap:10px"><div style="flex:1;min-width:0">' +
+      '<div style="font-size:14px;font-weight:800">' + esc((function(){ try { return navnFor(x.spiller, x.fornavn); } catch (_e) { return x.fornavn || "spiller"; } })()) + '</div>' +
+      (x.turnering ? '<div style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🏆 ' + esc(x.turnering) + '</div>' : '') +
+      '<div style="font-size:15px;font-weight:800;letter-spacing:.5px;margin-top:3px" data-live-score="1">' + esc(liveScore(x.stilling)) + '</div>' +
+      ((x.stilling && x.stilling.tiebreak) ? '<div class="lille" style="margin:0;color:var(--guld);font-weight:700">tiebreak</div>' : '') +
+      (x.startet ? '<div class="lille" style="margin:2px 0 0;color:var(--daempet)">startet ' + liveKl(x.startet) + '</div>' : '') +
+      '</div><a class="knap" data-live-foelg="' + esc(x.foelgekode) + '" href="' + esc(url) + '" target="_blank" rel="noopener" style="flex:none;min-height:40px;padding:0 14px;display:inline-flex;align-items:center;text-decoration:none">Følg med →</a></div></div>';
+  });
+  h += '<p class="lille" style="margin:10px 0 0;color:var(--daempet)">Kun kampe, spilleren selv deler live. Det er gratis at se med.</p>';
+  h += '<p class="lille" style="margin:4px 0 0;color:var(--daempet)">Listen opdateres hvert halve minut.</p>';
   return h;
 }
 function traenerRummet() {
@@ -5031,7 +5118,7 @@ document.addEventListener("click", function(e){
       render(); nuHent(true); }); }
   else if (act==="reg-vurd-igen"){ if (!S.reg || S.reg.trin !== 3) return; regSendVurderinger(true); render(); }
   else if (act==="reg-igen"){ regNulstil(); render(); nuHent(false); }
-  if (act==="tab"){ if (v === "weekenden" && !S.wkHenter && (!Array.isArray(S.wkRaekker) || Date.now() - (S.wkTid || 0) > 60000)) setTimeout(function(){ wkHent(); }, 0);   /* ⭐ v6.17.0 · frisk ved åbning, højst ét kald pr. minut */ if (S.tab === "grupper" && v !== "grupper") S.autoTrupBesked = null;   /* v6.10.0 */ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { S.snakValgt = null; S.snakRulNed = true; try { snakHent(false); } catch (_e) {} try { nuHent(false); } catch (_e) {} }   /* v6.15.0 · overblikket kommer fra dagens program */ if (v === "noegler" || v === "grupper") { try { budSendteHent(); } catch (_e) {} } if (v === "grupper" && lager.hent("klubkode", "") && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }   /* v6.10.0 */
+  if (act==="tab"){ if (v === "live" && !S.liveHenter && Date.now() - (S.liveTid || 0) > 10000) setTimeout(function(){ liveHent(); }, 0);   /* ⭐ v6.18.0 · frisk ved åbning */ if (v === "weekenden" && !S.wkHenter && (!Array.isArray(S.wkRaekker) || Date.now() - (S.wkTid || 0) > 60000)) setTimeout(function(){ wkHent(); }, 0);   /* ⭐ v6.17.0 · frisk ved åbning, højst ét kald pr. minut */ if (S.tab === "grupper" && v !== "grupper") S.autoTrupBesked = null;   /* v6.10.0 */ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { S.snakValgt = null; S.snakRulNed = true; try { snakHent(false); } catch (_e) {} try { nuHent(false); } catch (_e) {} }   /* v6.15.0 · overblikket kommer fra dagens program */ if (v === "noegler" || v === "grupper") { try { budSendteHent(); } catch (_e) {} } if (v === "grupper" && lager.hent("klubkode", "") && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }   /* v6.10.0 */
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
   else if (act==="vurder-omraade"){ S.vurderOmraade=v; render(); }   /* v6.5.0 · kun UGENS FOKUS (__fokus) bruger den */
@@ -5248,6 +5335,7 @@ document.addEventListener("click", function(e){
   else if (act==="snak-send"){ snakSend(); }
   /* ⭐ v6.17.0 · WEEKENDEN */
   else if (act==="wk-hent"){ S.wkFejl = null; wkHent(); }
+  else if (act==="live-hent"){ liveHent(true); }   /* ⭐ v6.18.0 */
   else if (act==="wk-ny"){ S.wkNy = !S.wkNy; S.wkBesked = null; render(); }
   else if (act==="wk-gem"){ wkGem(); }
   else if (act==="wk-traek"){ wkTraek(v); }

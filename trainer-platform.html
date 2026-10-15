@@ -1152,7 +1152,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.20.0 \u00b7 15. oktober 2026";
+const VERSION = "v6.20.1 \u00b7 15. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1987,6 +1987,10 @@ Object.assign(EN, {   /* ⭐ v6.17.0 · WEEKENDEN */
   "Ingen forbindelse lige nu — prøv igen.": "No connection right now — try again.", "Forbind telefonen med din klub først.": "Connect the phone with your club first.",
   "Kun klubbens trænere kan se truppens sæson.": "Only the club's coaches can see the squad's season.", "Det gik ikke lige nu — prøv igen.": "That didn't work right now — try again.",
   "UGE {n}": "WEEK {n}"
+});
+Object.assign(EN, {   /* ⭐ v6.20.1 · helten som START KAMP */
+  "fremmøde og vurdering fra banen": "attendance and rating from the court", "1 pas uden fremmøde": "1 session without attendance",
+  "+{n} pas mere": "+{n} more sessions",
 });
 Object.assign(EN, {   /* ⭐ v6.20.0 · analyser fra spillerne */
   "📋 ANALYSER FRA SPILLEREN": "📋 ANALYSES FROM THE PLAYER", "Sendt af spilleren selv — modstanderens navn er taget ud.": "Sent by the player — the opponent's name is taken out.",
@@ -3124,16 +3128,20 @@ function dashVurderet(){   /* v6.13.0 · spillere vurderet siden mandag — ét 
 }
 // ⭐ v6.13.0 · FLISEN «📊 OVERBLIK» — dens status er et løfte (70): nyheden, ellers dagens pas + ugens vurderede
 function overblikFlise(){
-  var dele = [];
+  var dele = [], uf = nuUdenFremmoede();
   var m = S.autoTrupBesked ? /^(.*?) sagde ja/.exec(S.autoTrupBesked) : null;
-  if (m) dele.push('✓ ' + m[1] + ' sagde ja');
+  if (m) { dele.push('<span>' + esc('✓ ' + m[1] + ' sagde ja') + '</span>'); if (uf) dele.push(_ufTekst(uf)); }   /* rødt står, også når der er nyt */
   else {
-    if (S.nu && Array.isArray(S.nu.pas)) dele.push(S.nu.pas.length ? S.nu.pas.length + ' pas i dag' : 'fri i dag');
-    dele.push(dashVurderet() + ' vurderet');
+    /* ⭐ v6.20.1 · det, der stod i helten, står her: hvor mange pas, hvor mange uden fremmøde (rødt), og en hentefejl med sit eget ord (94) */
+    if (lager.hent("klubkode", "") && S.nuFejl) dele.push('<span>' + esc(S.nuFejl) + '</span>');
+    else if (S.nu && Array.isArray(S.nu.pas)) dele.push('<span>' + esc(S.nu.pas.length ? S.nu.pas.length + ' pas i dag' : 'fri i dag') + '</span>');
+    if (uf) dele.push(_ufTekst(uf));
+    dele.push('<span>' + esc(dashVurderet() + ' vurderet') + '</span>');
   }
   return '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="overblik"><span class="dev-ikon">\ud83d\udcca</span><b>Overblik</b><small>' +
-    dele.map(function(x){ return '<span>' + esc(x) + '</span>'; }).join(' · ') + '</small></button>';
+    dele.join(' · ') + '</small></button>';
 }
+function _ufTekst(uf){ return '<span class="dash-roed" style="color:#ff8a8f;font-weight:700">' + uf + (uf === 1 ? ' pas uden fremmøde' : ' pas uden fremmøde') + '</span>'; }   /* ⭐ v6.20.1 · én tekstnode — ordbogen tager den hel */
 function traenerDash(){
   var trup = (lager.hent("truppen", []) || []).length;
   var vurd = dashVurderet();
@@ -3147,7 +3155,10 @@ function traenerDash(){
   else if (S.nuFejl) h += '<div class="dash-fri">' + esc(S.nuFejl) + '</div>';
   else if (!S.nu) h += '<div class="dash-fri">Henter dagens pas …</div>';
   else if (!(S.nu.pas || []).length) h += '<div class="dash-fri">Fri i dag 🎾</div>';
-  else (S.nu.pas || []).slice(0, 4).forEach(function(p){
+  else (function(){ var uf = nuUdenFremmoede(); if (uf) h += '<div class="dash-fri">' + _ufTekst(uf) + '</div>'; })();
+  if (S.nu && (S.nu.pas || []).length && lager.hent("klubkode", "") && !S.nuFejl) (S.nu.pas || []).map(function(p, i){ return { p: p, i: i }; }).sort(function(x, y){
+    return ((x.p.lige_slut && !x.p.registreret) ? 0 : 1) - ((y.p.lige_slut && !y.p.registreret) ? 0 : 1) || x.i - y.i;   /* ⭐ v6.20.1 · dem uden fremmøde først */
+  }).map(function(o){ return o.p; }).slice(0, 4).forEach(function(p){
     var m = p.registreret ? '<span class="dash-maerke ok">registreret ✓</span>' : p.lige_slut ? '<span class="dash-maerke nu">lige slut</span>' : p.mine ? '<span class="dash-maerke">dit pas</span>' : '';
     var n = (p.deltagere || []).length;
     /* hver del sin egen tekstnode — så oversættes de hver for sig (ordbogen tager hele tekstnoder) */
@@ -3155,6 +3166,7 @@ function traenerDash(){
     if (!p.mine && p.traener) dele.push(p.traener);
     h += '<div class="dash-pas"><span class="dash-hvad"><b>' + esc(tidTekst(p)) + '</b><small>' + dele.map(function(x){ return '<span>' + esc(x) + '</span>'; }).join(' · ') + '</small></span>' + m + '</div>';
   });
+  if (S.nu && lager.hent("klubkode", "") && !S.nuFejl && (S.nu.pas || []).length > 4) h += '<div class="dash-fri"><span>+' + ((S.nu.pas || []).length - 4) + ' pas mere</span></div>';   /* ⭐ v6.20.1 */
   if (S.autoTrupBesked) h += '<div class="dash-nyt"><span>✓</span><span>' + esc(S.autoTrupBesked) + '</span></div>';
   return h + '</div>';
 }
@@ -3190,17 +3202,10 @@ function renderTraener(){
     //   pas, `nu` peger på — motoren skjuler intet, skærmen vælger (princip 64).
     (function(){
       if (lager.hent("klubkode", "") && !S.nuHentet && !S.nuHenter) setTimeout(function(){ nuHent(false); }, 0);
-      var b = nuBedste(), uf = nuUdenFremmoede();
-      var linje;
-      if (!lager.hent("klubkode", "")) linje = 'Når telefonen er forbundet med din klub, kommer dagens pas frem her.';
-      else if (S.nuFejl) linje = S.nuFejl;
-      else if (!S.nu) linje = 'Henter dagens pas …';
-      else if (b) linje = '<span>' + (b.lige_slut ? 'Lige slut:' : 'Næste:') + '</span> ' + tidTekst(b) + ' · <span>bane ' + esc(b.bane) + '</span>' + (pasTekst(b) ? ' · ' + esc(pasTekst(b)) : '') + ' · <span>' + (b.deltagere || []).length + ((b.deltagere || []).length === 1 ? ' spiller' : ' spillere') + '</span>';
-      else if (S.nu.pas && S.nu.pas.length) linje = 'Dagens ' + S.nu.pas.length + (S.nu.pas.length === 1 ? ' pas er registreret ✓' : ' pas er registreret ✓');
-      else linje = 'Ingen pas i dag i det godkendte program.';
-      if (uf > 1) linje = '<span>' + linje + '</span> \u00b7 <span style="color:#ff8a8f;font-weight:700">' + uf + ' pas uden fremm\u00f8de</span>';
-      /* v6.1.0 · StreakTennis' helt (.dev-hero) — samme markup som START KAMP, ordret */
-      h += '<button class="dev-hero dev-kant dev-kant-grus" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + '><span style="font-size:30px">\u26a1</span><span><b>VURD\u00c9R TR\u00c6NINGEN</b><br><small>' + linje + '</small></span><span class="dev-pil">\u2192</span></button>';
+      var b = nuBedste();
+      /* ⭐ v6.20.1 · helten er lige så høj som StreakTennis' START KAMP (Nicolai 15/10: «alt for stor» · «Selve indholdet der står der skal nok ind under overblik»).
+         Én kort linje. Dagens pas — tid, bane, trænere, spillere og hvor mange uden fremmøde — står under 📊 Overblik. Knappen peger stadig på nuBedste(). */
+      h += '<button class="dev-hero dev-kant dev-kant-grus" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + '><span style="font-size:30px">\u26a1</span><span><b>VURD\u00c9R TR\u00c6NINGEN</b><br><small>fremmøde og vurdering fra banen</small></span><span class="dev-pil">\u2192</span></button>';
     })();
     /* ⭐ v6.10.0 · kortet (princip 100): nye spillere har ét rum — SPILLERE. HJEM viser dem kun, når de kræver en hånd nu. */
     (function(){

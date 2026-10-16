@@ -492,7 +492,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.15.0 · 15. oktober 2026";
+const VERSION = "v5.16.0 · 16. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -2187,6 +2187,38 @@ function iDetDelteLag() {
 // slags telefoner. Læser lageret direkte, fordi S.rolle sættes senere i
 // opstarten end det første sted, reglen skal gælde (invitations-hilsenen).
 // ⚠️ Ét sted, elleve kald — ændres reglen, ændres den HER.
+/* ⭐⭐ v5.16.0 · LIVE NU PÅ HJEM (Nicolai 16/10: «Man skal kunne se når ens venner spiller. Den lå virkeligt langt inde i menuen.»)
+   Spilleren ser vennernes AKTIVE kampe (venne-hent → venner[].live) · teamet ser spillerens egen (hent → ejer_live) — aldrig vennelisten.
+   Flisen står ALTID (HJEM tegner intet betinget kort); status i underteksten (70). */
+function liveNuListe() {
+  if (teamKunStreaks()) {
+    const e = S.ejerLive;
+    return (e && e.foelgekode) ? [{ navn: e.spiller || "", foelgekode: e.foelgekode, stilling: e.stilling || null, modstander: e.modstander || "", turnering: e.turnering || "" }] : [];
+  }
+  return (S.venner || []).filter(function (v) { return v && v.live && v.live.foelgekode; }).map(function (v) {
+    return { navn: v.fornavn || "", foelgekode: v.live.foelgekode, stilling: v.live.stilling || null, modstander: v.live.modstander || "", turnering: v.live.turnering || "" };
+  });
+}
+function liveNuStatus(EN) {
+  const L = liveNuListe();
+  if (L.length === 1) { const st = _stillingKort(L[0].stilling); return { t: L[0].navn + (EN ? " is playing" : " spiller nu") + (st ? " · " + st : ""), live: true }; }
+  if (L.length > 1) return { t: L.length + (EN ? " friends: " : " venner: ") + L.map(function (x) { return x.navn; }).join(", "), live: true };
+  if (S.liveNuFejl) return { t: S.liveNuFejl === "netvaerk" ? (EN ? "no connection" : "ingen forbindelse") : (EN ? "couldn’t be fetched" : "kunne ikke hentes") };
+  if (teamKunStreaks()) return { t: S.liveNuSvar ? (EN ? "no match right now" : "ingen kamp lige nu") : (EN ? "loading…" : "henter…") };
+  if (!iDetDelteLag()) return { t: EN ? "your friends’ matches" : "dine venners kampe" };
+  if (!S.liveNuSvar) return { t: EN ? "loading…" : "henter…" };
+  if (!(S.venner || []).length) return { t: EN ? "find friends in Streak Zone" : "find venner i Streak Zone" };
+  return { t: EN ? "no friends playing right now" : "ingen venner spiller lige nu" };
+}
+function liveNuFlise(EN, flise) {
+  if (!S.liveNuHenter && Date.now() - (S.liveNuTid || 0) > 60000) setTimeout(function () { try { A.liveNuHent(); } catch (_e) {} }, 0);
+  const st = liveNuStatus(EN);
+  return flise("liveNuAabn", "", "🔴", (EN ? "Live now" : "Live nu"), esc(st.t), st.live ? "dev-kant-roed" : "dev-kant-staal").replace('<button class="dev-flise', '<button data-live-flise="' + (st.live ? "1" : "0") + '" class="dev-flise');
+}
+/* hvert minut, mens HJEM eller Live nu står fremme, og telefonen er vågen — og straks, når den vågner */
+setInterval(function () { try { if ((S.tab === "hjem" || S.tab === "livenu") && document.visibilityState === "visible") A.liveNuHent(); } catch (_e) {} }, 60000);
+try { document.addEventListener("visibilitychange", function () { try { if (document.visibilityState === "visible" && (S.tab === "hjem" || S.tab === "livenu")) A.liveNuHent(); } catch (_e) {} }); } catch (_e) {}
+
 function teamKunStreaks() {
   try { return VISNING === "team" || S.rolle === "familie" || lager.hent("sai-rolle") === "familie"; }
   catch (_e) { return VISNING === "team" || S.rolle === "familie"; }
@@ -7224,11 +7256,33 @@ const A = {
     A.grHent();
   },
 
+  /* ⭐ v5.16.0 · LIVE NU: én live → tribunen direkte; ellers skærmen «Live nu» */
+  liveNuAabn: () => {
+    const L = liveNuListe();
+    if (L.length === 1) { A.rumAabn(L[0].foelgekode + "|" + L[0].navn); return; }
+    S.tab = "livenu"; render(); A.liveNuHent();
+  },
+  liveNuHent: async () => {
+    if (S.liveNuHenter) return;
+    S.liveNuTid = Date.now();
+    const team = teamKunStreaks();
+    if (!S.spillerNoegle || (!team && !iDetDelteLag())) return;
+    S.liveNuHenter = true;
+    const r = await sync(team ? "hent" : "venne-hent", {});
+    S.liveNuHenter = false;
+    const foer = JSON.stringify([S.venner || null, S.ejerLive || null, S.liveNuFejl || null, !!S.liveNuSvar]);
+    if (!r.fejl) {
+      if (team) S.ejerLive = r.ejer_live || null; else S.venner = r.venner || [];
+      S.liveNuFejl = null; S.liveNuSvar = true;   /* succes sletter fejlen i samme åndedrag (94) */
+    } else S.liveNuFejl = r.fejl;
+    if (JSON.stringify([S.venner || null, S.ejerLive || null, S.liveNuFejl || null, !!S.liveNuSvar]) !== foer && (S.tab === "hjem" || S.tab === "livenu")) render();
+  },
+
   rumAabn: (v) => {
     const d = String(v || "").split("|");
     // ⭐ v4.103.0 · husk døren ind: fra chatten eller rummet skal «←» føre
     //   TILBAGE dertil — ikke til stigen. Ellers er tavlen en blindgyde.
-    S._rumFra = (S.tab === "chat" && S.chatVen) ? "chat" : (S.tab === "rumsnak" && S.snakRum) ? "rumsnak" : null;
+    S._rumFra = (S.tab === "chat" && S.chatVen) ? "chat" : (S.tab === "rumsnak" && S.snakRum) ? "rumsnak" : (S.tab === "hjem" || S.tab === "livenu") ? S.tab : null;   /* v5.16.0 · også fra HJEM og Live nu */
     S.rumKode = d[0] || null; S.rumNavn = d[1] || "";
     S.tab = "rum"; S.rumData = null; S.rumBeskeder = []; S.rumBesked = null; S.rumUdkast = ""; S._rumSig = null;
     render();
@@ -7247,6 +7301,7 @@ const A = {
     const _fra = S._rumFra; S._rumFra = null;
     if (_fra === "chat" && S.chatVen) { S.tab = "chat"; render(); A.chatHent(1); return; }
     if (_fra === "rumsnak" && S.snakRum) { S.tab = "rumsnak"; render(); A.snakHent(1); return; }
+    if (_fra === "hjem" || _fra === "livenu") { S.tab = _fra; render(); A.liveNuHent(); return; }   /* ⭐ v5.16.0 */
     S.tab = "stige"; render();
     // ⭐ v4.82.0 · samme dør som i `stigeAabn` (se dér).
     if (S.spillerNoegle && iDetDelteLag() && !S.vennerHenter) A.venneHent();
@@ -12223,7 +12278,7 @@ function _tegn() {
       //   byggescriptet måler, at de ikke er her.
       h += '<button class="dev-hero dev-kant dev-kant-grus" data-a="tab" data-v="kamp"><span style="font-size:30px">🎾</span><span><b>' + (EN?"START MATCH":"START KAMP") + '</b><br><small id="hero-sub">' + (EN?"register points live from the court":"registrér point live fra banen") + '</small></span><span class="dev-pil">→</span></button>';
       if (traeningNoegle() && S.saeson === undefined && !S.saesonFejl && !S.saesonHenter) setTimeout(function(){ A.saesonHent(); }, 0);   /* ⭐ v5.14.0 · flisens status */
-      h += '<div class="dev-grid">' +
+      h += '<div class="dev-grid">' + liveNuFlise(EN, _flise) +   /* ⭐ v5.16.0 · 🔴 Live nu — altid, forrest (Nicolai 16/10) */
         // "Din træner"-flisen UDGIK 22/8 — indholdet er absorberet i TRÆN
         // ("Absorbere tænker jeg :)"). _traenerStatus lever videre derinde.
         // 21/8: flisen kraevede en klub OG et tilvalg fra traeneren. Det var
@@ -12265,6 +12320,34 @@ function _tegn() {
     // intet — maalt: nul netvaerkskald — saa der skal heller ikke staa en flise,
     // der lover en traener, familien ikke har.
     // ══════════════════════════════════════════════════════════════
+    } else if (S.tab === "livenu") {
+      // ⭐ v5.16.0 · LIVE NU — hvem spiller lige nu · senest spillet (syv dage, som motoren) · vejen til venner
+      const _L = liveNuListe(), _team = teamKunStreaks();
+      h += '<div data-livenu style="display:flex;align-items:center;gap:10px;margin:12px 0 10px">' + _hjempil("hjem") + '<b style="font-size:16px">🔴 ' + (EN ? "Live now" : "Live nu") + '</b></div>';
+      if (S.liveNuFejl) h += '<p class="lille" style="margin:0 0 8px;color:var(--tabt)">' + (S.liveNuFejl === "netvaerk" ? (EN ? "No connection right now — the list updates by itself." : "Ingen forbindelse lige nu — listen opdaterer sig selv.") : (EN ? "The list couldn’t be fetched — it tries again in a minute." : "Listen kunne ikke hentes — den prøver igen om et minut.")) + '</p>';
+      _L.forEach(function (m) {
+        const _st = _stillingKort(m.stilling);
+        h += '<button class="kort dev-kant dev-kant-roed" style="width:100%;text-align:left;padding:12px 14px;margin:0 0 8px;color:var(--kridt)" data-a="rumAabn" data-v="' + esc(m.foelgekode + "|" + m.navn) + '">' +
+          '<div style="display:flex;align-items:center;gap:9px"><span style="flex:none;font-size:18px">🔴</span><div style="flex:1;min-width:0"><b>' + esc(m.navn) + (EN ? " is playing now" : " spiller lige nu") + '</b>' +
+          (_st ? '<span class="lille" style="display:block;opacity:.85">' + esc(_st) + '</span>' : '') +
+          ((m.modstander || m.turnering) ? '<span class="lille" style="display:block;opacity:.7">' + esc([m.modstander ? (EN ? "vs " : "mod ") + m.modstander : "", m.turnering || ""].filter(Boolean).join(" · ")) + '</span>' : '') +
+          '</div><span style="flex:none;opacity:.6">▸</span></div></button>';
+      });
+      if (!_L.length && !S.liveNuFejl) h += '<div class="kort" style="padding:14px"><b>' + (_team ? (EN ? "No match right now." : "Ingen kamp lige nu.") : (EN ? "None of your friends are playing right now." : "Ingen af dine venner spiller lige nu.")) + '</b>' +
+        '<p class="lille" style="margin:6px 0 0;color:var(--daempet)">' + (_team ? (EN ? "When the match starts, it shows up here and on HOME." : "Når kampen starter, står den her og på HJEM.") : (EN ? "When a friend starts a match, it shows up here and on HOME." : "Når en ven starter en kamp, står den her og på HJEM.")) + '</p></div>';
+      if (!_team) {
+        const _sen = (S.venner || []).filter(function (v) { return v && !v.live && v.seneste && v.seneste.foelgekode; });
+        if (_sen.length) {
+          h += '<div class="eyebrow" style="margin:14px 2px 6px">' + (EN ? "PLAYED LATELY" : "SENEST SPILLET") + '</div>';
+          _sen.forEach(function (v) {
+            h += '<button class="kort dev-kant dev-kant-staal" style="width:100%;text-align:left;padding:11px 14px;margin:0 0 8px;color:var(--kridt)" data-a="rumAabn" data-v="' + esc(v.seneste.foelgekode + "|" + (v.fornavn || "")) + '">' +
+              '<div style="display:flex;align-items:center;gap:9px"><span style="flex:none;font-size:16px">🏁</span><div style="flex:1;min-width:0"><b>' + esc(v.fornavn || "") + '</b>' +
+              '<span class="lille" style="display:block;opacity:.75">' + esc([v.seneste.resultat || "", v.seneste.modstander ? (EN ? "vs " : "mod ") + v.seneste.modstander : "", v.seneste.turnering || ""].filter(Boolean).join(" · ")) + '</span>' +
+              '</div><span style="flex:none;opacity:.6">▸</span></div></button>';
+          });
+        }
+        if (!(S.venner || []).length) h += '<button class="knap valg" style="width:100%;min-height:44px;margin-top:6px" data-a="stigeAabn">👥 ' + (EN ? "Find friends in Streak Zone" : "Find venner i Streak Zone") + '</button>';
+      }
     } else if (S.tab === "rum") {
       // ══════════════════════════════════════════════════════════════
       // TRIBUNEN · rummet omkring én kamp
@@ -12395,7 +12478,7 @@ function _tegn() {
             '<div style="display:flex;align-items:center;gap:9px">' +
             '<span style="flex:none;font-size:18px">🔴</span>' +
             '<div style="flex:1;min-width:0"><b>' + esc(m.fornavn || "") + (EN ? " is playing now" : " spiller lige nu") + '</b>' +
-            (m.live && m.live.stilling ? '<span class="lille" style="display:block;opacity:.8">' + esc(String(m.live.stilling.saet || "") + " · " + String(m.live.stilling.spil || "")) + '</span>' : '') +
+            (m.live && _stillingKort(m.live.stilling) ? '<span class="lille" style="display:block;opacity:.8">' + esc(_stillingKort(m.live.stilling)) + '</span>' : '') +
             '</div><span style="flex:none;opacity:.6">▸</span></div></button>';
         });
 
@@ -12506,7 +12589,7 @@ function _tegn() {
             '<div style="display:flex;align-items:center;gap:9px">' +
             '<span style="flex:none;font-size:18px">🔴</span>' +
             '<div style="flex:1;min-width:0"><b>' + esc(_cv.fornavn || S.chatNavn || "") + (EN ? " is playing now" : " spiller lige nu") + '</b>' +
-            (_cv.live.stilling ? '<span class="lille" style="display:block;opacity:.8">' + esc(String(_cv.live.stilling.saet || "") + " · " + String(_cv.live.stilling.spil || "")) + '</span>' : '') +
+            (_stillingKort(_cv.live.stilling) ? '<span class="lille" style="display:block;opacity:.8">' + esc(_stillingKort(_cv.live.stilling)) + '</span>' : '') +
             '<span class="lille" style="display:block;opacity:.7">' + (EN ? "Comments live on the board — everyone following sees them" : "Kommentarerne bor på tavlen — alle, der følger med, ser dem") + '</span>' +
             '</div><span style="flex:none;opacity:.6">▸</span></div></button>';
         }

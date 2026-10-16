@@ -1152,7 +1152,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.20.1 \u00b7 15. oktober 2026";
+const VERSION = "v6.20.2 \u00b7 16. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1987,6 +1987,9 @@ Object.assign(EN, {   /* ⭐ v6.17.0 · WEEKENDEN */
   "Ingen forbindelse lige nu — prøv igen.": "No connection right now — try again.", "Forbind telefonen med din klub først.": "Connect the phone with your club first.",
   "Kun klubbens trænere kan se truppens sæson.": "Only the club's coaches can see the squad's season.", "Det gik ikke lige nu — prøv igen.": "That didn't work right now — try again.",
   "UGE {n}": "WEEK {n}"
+});
+Object.assign(EN, {   /* ⭐ v6.20.2 · de uden app */
+  "{n} uden app": "{n} without the app", "+{n} uden app": "+{n} without the app",
 });
 Object.assign(EN, {   /* ⭐ v6.20.1 · helten som START KAMP */
   "fremmøde og vurdering fra banen": "attendance and rating from the court", "1 pas uden fremmøde": "1 session without attendance",
@@ -3162,7 +3165,8 @@ function traenerDash(){
     var m = p.registreret ? '<span class="dash-maerke ok">registreret ✓</span>' : p.lige_slut ? '<span class="dash-maerke nu">lige slut</span>' : p.mine ? '<span class="dash-maerke">dit pas</span>' : '';
     var n = (p.deltagere || []).length;
     /* hver del sin egen tekstnode — så oversættes de hver for sig (ordbogen tager hele tekstnoder) */
-    var dele = [p.titel || 'Træning', 'bane ' + p.bane, n + (n === 1 ? ' spiller' : ' spillere')];
+    var ua = +p.uden_app || 0;   /* ⭐ v6.20.2 · dem uden app tæller med (Nicolai 16/10: 25 pas, alle «0 spillere» — målt: 142 uden app) */
+    var dele = [p.titel || 'Træning', 'bane ' + p.bane].concat((n || !ua) ? [n + (n === 1 ? ' spiller' : ' spillere')] : []).concat(ua ? [(n ? '+' : '') + ua + ' uden app'] : []);
     if (!p.mine && p.traener) dele.push(p.traener);
     h += '<div class="dash-pas"><span class="dash-hvad"><b>' + esc(tidTekst(p)) + '</b><small>' + dele.map(function(x){ return '<span>' + esc(x) + '</span>'; }).join(' · ') + '</small></span>' + m + '</div>';
   });

@@ -29,6 +29,7 @@ h3{font-size:14px;margin:0 0 6px}
 .brandlogo{width:34px;height:34px;border-radius:50%;flex:none;box-shadow:0 0 0 1.5px rgba(240,207,97,.45),0 4px 12px rgba(0,0,0,.4)}
 .brandtxt{display:flex;flex-direction:column;gap:1px}
 .wordmark{font-size:11px;letter-spacing:4px;font-weight:700;color:var(--guld);line-height:1}
+.brand{min-width:0}.brandtxt{min-width:0}.brandtxt .wordmark{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}.brandby-app{color:var(--kridt)}   /* v6.20.3 */
 .brandby{font-size:9px;letter-spacing:.6px;font-weight:600;color:var(--daempet);line-height:1}
 .brandby b{color:var(--is)}
 .eyebrow{font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--daempet);text-transform:uppercase}
@@ -1145,14 +1146,16 @@ function avat(navn, px){
   var ini = (dele[0][0] + (dele.length > 1 ? dele[dele.length-1][0] : "")).toUpperCase();
   return '<span class="avat" style="width:' + px + 'px;height:' + px + 'px;font-size:' + Math.round(px*0.4) + 'px;background:' + farver[h % 4] + '">' + ini + '</span>';
 }
-function topbarMedSprog(){ return LOGO.slice(0, -6) + '<button class="sprogknap" data-act="sprog-saet" data-v="' + (SPROG === "en" ? "da" : "en") + '">' + (SPROG === "en" ? "\u{1F310} Dansk" : "\u{1F310} English") + '</button></div>'; }
+/* ⭐ v6.20.3 · toppen som StreakTennis' «TEAM NICOLAI / StreakTennis» (Nicolai 16/10 · «Klubben / StreakCoach») */
+function topKlubLogo(){ var k = String(KONFIG.klub || '').trim(); return k ? LOGO.replace('<span class="wordmark">STREAK<span style="color:var(--is)">COACH</span></span><span class="brandby">Sports<b>AI</b>nalytics</span>', '<span class="wordmark">' + esc(k) + '</span><span class="brandby brandby-app">StreakCoach</span>') : LOGO; }
+function topbarMedSprog(){ return topKlubLogo().slice(0, -6) + '<button class="sprogknap" data-act="sprog-saet" data-v="' + (SPROG === "en" ? "da" : "en") + '">' + (SPROG === "en" ? "\u{1F310} Dansk" : "\u{1F310} English") + '</button></div>'; }
 function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); return v.length? v.reduce((a,b)=>a+b,0)/v.length : 0; }
 
 // ⭐ VERSIONSSTEMPEL 21/8. Traenerplatformen har hidtil ikke haft ét —
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.20.2 \u00b7 16. oktober 2026";
+const VERSION = "v6.20.3 \u00b7 16. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -3179,7 +3182,7 @@ function renderTraener(){
   // ⭐⭐⭐ v6.1.0 · HILSNEN SOM STREAKTENNIS (Nicolai 20/9: «identisk»): den dæmpede linje ovenover, avat(46), «Hej Navn».
   //   ⭐ v4.0.0 · rollen kommer stadig fra serveren, ikke fra en antagelse.
   let h = topbarMedSprog() +
-    '<div class="hero"><span style="font-size:11px;color:var(--daempet);letter-spacing:.5px">' + esc(KONFIG.klub) + ' \u00b7 ' +
+    '<div class="hero"><span style="font-size:11px;color:var(--daempet);letter-spacing:.5px">' +   /* v6.20.3 · klubben står i toppen */
       (S.minRolle === "admin" ? '<span style="color:var(--guld)">Cheftr\u00e6ner</span>' : 'Tr\u00e6ner') + '</span></div>';
   /* v6.2.0 · hilsnen er HJEM's — inde på en fane står der ingen (målt i StreakTennis' TRÆN/Statistik/Indstillinger) */
   if (S.tab === "hjem") h += '<div style="margin:16px 2px 6px;display:flex;align-items:center;gap:12px">' + avat(t.navn, 46) +

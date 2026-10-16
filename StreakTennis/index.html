@@ -98,7 +98,15 @@ button.dev-hero.dev-kant{background:linear-gradient(160deg,#101E3A,#0C1526) padd
 .dev-fold .dev-indhold{padding:2px 12px 12px}
 .dev-fold .dev-indhold > .kort{border:none !important;background:none !important;margin:0 !important;padding:2px 0 0 !important;box-shadow:none !important;backdrop-filter:none !important}
 .kort{background:var(--kort);border:1px solid var(--kant);border-radius:18px;padding:14px 16px;margin-bottom:10px;backdrop-filter:blur(8px)}
-.kort,[style*="--tone:"]{--tone:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tone) 35%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--tone) 11%,transparent),color-mix(in srgb,var(--tone) 2%,transparent) 55%,transparent),var(--kort)}   /* v5.11.4 · gylden tone, som StreakCoach 6.16.3 */
+.kort,[style*="--tone:"]{--tone:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tone) 35%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--tone) 11%,transparent),color-mix(in srgb,var(--tone) 2%,transparent) 55%,transparent),var(--kort)}
+/* ⭐ v5.16.1 · FARVERNE TILBAGE: tone-reglen (5.11.4) åd .dev-kant-* på ethvert .kort — modstander-fliserne, live-kortene m.fl.
+   blev flade (målt 16/10). De samme regler som .dev-kant-*, med højere vægt. */
+.kort.dev-kant-guld{box-shadow:inset 0 0 0 1px rgba(240,207,97,.35),inset 0 22px 44px -30px rgba(240,207,97,.5)}
+.kort.dev-kant-is{box-shadow:inset 0 0 0 1px rgba(159,216,232,.3),inset 0 22px 44px -30px rgba(159,216,232,.5)}
+.kort.dev-kant-grus{box-shadow:inset 0 0 0 1px rgba(123,155,255,.4),inset 0 22px 44px -30px rgba(123,155,255,.55)}
+.kort.dev-kant-gron{box-shadow:inset 0 0 0 1px rgba(34,153,90,.4),inset 0 22px 44px -30px rgba(34,153,90,.5)}
+.kort.dev-kant-roed{box-shadow:inset 0 0 0 1px rgba(210,72,78,.4),inset 0 22px 44px -30px rgba(210,72,78,.5)}
+.kort.dev-kant-staal{box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}   /* v5.11.4 · gylden tone, som StreakCoach 6.16.3 */
 .kort h3{margin:0 0 3px;font-size:13.5px}
 .kort p{margin:0;font-size:12.5px;color:var(--tekst2);line-height:1.65}
 /* ⭐⭐ v4.39.0 · 16px ER IKKE EN SMAG — DET ER iOS’ GRÆNSE.
@@ -492,7 +500,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.16.0 · 16. oktober 2026";
+const VERSION = "v5.16.1 · 16. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -11581,7 +11589,7 @@ function _tegn() {
   try { document.body.classList.toggle("doer",
         !SPILLER || !!S.famTilbud || !!S.indAaben || !!S.indResultat || !!S.nulstilToken
         || !!S.betingelser || !!S.liveDemo); } catch (_e) {}
-    let h = '<div class="topbar"><span class="brand">'+'<img class="brandlogo" src="'+(KLUBLOGO||SAILOGO)+'" alt="">'+'<span class="brandtxt"><span class="wordmark">'+HOLDNAVN()+'</span><span class="brandby">'+(KLUB?esc(KLUB)+" · ":"")+'Sports<b>AI</b>nalytics</span></span></span><button class="sprogknap" data-a="sprog">'+(EN?"\u{1F310} Dansk":"\u{1F310} English")+'</button></div>';
+    let h = '<div class="topbar"><span class="brand">'+'<img class="brandlogo" src="'+(KLUBLOGO||SAILOGO)+'" alt="">'+'<span class="brandtxt"><span class="wordmark">'+HOLDNAVN()+'</span><span class="brandby">'+(KLUB?esc(KLUB)+" · ":"")+'StreakTennis</span></span></span><button class="sprogknap" data-a="sprog">'+(EN?"\u{1F310} Dansk":"\u{1F310} English")+'</button></div>';
 
   h += '<div class="hero"><span class="eyebrow">'+(EN?'High tempo \u00b7 ball in \u00b7 cool head':'H\u00f8jt tempo \u00b7 bolden ind \u00b7 hovedet koldt')+'</span>'+naesteChip(EN)+'</div>';
   // ⭐ v4.52.0 · FORDOEREN tegnes OGSAA for en telefon, der allerede har

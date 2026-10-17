@@ -1,4 +1,4 @@
-# StreakTennis · butikken i App Store Connect (ordre-171026-03 · 17/10-2026)
+# StreakTennis · butikken i App Store Connect (ordre-171026-03 · 17/10-2026 · v2: én kørsel ad gangen)
 # Butikssiden, aldersmærket, review-oplysningerne, produkternes metadata og bygget på versionen — gennem App Store Connect API'et,
 # samme hemmeligheder og samme mønster som asc-koeb.yml. Kilden til alt, der skrives: butik/butik.json + butik/skud/61/.
 # Kør «status» FØRST og læs loggen. Hver skrivende handling kan køres igen uden skade: det, der findes, rettes (tekster) eller røres ikke (billeder).
@@ -26,6 +26,9 @@ on:
       - "butik/**"
 permissions:
   contents: read
+concurrency:
+  group: asc-butik
+  cancel-in-progress: false
 jobs:
   koer:
     runs-on: ubuntu-latest

@@ -1,4 +1,8 @@
-// asc-butik.mjs · butikken i App Store Connect (ordre-171026-03 · 17/10-2026)
+// asc-butik.mjs v2 · butikken i App Store Connect (ordre-171026-03 · 17/10-2026 · v2 samme aften efter Apples 409 på whatsNew)
+// v2: «nyt i denne version» sendes KUN, når appen har en tidligere version i butikken (Apple: STATE_ERROR på den første) · Apples
+//     tegn-lofter måles på butik.json, FØR noget skrives · et opslag, der hverken er 200 eller 404, stopper (det er ikke «findes ikke») ·
+//     uden demo-konto sendes noterne uden demo-afsnittet (notesUdenDemo) · «byg» sætter bygget på FØR versionen omdøbes, og et byg uden
+//     processingState afvises · kontaktens mail og demo-navnet står aldrig i loggen.
 // Butikssiden, aldersmærket, review-oplysningerne, produkternes metadata og bygget på versionen — gennem App Store Connect API'et,
 // med den nøgle, ios.yml, testflight-grupper.mjs og asc-koeb.mjs allerede bruger, og efter samme mønster.
 // Handlinger (HANDLING): status · tekster · alder · produkter · billeder · review · byg · alt (= tekster alder produkter billeder review)
@@ -105,14 +109,32 @@ async function appInfoen(app) {
   if (!i) stop("appen har ingen appInfo");
   return i;
 }
+async function versionerne(app) { return (await alle("/v1/apps/" + app.id + "/appStoreVersions?filter[platform]=IOS&limit=20", "GET /v1/apps/{id}/appStoreVersions")).data; }
+// en tidligere udgave = en version, der ikke er den åbne, og som er eller har været i butikken
+const TIDLIGERE = /READY_FOR_SALE|REPLACED_WITH_NEW_VERSION|REMOVED_FROM_SALE|PENDING_DEVELOPER_RELEASE|PENDING_APPLE_RELEASE|PROCESSING_FOR_APP_STORE|IN_REVIEW|WAITING_FOR_REVIEW|READY_FOR_REVIEW/;
 async function versionen(app) {
-  const vs = (await alle("/v1/apps/" + app.id + "/appStoreVersions?filter[platform]=IOS&limit=20", "GET /v1/apps/{id}/appStoreVersions")).data;
+  const vs = await versionerne(app);
   const aaben = vs.filter((v) => /PREPARE_FOR_SUBMISSION|DEVELOPER_REJECTED|REJECTED|METADATA_REJECTED|INVALID_BINARY|WAITING_FOR_REVIEW|READY_FOR_REVIEW/.test(v.attributes.appStoreState || v.attributes.appVersionState || ""));
   const v = aaben[0];
   if (!v) stop("ingen åben App Store-version (PREPARE_FOR_SUBMISSION) — opret 1.0 i App Store Connect først; værktøjet opretter ikke versioner");
   return v;
 }
 const vState = (v) => v.attributes.appStoreState || v.attributes.appVersionState || "?";
+
+// ── LOFTERNE — måles på butik.json, før noget skrives (hvert brud sin egen linje; ét brud stopper alt)
+const LOFT = { name: 30, subtitle: 30, promotionalText: 170, description: 4000, keywords: 100, whatsNew: 4000 };
+function lofterne() {
+  const brud = [];
+  const tjek = (hvad, tekst, loft) => { const n = String(tekst == null ? "" : tekst).length; if (n > loft) brud.push(hvad + ": " + n + " tegn (loft " + loft + ")"); };
+  for (const [locale, t] of Object.entries(BUTIK.tekster || {})) for (const [k, loft] of Object.entries(LOFT)) tjek("tekster." + locale + "." + k, t[k], loft);
+  for (const [k, a] of Object.entries((BUTIK.produkter || {}).abonnementer_da || {})) { tjek("abonnement " + k + " name", a.name, 30); tjek("abonnement " + k + " description", a.description, 45); }
+  if (BUTIK.review) { tjek("review.notes", BUTIK.review.notes, 4000); tjek("review.notesUdenDemo", BUTIK.review.notesUdenDemo, 4000); }
+  for (const b of brud) console.log("⛔ loft: " + b);
+  if (brud.length) stop(brud.length + " tekst(er) i butik.json er over Apples loft — intet skrevet");
+  console.log("lofterne målt på butik.json: alle tekster under Apples grænser");
+}
+// et opslag: 200 med data = findes · 404 (eller 200 uden data) = findes ikke · alt andet er en FEJL, ikke et «findes ikke»
+const findes = (r, hvad) => { if (r.status === 200 && r.j.data) return true; if (r.status === 404 || (r.status === 200 && !r.j.data)) return false; stop(hvad + " svarede " + r.status, r.fejl); };
 
 // ── STATUS — læser alt, ændrer intet
 async function status(app) {
@@ -148,7 +170,7 @@ async function status(app) {
   const rd = await kald("GET", "/v1/appStoreVersions/" + v.id + "/appStoreReviewDetail");
   if (rd.status === 200 && rd.j.data) {
     const a = rd.j.data.attributes;
-    console.log("  review: " + (a.contactFirstName || "") + " " + (a.contactLastName || "") + " · " + (a.contactEmail || "") + " · demo " + (a.demoAccountRequired ? "kræves (" + (a.demoAccountName || "intet navn") + ")" : "kræves ikke") + " · noter " + (a.notes || "").length + " tegn · id " + rd.j.data.id);
+    console.log("  review: kontakt " + (a.contactFirstName && a.contactEmail ? "sat" : "mangler") + " · demo " + (a.demoAccountRequired ? "kræves (" + (a.demoAccountName ? "navn sat" : "intet navn") + ")" : "kræves ikke") + " · noter " + (a.notes || "").length + " tegn · id " + rd.j.data.id);
   } else console.log("  review: ingen oplysninger endnu");
   await produktStatus(app);
 }
@@ -180,6 +202,7 @@ async function produktStatus(app) {
 
 // ── TEKSTER — navn, undertitel, privatliv (appInfo) · beskrivelse, nøgleord, promo, support, marketing, nyt (version) · kategorier · copyright/release
 async function tekster(app) {
+  lofterne();
   const info = await appInfoen(app);
   const K = BUTIK.kategorier || {};
   if (K.primaer) {
@@ -199,9 +222,12 @@ async function tekster(app) {
   const V = BUTIK.version || {};
   const vattr = {}; if (V.copyright) vattr.copyright = V.copyright; if (V.releaseType) vattr.releaseType = V.releaseType;
   if (Object.keys(vattr).length) { kraev(await kald("PATCH", "/v1/appStoreVersions/" + v.id, { data: { type: "appStoreVersions", id: v.id, attributes: vattr } }), [200], "PATCH /v1/appStoreVersions/{id} (copyright/release)"); console.log("version " + v.attributes.versionString + ": copyright «" + (V.copyright || "") + "» · release " + (V.releaseType || "")); }
+  const tidligere = (await versionerne(app)).filter((x) => x.id !== v.id && TIDLIGERE.test(vState(x)));
+  if (!tidligere.length) console.log("nyt i denne version springes over: " + v.attributes.versionString + " er appens første udgave (Apple tillader ikke feltet dér)");
   const vl = (await alle("/v1/appStoreVersions/" + v.id + "/appStoreVersionLocalizations?limit=50", "GET …/appStoreVersionLocalizations")).data;
   for (const [locale, t] of Object.entries(BUTIK.tekster)) {
-    const attr = { description: t.description, keywords: t.keywords, promotionalText: t.promotionalText, supportUrl: t.supportUrl, marketingUrl: t.marketingUrl, whatsNew: t.whatsNew };
+    const attr = { description: t.description, keywords: t.keywords, promotionalText: t.promotionalText, supportUrl: t.supportUrl, marketingUrl: t.marketingUrl };
+    if (tidligere.length && t.whatsNew) attr.whatsNew = t.whatsNew;
     const l = vl.find((x) => x.attributes.locale === locale);
     if (l) { kraev(await kald("PATCH", "/v1/appStoreVersionLocalizations/" + l.id, { data: { type: "appStoreVersionLocalizations", id: l.id, attributes: attr } }), [200], "PATCH /v1/appStoreVersionLocalizations/{id} (" + locale + ")"); console.log("tekst · " + locale + " rettet: beskrivelse " + t.description.length + " tegn · nøgleord " + t.keywords.length + " tegn"); }
     else { kraev(await kald("POST", "/v1/appStoreVersionLocalizations", { data: { type: "appStoreVersionLocalizations", attributes: { locale, ...attr }, relationships: { appStoreVersion: { data: { type: "appStoreVersions", id: v.id } } } } }), [201], "POST /v1/appStoreVersionLocalizations (" + locale + ")"); console.log("tekst · " + locale + " oprettet: beskrivelse " + t.description.length + " tegn · nøgleord " + t.keywords.length + " tegn"); }
@@ -237,6 +263,7 @@ async function territorier() {
   return t.map((x) => ({ type: "territories", id: x.id }));
 }
 async function produkter(app) {
+  lofterne();
   const P = BUTIK.produkter; const lande = await territorier();
   console.log("tilgængelighed: " + lande.length + " lande" + (P.alle_lande ? " + nye lande automatisk" : ""));
   const fil = (pid) => { const f = P.billede[pid.replace(PRAEFIKS, "")]; if (!f) return null; const sti = path.join(P.mappe, f); if (!fs.existsSync(sti)) stop("billedet " + sti + " findes ikke"); return sti; };
@@ -252,10 +279,10 @@ async function produkter(app) {
         console.log(pid + " · lokalisering da oprettet: «" + da.name + "»");
       } else console.log(pid + " · lokalisering: " + (lok.length ? lok.map((l) => l.attributes.locale).join(", ") + " findes" : "ingen, og ingen tekst i butik.json"));
       const sk = await kald("GET", "/v1/subscriptions/" + s.id + "/appStoreReviewScreenshot");
-      if (sk.status === 200 && sk.j.data) console.log(pid + " · review-billede findes allerede (" + (sk.j.data.attributes.fileName || "") + ") — røres ikke");
+      if (findes(sk, "GET /v1/subscriptions/{id}/appStoreReviewScreenshot (" + pid + ")")) console.log(pid + " · review-billede findes allerede (" + (sk.j.data.attributes.fileName || "") + ") — røres ikke");
       else { const f = fil(pid); if (!f) console.log(pid + " · intet billede i butik.json — ikke sat"); else { const u = await upload("subscriptionAppStoreReviewScreenshots", "/v1/subscriptionAppStoreReviewScreenshots", f, { subscription: { data: { type: "subscriptions", id: s.id } } }); console.log(pid + " · review-billede lagt op: " + path.basename(f) + " · " + u.state); } }
       const ti = await kald("GET", "/v1/subscriptions/" + s.id + "/subscriptionAvailability");
-      if (ti.status === 200 && ti.j.data) console.log(pid + " · tilgængelighed findes allerede — røres ikke");
+      if (findes(ti, "GET /v1/subscriptions/{id}/subscriptionAvailability (" + pid + ")")) console.log(pid + " · tilgængelighed findes allerede — røres ikke");
       else { kraev(await kald("POST", "/v1/subscriptionAvailabilities", { data: { type: "subscriptionAvailabilities", attributes: { availableInNewTerritories: !!P.alle_lande }, relationships: { subscription: { data: { type: "subscriptions", id: s.id } }, availableTerritories: { data: lande } } } }), [201], "POST /v1/subscriptionAvailabilities (" + pid + ")"); console.log(pid + " · tilgængelighed sat: " + lande.length + " lande"); }
     }
   }
@@ -263,10 +290,10 @@ async function produkter(app) {
   for (const k of iaps) {
     const pid = k.attributes.productId;
     const sk = await kald("GET", "/v2/inAppPurchases/" + k.id + "/appStoreReviewScreenshot");
-    if (sk.status === 200 && sk.j.data) console.log(pid + " · review-billede findes allerede (" + (sk.j.data.attributes.fileName || "") + ") — røres ikke");
+    if (findes(sk, "GET /v2/inAppPurchases/{id}/appStoreReviewScreenshot (" + pid + ")")) console.log(pid + " · review-billede findes allerede (" + (sk.j.data.attributes.fileName || "") + ") — røres ikke");
     else { const f = fil(pid); if (!f) console.log(pid + " · intet billede i butik.json — ikke sat"); else { const u = await upload("inAppPurchaseAppStoreReviewScreenshots", "/v1/inAppPurchaseAppStoreReviewScreenshots", f, { inAppPurchaseV2: { data: { type: "inAppPurchases", id: k.id } } }); console.log(pid + " · review-billede lagt op: " + path.basename(f) + " · " + u.state); } }
     const ti = await kald("GET", "/v2/inAppPurchases/" + k.id + "/inAppPurchaseAvailability");
-    if (ti.status === 200 && ti.j.data) console.log(pid + " · tilgængelighed findes allerede — røres ikke");
+    if (findes(ti, "GET /v2/inAppPurchases/{id}/inAppPurchaseAvailability (" + pid + ")")) console.log(pid + " · tilgængelighed findes allerede — røres ikke");
     else { kraev(await kald("POST", "/v1/inAppPurchaseAvailabilities", { data: { type: "inAppPurchaseAvailabilities", attributes: { availableInNewTerritories: !!P.alle_lande }, relationships: { inAppPurchase: { data: { type: "inAppPurchases", id: k.id } }, availableTerritories: { data: lande } } } }), [201], "POST /v1/inAppPurchaseAvailabilities (" + pid + ")"); console.log(pid + " · tilgængelighed sat: " + lande.length + " lande"); }
   }
   console.log("── produkterne efter:"); await produktStatus(app);
@@ -293,16 +320,21 @@ async function billeder(app) {
 
 // ── REVIEW — kontakt, demo-konto (fra miljøet), noter
 async function review(app) {
+  lofterne();
   const R = BUTIK.review; const v = await versionen(app);
   const attr = { contactFirstName: R.contactFirstName, contactLastName: R.contactLastName, contactPhone: R.contactPhone, contactEmail: R.contactEmail, notes: R.notes, demoAccountRequired: !!R.demoAccountRequired };
   if (R.demoAccountRequired) {
-    if (!E.DEMO_BRUGER || !E.DEMO_KODE) { console.log("  · demo-kontoen (DEMO_BRUGER/DEMO_KODE) mangler i miljøet — kontakt og noter sættes; demo-konto IKKE sat"); attr.demoAccountRequired = false; }
+    if (!E.DEMO_BRUGER || !E.DEMO_KODE) {
+      if (!R.notesUdenDemo) stop("demo-kontoen mangler i miljøet, og butik.json har ingen notesUdenDemo — noterne ville love en konto, der ikke findes");
+      console.log("  · demo-kontoen (DEMO_BRUGER/DEMO_KODE) mangler i miljøet — kontakt sættes, noterne UDEN demo-afsnittet (notesUdenDemo); demo-konto IKKE sat");
+      attr.demoAccountRequired = false; attr.notes = R.notesUdenDemo;
+    }
     else { attr.demoAccountName = E.DEMO_BRUGER; attr.demoAccountPassword = E.DEMO_KODE; }
   }
   const rd = await kald("GET", "/v1/appStoreVersions/" + v.id + "/appStoreReviewDetail");
   if (rd.status === 200 && rd.j.data) { kraev(await kald("PATCH", "/v1/appStoreReviewDetails/" + rd.j.data.id, { data: { type: "appStoreReviewDetails", id: rd.j.data.id, attributes: attr } }), [200], "PATCH /v1/appStoreReviewDetails/{id}"); console.log("review-oplysninger rettet"); }
   else { kraev(await kald("POST", "/v1/appStoreReviewDetails", { data: { type: "appStoreReviewDetails", attributes: attr, relationships: { appStoreVersion: { data: { type: "appStoreVersions", id: v.id } } } } }), [201], "POST /v1/appStoreReviewDetails"); console.log("review-oplysninger oprettet"); }
-  console.log("  kontakt " + attr.contactFirstName + " " + attr.contactLastName + " · " + attr.contactEmail + " · demo " + (attr.demoAccountRequired ? "sat (navn maskeret)" : "ikke sat") + " · noter " + attr.notes.length + " tegn");
+  console.log("  kontakt " + attr.contactFirstName + " " + attr.contactLastName + " (mail og telefon sat) · demo " + (attr.demoAccountRequired ? "sat (navn maskeret)" : "ikke sat") + " · noter " + attr.notes.length + " tegn");
 }
 
 // ── BYG — sæt TestFlight-bygget på versionen (BYG = byggenummeret); versionsstrengen følger bygget
@@ -314,16 +346,18 @@ async function byg(app) {
   const pre = (j.included || []).find((x) => x.type === "preReleaseVersions");
   const kortVersion = pre ? pre.attributes.version : null;
   console.log("byg " + nr + ": id " + b.id + " · " + (b.attributes.processingState || "?") + " · version " + (kortVersion || "?") + (b.attributes.expired ? " · UDLØBET" : ""));
-  if (b.attributes.processingState && b.attributes.processingState !== "VALID") stop("byg " + nr + " er " + b.attributes.processingState + " — ikke VALID");
+  if (!b.attributes.processingState) stop("byg " + nr + " har ingen processingState i Apples svar — ikke sat på");
+  if (b.attributes.processingState !== "VALID") stop("byg " + nr + " er " + b.attributes.processingState + " — ikke VALID");
   const v = await versionen(app);
-  if (kortVersion && v.attributes.versionString !== kortVersion) {
-    kraev(await kald("PATCH", "/v1/appStoreVersions/" + v.id, { data: { type: "appStoreVersions", id: v.id, attributes: { versionString: kortVersion } } }), [200], "PATCH /v1/appStoreVersions/{id} (versionString)");
-    console.log("versionen omdøbt " + v.attributes.versionString + " → " + kortVersion + " (byggets version)");
-  }
   kraev(await kald("PATCH", "/v1/appStoreVersions/" + v.id, { data: { type: "appStoreVersions", id: v.id, relationships: { build: { data: { type: "builds", id: b.id } } } } }), [200], "PATCH /v1/appStoreVersions/{id} (build)");
   const efter = await kald("GET", "/v1/appStoreVersions/" + v.id + "/build");
   const staar = efter.status === 200 && efter.j.data && efter.j.data.id === b.id;
   if (!staar) stop("bygget står ikke på versionen efter PATCH");
+  console.log("byg " + nr + " sat på versionen " + v.attributes.versionString + " — målt efter");
+  if (kortVersion && v.attributes.versionString !== kortVersion) {
+    kraev(await kald("PATCH", "/v1/appStoreVersions/" + v.id, { data: { type: "appStoreVersions", id: v.id, attributes: { versionString: kortVersion } } }), [200], "PATCH /v1/appStoreVersions/{id} (versionString)");
+    console.log("versionen omdøbt " + v.attributes.versionString + " → " + kortVersion + " (byggets version)");
+  }
   console.log("byg " + nr + " står på versionen " + (kortVersion || v.attributes.versionString) + " — målt efter");
 }
 

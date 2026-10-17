@@ -1,0 +1,46 @@
+# StreakTennis · butikken i App Store Connect (ordre-171026-03 · 17/10-2026)
+# Butikssiden, aldersmærket, review-oplysningerne, produkternes metadata og bygget på versionen — gennem App Store Connect API'et,
+# samme hemmeligheder og samme mønster som asc-koeb.yml. Kilden til alt, der skrives: butik/butik.json + butik/skud/61/.
+# Kør «status» FØRST og læs loggen. Hver skrivende handling kan køres igen uden skade: det, der findes, rettes (tekster) eller røres ikke (billeder).
+# Værktøjet kan ikke slette (ingen DELETE) og sender intet til review. Nøglen og token'et skrives aldrig i loggen.
+# Demo-kontoen til Apple læses fra hemmelighederne DEMO_BRUGER + DEMO_KODE (sættes af Nicolai under Settings → Secrets); mangler de, sættes kontakt og noter, ikke kontoen.
+# pull_request: når værktøjet selv ændres, kører KUN «status».
+name: asc-butik
+on:
+  workflow_dispatch:
+    inputs:
+      handling:
+        description: "Handling"
+        required: true
+        type: choice
+        options: [status, tekster, alder, produkter, billeder, review, byg, alt]
+        default: status
+      byg:
+        description: "Byggenummer (kun til «byg»)"
+        required: false
+        type: string
+  pull_request:
+    paths:
+      - ".github/workflows/asc-butik.yml"
+      - ".github/scripts/asc-butik.mjs"
+      - "butik/**"
+permissions:
+  contents: read
+jobs:
+  koer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: App Store · ${{ github.event.inputs.handling || 'status' }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          DEMO_BRUGER: ${{ secrets.DEMO_BRUGER }}
+          DEMO_KODE: ${{ secrets.DEMO_KODE }}
+          HANDLING: ${{ github.event.inputs.handling || 'status' }}
+          BYG: ${{ github.event.inputs.byg }}
+        run: node .github/scripts/asc-butik.mjs

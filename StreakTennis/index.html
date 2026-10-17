@@ -500,7 +500,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.16.1 · 16. oktober 2026";
+const VERSION = "v5.16.2 · 17. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -12337,7 +12337,7 @@ function _tegn() {
         const _st = _stillingKort(m.stilling);
         h += '<button class="kort dev-kant dev-kant-roed" style="width:100%;text-align:left;padding:12px 14px;margin:0 0 8px;color:var(--kridt)" data-a="rumAabn" data-v="' + esc(m.foelgekode + "|" + m.navn) + '">' +
           '<div style="display:flex;align-items:center;gap:9px"><span style="flex:none;font-size:18px">🔴</span><div style="flex:1;min-width:0"><b>' + esc(m.navn) + (EN ? " is playing now" : " spiller lige nu") + '</b>' +
-          (_st ? '<span class="lille" style="display:block;opacity:.85">' + esc(_st) + '</span>' : '') +
+          (_st ? '<span class="lille" style="margin-top:3px;display:block;opacity:.85">' + esc(_st) + '</span>' : '') +
           ((m.modstander || m.turnering) ? '<span class="lille" style="display:block;opacity:.7">' + esc([m.modstander ? (EN ? "vs " : "mod ") + m.modstander : "", m.turnering || ""].filter(Boolean).join(" · ")) + '</span>' : '') +
           '</div><span style="flex:none;opacity:.6">▸</span></div></button>';
       });
@@ -12350,7 +12350,7 @@ function _tegn() {
           _sen.forEach(function (v) {
             h += '<button class="kort dev-kant dev-kant-staal" style="width:100%;text-align:left;padding:11px 14px;margin:0 0 8px;color:var(--kridt)" data-a="rumAabn" data-v="' + esc(v.seneste.foelgekode + "|" + (v.fornavn || "")) + '">' +
               '<div style="display:flex;align-items:center;gap:9px"><span style="flex:none;font-size:16px">🏁</span><div style="flex:1;min-width:0"><b>' + esc(v.fornavn || "") + '</b>' +
-              '<span class="lille" style="display:block;opacity:.75">' + esc([v.seneste.resultat || "", v.seneste.modstander ? (EN ? "vs " : "mod ") + v.seneste.modstander : "", v.seneste.turnering || ""].filter(Boolean).join(" · ")) + '</span>' +
+              '<span class="lille" style="margin-top:3px;display:block;opacity:.75">' + esc([v.seneste.resultat || "", v.seneste.modstander ? (EN ? "vs " : "mod ") + v.seneste.modstander : "", v.seneste.turnering || ""].filter(Boolean).join(" · ")) + '</span>' +
               '</div><span style="flex:none;opacity:.6">▸</span></div></button>';
           });
         }
@@ -12486,7 +12486,7 @@ function _tegn() {
             '<div style="display:flex;align-items:center;gap:9px">' +
             '<span style="flex:none;font-size:18px">🔴</span>' +
             '<div style="flex:1;min-width:0"><b>' + esc(m.fornavn || "") + (EN ? " is playing now" : " spiller lige nu") + '</b>' +
-            (m.live && _stillingKort(m.live.stilling) ? '<span class="lille" style="display:block;opacity:.8">' + esc(_stillingKort(m.live.stilling)) + '</span>' : '') +
+            (m.live && _stillingKort(m.live.stilling) ? '<span class="lille" style="margin-top:3px;display:block;opacity:.8">' + esc(_stillingKort(m.live.stilling)) + '</span>' : '') +
             '</div><span style="flex:none;opacity:.6">▸</span></div></button>';
         });
 
@@ -12597,7 +12597,7 @@ function _tegn() {
             '<div style="display:flex;align-items:center;gap:9px">' +
             '<span style="flex:none;font-size:18px">🔴</span>' +
             '<div style="flex:1;min-width:0"><b>' + esc(_cv.fornavn || S.chatNavn || "") + (EN ? " is playing now" : " spiller lige nu") + '</b>' +
-            (_stillingKort(_cv.live.stilling) ? '<span class="lille" style="display:block;opacity:.8">' + esc(_stillingKort(_cv.live.stilling)) + '</span>' : '') +
+            (_stillingKort(_cv.live.stilling) ? '<span class="lille" style="margin-top:3px;display:block;opacity:.8">' + esc(_stillingKort(_cv.live.stilling)) + '</span>' : '') +
             '<span class="lille" style="display:block;opacity:.7">' + (EN ? "Comments live on the board — everyone following sees them" : "Kommentarerne bor på tavlen — alle, der følger med, ser dem") + '</span>' +
             '</div><span style="flex:none;opacity:.6">▸</span></div></button>';
         }

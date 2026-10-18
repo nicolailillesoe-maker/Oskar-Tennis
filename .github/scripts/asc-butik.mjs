@@ -1,4 +1,6 @@
-// asc-butik.mjs v2 · butikken i App Store Connect (ordre-171026-03 · 17/10-2026 · v2 samme aften efter Apples 409 på whatsNew)
+// asc-butik.mjs v3 · butikken i App Store Connect (ordre-171026-03 · 17/10-2026 · v2 samme aften efter Apples 409 på whatsNew · v3 efter 409 på aldersmærket)
+// v3: review-opslaget går gennem findes() (et 500 er en fejl, ikke «findes ikke») · aldersmærket bærer nu Nicolais svar på de to felter,
+//     Apple krævede (gunsOrOtherWeapons · healthOrWellnessTopics) — typerne måles levende: PATCH → GET → sammenlign; et 409 stopper.
 // v2: «nyt i denne version» sendes KUN, når appen har en tidligere version i butikken (Apple: STATE_ERROR på den første) · Apples
 //     tegn-lofter måles på butik.json, FØR noget skrives · et opslag, der hverken er 200 eller 404, stopper (det er ikke «findes ikke») ·
 //     uden demo-konto sendes noterne uden demo-afsnittet (notesUdenDemo) · «byg» sætter bygget på FØR versionen omdøbes, og et byg uden
@@ -332,7 +334,7 @@ async function review(app) {
     else { attr.demoAccountName = E.DEMO_BRUGER; attr.demoAccountPassword = E.DEMO_KODE; }
   }
   const rd = await kald("GET", "/v1/appStoreVersions/" + v.id + "/appStoreReviewDetail");
-  if (rd.status === 200 && rd.j.data) { kraev(await kald("PATCH", "/v1/appStoreReviewDetails/" + rd.j.data.id, { data: { type: "appStoreReviewDetails", id: rd.j.data.id, attributes: attr } }), [200], "PATCH /v1/appStoreReviewDetails/{id}"); console.log("review-oplysninger rettet"); }
+  if (findes(rd, "GET /v1/appStoreVersions/{id}/appStoreReviewDetail")) { kraev(await kald("PATCH", "/v1/appStoreReviewDetails/" + rd.j.data.id, { data: { type: "appStoreReviewDetails", id: rd.j.data.id, attributes: attr } }), [200], "PATCH /v1/appStoreReviewDetails/{id}"); console.log("review-oplysninger rettet"); }
   else { kraev(await kald("POST", "/v1/appStoreReviewDetails", { data: { type: "appStoreReviewDetails", attributes: attr, relationships: { appStoreVersion: { data: { type: "appStoreVersions", id: v.id } } } } }), [201], "POST /v1/appStoreReviewDetails"); console.log("review-oplysninger oprettet"); }
   console.log("  kontakt " + attr.contactFirstName + " " + attr.contactLastName + " (mail og telefon sat) · demo " + (attr.demoAccountRequired ? "sat (navn maskeret)" : "ikke sat") + " · noter " + attr.notes.length + " tegn");
 }

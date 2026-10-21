@@ -500,7 +500,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.16.2 · 17. oktober 2026";
+const VERSION = "v5.16.3 · 21. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -10136,7 +10136,6 @@ function _fordoerDomme() {
   const EN = S.sprog === "en";
   const bn = String(S.navnUdkast2 || "").trim().toLowerCase();
   const mail = String(S.indMail || "").trim().toLowerCase();
-  const kode = String(S.indKlubkode || "").trim();
   let dNavn2;
   if (!bn) dNavn2 = { tom: true };
   else if (!/^[a-zæøå][a-zæøå0-9_-]{2,19}$/.test(bn))
@@ -10153,12 +10152,6 @@ function _fordoerDomme() {
     indKode:     String(S.indKode || "") ? (tjekNyKode(S.indKode, EN) ? { ok: false } : { ok: true }) : { tom: true },
     indKode2:    String(S.indKode2 || "") ? { ok: String(S.indKode) === String(S.indKode2) } : { tom: true },
     indMail:     mail ? { ok: /^[^@\s]{1,64}@[^@\s.]+(\.[^@\s.]+)+$/.test(mail) } : { tom: true },
-    // Valgfrit felt: tomt er en gyldig tilstand og faar hverken flueben
-    // eller kryds. Betingelses-reglen — vi maerker ikke noget som en fejl,
-    // der ikke er en fejl.
-    indKlubkode: kode
-      ? { ok: /^[A-Za-z2-9]{4}-[A-Za-z2-9]{4}-[A-Za-z2-9]{4}$/.test(kode) || _invitGyldig(kode) }
-      : { tom: true },
   };
 }
 
@@ -12162,9 +12155,7 @@ function _tegn() {
             '\ud83e\udd1d <b style="color:var(--guld)">' + esc(_invitFornavn(_invitVed()) || _invitVed()) + '</b> ' + (S.sprog === "en"
               ? "invited you. Create yourself with <b>your own</b> name \u2014 " + esc(_invitFornavn(_invitVed()) || _invitVed()) + " is already waiting as the friend you can ask once you are in."
               : "har inviteret dig. Opret dig med <b>dit eget</b> navn \u2014 " + esc(_invitFornavn(_invitVed()) || _invitVed()) + " st\u00e5r allerede klar som den ven, du kan sp\u00f8rge, n\u00e5r du er inde.") + '</div>' : '') +
-          (_invitVed() ? '' :   /* ⭐ v5.11.1 · nøglerne er væk — feltet er kun til en vens brugernavn; har en ven inviteret, står chippen ovenfor */
-          '<label class="lille" style="display:block;font-weight:800;letter-spacing:1.2px;color:var(--grus);margin:9px 0 4px">' + (S.sprog === "en" ? "FRIEND · OPTIONAL" : "VEN · VALGFRIT") + '<span id="ok-indKlubkode" class="lille" style="float:right;font-weight:700;letter-spacing:0"></span></label>' +
-          '<input data-felt="indKlubkode" maxlength="40" style="letter-spacing:1px;font-weight:700" placeholder="' + (S.sprog === "en" ? "your friend’s username" : "din vens brugernavn") + '" value="' + esc(S.indKlubkode) + '" autocapitalize="off" spellcheck="false">') +
+          '' +   /* ⭐ v5.16.3 · VEN-feltet er ude (Nicolai 21/10: «det skal vi ikke bruge til noget»). Venner tilføjes i appen bagefter; en invitation fra et link er chippen ovenfor */
           // ⭐ v4.72.0 · Tre saetninger blev til én. Etiketten siger selv
           //   «VALGFRIT», saa «ingen kode? gaa bare videre» var det samme
           //   sagt to gange paa 20 pixels afstand.

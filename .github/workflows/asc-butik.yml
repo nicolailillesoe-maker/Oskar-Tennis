@@ -1,6 +1,7 @@
 # StreakTennis · butikken i App Store Connect (ordre-171026-03 · 17/10-2026 · v2: én kørsel ad gangen)
 # Butikssiden, aldersmærket, review-oplysningerne, produkternes metadata og bygget på versionen — gennem App Store Connect API'et,
-# samme hemmeligheder og samme mønster som asc-koeb.yml. Kilden til alt, der skrives: butik/butik.json + butik/skud/61/.
+# samme hemmeligheder og samme mønster som asc-koeb.yml. Kilden til alt, der skrives: butik/butik.json + billedmapperne under butik/skud/.
+# v4 (ordre-241026-04): «billeder --proeve» sender ét billede til ét sæt i én locale og venter på COMPLETE — kør den før «billeder».
 # Kør «status» FØRST og læs loggen. Hver skrivende handling kan køres igen uden skade: det, der findes, rettes (tekster) eller røres ikke (billeder).
 # Værktøjet kan ikke slette (ingen DELETE) og sender intet til review. Nøglen og token'et skrives aldrig i loggen.
 # Demo-kontoen til Apple læses fra hemmelighederne DEMO_BRUGER + DEMO_KODE (sættes af Nicolai under Settings → Secrets); mangler de, sættes kontakt og noter, ikke kontoen.
@@ -13,7 +14,7 @@ on:
         description: "Handling"
         required: true
         type: choice
-        options: [status, tekster, alder, produkter, billeder, review, byg, alt]
+        options: [status, tekster, alder, produkter, "billeder --proeve", billeder, review, byg, alt]
         default: status
       byg:
         description: "Byggenummer (kun til «byg»)"
@@ -32,7 +33,7 @@ concurrency:
 jobs:
   koer:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45   # v4: billeder venter på Apples behandling af hvert billede (COMPLETE), ét ad gangen
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

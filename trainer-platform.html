@@ -845,8 +845,10 @@ function hentTilmeldinger(){
         if (x.haandtag) _prNoegle[x.haandtag] = x;            // motor v2.17.0+
         if (x.spillernoegle) _prNoegle[x.spillernoegle] = x;  // gamle noegler i truppen
       });
+      var _fpSrv = false;   /* ⭐ v6.21.0 · fokuspunkterne er klubbens: serverens liste pr. spiller er sandheden (Nicolai 23/10) */
       (S.truppen||[]).forEach(function(t3){
         var srv = t3.noegle && _prNoegle[t3.noegle]; if (!srv) return;
+        if (Array.isArray(srv.fokuspunkter)) { S.fokuspunkter = S.fokuspunkter || {}; S.fokuspunkter[t3.navn] = srv.fokuspunkter.slice(0, 10).map(String); _fpSrv = true; }   /* v6.21.0 */
         if (srv.fornavn) { S.srvNavne = S.srvNavne || {}; S.srvNavne[t3.noegle] = srv.fornavn; }
         var d3 = DATA.spillere[t3.navn]; if (!d3) return;
         var kr = Array.isArray(srv.kampresume) ? srv.kampresume : [];
@@ -868,6 +870,7 @@ function hentTilmeldinger(){
         if (srv.opdateret) d3.sidsteTraening = String(srv.opdateret).slice(0, 10);
       });
       lager.gem("srvnavne", S.srvNavne || {});
+      if (_fpSrv) { window.__boksStille = true; try { lager.gem("fokuspunkter", S.fokuspunkter); } finally { window.__boksStille = false; } }   /* v6.21.1 · klubbens liste står også uden net — men serverens liste er ikke en ændring, træneren har lavet: intet stempel, ingen sending (fund fra Code 24/10) */
       // ⭐ v5.2.0 · DET FULDE NAVN (Nicolai 12/9: «Navnet det går til træneren er
       //   det fulde navn»). Spilleren skriver det selv i StreakTennis; motoren
       //   udleverer det KUN til klubbens egen nøgle. Fejler kaldet, står de
@@ -1155,7 +1158,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.20.3 \u00b7 16. oktober 2026";
+const VERSION = "v6.21.1 \u00b7 24. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1956,6 +1959,9 @@ Object.assign(EN, {   /* v6.16.2 · fliser i Invitér og adgang */
   "Skjul de fjernede": "Hide the removed",
   "Vis {n} fjernede": "Show {n} removed",
   "Fjerner du en adgang, kommer spilleren eller træneren ikke ind igen, før I har inviteret dem på ny.": "If you remove an access, the player or the coach cannot get back in until you have invited them again."
+});
+Object.assign(EN, {   /* v6.21.0 · fokuspunkterne er klubbens */
+  "Klubbens — alle klubbens trænere ser dem.": "The club's — every coach in the club sees them.",
 });
 Object.assign(EN, {   /* v6.16.4 · vurderingskortet på spilleren — set på dansk i den engelske udgave 9/10 */
   "📋 VURDERINGER · SENESTE": "📋 RATINGS · LATEST",
@@ -4729,7 +4735,7 @@ function spillerDetalje(navn){
   const navnPaa = id => { for (const [,liste] of alle) { const k = liste.find(x=>x.id===id); if (k) return k.navn; } return id; };
   h += '<div class="kort" style="--tone:var(--is)">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
-      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🎯 FOKUSPUNKTER</div>' +
+      '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🎯 FOKUSPUNKTER<div class="lille fp-klub-note" style="letter-spacing:0;font-weight:400;margin-top:2px">Klubbens — alle klubbens trænere ser dem.</div></div>' +   /* v6.21.0 */
       '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="fp-aabn" data-v="'+esc(navn)+'">' +
       (S.fpAaben===navn ? 'Færdig' : (mine.length ? 'Ret' : 'Vælg')) + '</button></div>';
   if (S.fpAaben !== navn) {

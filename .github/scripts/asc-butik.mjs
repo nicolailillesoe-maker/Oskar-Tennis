@@ -1,4 +1,12 @@
-// asc-butik.mjs v3 · butikken i App Store Connect (ordre-171026-03 · 17/10-2026 · v2 samme aften efter Apples 409 på whatsNew · v3 efter 409 på aldersmærket)
+// asc-butik.mjs v4 · butikken i App Store Connect (ordre-171026-03 · 17/10-2026 · v2 samme aften efter Apples 409 på whatsNew · v3 efter 409 på aldersmærket)
+// v4 (ordre-241026-04): billeder sender sættene i butik.json → billeder.saet (6,5" APP_IPHONE_65 + iPad 13") pr. locale · hvert billede
+//     måles lokalt FØR det sendes (PNG 8 bit · RGB uden alfa · sættets «maal» og Apples pixelmål for typen) · forhåndstjek med GET af
+//     alle typer og sæt, før første billede sendes · slutstatus er COMPLETE (eller FAILED), ikke UPLOAD_COMPLETE: værktøjet venter på
+//     Apples behandling, ét billede ad gangen, og skriver hvert billedes slutstatus · et sæt, hvor de første af butikkens billeder
+//     allerede ligger i rækkefølge, med samme indhold (Apples checksum) og COMPLETE, fortsættes — alt andet stopper (værktøjet sletter
+//     ikke) · «billeder --proeve»: ét billede, ét sæt (det første), én locale (den første); den fulde kørsel nægter at starte, før prøven
+//     er bestået · Apples fejlsvar skrives ordret · netfejl/429/5xx på upload-delene, commit og opslag prøves op til tre gange; en
+//     afbrudt reservation genoptages · en tidsfrist (35 min) gør, at jobbet aldrig dræbes midt i en upload · token'et fornyes undervejs.
 // v3: review-opslaget går gennem findes() (et 500 er en fejl, ikke «findes ikke») · aldersmærket bærer nu Nicolais svar på de to felter,
 //     Apple krævede (gunsOrOtherWeapons · healthOrWellnessTopics) — typerne måles levende: PATCH → GET → sammenlign; et 409 stopper.
 // v2: «nyt i denne version» sendes KUN, når appen har en tidligere version i butikken (Apple: STATE_ERROR på den første) · Apples
@@ -7,11 +15,13 @@
 //     processingState afvises · kontaktens mail og demo-navnet står aldrig i loggen.
 // Butikssiden, aldersmærket, review-oplysningerne, produkternes metadata og bygget på versionen — gennem App Store Connect API'et,
 // med den nøgle, ios.yml, testflight-grupper.mjs og asc-koeb.mjs allerede bruger, og efter samme mønster.
-// Handlinger (HANDLING): status · tekster · alder · produkter · billeder · review · byg · alt (= tekster alder produkter billeder review)
+// Handlinger (HANDLING): status · tekster · alder · produkter · billeder · billeder --proeve · review · byg · alt (= tekster alder produkter billeder review;
+//           v4: billeder i «alt» er den fulde kørsel og stopper, til prøven er bestået — så kommer review ikke med)
 // Reglerne: ingen DELETE · intet sendes til review (ingen *Submissions) · PATCH kun på de stier, der står i PATCH_TILLADT ·
 //           det, der findes, ændres kun, når det er en TEKST (tekster, alder, review) — billeder, der allerede ligger, røres ikke ·
 //           nøglen og token'et skrives ALDRIG i loggen · hvert udfald sin egen linje · «status» skriver kun.
-// Kilden til alt, der skrives: butik/butik.json. Billederne: butik/skud/61/ (skudt af vaerktoej-butik-skud.js).
+// Kilden til alt, der skrives: butik/butik.json. Butiksbillederne: mapperne i billeder.saet (butik/skud/65/ · butik/skud/ipad13/);
+// produkternes review-billeder: butik/skud/61/ (alle skudt af vaerktoej-butik-skud.js).
 // Princip 89: aldersmærket sættes KUN på de felter, Apple viser i den levende erklæring (GET først) — et felt, vi kender, men Apple
 //             ikke viser, skrives som sin egen linje, og et felt, Apple viser, men vi ikke har svaret på, ligeså.
 // Node 20, ingen pakker.
@@ -24,47 +34,63 @@ const BASE = E.ASC_BASE || "https://api.appstoreconnect.apple.com";   // ASC_BAS
 const BUNDLE = "com.sportsainalytics.streaktennis";
 const PRAEFIKS = BUNDLE + ".";
 const HANDLING = (E.HANDLING || "").trim();
+const [HNAVN, ...TILVALG] = HANDLING.split(/\s+/);
+const PROEVE = TILVALG.includes("--proeve");
 const HAENDELSE = (E.GITHUB_EVENT_NAME || "").trim();
 const BUTIK = JSON.parse(fs.readFileSync("butik/butik.json", "utf8"));
 
 const stop = (hvor, detalje) => { console.log("⛔ " + hvor + (detalje ? " — " + detalje : "")); process.exit(3); };
 for (const k of ["ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_KEY_P8_BASE64"]) if (!E[k]) stop("miljøet mangler " + k);
 
-// ── token (ES256, højst 20 minutter); maskeres, så det aldrig kan stå i loggen
+// ── token (ES256, højst 20 minutter; v4: fornyes efter 15 minutter); hvert token maskeres, så det aldrig kan stå i loggen
 const b64u = (b) => Buffer.from(b).toString("base64").replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
-const nu = Math.floor(Date.now() / 1000);
 const hoved = b64u(JSON.stringify({ alg: "ES256", kid: E.ASC_KEY_ID, typ: "JWT" }));
-const krop = b64u(JSON.stringify({ iss: E.ASC_ISSUER_ID, iat: nu, exp: nu + 1200, aud: "appstoreconnect-v1" }));
 let noegle;
 try { noegle = crypto.createPrivateKey(Buffer.from(E.ASC_KEY_P8_BASE64, "base64").toString("utf8")); }
 catch (e) { stop("API-nøglen (.p8) kunne ikke læses"); }
-const sig = crypto.sign("sha256", Buffer.from(hoved + "." + krop), { key: noegle, dsaEncoding: "ieee-p1363" });
-const TOKEN = hoved + "." + krop + "." + b64u(sig);
-console.log("::add-mask::" + TOKEN);
+let TOKEN = "", tokenFra = 0;
+function tokenet() {
+  const nu = Math.floor(Date.now() / 1000);
+  if (TOKEN && nu - tokenFra < 900) return TOKEN;
+  const krop = b64u(JSON.stringify({ iss: E.ASC_ISSUER_ID, iat: nu, exp: nu + 1200, aud: "appstoreconnect-v1" }));
+  const sig = crypto.sign("sha256", Buffer.from(hoved + "." + krop), { key: noegle, dsaEncoding: "ieee-p1363" });
+  TOKEN = hoved + "." + krop + "." + b64u(sig); tokenFra = nu;
+  console.log("::add-mask::" + TOKEN);
+  return TOKEN;
+}
+tokenet();
 for (const k of ["DEMO_BRUGER", "DEMO_KODE"]) if (E[k]) console.log("::add-mask::" + E[k]);
 
 // ── ét kald; en fejl siger status + Apples errors[].code + errors[].detail (aldrig token'et, aldrig headere)
 const SPAERRET = /(inAppPurchaseSubmissions|subscriptionSubmissions|subscriptionGroupSubmissions|reviewSubmissions|appStoreVersionSubmissions|betaAppReviewSubmissions|appStoreVersionReleaseRequests)/i;
 const PATCH_TILLADT = /^\/v1\/(appInfoLocalizations|appStoreVersionLocalizations|ageRatingDeclarations|appStoreReviewDetails|appScreenshots|inAppPurchaseAppStoreReviewScreenshots|subscriptionAppStoreReviewScreenshots|appStoreVersions|appInfos)\/[^/]+$/;
-async function kald(metode, sti, body) {
+async function kald(metode, sti, body, taalNet) {   // taalNet (v4): en netfejl giver { status: 0 } i stedet for stop, så kalderen kan prøve igen
   if (metode === "DELETE") stop("DELETE er spærret i dette værktøj");
   if (SPAERRET.test(sti)) stop("review er spærret i dette værktøj");
   if (metode === "PATCH" && !PATCH_TILLADT.test(sti.replace(BASE, "").split("?")[0])) stop("PATCH på " + sti.replace(BASE, "").split("?")[0] + " er ikke tilladt i dette værktøj");
   let r;
   try {
     r = await fetch(sti.startsWith("http") ? sti : BASE + sti, {
-      method: metode, headers: { Authorization: "Bearer " + TOKEN, "Content-Type": "application/json" },
+      method: metode, headers: { Authorization: "Bearer " + tokenet(), "Content-Type": "application/json" },
       body: body ? JSON.stringify(body) : undefined,
     });
-  } catch (e) { stop(metode + " " + sti.replace(BASE, "").split("?")[0] + " nåede ikke frem", String(e.message || e)); }
+  } catch (e) { if (taalNet) return { status: 0, j: {}, tekst: "", fejl: "nåede ikke frem: " + String(e.message || e) }; stop(metode + " " + sti.replace(BASE, "").split("?")[0] + " nåede ikke frem", String(e.message || e)); }
   const tekst = await r.text();
   let j = {}; try { j = tekst ? JSON.parse(tekst) : {}; } catch (e) {}
-  return { status: r.status, j, fejl: (j.errors || []).map((x) => x.code + ": " + (x.detail || x.title || "")).join(" · ") };
+  // v4: Apple markerer de gamle billed-kald som udfasede (API 4.5) — sender Apple en Deprecation/Sunset/Warning-header, står den i loggen én gang
+  const ren = sti.replace(BASE, "").split("?")[0];
+  if (/appScreenshot/.test(ren)) for (const h of ["deprecation", "sunset", "warning"]) { const v = r.headers.get(h); if (v && !HEADERE.has(h + v)) { HEADERE.add(h + v); console.log("  ⚠️ Apple-header på " + metode + " " + ren.replace(/\/(?=[^/]*\d)[^/]{8,}/g, "/{id}") + ": " + h + ": " + v); } }
+  return { status: r.status, j, tekst, fejl: (j.errors || []).map((x) => x.code + ": " + (x.detail || x.title || "")).join(" · ") };
 }
+const HEADERE = new Set();
+// v4: i «billeder» står Apples fejlsvar ordret (hele errors-listen, eller råteksten uden adresser), ikke kun «code: detail»
+let ORDRET = false;
+const skrub = (t, n) => String(t || "").replace(/https?:\/\/[^\s"'<>]+/g, "[adresse]").replace(/([?&](?:sig|signature|X-Amz-[A-Za-z-]+|token|Expires|Policy|Key-Pair-Id)=)[^&\s"'<>]+/gi, "$1[skjult]").slice(0, n);
+const ordret = (svar) => (svar.j && svar.j.errors ? JSON.stringify(svar.j.errors) : skrub(svar.tekst, 2000)) || "(tomt svar)";
 const kraev = (svar, ok, hvad) => {
   if (!ok.includes(svar.status)) {
-    const hint = svar.status === 401 ? " (nøgle-id, issuer-id eller .p8 passer ikke sammen)" : svar.status === 403 ? " (nøglens rolle må ikke dette)" : "";
-    stop(hvad + " svarede " + svar.status + hint, svar.fejl);
+    const hint = svar.status === 401 ? " (nøgle-id, issuer-id eller .p8 passer ikke sammen — eller token'et er udløbet)" : svar.status === 403 ? " (nøglens rolle må ikke dette)" : "";
+    stop(hvad + " svarede " + svar.status + hint, ORDRET ? "Apples svar ordret: " + ordret(svar) : svar.fejl);
   }
   return svar.j;
 };
@@ -81,19 +107,45 @@ const kort = (s, n) => { s = String(s == null ? "" : s).replace(/\s+/g, " "); re
 const md5 = (b) => crypto.createHash("md5").update(b).digest("hex");
 
 // ── upload af et billede: reservation → PUT-delene → «uploaded» + md5. Samme tre skridt for alle Apples billedtyper.
-async function upload(type, sti, fil, rel) {
-  const bytes = fs.readFileSync(fil);
-  const res = kraev(await kald("POST", sti, { data: { type, attributes: { fileName: path.basename(fil), fileSize: bytes.length }, relationships: rel } }), [201], "POST " + sti);
-  const ops = (res.data.attributes || {}).uploadOperations || [];
-  if (!ops.length) stop("POST " + sti + " gav ingen uploadOperations");
+// v4: en PUT-del og commit'et prøves op til tre gange ved netfejl/429/5xx (Apple: en del kan sendes igen før commit; en reservation
+//     kan ikke slettes af værktøjet) · reservationen (POST) prøves aldrig igen — den ville give en dobbelt.
+const tal = (v, std) => (v !== undefined && v !== "" && Number.isFinite(Number(v)) ? Number(v) : std);
+const VENT_IGEN = tal(E.ASC_VENT_IGEN, 5);   // ASC_VENT_IGEN: kun prøvens stub-server
+const vent = (s) => new Promise((ok) => setTimeout(ok, s * 1000));
+const igenKode = (st) => st === 0 || st === 429 || st >= 500;   // 0 = netfejl (kald med taalNet)
+async function sendDele(ops, bytes, navn) {
   for (const op of ops) {
     const h = {}; for (const x of op.requestHeaders || []) h[x.name] = x.value;
     const del = bytes.subarray(op.offset, op.offset + op.length);
-    let r; try { r = await fetch(op.url, { method: op.method || "PUT", headers: h, body: del }); } catch (e) { stop("upload af " + path.basename(fil) + " nåede ikke frem", String(e.message || e)); }
-    if (r.status < 200 || r.status > 299) stop("upload af " + path.basename(fil) + " (del ved " + op.offset + ") svarede " + r.status);
+    for (let forsoeg = 1; ; forsoeg++) {
+      let r = null, net = "";
+      try { r = await fetch(op.url, { method: op.method || "PUT", headers: h, body: del }); } catch (e) { net = String(e.message || e); }
+      if (r && r.status >= 200 && r.status <= 299) break;
+      const hvad = "upload af " + navn + " (del ved " + op.offset + ") " + (r ? "svarede " + r.status : "nåede ikke frem");
+      if ((!r || igenKode(r.status)) && forsoeg < 3) { console.log("  · " + hvad + " — prøver igen (forsøg " + (forsoeg + 1) + "/3)"); await vent(VENT_IGEN * forsoeg); continue; }
+      const krop = r ? skrub(await r.text().catch(() => ""), 1000) : "";
+      stop(hvad, net || (ORDRET && krop ? "svaret ordret: " + krop : ""));
+    }
   }
-  const faerdig = kraev(await kald("PATCH", "/v1/" + type + "/" + res.data.id, { data: { type, id: res.data.id, attributes: { uploaded: true, sourceFileChecksum: md5(bytes) } } }), [200], "PATCH /v1/" + type + "/{id}");
-  return { id: res.data.id, state: ((faerdig.data.attributes || {}).assetDeliveryState || {}).state || "?" };
+}
+async function commit(type, id, bytes, navn) {
+  for (let forsoeg = 1; ; forsoeg++) {
+    const svar = await kald("PATCH", "/v1/" + type + "/" + id, { data: { type, id, attributes: { uploaded: true, sourceFileChecksum: md5(bytes) } } }, true);
+    if (svar.status === 200) return (((svar.j.data || {}).attributes || {}).assetDeliveryState || {}).state || "?";
+    // gik et tidligere forsøg igennem hos Apple, selv om svaret gik tabt? Så er billedet ikke længere AWAITING_UPLOAD — fortsæt
+    if (forsoeg > 1) { const g = await kald("GET", "/v1/" + type + "/" + id, undefined, true); const st = g.status === 200 ? tilstand(g.j.data).state : ""; if (st === "UPLOAD_COMPLETE" || st === "COMPLETE") { console.log("  · commit af " + navn + " var gået igennem (" + st + ")"); return st; } }
+    if (igenKode(svar.status) && forsoeg < 3) { console.log("  · PATCH /v1/" + type + "/{id} (" + navn + ") " + (svar.status ? "svarede " + svar.status : svar.fejl) + " — prøver igen (forsøg " + (forsoeg + 1) + "/3)"); await vent(VENT_IGEN * forsoeg); continue; }
+    if (!svar.status) stop("PATCH /v1/" + type + "/{id} (" + navn + ") " + svar.fejl);
+    kraev(svar, [200], "PATCH /v1/" + type + "/{id} (" + navn + ")");
+  }
+}
+async function upload(type, sti, fil, rel) {
+  const bytes = fs.readFileSync(fil);
+  const res = kraev(await kald("POST", sti, { data: { type, attributes: { fileName: path.basename(fil), fileSize: bytes.length }, relationships: rel } }), [201], "POST " + sti + " (" + path.basename(fil) + ")");
+  const ops = ((res.data || {}).attributes || {}).uploadOperations || [];
+  if (!res.data || !ops.length) stop("POST " + sti + " (" + path.basename(fil) + ") gav ingen uploadOperations", ORDRET ? "Apples svar ordret: " + ordret({ j: res, tekst: JSON.stringify(res) }) : "");
+  await sendDele(ops, bytes, path.basename(fil));
+  return { id: res.data.id, state: await commit(type, res.data.id, bytes, path.basename(fil)) };
 }
 
 // ── appen, dens info og dens version
@@ -166,7 +218,8 @@ async function status(app) {
     const sets = (await alle("/v1/appStoreVersionLocalizations/" + l.id + "/appScreenshotSets?limit=50", "GET …/appScreenshotSets")).data;
     for (const s of sets) {
       const sk = (await alle("/v1/appScreenshotSets/" + s.id + "/appScreenshots?limit=50", "GET …/appScreenshots")).data;
-      console.log("    billeder · " + s.attributes.screenshotDisplayType + " · " + sk.length + " stk" + (sk.length ? " (" + sk.map((x) => x.attributes.fileName + " " + (((x.attributes.assetDeliveryState || {}).state) || "?")).join(", ") + ")" : ""));
+      console.log("    billeder · " + a.locale + " · " + s.attributes.screenshotDisplayType + " · " + sk.length + " stk" + (sk.length ? " · " + optaelling(sk) + " (" + sk.map((x) => x.attributes.fileName + " " + (tilstand(x).state || "?")).join(", ") + ")" : ""));
+      for (const x of sk) if (tilstand(x).state === "FAILED") console.log("      ⛔ " + x.attributes.fileName + " FAILED — Apples svar: " + (apples(tilstand(x).errors) || "(ingen fejltekst)"));
     }
   }
   const rd = await kald("GET", "/v1/appStoreVersions/" + v.id + "/appStoreReviewDetail");
@@ -301,23 +354,157 @@ async function produkter(app) {
   console.log("── produkterne efter:"); await produktStatus(app);
 }
 
-// ── BILLEDER — butikkens seks billeder pr. sprog (kun hvor sættet er tomt; intet slettes)
-async function billeder(app) {
-  const B = BUTIK.billeder; const v = await versionen(app);
-  for (const f of B.raekkefoelge) if (!fs.existsSync(path.join(B.mappe, f))) stop("billedet " + path.join(B.mappe, f) + " findes ikke — kør vaerktoej-butik-skud.js først");
-  const vl = (await alle("/v1/appStoreVersions/" + v.id + "/appStoreVersionLocalizations?limit=50", "GET …/appStoreVersionLocalizations")).data;
-  for (const locale of B.locales) {
-    const l = vl.find((x) => x.attributes.locale === locale);
-    if (!l) { console.log(locale + ": ingen tekst-lokalisering endnu — kør «tekster» først; billeder ikke sat"); continue; }
-    const sets = (await alle("/v1/appStoreVersionLocalizations/" + l.id + "/appScreenshotSets?limit=50", "GET …/appScreenshotSets")).data;
-    let set = sets.find((s) => s.attributes.screenshotDisplayType === B.displayType);
-    if (!set) { set = kraev(await kald("POST", "/v1/appScreenshotSets", { data: { type: "appScreenshotSets", attributes: { screenshotDisplayType: B.displayType }, relationships: { appStoreVersionLocalization: { data: { type: "appStoreVersionLocalizations", id: l.id } } } } }), [201], "POST /v1/appScreenshotSets (" + locale + ")").data; console.log(locale + " · sæt " + B.displayType + " oprettet"); }
-    const har = (await alle("/v1/appScreenshotSets/" + set.id + "/appScreenshots?limit=50", "GET …/appScreenshots")).data;
-    if (har.length) { console.log(locale + " · " + B.displayType + " har allerede " + har.length + " billeder — røres ikke (værktøjet sletter ikke; byt dem på pc'en, eller slet sættet dér, og kør igen)"); continue; }
-    for (const f of B.raekkefoelge) { const u = await upload("appScreenshots", "/v1/appScreenshots", path.join(B.mappe, f), { appScreenshotSet: { data: { type: "appScreenshotSets", id: set.id } } }); console.log(locale + " · " + f + " lagt op · " + u.state); }
-    const efter = (await alle("/v1/appScreenshotSets/" + set.id + "/appScreenshots?limit=50", "GET …/appScreenshots (efter)")).data;
-    console.log(locale + " · " + B.displayType + " har nu " + efter.length + " billeder");
+// ── BILLEDER v4 — sættene i billeder.saet pr. locale; et billede er først færdigt, når Apple har behandlet det (COMPLETE).
+//    Apple: upload → UPLOAD_COMPLETE → (behandling, sekunder til minutter) → COMPLETE eller FAILED. FAILED er endelig, og værktøjet kan
+//    ikke slette — derfor: lokal måling før noget sendes · forhåndstjek (kun GET) af alle sæt før første billede · ét billede ad gangen,
+//    og et FAILED stopper alt · den fulde kørsel kræver, at prøven er bestået · en tidsfrist, så jobbet aldrig dræbes midt i en upload.
+const POLL_SEK = tal(E.ASC_POLL_SEK, 5), POLL_MAKS = tal(E.ASC_POLL_MAKS, 600);   // ASC_POLL_*: kun prøvens stub-server
+const FRIST_SEK = tal(E.ASC_FRIST_SEK, 30 * 60);   // jobbet har 45 minutter (asc-butik.yml): 30 min + én upload + POLL_MAKS (10 min) + opstart < 45 min; ingen ny upload startes efter fristen
+const START = Date.now();
+const brugt = () => (Date.now() - START) / 1000;
+const MAAL = {   // Apples pixelmål (portræt) pr. type, fra «Screenshot specifications». 13"-pladsen er APP_IPAD_PRO_3GEN_129 (ikke APP_IPAD_PRO_129, der er 12,9" 2. gen.)
+  APP_IPHONE_65: ["1242x2688", "1284x2778"], APP_IPHONE_67: ["1260x2736", "1290x2796", "1320x2868"], APP_IPHONE_61: ["1179x2556", "1206x2622"],
+  APP_IPAD_PRO_3GEN_129: ["2048x2732", "2064x2752"] };
+const tilstand = (x) => ((x && x.attributes) || {}).assetDeliveryState || {};
+const apples = (fejl) => (fejl || []).map((e) => (e.code || "?") + ": " + (e.description || e.detail || e.message || "")).join(" · ");
+const optaelling = (sk) => { const t = {}; for (const x of sk) { const s = tilstand(x).state || "?"; t[s] = (t[s] || 0) + 1; } return Object.entries(t).map(([s, n]) => n + " " + s).join(" · "); };
+const sammeNavn = (a, b) => String(a || "").toLowerCase() === String(b || "").toLowerCase();
+// PNG-hovedet læses direkte: IHDR giver mål, bitdybde, farvetype (2 = RGB uden alfa) og interlace; tRNS før IDAT er gennemsigtighed; filen skal slutte med IEND
+function pngMaal(fil) {
+  const b = fs.readFileSync(fil);
+  if (b.length < 45 || b.readUInt32BE(0) !== 0x89504e47 || b.toString("latin1", 12, 16) !== "IHDR") return { fejl: "ikke en PNG" };
+  const m = { w: b.readUInt32BE(16), h: b.readUInt32BE(20), dybde: b[24], farve: b[25], interlace: b[28], tRNS: false };
+  for (let i = 8; i + 8 <= b.length;) { const n = b.readUInt32BE(i), t = b.toString("latin1", i + 4, i + 8); if (t === "IDAT") break; if (t === "tRNS") m.tRNS = true; i += 12 + n; }
+  if (m.farve !== 2) m.fejl = "farvetype " + m.farve + (m.farve === 6 || m.farve === 4 ? " (alfakanal)" : "") + " — Apple vil have RGB uden alfa";
+  else if (m.tRNS) m.fejl = "tRNS-blok (gennemsigtighed) — Apple vil have RGB uden alfa";
+  else if (m.dybde !== 8 || m.interlace !== 0) m.fejl = "bitdybde " + m.dybde + " / interlace " + m.interlace + " — forventet 8 / 0";
+  else if (b.toString("latin1", b.length - 8, b.length - 4) !== "IEND") m.fejl = "filen slutter ikke med IEND (afkortet?)";
+  m.md5 = md5(b); m.bytes = b.length;
+  return m;
+}
+async function slutstatus(id, navn) {
+  const t0 = Date.now(); let igen = 0;
+  for (;;) {
+    const svar = await kald("GET", "/v1/appScreenshots/" + id, undefined, true);
+    if (igenKode(svar.status) && igen < 3) { igen++; console.log("  · GET /v1/appScreenshots/{id} (" + navn + ") " + (svar.status ? "svarede " + svar.status : svar.fejl) + " — prøver igen (forsøg " + (igen + 1) + "/4)"); await vent(VENT_IGEN * igen); continue; }   // et opslag er ufarligt at gentage: 4 forsøg
+    if (!svar.status) stop("GET /v1/appScreenshots/{id} (" + navn + ") " + svar.fejl);
+    const j = kraev(svar, [200], "GET /v1/appScreenshots/{id} (" + navn + ")"); igen = 0;
+    const a = tilstand(j.data), sek = Math.round((Date.now() - t0) / 1000);
+    if (a.state === "COMPLETE" || a.state === "FAILED") return { state: a.state, fejl: a.errors && a.errors.length ? JSON.stringify(a.errors) : "", adv: apples(a.warnings), sek };
+    if (sek >= POLL_MAKS) return { state: a.state || "?", fejl: "", adv: "", sek, udloeb: true };
+    await vent(POLL_SEK);
   }
+}
+const slutLinje = (navn, fn, s) => {
+  if (s.state === "COMPLETE") { console.log(navn + " · " + fn + " · slutstatus COMPLETE (" + s.sek + " s)" + (s.adv ? " · Apples advarsel: " + s.adv : "")); return; }
+  if (s.udloeb) stop(navn + " · " + fn + " er ikke færdigbehandlet efter " + s.sek + " s (står som " + s.state + ")", "kør igen; værktøjet venter så videre på det, der ligger · intet mere sendt");
+  stop(navn + " · " + fn + " · slutstatus " + s.state + " — Apples svar ordret: " + (s.fejl || "(ingen fejltekst)"), "intet mere sendt");
+};
+// FORHÅNDSTJEK (kun GET): kender Apple typen (GET med filter), findes sættet, og er det, der ligger, butikkens første billeder i rækkefølge
+// — samme navn (store/små bogstaver lige meget) OG samme indhold (Apples sourceFileChecksum = md5 af vores fil)?
+async function forhaand(l, locale, S, lokalt) {
+  const navn = locale + " · " + S.displayType;
+  const url = "/v1/appStoreVersionLocalizations/" + l.id + "/appScreenshotSets?filter[screenshotDisplayType]=" + encodeURIComponent(S.displayType) + "&limit=50";
+  let svar;
+  for (let forsoeg = 1; ; forsoeg++) { svar = await kald("GET", url, undefined, true); if (!igenKode(svar.status) || forsoeg >= 3) break; console.log("  · GET …/appScreenshotSets (" + navn + ") " + (svar.status ? "svarede " + svar.status : svar.fejl) + " — prøver igen (forsøg " + (forsoeg + 1) + "/3)"); await vent(VENT_IGEN * forsoeg); }
+  if (svar.status !== 200) stop("GET …/appScreenshotSets?filter[screenshotDisplayType]=" + S.displayType + " (" + locale + ") svarede " + svar.status, "Apples svar ordret: " + ordret(svar));
+  const fundne = (svar.j.data || []).filter((s) => s.attributes.screenshotDisplayType === S.displayType);
+  if (fundne.length > 1) stop(navn + " · Apple viser " + fundne.length + " sæt af samme type", "ret det på pc'en; intet sendt");
+  const set = fundne[0] || null;
+  const har = set ? (await alle("/v1/appScreenshotSets/" + set.id + "/appScreenshots?limit=50", "GET …/appScreenshots (" + navn + ")")).data : [];
+  for (const [i, x] of har.entries()) {
+    const fn = x.attributes.fileName, a = tilstand(x), vent_ = S.raekkefoelge[i];
+    if (vent_ === undefined || !sammeNavn(fn, vent_)) stop(navn + " · billede " + (i + 1) + " i sættet er «" + fn + "», men butikken venter «" + (vent_ || "intet") + "»", "værktøjet sletter ikke — ret sættet på pc'en og kør igen; intet sendt");
+    if (a.state === "FAILED") stop(navn + " · " + fn + " ligger som FAILED — Apples svar ordret: " + (a.errors && a.errors.length ? JSON.stringify(a.errors) : "(ingen fejltekst)"), "værktøjet sletter ikke — slet billedet på pc'en og kør igen; intet sendt");
+    const sti = path.join(S.mappe, vent_);
+    if (!lokalt[sti] && !fs.existsSync(sti)) stop(navn + " · " + fn + " ligger i sættet, men " + sti + " findes ikke her", "intet sendt");
+    const L = lokalt[sti] || pngMaal(sti);
+    if (L.fejl) stop("billedet " + sti + ": " + L.fejl + " — intet sendt");
+    if (a.state === "AWAITING_UPLOAD") {
+      if (i !== har.length - 1) stop(navn + " · " + fn + " er en reservation uden upload midt i sættet", "værktøjet sletter ikke — slet den på pc'en og kør igen; intet sendt");
+      if (x.attributes.fileSize !== undefined && x.attributes.fileSize !== L.bytes) stop(navn + " · " + fn + " er en reservation på " + x.attributes.fileSize + " B, men vores fil er " + L.bytes + " B", "værktøjet sletter ikke — slet den på pc'en og kør igen; intet sendt");
+    } else if (x.attributes.sourceFileChecksum && String(x.attributes.sourceFileChecksum).toLowerCase() !== L.md5) stop(navn + " · " + fn + " i sættet har andet indhold end vores fil (Apples checksum " + x.attributes.sourceFileChecksum + " · vores " + L.md5 + ")", "værktøjet sletter ikke — byt det på pc'en og kør igen; intet sendt");
+  }
+  console.log(navn + " · forhåndstjek: typen kendt af Apple · " + (set ? "sættet findes · " + (har.length ? har.length + " billede(r): " + har.map((x) => x.attributes.fileName + " " + (tilstand(x).state || "?")).join(", ") : "tomt") : "sættet findes ikke endnu"));
+  return { set, har };
+}
+async function opretSaet(l, locale, S) {
+  const r = await kald("POST", "/v1/appScreenshotSets", { data: { type: "appScreenshotSets", attributes: { screenshotDisplayType: S.displayType }, relationships: { appStoreVersionLocalization: { data: { type: "appStoreVersionLocalizations", id: l.id } } } } });
+  if (r.status !== 201 || !r.j.data) stop("POST /v1/appScreenshotSets (" + locale + " · " + S.displayType + ") svarede " + r.status, "Apples svar ordret: " + ordret(r));
+  console.log(locale + " · " + S.displayType + " · sæt oprettet (id " + r.j.data.id + ")");
+  return r.j.data;
+}
+async function fyldSaet(locale, S, antal, fh) {
+  const navn = locale + " · " + S.displayType, { set, har } = fh;
+  // det, der ligger, gøres færdigt: UPLOAD_COMPLETE ventes ud · en reservation uden upload (sidst i sættet, samme størrelse) genoptages
+  // — i prøven kun det første billede (prøven rører højst ét billede); ligger der mere uafsluttet, er det den fulde kørsels arbejde
+  for (const [i, x] of har.entries()) {
+    const fn = x.attributes.fileName, a = tilstand(x);
+    if (a.state === "COMPLETE") continue;
+    if (PROEVE && i > 0) stop(navn + " · " + fn + " (billede " + (i + 1) + ") er ikke COMPLETE (" + (a.state || "?") + ") — det gør prøven ikke færdigt", "kør «billeder»; intet sendt");
+    if (a.state === "AWAITING_UPLOAD") {
+      const bytes = fs.readFileSync(path.join(S.mappe, S.raekkefoelge[i]));
+      const g = kraev(await kald("GET", "/v1/appScreenshots/" + x.id), [200], "GET /v1/appScreenshots/{id} (" + fn + ")");
+      const ops = (((g.data || {}).attributes) || {}).uploadOperations || [];
+      if (!ops.length) stop(navn + " · " + fn + " er en reservation uden upload, og Apple giver ingen uploadOperations at genoptage", "værktøjet sletter ikke — slet den på pc'en og kør igen; intet sendt");
+      console.log(navn + " · " + fn + " · reservationen genoptages (" + ops.length + " del(e))");
+      await sendDele(ops, bytes, fn); console.log(navn + " · " + fn + " · genoptaget · " + (await commit("appScreenshots", x.id, bytes, fn)));
+    }
+    const s = await slutstatus(x.id, fn); console.log(navn + " · " + fn + " lå som " + (a.state || "?") + " → slutstatus " + s.state + " (" + s.sek + " s)"); slutLinje(navn, fn, s);
+  }
+  if (har.length) console.log(navn + " · har allerede " + har.length + " af butikkens billeder, i rækkefølge og COMPLETE: " + har.map((x) => x.attributes.fileName).join(", "));
+  const send = S.raekkefoelge.slice(har.length, antal);
+  if (!send.length) console.log(navn + " · intet at sende");
+  for (const f of send) {
+    if (brugt() >= FRIST_SEK) stop("kørslen har brugt " + Math.round(brugt() / 60) + " min (frist " + Math.round(FRIST_SEK / 60) + " min) — " + navn + " · " + f + " og resten sendes ikke i denne kørsel", "kør «billeder» igen; den fortsætter, hvor denne slap · intet halvt sendt");
+    const u = await upload("appScreenshots", "/v1/appScreenshots", path.join(S.mappe, f), { appScreenshotSet: { data: { type: "appScreenshotSets", id: set.id } } });
+    console.log(navn + " · " + f + " lagt op · " + u.state + " · venter på Apples behandling");
+    slutLinje(navn, f, await slutstatus(u.id, f));
+  }
+  const efter = (await alle("/v1/appScreenshotSets/" + set.id + "/appScreenshots?limit=50", "GET …/appScreenshots (" + navn + ", efter)")).data;
+  const forventet = Math.max(har.length, Math.min(antal, S.raekkefoelge.length));
+  const orden = efter.length === forventet && efter.every((x, i) => sammeNavn(x.attributes.fileName, S.raekkefoelge[i]));
+  console.log(navn + " · har nu " + efter.length + " billeder · " + (efter.length ? optaelling(efter) : "intet") + " · rækkefølgen " + (orden ? "er butikkens" : "AFVIGER (forventet " + forventet + "): " + efter.map((x) => x.attributes.fileName).join(", ")));
+  if (!orden) stop(navn + " · rækkefølgen eller antallet afviger efter kørslen", "intet mere sendt — se sættet på pc'en");
+  if (efter.some((x) => tilstand(x).state !== "COMPLETE")) stop(navn + " · ikke alle billeder i sættet er COMPLETE efter kørslen", "intet mere sendt");
+}
+async function billeder(app) { ORDRET = true; try { await billederKoer(app); } finally { ORDRET = false; } }
+async function billederKoer(app) {
+  const B = BUTIK.billeder || {}; const alleSaet = B.saet || [];
+  if (!alleSaet.length || !(B.locales || []).length) stop("butik.json har ingen billeder.saet eller billeder.locales");
+  const saet = PROEVE ? alleSaet.slice(0, 1) : alleSaet; const locales = PROEVE ? B.locales.slice(0, 1) : B.locales;
+  // lokalt, før noget sendes: hver fil findes, er PNG (8 bit, RGB uden alfa, ikke interlaced, hel) og har sættets mål (maal) og Apples mål for typen
+  const lokalt = {};
+  for (const S of alleSaet) for (const f of S.raekkefoelge) {   // alle filer i alle sæt, også i prøven (billigt, og intet ukontrolleret kan sendes senere)
+    const sti = path.join(S.mappe, f);
+    if (!fs.existsSync(sti)) stop("billedet " + sti + " findes ikke — kør vaerktoej-butik-skud.js først; intet sendt");
+    const m = pngMaal(sti);
+    if (m.fejl) stop("billedet " + sti + ": " + m.fejl + " — intet sendt");
+    const ok = MAAL[S.displayType], wh = m.w + "x" + m.h;
+    if (S.maal && wh !== S.maal) stop("billedet " + sti + " er " + m.w + "×" + m.h + ", men sættet skal være præcis " + S.maal + " (butik.json) — intet sendt");
+    if (ok && !ok.includes(wh)) stop("billedet " + sti + " er " + m.w + "×" + m.h + ", men " + S.displayType + " tager " + ok.join(" / ") + " — intet sendt");
+    lokalt[sti] = m;
+  }
+  console.log("målt lokalt: " + Object.keys(lokalt).length + " fil(er) · PNG 8 bit · RGB uden alfa · " + saet.map((S) => S.displayType + " " + (S.maal || "?") + (MAAL[S.displayType] ? " (Apples mål)" : " (intet Apple-mål i værktøjet)")).join(" · "));
+  if (PROEVE) console.log("PRØVEN: ét billede (" + saet[0].raekkefoelge[0] + ") · ét sæt (" + saet[0].displayType + ") · én locale (" + locales[0] + ") — de andre typer tjekkes kun med GET");
+  const v = await versionen(app);
+  console.log("version " + v.attributes.versionString + " · " + vState(v) + " · id " + v.id);
+  const vl = (await alle("/v1/appStoreVersions/" + v.id + "/appStoreVersionLocalizations?limit=50", "GET …/appStoreVersionLocalizations")).data;
+  const lok = (locale) => vl.find((x) => x.attributes.locale === locale);
+  const mangler = locales.filter((locale) => !lok(locale));
+  if (mangler.length) stop(mangler.join(" · ") + ": ingen tekst-lokalisering på versionen — kør «tekster» først; intet sendt");
+  // forhåndstjek af ALLE typer i de locales, kørslen rører (kun GET) — et ukendt typenavn eller et forkert sæt stopper, før første billede sendes
+  const fh = {};
+  for (const locale of locales) for (const S of alleSaet) fh[locale + "|" + S.displayType] = await forhaand(lok(locale), locale, S, lokalt);
+  if (!PROEVE) {
+    const p = fh[B.locales[0] + "|" + alleSaet[0].displayType];
+    const bestaaet = p.har.length && sammeNavn(p.har[0].attributes.fileName, alleSaet[0].raekkefoelge[0]) && tilstand(p.har[0]).state === "COMPLETE";
+    if (!bestaaet) stop("prøven er ikke bestået: " + B.locales[0] + " · " + alleSaet[0].displayType + " har ikke " + alleSaet[0].raekkefoelge[0] + " som COMPLETE", "kør «billeder --proeve» først; intet sendt");
+    // alle sæt oprettes, før første billede sendes (et tomt sæt er harmløst; et afvist typenavn stopper her)
+    for (const locale of locales) for (const S of saet) { const k = locale + "|" + S.displayType; if (!fh[k].set) fh[k].set = await opretSaet(lok(locale), locale, S); }
+  } else { const k = locales[0] + "|" + saet[0].displayType; if (!fh[k].set) fh[k].set = await opretSaet(lok(locales[0]), locales[0], saet[0]); }
+  for (const locale of locales) for (const S of saet) await fyldSaet(locale, S, PROEVE ? 1 : S.raekkefoelge.length, fh[locale + "|" + S.displayType]);
+  if (PROEVE) console.log("PRØVEN BESTÅET: " + locales[0] + " · " + saet[0].displayType + " · " + saet[0].raekkefoelge[0] + " er COMPLETE");
 }
 
 // ── REVIEW — kontakt, demo-konto (fra miljøet), noter
@@ -366,8 +553,9 @@ async function byg(app) {
 async function alt(app) { for (const h of [tekster, alder, produkter, billeder, review]) { console.log("── " + h.name); await h(app); } }
 
 const HANDLINGER = { status, tekster, alder, produkter, billeder, review, byg, alt };
-if (!HANDLINGER[HANDLING]) stop("ukendt handling «" + HANDLING + "» — brug " + Object.keys(HANDLINGER).join(" · "));
-if (HANDLING !== "status" && HAENDELSE !== "workflow_dispatch") stop("«" + HANDLING + "» kører kun fra Actions → Run workflow (her: " + (HAENDELSE || "?") + ")");
+if (!Object.hasOwn(HANDLINGER, HNAVN)) stop("ukendt handling «" + HANDLING + "» — brug " + Object.keys(HANDLINGER).join(" · ") + " · billeder --proeve");
+for (const t of TILVALG) if (t !== "--proeve" || HNAVN !== "billeder") stop("ukendt tilvalg «" + t + "» til «" + HNAVN + "» — det eneste tilvalg er «billeder --proeve»");
+if (HNAVN !== "status" && HAENDELSE !== "workflow_dispatch") stop("«" + HANDLING + "» kører kun fra Actions → Run workflow (her: " + (HAENDELSE || "?") + ")");
 console.log("Handling: " + HANDLING + " · hændelse " + (HAENDELSE || "?"));
-await HANDLINGER[HANDLING](await appen());
+await HANDLINGER[HNAVN](await appen());
 console.log("✅ " + HANDLING + " færdig");

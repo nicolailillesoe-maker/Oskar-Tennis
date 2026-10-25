@@ -870,7 +870,7 @@ function hentTilmeldinger(){
         if (srv.opdateret) d3.sidsteTraening = String(srv.opdateret).slice(0, 10);
       });
       lager.gem("srvnavne", S.srvNavne || {});
-      if (_fpSrv) lager.gem("fokuspunkter", S.fokuspunkter);   /* v6.21.0 · klubbens liste står også uden net */
+      if (_fpSrv) { window.__boksStille = true; try { lager.gem("fokuspunkter", S.fokuspunkter); } finally { window.__boksStille = false; } }   /* v6.21.1 · klubbens liste står også uden net — men serverens liste er ikke en ændring, træneren har lavet: intet stempel, ingen sending (fund fra Code 24/10) */
       // ⭐ v5.2.0 · DET FULDE NAVN (Nicolai 12/9: «Navnet det går til træneren er
       //   det fulde navn»). Spilleren skriver det selv i StreakTennis; motoren
       //   udleverer det KUN til klubbens egen nøgle. Fejler kaldet, står de
@@ -1158,7 +1158,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.21.0 \u00b7 24. oktober 2026";
+const VERSION = "v6.21.1 \u00b7 24. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN

@@ -1,6 +1,11 @@
 # StreakTennis · iOS-skallen bygges og sendes til TestFlight fra en Mac i skyen.
 # Kører KUN, når man trykker «Run workflow» under Actions (aldrig af sig selv ved upload).
 #
+# v9 (24/10-2026) — APP-IKONET. Målt 22/10: ingen af trinnene rørte ikonet, så TestFlight viste Capacitors blå X — en
+#   App Store-blokering. Nu: appens eget ikon (StreakTennis/ikon-512.png, det hjemmeskærmen allerede viser) skaleres til
+#   1024×1024 med sips og bliver det eneste billede i AppIcon.appiconset (Xcodes én-størrelse-form). Vagter: størrelsen,
+#   ingen alfakanal (Apple afviser gennemsigtighed), og projektet peger på AppIcon. Ingen ny profil, intet entitlement.
+#
 # v8 (3/10-2026) — APPLES KØB I APPEN (StreakTennis v5.10.0 · App Store 3.1.1). Købs-pluginet (StoreKit 2) installeres altid,
 #   med fast version. To vagter efter cap sync: pod'en står i Podfile, og PurchasePlugin står i appens packageClassList.
 #   Ingen ny profil og intet entitlement — et køb gennem StoreKit kræver ingen af delene.
@@ -158,6 +163,29 @@ jobs:
           grep -q "CapacitorPluginCdvPurchase" ios/App/Podfile || { echo "⛔ købs-pluginet (CapacitorPluginCdvPurchase) kom ikke med i Podfile"; exit 1; }   # v8
           grep -q '"PurchasePlugin"' ios/App/App/capacitor.config.json || { echo "⛔ PurchasePlugin står ikke i appens packageClassList"; exit 1; }   # v8
           echo "⭐ Apples køb: CapacitorPluginCdvPurchase i Podfile · PurchasePlugin i packageClassList"   # v8
+      - name: App-ikonet (v9 · appens eget ikon, 1024×1024, ingen alfakanal)
+        run: |
+          SETT=ios/App/App/Assets.xcassets/AppIcon.appiconset
+          test -d "$SETT" || { echo "⛔ cap add ios lavede ingen AppIcon.appiconset"; exit 1; }
+          test -f StreakTennis/ikon-512.png || { echo "⛔ StreakTennis/ikon-512.png findes ikke"; exit 1; }
+          rm -f "$SETT"/*
+          sips -s format png -z 1024 1024 StreakTennis/ikon-512.png --out "$SETT/AppIcon-1024.png" >/dev/null
+          cat > "$SETT/Contents.json" <<'JS'
+          {
+            "images" : [
+              { "filename" : "AppIcon-1024.png", "idiom" : "universal", "platform" : "ios", "size" : "1024x1024" }
+            ],
+            "info" : { "author" : "xcode", "version" : 1 }
+          }
+          JS
+          python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$SETT/Contents.json" || { echo "⛔ Contents.json er ikke gyldig JSON"; exit 1; }
+          W=$(sips -g pixelWidth "$SETT/AppIcon-1024.png" | awk '/pixelWidth/{print $2}'); H=$(sips -g pixelHeight "$SETT/AppIcon-1024.png" | awk '/pixelHeight/{print $2}')
+          test "$W" = "1024" -a "$H" = "1024" || { echo "⛔ ikonet er ${W}×${H}, ikke 1024×1024"; exit 1; }
+          A=$(sips -g hasAlpha "$SETT/AppIcon-1024.png" | awk '/hasAlpha/{print $2}')
+          test "$A" = "no" || { echo "⛔ ikonet har en alfakanal (hasAlpha=${A}) — Apple afviser gennemsigtighed"; exit 1; }
+          grep -q "ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon" ios/App/App.xcodeproj/project.pbxproj || { echo "⛔ projektet peger ikke på AppIcon"; exit 1; }
+          test "$(ls "$SETT" | wc -l | tr -d ' ')" = "2" || { echo "⛔ AppIcon.appiconset skal have præcis to filer"; ls -la "$SETT"; exit 1; }
+          echo "⭐ App-ikonet: AppIcon-1024.png ${W}×${H} · hasAlpha=${A} · Contents.json (én størrelse) · projektet peger på AppIcon"
       - name: Push · AppDelegate + entitlements (v5 · kun når profilen bærer Push)
         if: env.PUSH == 'ja'
         run: |

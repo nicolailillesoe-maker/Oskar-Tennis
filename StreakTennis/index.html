@@ -500,7 +500,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.16.3 · 21. oktober 2026";
+const VERSION = "v5.16.4 · 25. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -8972,6 +8972,12 @@ const A = {
   //   { plan: gaest|fuld|fri } → 200 { plan } · 409 klub (klubben betaler) · 403 afventer.
   //   Et eget valg afslutter en gave paa serveren (konto v8) — og kortet siger det samme her.
   /* ⭐ v5.10.3 · Din konto: et rum åbnes (plan · live) — eller tilbage til fliserne (tom v) */
+  rumFraTab: (v) => {   /* ⭐ v5.16.4 · «‹ Hjem» i et rum, der blev åbnet fra en anden fane: rummets egen lukker + fanen før */
+    const d = String(v || "").split("|"); const fra = S._rumFraTab; S._rumFraTab = null;
+    if (d[0] && typeof A[d[0]] === "function") A[d[0]](d[1] || "");
+    if (fra) S.tab = fra;
+    render(); try { window.scrollTo(0, 0); } catch (_e) {}
+  },
   kontoRum: (v) => {
     S.kontoRum = v || null; S.kontoBesked = null;
     if (!v) { S.planSkift = false; S.udtjek = null; S.kodeAaben2 = false; S.logUdSpoerg = false; S.fortrydSpoerg = false; }
@@ -9847,14 +9853,27 @@ let _kontoRumAaben = null;
 /* ⭐⭐ v5.12.0 · ET RUM FOR HELE APPEN (Nicolai 11/10: «fliserne der skal gå igen i layoutet igennem hele appen» · «Ikke som fliser
    men som en liste underneden»). Samme mekanik som Din kontos rum: en flise åbner sit rum som egen skærm over alt andet, med
    «‹ tilbage» og rummets navn øverst; fliserne står urørte bagved. {tilbage, titel, html, a, v, id} sættes af fanen, der tegner. */
-let _rumAaben = null;
+let _rumAaben = null, _rumSidsteTab = null, _rumSidsteId = null;
+/* ⭐⭐ v5.16.4 · DØREN IND HUSKES. Åbner et rum i SAMME tegning, som fanen skifter (Sæsonen fra HJEM åbner under TRÆN), skal «‹»
+   føre tilbage til den fane, man kom fra — ikke til rummets egen fane. Nicolai 25/10: «Hvis jeg går ind i sæson fra hjemmeskærmen
+   og går tilbage igen - så kommer jeg ikke samme sted hen.» Målt 25/10: Sæsonen var det eneste rum fra de fire faner, der landede forkert. */
+function _rumFaneNavn(tab, EN) {
+  return ({ hjem: EN ? "Home" : "Hjem", "hb-hjem": EN ? "Home" : "Hjem", kamp: EN ? "Match" : "Kamp", fysisk: EN ? "Train" : "Træn", historik: "Stats",
+    opsaet: EN ? "Settings" : "Indstillinger", livenu: "Live nu", stige: "Streak Zone" })[tab] || (EN ? "Back" : "Tilbage");
+}
 function _rumSkaerm(EN) {
   const r = _rumAaben; _rumAaben = null;
+  if (r) { if (r.id !== _rumSidsteId && _rumSidsteTab && _rumSidsteTab !== S.tab) S._rumFraTab = _rumSidsteTab; }
+  else S._rumFraTab = null;
+  _rumSidsteId = r ? r.id : null; _rumSidsteTab = S.tab;
   if (!r) return "";
+  const _fra = S._rumFraTab;
   return '<div id="rum-skaerm" data-rum-skaerm="' + r.id + '" style="position:fixed;inset:0;z-index:60;background:var(--dyb);overflow:auto;padding:max(12px,env(safe-area-inset-top)) 0 max(24px,env(safe-area-inset-bottom))">' +
     '<div class="wrap" style="padding-top:0">' +
     '<div style="display:flex;align-items:center;gap:10px;margin:0 0 12px">' +
-    '<button class="knap valg" data-rum-tilbage="1" style="flex:none;min-height:40px;margin:0;padding:6px 14px" data-a="' + r.a + '" data-v="' + (r.v || "") + '">' + r.tilbage + '</button>' +
+    (_fra
+      ? '<button class="knap valg" data-rum-tilbage="1" data-rum-fra="' + esc(_fra) + '" style="flex:none;min-height:40px;margin:0;padding:6px 14px" data-a="rumFraTab" data-v="' + r.a + '|' + (r.v || "") + '">\u2039 ' + esc(_rumFaneNavn(_fra, EN)) + '</button>'   /* v5.16.4 · tilbage til døren ind */
+      : '<button class="knap valg" data-rum-tilbage="1" style="flex:none;min-height:40px;margin:0;padding:6px 14px" data-a="' + r.a + '" data-v="' + (r.v || "") + '">' + r.tilbage + '</button>') +
     '<span style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">' + r.titel + '</span></div>' +
     r.html + '</div></div>';
 }   /* ⭐ v5.10.4 · det åbne rum (titel + indhold) — tegnes som egen skærm af _kontoRumSkaerm() */

@@ -1158,7 +1158,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.21.1 \u00b7 24. oktober 2026";
+const VERSION = "v6.22.0 \u00b7 25. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1657,6 +1657,19 @@ Object.assign(EN, {   /* v6.9.0 · automatisk backup */
   "⚠️ Ingen forbindelse — det gemmes på din konto ved næste ændring.": "⚠️ No connection — it is saved to your account at the next change.",
   "⚠️ Din trup kunne ikke hentes eller gemmes på din konto — log ud og ind igen, hvis det bliver ved.": "⚠️ Your squad could not be fetched or saved to your account — log out and in again if it keeps happening.",
   "Din konto har en låst kopi. Sikkerhedskopien her er din egen fil ved siden af — til dig selv, ikke til os.": "Your account holds a locked copy. The backup here is your own file alongside it — for you, not for us."
+});
+Object.assign(EN, {   /* v6.22.0 · Gør nu */
+  "✅ Gør nu": "✅ Do now", "Gør nu": "Do now", "1 ting venter": "1 thing waiting", "{n} ting venter": "{n} things waiting", "alt er gjort": "all done",
+  "Alt er gjort — ingen hænder lige nu.": "All done — nothing needs a hand right now.",
+  "Godkend programmet": "Approve the schedule", "GODKEND PROGRAMMET": "APPROVE THE SCHEDULE",
+  "1 pas i kladden venter på dit ja": "1 session in the draft is waiting for your yes", "{n} pas i kladden venter på dit ja": "{n} sessions in the draft are waiting for your yes",
+  "1 ændring siden sidste godkendelse": "1 change since the last approval", "{n} ændringer siden sidste godkendelse": "{n} changes since the last approval",
+  "registrér fremmøde og vurdér": "register attendance and rate", "1 PAS UDEN FREMMØDE": "1 SESSION WITHOUT ATTENDANCE", "{n} PAS UDEN FREMMØDE": "{n} SESSIONS WITHOUT ATTENDANCE",
+  "1 ny spiller": "1 new player", "{n} nye spillere": "{n} new players",
+  "1 ny analyse": "1 new analysis", "{n} nye analyser": "{n} new analyses", "1 NY ANALYSE": "1 NEW ANALYSIS", "{n} NYE ANALYSER": "{n} NEW ANALYSES",
+  "fra spillerne — læs dem på kortet": "from the players — read them on the card",
+  "Ugens fokus mangler": "This week's focus is missing", "UGENS FOKUS MANGLER": "THIS WEEK'S FOCUS IS MISSING", "vælg området, før du vurderer": "pick the area before you rate",
+  "Vurdér træningen": "Rate the practice",
 });
 Object.assign(EN, {   /* v6.13.0 · Overblik */
   "Overblik": "Overview", "📊 Overblik": "📊 Overview", "{n} pas i dag": "{n} sessions today", "1 pas i dag": "1 session today",
@@ -3129,7 +3142,7 @@ function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emo
     "adgang-spiller": "\ud83c\udfbe Invit\u00e9r spiller", "adgang-traener": "\ud83e\uddd1\u200d\ud83c\udfeb Invit\u00e9r tr\u00e6ner", "adgang-link": "\ud83d\udcf1 Link til appen", "adgang-klub": "\ud83d\udc65 Klubben" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen", udstil: "\ud83c\udf10 Udstil" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Spillere", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
-           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\ud83d\udcca Overblik", weekenden: "📆 Weekenden", live: "🔴 Live nu" }[tab] || "";
+           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\u2705 G\u00f8r nu", weekenden: "📆 Weekenden", live: "🔴 Live nu" }[tab] || "";
 }
 // ⭐⭐ v6.12.0 · TRÆNERENS DASHBOARD (Nicolai 26/9: «de 3 tal og nyhed» + «hvad der skal ske i dag»). Står altid på HJEM.
 //   Tallene er det, telefonen VED: truppen (lager) · spillere vurderet siden mandag (S.vurderinger, dansk dato) · nye (hent-hold).
@@ -3138,20 +3151,54 @@ function dashVurderet(){   /* v6.13.0 · spillere vurderet siden mandag — ét 
   var vurd = {}; (S.vurderinger || []).forEach(function(v){ if (v && v.dato && String(v.dato).slice(0, 10) >= man && v.spiller) vurd[v.spiller] = 1; });
   return Object.keys(vurd).length;
 }
-// ⭐ v6.13.0 · FLISEN «📊 OVERBLIK» — dens status er et løfte (70): nyheden, ellers dagens pas + ugens vurderede
+// ⭐⭐⭐ v6.22.0 · «✅ GØR NU» — HANDLINGSCENTRET (Nicolai 25/10: «et action center … trykke sig igennem det på samme måde som man starter en kamp» · «Dynamisk og under»).
+//   goerNu() er listen over det, der kræver en hånd NU, i den rækkefølge, træneren bør tage det. Hver post er en knap, der fører derhen.
+//   Helten på HJEM er den øverste post; flisen bærer tallet og titlen; rummet har dem alle som brede knapper + den stående dør
+//   «⚡ Vurdér træningen» (kortets regel 26/9: hvert rum i bundbaren kan nås fra HJEM) + dashboardet (v6.12.0) under.
+//   Tallene er det, telefonen VED (64/70): nu (pas i dag) · prg (kladden) · tilmeldinger (hent-hold) · analyser (klub-live) · ugefokus (lager).
+function goerNu(){
+  var liste = [], uf = nuUdenFremmoede(), b = nuBedste();
+  if (uf && b) liste.push({ id: "reg", ikon: "\u26a1", titel: (uf === 1 ? "1 pas uden fremm\u00f8de" : uf + " pas uden fremm\u00f8de"), tekst: "registr\u00e9r fremm\u00f8de og vurd\u00e9r", act: "reg-start", v: b.id, kant: "dev-kant-grus" });
+  var prg = S.prg; var nP = prg && Array.isArray(prg.pas) ? prg.pas.length : 0;
+  if (S.minRolle !== "traener" && nP && (!prg.sidst_godkendt || prg.aendret_siden > 0)) {
+    var tk = !prg.sidst_godkendt ? (nP === 1 ? "1 pas i kladden venter p\u00e5 dit ja" : nP + " pas i kladden venter p\u00e5 dit ja")
+                                 : (prg.aendret_siden === 1 ? "1 \u00e6ndring siden sidste godkendelse" : prg.aendret_siden + " \u00e6ndringer siden sidste godkendelse");
+    liste.push({ id: "kladde", ikon: "\u2705", titel: "Godkend programmet", tekst: tk, act: "goer-nu", v: "kladde", kant: "dev-kant-gron" });
+  }
+  var _t = { venter: [], nye: [] }; try { _t = nyeSpillere(); } catch (_e) {}
+  var _n = _t.venter.length + _t.nye.length;
+  if (_n) liste.push({ id: "nye", ikon: "\ud83d\udce5", titel: (_n === 1 ? "1 ny spiller" : _n + " nye spillere"), tekst: (_t.venter.length ? "venter p\u00e5 jeres ja" : "mangler i truppen"), act: "tab", v: "grupper", kant: "dev-kant-guld" });
+  var _a = 0; try { _a = analyseNye(); } catch (_e2) {}
+  if (_a) liste.push({ id: "analyser", ikon: "\ud83d\udccb", titel: (_a === 1 ? "1 ny analyse" : _a + " nye analyser"), tekst: "fra spillerne \u2014 l\u00e6s dem p\u00e5 kortet", act: "tab", v: "grupper", kant: "dev-kant-guld" });
+  if (lager.hent("klubkode", "") && (lager.hent("truppen", []) || []).length && !(S.ugefokus || {})[ugeNoegle()])
+    liste.push({ id: "ugefokus", ikon: "\ud83c\udfaf", titel: "Ugens fokus mangler", tekst: "v\u00e6lg omr\u00e5det, f\u00f8r du vurderer", act: "goer-nu", v: "ugefokus", kant: "dev-kant-is" });
+  return liste;
+}
+function goerNuKnap(x, hel){   /* hel = helten på HJEM (VERSALER som START KAMP) · ellers en bred knap i rummet */
+  return '<button class="dev-hero dev-kant ' + x.kant + '" data-act="' + x.act + '" data-v="' + esc(x.v || "") + '" data-goer-nu="' + x.id + '"' + (hel ? '' : ' style="margin:0 0 10px;padding:16px 18px"') + '>' +
+    '<span style="font-size:30px">' + x.ikon + '</span><span><b>' + esc(hel ? x.titel.toUpperCase() : x.titel) + '</b><br><small>' + esc(x.tekst) + '</small></span><span class="dev-pil">\u2192</span></button>';
+}
+function goerNuKort(){   /* rummet «✅ Gør nu»: handlingerne · den stående dør · (dashboardet tegnes af kalderen) */
+  var liste = goerNu(), h = '';
+  liste.forEach(function(x){ h += goerNuKnap(x, false); });
+  if (!liste.length) h += '<p class="lille" style="margin:0 0 10px">Alt er gjort \u2014 ingen h\u00e6nder lige nu.</p>';
+  var b = nuBedste();   /* den stående dør er stål — handlingerne har farve */
+  h += '<button class="dev-hero dev-kant dev-kant-staal" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + ' data-goer-nu="vurder" style="margin:0 0 14px;padding:16px 18px"><span style="font-size:30px">\u26a1</span><span><b>Vurd\u00e9r tr\u00e6ningen</b><br><small>fremm\u00f8de og vurdering fra banen</small></span><span class="dev-pil">\u2192</span></button>';
+  return h;
+}
+// ⭐ v6.22.0 · FLISEN «✅ GØR NU» — dens status er et løfte (70): tallet og den øverste handling; uden handlinger: dagen og «alt er gjort»
 function overblikFlise(){
-  var dele = [], uf = nuUdenFremmoede();
-  var m = S.autoTrupBesked ? /^(.*?) sagde ja/.exec(S.autoTrupBesked) : null;
-  if (m) { dele.push('<span>' + esc('✓ ' + m[1] + ' sagde ja') + '</span>'); if (uf) dele.push(_ufTekst(uf)); }   /* rødt står, også når der er nyt */
+  var liste = goerNu(), dele = [];
+  var m = S.autoTrupBesked ? /^(.*?) sagde ja/.exec(S.autoTrupBesked) : null;   /* v6.13.0 · nyheden står én gang og kort på flisen */
+  if (m) { dele.push('<span>' + esc('\u2713 ' + m[1] + ' sagde ja') + '</span>'); if (liste.length) dele.push('<span>' + esc(liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span>'); }
+  else if (liste.length) { dele.push('<span>' + esc(liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span>'); dele.push('<span>' + esc(liste[0].titel) + '</span>'); }
   else {
-    /* ⭐ v6.20.1 · det, der stod i helten, står her: hvor mange pas, hvor mange uden fremmøde (rødt), og en hentefejl med sit eget ord (94) */
     if (lager.hent("klubkode", "") && S.nuFejl) dele.push('<span>' + esc(S.nuFejl) + '</span>');
     else if (S.nu && Array.isArray(S.nu.pas)) dele.push('<span>' + esc(S.nu.pas.length ? S.nu.pas.length + ' pas i dag' : 'fri i dag') + '</span>');
-    if (uf) dele.push(_ufTekst(uf));
-    dele.push('<span>' + esc(dashVurderet() + ' vurderet') + '</span>');
+    dele.push('<span>alt er gjort</span>');
   }
-  return '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="overblik"><span class="dev-ikon">\ud83d\udcca</span><b>Overblik</b><small>' +
-    dele.join(' · ') + '</small></button>';
+  return '<button class="dev-flise dev-kant ' + (liste.length ? 'dev-kant-guld' : 'dev-kant-staal') + '" data-act="tab" data-v="overblik"><span class="dev-ikon">\u2705</span><b>G\u00f8r nu</b><small>' +
+    dele.join(' \u00b7 ') + '</small></button>';
 }
 function _ufTekst(uf){ return '<span class="dash-roed" style="color:#ff8a8f;font-weight:700">' + uf + (uf === 1 ? ' pas uden fremmøde' : ' pas uden fremmøde') + '</span>'; }   /* ⭐ v6.20.1 · én tekstnode — ordbogen tager den hel */
 function traenerDash(){
@@ -3206,6 +3253,7 @@ function renderTraener(){
     /* ⭐⭐ v6.18.0 · LIVE NU — hentes, når HJEM tegnes. v6.19.0: vist som flise forrest i gitteret, altid (liveFlise). */
     (function(){
       if (lager.hent("klubkode", "") && !S.liveHenter && Date.now() - (S.liveTid || 0) > 30000) setTimeout(function(){ liveHent(); }, 0);
+      if (lager.hent("klubkode", "") && !S.prg && !S.prgHenter && !S.prgBesked) setTimeout(function(){ prgHent("kladde"); }, 0);   /* ⭐ v6.22.0 · kladden skal kunne stå i Gør nu (Øresund 25/10: 15 pas, ingen sagde det) */
       if (lager.hent("klubkode", "") && !S.analyseHenter && Date.now() - (S.analyseTid || 0) > 300000) setTimeout(function(){ analyseHent(); }, 0);   /* ⭐ v6.20.0 · højst hvert 5. minut */
       var k = Array.isArray(S.liveKampe) ? S.liveKampe : [];
       /* ⭐⭐ v6.19.0 · ingen helt længere — tallet står i flisen «🔴 Live nu» forrest i gitteret (Nicolai 15/10: «Klart denne») */
@@ -3218,16 +3266,12 @@ function renderTraener(){
       var b = nuBedste();
       /* ⭐ v6.20.1 · helten er lige så høj som StreakTennis' START KAMP (Nicolai 15/10: «alt for stor» · «Selve indholdet der står der skal nok ind under overblik»).
          Én kort linje. Dagens pas — tid, bane, trænere, spillere og hvor mange uden fremmøde — står under 📊 Overblik. Knappen peger stadig på nuBedste(). */
-      h += '<button class="dev-hero dev-kant dev-kant-grus" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + '><span style="font-size:30px">\u26a1</span><span><b>VURD\u00c9R TR\u00c6NINGEN</b><br><small>fremmøde og vurdering fra banen</small></span><span class="dev-pil">\u2192</span></button>';
+      /* ⭐⭐⭐ v6.22.0 · HELTEN ER DYNAMISK («Dynamisk og under»): den øverste handling i Gør nu — ellers VURDÉR TRÆNINGEN som før */
+      var _top = goerNu()[0];
+      if (_top) h += goerNuKnap(_top, true);
+      else h += '<button class="dev-hero dev-kant dev-kant-grus" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + '><span style="font-size:30px">\u26a1</span><span><b>VURD\u00c9R TR\u00c6NINGEN</b><br><small>fremmøde og vurdering fra banen</small></span><span class="dev-pil">\u2192</span></button>';
     })();
-    /* ⭐ v6.10.0 · kortet (princip 100): nye spillere har ét rum — SPILLERE. HJEM viser dem kun, når de kræver en hånd nu. */
-    (function(){
-      var _t = { venter: [], nye: [] }; try { _t = nyeSpillere(); } catch (_e) {}
-      var _n = _t.venter.length + _t.nye.length;
-      /* v6.12.0 · nyheden («… sagde ja …») står i dashboardet nu — ikke løst midt mellem heltene */
-      if (!_n) return;
-      h += '<button class="dev-hero dev-kant dev-kant-guld" data-act="tab" data-v="grupper"><span style="font-size:30px">📥</span><span><b>' + (_n === 1 ? '1 NY SPILLER' : _n + ' NYE SPILLERE') + '</b><br><small>' + (_t.venter.length ? 'venter på jeres ja' : 'mangler i truppen') + '</small></span><span class="dev-pil">→</span></button>';
-    })();
+    /* v6.22.0 · helten «NYE SPILLERE» er væk — nye spillere er en linje i Gør nu (HJEM har ÉN helt) */
     h += '<div class="dev-grid hjem-grid">' + liveFlise() +   /* ⭐⭐ v6.19.0 · LIVE NU — altid, forrest · hjem-grid = de lavere fliser */
       // ⭐⭐⭐ v4.1.0 · AFTENENS VIGTIGSTE KNAP STÅR FORREST.
       //   ⚠️ FANGET FØR DEN BLEV BYGGET: første udkast skrev
@@ -3262,7 +3306,7 @@ function renderTraener(){
     else if (S.tab==="vurder") h += traenerVurder(t);
     else if (S.tab==="kvartal") h += traenerKvartal(t);
     else if (S.tab==="rum") h += traenerRummet();
-    else if (S.tab==="overblik") h += traenerDash();
+    else if (S.tab==="overblik") h += goerNuKort() + traenerDash();   /* v6.22.0 · handlingerne over dashboardet */
     else if (S.tab==="weekenden") h += traenerWeekenden();   /* ⭐ v6.17.0 */
     else if (S.tab==="live") h += traenerLive();   /* ⭐ v6.18.0 */   /* v6.13.0 · dashboardet har sit eget rum */
     else if (S.tab==="indst") h += traenerIndstillinger();
@@ -5236,6 +5280,10 @@ document.addEventListener("click", function(e){
   else if (act==="reg-vurd-igen"){ if (!S.reg || S.reg.trin !== 3) return; regSendVurderinger(true); render(); }
   else if (act==="reg-igen"){ regNulstil(); render(); nuHent(false); }
   if (act==="tab"){ if (v === "live" && !S.liveHenter && Date.now() - (S.liveTid || 0) > 10000) setTimeout(function(){ liveHent(); }, 0);   /* ⭐ v6.18.0 · frisk ved åbning */ if (v === "weekenden" && !S.wkHenter && (!Array.isArray(S.wkRaekker) || Date.now() - (S.wkTid || 0) > 60000)) setTimeout(function(){ wkHent(); }, 0);   /* ⭐ v6.17.0 · frisk ved åbning, højst ét kald pr. minut */ if (S.tab === "grupper" && v !== "grupper") S.autoTrupBesked = null;   /* v6.10.0 */ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { S.snakValgt = null; S.snakRulNed = true; try { snakHent(false); } catch (_e) {} try { nuHent(false); } catch (_e) {} }   /* v6.15.0 · overblikket kommer fra dagens program */ if (v === "noegler" || v === "grupper") { try { budSendteHent(); } catch (_e) {} } if (v === "grupper" && lager.hent("klubkode", "") && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }   /* v6.10.0 */
+  else if (act==="goer-nu"){   /* ⭐ v6.22.0 · Gør nu's egne døre: kladden → PROGRAM/Ugeskemaet · ugens fokus → Vælg ugens fokus */
+    if (v === "kladde") { S.tab = "program"; S.prgVisning = "skema"; S.indstVisning = null; S.aabenSpiller = null; render(); if (!S.prgHenter) prgHent("kladde"); }
+    else if (v === "ugefokus") { S.tab = "vurder"; S.indstVisning = null; S.aabenSpiller = null; regNulstil(); S.vurderOmraade = "__fokus"; S.vurderGruppe = null; render(); }
+  }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
   else if (act==="vurder-omraade"){ S.vurderOmraade=v; render(); }   /* v6.5.0 · kun UGENS FOKUS (__fokus) bruger den */

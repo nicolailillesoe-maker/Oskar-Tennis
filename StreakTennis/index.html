@@ -500,7 +500,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.16.5 · 26. oktober 2026";
+const VERSION = "v5.16.6 · 26. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -7297,11 +7297,7 @@ const A = {
     S.tab = "rum"; S.rumData = null; S.rumBeskeder = []; S.rumBesked = null; S.rumUdkast = ""; S._rumSig = null;
     render();
     A.rumHent();
-    if (_rumTimer) clearInterval(_rumTimer);
-    _rumTimer = setInterval(function(){
-      if (S.tab !== "rum" || !S.rumKode) { clearInterval(_rumTimer); _rumTimer = null; return; }
-      A.rumHent(1);
-    }, 6000);
+    _rumPuls();   /* ⭐ v5.16.6 · pulsen bor i _rumPuls, så døren tilbage kan starte den igen */
   },
 
   rumLuk: () => {
@@ -9812,6 +9808,7 @@ const esc = (t) => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">
 /* ⭐ v5.3.0 · «💳 Betalt til …» på kontokortet — kun når serveren siger det */
 function _betaltTekst(EN) {
   if (!S.betaltTil) return "";
+  if (S.mpAftale && S.mpAftale.udbyder === "apple") return "";   /* ⭐ v5.16.6 · et Apple-køb har sin egen linje (🍎) — ingen dobbelt dato */
   const d = String(S.betaltTil).slice(0, 10).split("-");
   return ' 💳 ' + (EN ? "Paid until " : "Betalt til ") + (d.length === 3 ? d[2] + "/" + d[1] + "-" + d[0] : S.betaltTil) + '.';
 }
@@ -9874,12 +9871,19 @@ let _rumAaben = null;
 let _doerVist = false;   /* sat af den skærm, der tegnede døren i denne tegning */
 function _doerFor(til) { const d = S._doer; return (d && d.til === til && d.fra) ? d.fra : null; }
 function _tilFane(fra) {   /* tilbage ad døren — gennem appens egne døre, hvor der er en (stigeAabn/liveNuAabn henter) */
-  if (fra === "stige") A.stigeAabn(); else if (fra === "livenu") A.liveNuAabn(); else { S.tab = fra; render(); }
+  /* ⭐ v5.16.6 · som rumLuk: Tribunen får sin puls igen (Codes fund: den frøs), Live nu åbnes som LISTE (liveNuAabn springer ind i en enkelt kamp), samtalerne hentes */
+  if (fra === "stige") A.stigeAabn();
+  else if (fra === "livenu") { S.tab = "livenu"; render(); A.liveNuHent(); }
+  else if (fra === "rum" && S.rumKode) { S.tab = "rum"; render(); A.rumHent(); _rumPuls(); }
+  else if (fra === "chat" && S.chatVen) { S.tab = "chat"; render(); A.chatHent(1); }
+  else if (fra === "rumsnak" && S.snakRum) { S.tab = "rumsnak"; render(); A.snakHent(1); }
+  else { S.tab = fra; render(); }
   try { window.scrollTo(0, 0); } catch (_e) {}
 }
 function _rumFaneNavn(tab, EN) {
   return ({ hjem: EN ? "Home" : "Hjem", "hb-hjem": EN ? "Handbook" : "Håndbog", kamp: EN ? "Match" : "Kamp", fysisk: EN ? "Train" : "Træn", historik: "Stats",
-    opsaet: EN ? "Settings" : "Indstillinger", livenu: EN ? "Live now" : "Live nu", stige: "Streak Zone" })[tab] || (EN ? "Back" : "Tilbage");
+    opsaet: EN ? "Settings" : "Indstillinger", livenu: EN ? "Live now" : "Live nu", stige: "Streak Zone",
+    rum: EN ? "Tribune" : "Tribunen", chat: EN ? "Chat" : "Samtalen", rumsnak: EN ? "Room" : "Rummet" })[tab] || (EN ? "Back" : "Tilbage");   /* ⭐ v5.16.6 · ⑥ */
 }
 function _rumSkaerm(EN) {
   const r = _rumAaben; _rumAaben = null;
@@ -10392,6 +10396,14 @@ let _foelgData = null, _foelgFejl = null, _foelgTimer = null;
 
 // Tribunens puls. Ligger uden for A, saa den kan ryddes fra enhver vej ud.
 let _rumTimer = null;
+/* ⭐ v5.16.6 · Tribunens puls, ét sted: rumAabn og døren tilbage (_tilFane «rum») starter den — Codes fund: tribunen frøs efter «←» */
+function _rumPuls() {
+  if (_rumTimer) clearInterval(_rumTimer);
+  _rumTimer = setInterval(function(){
+    if (S.tab !== "rum" || !S.rumKode) { clearInterval(_rumTimer); _rumTimer = null; return; }
+    A.rumHent(1);
+  }, 6000);
+}
 // Reaktionen flyver op over skaermen og fader. Den skrives direkte i DOM'en
 // og ikke i S, fordi den ikke er TILSTAND — den er en kvittering paa 1,9 sek.
 function _rumFlyv(ikon) {
@@ -13991,7 +14003,7 @@ function _tegn() {
             } else if (_pl === "fri") {
               _kk += '<p class="lille" style="margin:2px 0 8px">🚀 ' + (EN ? "Full access + free streaming — live with no limit." : "Fuld adgang + fri streaming — live uden loft.") + _betaltTekst(EN) + '</p>';
             } else if (_pl === "fuld") {
-              _kk += '<p class="lille" style="margin:2px 0 8px">⭐ ' + (EN ? "Full access — incl. live streaming (49 kr/mo)." : "Fuld adgang — inkl. live-streaming (49 kr/md).") + _betaltTekst(EN) + '</p>';
+              _kk += '<p class="lille" style="margin:2px 0 8px">⭐ ' + (EN ? "Full access — 40 analyses and 3 live matches a month (49 kr/mo)." : "Fuld adgang — 40 analyser og 3 live-kampe om måneden (49 kr/md).")   /* ⭐ v5.16.6 · Fuld har et loft; Fri er uden (Nicolai 26/10) */ + _betaltTekst(EN) + '</p>';
             } else if (_pl === "klub") {
               _kk += '<p class="lille" style="margin:2px 0 8px">🏛 ' + (EN ? "Your club pays — full access." : "Klubben betaler — fuld adgang.") +
                 (_friLoeber() ? ' 🚀 ' + (EN ? "Free streaming — live with no limit." : "Fri streaming — live uden loft.") : '') + '</p>';   /* ⭐ v5.8.8 */
@@ -14129,7 +14141,7 @@ function _tegn() {
         if (_m) _m.h = _kk.length;   /* ⭐ v5.10.3 · fortryd aftale + betal her (hører til PLAN) */
         /* ⭐ v5.3.6 · FORTRYD AFTALE (forbrugeraftaleloven fra 19/6-2026: fortrydelsen skal kunne ske i appen).
            Kun på en betalt Fuld/Fri. «Bekræft fortrydelse» åbner en mail til os med brugernavnet — svaret er kvitteringen. */
-        if ((S.minPlan === "fuld" || S.minPlan === "fri") && S.betaltTil && S.kontoAaben !== "log") {
+        if ((S.minPlan === "fuld" || S.minPlan === "fri") && S.betaltTil && S.kontoAaben !== "log" && !(S.mpAftale && S.mpAftale.udbyder === "apple")) {   /* ⭐ v5.16.6 · et Apple-køb fortrydes hos Apple — aldrig en mail til os */
           if (S.fortrydSpoerg) {
             var _fm = "mailto:" + HANDEL.mail + "?subject=" + encodeURIComponent(EN ? "Withdraw agreement" : "Fortryd aftale") +
               "&body=" + encodeURIComponent((EN ? "I withdraw from my StreakTennis subscription. Username: " : "Jeg fortryder mit abonnement p\u00e5 StreakTennis. Brugernavn: ") + (S.minKonto || ""));

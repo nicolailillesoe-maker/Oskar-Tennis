@@ -500,7 +500,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.16.4 · 25. oktober 2026";
+const VERSION = "v5.16.5 · 26. oktober 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -4244,7 +4244,7 @@ function _profilHtml(EN) {
       const _B = (typeof BENCHMARKS !== "undefined" && BENCHMARKS[S.benchmark]) ? BENCHMARKS[S.benchmark] : null;
       h += '<div class="lille" style="margin:6px 2px 0;display:flex;align-items:center;gap:7px">' +
         '<span style="flex:1;min-width:0">\ud83c\udfaf ' + (EN ? "Role model" : "Forbillede") + ': <b style="color:var(--kridt)">' + (_B ? _B.emoji + ' ' + esc(_B.navn) : (EN ? "Sinner" : "Sinner")) + '</b> \u00b7 ' + (S.haand === "hoejre" ? '\ud83e\udef1 ' + (EN ? "right-handed" : "h\u00f8jreh\u00e5ndet") : '\ud83e\udef2 ' + (EN ? "left-handed" : "venstreh\u00e5ndet")) + '</span>' +
-        '<button class="knap valg" style="flex:none;min-height:40px;padding:0 14px;font-size:12px" data-a="tab" data-v="stil">' + (EN ? "Change" : "Skift") + '</button></div>';
+        '<button class="knap valg" style="flex:none;min-height:40px;padding:0 14px;font-size:12px" data-a="sideAabn" data-v="stil">' + (EN ? "Change" : "Skift") + '</button></div>';   /* v5.16.5 · «←» i STIL fører tilbage hertil */
     })();
   }
 
@@ -4558,7 +4558,7 @@ const A = {
     render();
   },
   /* ⭐⭐ v5.14.0 · SÆSONEN fra HJEM (Nicolais valg B) · svarene på et forslag · tilmeldingen bekræftes (K1) */
-  saesonAabn: () => { S._rumFraTab = (S.tab !== "fysisk") ? S.tab : null; S.traenPanel = "saeson"; A.tab("fysisk"); },   /* ⭐ v5.16.4 · døren ind huskes — kun når den krydser en fane */
+  saesonAabn: () => { S._doer = (S.tab !== "fysisk") ? { fra: S.tab, til: "traen-saeson" } : null; S.traenPanel = "saeson"; A.tab("fysisk"); },   /* ⭐ v5.16.4 · døren ind huskes — kun når den krydser en fane · v5.16.5: med målet */
   saesonSvar: async (v) => {
     const EN = S.sprog === "en";
     const p = String(v || "").split("|"); const id = p[0], hvad = p[1];
@@ -5357,7 +5357,8 @@ const A = {
     const noegle = String(S.klubScannet || "").trim().toUpperCase();
     if (!noegle || !S.spillerNoegle) return;
     S.klubScannet = "";
-    A.tab("opsaet"); S.opsAaben = "klub"; S.klubBudBesked = { fejl: false, t: EN ? "Connecting to the club…" : "Tilknytter klubben…" }; render();
+    const _fraTab = S.tab; A.tab("opsaet"); S.opsAaben = "klub"; S._doer = (_fraTab !== "opsaet") ? { fra: _fraTab, til: "ops-klub" } : null;   /* ⭐ v5.16.5 · døren ind */
+    S.klubBudBesked = { fejl: false, t: EN ? "Connecting to the club…" : "Tilknytter klubben…" }; render();
     const r = await klubBudKald("indloes", { noegle });
     if (r && r.klub) {
       S.klubKode = noegle; lager.gem("sai-klubkode", S.klubKode);
@@ -5406,7 +5407,6 @@ const A = {
 
   // ⭐ v4.32.0 · § i vennelisten. Aabner det kort, der ALLEREDE staar
   // med hele forklaringen — vi skriver den ikke to steder.
-  dataAabn: () => { S.opsAaben = "data"; S.tab = "opsaet"; render(); },
 
 // ══════════════════════════════════════════════════════════════════
   // TRIBUNEN
@@ -6678,6 +6678,8 @@ const A = {
     render(); A.snakHent();
   },
   snakLuk: () => { S.snakRum = null; S.snakBeskeder = null; S.snakValgtId = null;
+    const _fra = _doerFor("rumsnak"); S._doer = null;   /* ⭐ v5.16.5 · tilbage ad døren ind */
+    if (_fra) { _tilFane(_fra); return; }
     S.tab = "stige"; S.zonePanel = (teamKunStreaks() ? null : "rum"); render(); },   // ⭐ v4.95.0
   snakHent: async (puls) => {
     if (!S.snakRum || S.snakHenter) return;
@@ -7290,7 +7292,7 @@ const A = {
     const d = String(v || "").split("|");
     // ⭐ v4.103.0 · husk døren ind: fra chatten eller rummet skal «←» føre
     //   TILBAGE dertil — ikke til stigen. Ellers er tavlen en blindgyde.
-    S._rumFra = (S.tab === "chat" && S.chatVen) ? "chat" : (S.tab === "rumsnak" && S.snakRum) ? "rumsnak" : (S.tab === "hjem" || S.tab === "livenu") ? S.tab : null;   /* v5.16.0 · også fra HJEM og Live nu */
+    S._rumFra = (S.tab === "chat" && S.chatVen) ? "chat" : (S.tab === "rumsnak" && S.snakRum) ? "rumsnak" : (S.tab === "hjem" || S.tab === "livenu" || S.tab === "kamp") ? S.tab : null;   /* v5.16.0 · også fra HJEM og Live nu · v5.16.5 · og KAMP */
     S.rumKode = d[0] || null; S.rumNavn = d[1] || "";
     S.tab = "rum"; S.rumData = null; S.rumBeskeder = []; S.rumBesked = null; S.rumUdkast = ""; S._rumSig = null;
     render();
@@ -7310,6 +7312,7 @@ const A = {
     if (_fra === "chat" && S.chatVen) { S.tab = "chat"; render(); A.chatHent(1); return; }
     if (_fra === "rumsnak" && S.snakRum) { S.tab = "rumsnak"; render(); A.snakHent(1); return; }
     if (_fra === "hjem" || _fra === "livenu") { S.tab = _fra; render(); A.liveNuHent(); return; }   /* ⭐ v5.16.0 */
+    if (_fra === "kamp") { S.tab = "kamp"; render(); return; }   /* ⭐ v5.16.5 · «Åbn den kamp» fra KAMP */
     S.tab = "stige"; render();
     // ⭐ v4.82.0 · samme dør som i `stigeAabn` (se dér).
     if (S.spillerNoegle && iDetDelteLag() && !S.vennerHenter) A.venneHent();
@@ -8357,7 +8360,10 @@ const A = {
     render(); A.chatHent();
   },
   chatLuk: () => { S.chatVen = null; S.chatBeskeder = null; S.chatValgtId = null;
-    S.chatVenLaest = null; S.chatKort = null; S.tab = "stige"; render(); A.ulaestHent(); },
+    S.chatVenLaest = null; S.chatKort = null;
+    const _fra = _doerFor("chat"); S._doer = null;   /* ⭐ v5.16.5 · tilbage ad døren ind (en notifikation fra en anden fane) */
+    if (_fra) { _tilFane(_fra); A.ulaestHent(); return; }
+    S.tab = "stige"; render(); A.ulaestHent(); },
   // ⭐ v4.27.0 · Chatten har sin egen funktion nu — rummets vagter ordret.
   // Den gamle vej i spiller-sync roeres ikke; den bruges bare ikke mere.
   // ⭐ v4.29.0 · Ét tryk paa en boble folder dens handlinger ud. Andet
@@ -8972,13 +8978,17 @@ const A = {
   //   { plan: gaest|fuld|fri } → 200 { plan } · 409 klub (klubben betaler) · 403 afventer.
   //   Et eget valg afslutter en gave paa serveren (konto v8) — og kortet siger det samme her.
   /* ⭐ v5.10.3 · Din konto: et rum åbnes (plan · live) — eller tilbage til fliserne (tom v) */
-  rumFraTab: (v) => {   /* ⭐ v5.16.4 · «‹ Hjem» i et rum, der blev åbnet fra en anden fane: fanens panel lukkes helt + fanen før */
-    const id = String(v || ""); const fra = S._rumFraTab; S._rumFraTab = null;
+  doerTilbage: (v) => {   /* ⭐ v5.16.4 · «‹ Hjem» i et rum (eller «←» på en side), der blev åbnet fra en anden fane: panelet lukkes helt + fanen før */
+    const id = String(v || ""); const fra = _doerFor(id); S._doer = null;
     if (id.indexOf("traen-") === 0) S.traenPanel = null;
     else if (id.indexOf("stat-") === 0) { S.statPanel = null; S.kampAaben = {}; S.kampMere = null; }
-    else if (id.indexOf("ops-") === 0) { S.opsAaben = null; S.kontoRum = null; }
-    if (fra) S.tab = fra;
-    render(); try { window.scrollTo(0, 0); } catch (_e) {}
+    else if (id.indexOf("ops-") === 0 || id.indexOf("konto-") === 0) { S.opsAaben = null; S.kontoRum = null; }   /* v5.16.5 · også Din kontos rum */
+    if (fra) _tilFane(fra); else { render(); try { window.scrollTo(0, 0); } catch (_e) {} }
+  },
+  sideAabn: (v) => {   /* ⭐ v5.16.5 · en SIDE (stil · guide · opsaet · stige) åbnet fra en anden fane: «←» fører tilbage dertil, ikke til sidens faste hjem */
+    const til = String(v || ""); const fra = S.tab;
+    S._doer = (fra !== til) ? { fra: fra, til: til } : null;
+    if (til === "stige") A.stigeAabn(); else A.tab(til);
   },
   kontoRum: (v) => {
     S.kontoRum = v || null; S.kontoBesked = null;
@@ -9856,23 +9866,30 @@ let _kontoRumAaben = null;
    men som en liste underneden»). Samme mekanik som Din kontos rum: en flise åbner sit rum som egen skærm over alt andet, med
    «‹ tilbage» og rummets navn øverst; fliserne står urørte bagved. {tilbage, titel, html, a, v, id} sættes af fanen, der tegner. */
 let _rumAaben = null;
-/* ⭐⭐ v5.16.4 · DØREN IND. Åbner en dør et rum under en ANDEN fane (Sæsonen fra HJEM åbner under TRÆN), sætter døren S._rumFraTab,
-   og rummets «‹» hedder så den fane, man kom fra, og fører derhen. Nicolai 25/10: «Hvis jeg går ind i sæson fra hjemmeskærmen og går
-   tilbage igen - så kommer jeg ikke samme sted hen.» Målt 25/10: Sæsonen var det eneste rum fra de fire faner, der landede forkert.
-   Udgave 2 (Codes fund): døren sættes af den, der krydser — ikke gættet af, at fanen skiftede i samme tegning. */
+/* ⭐⭐ v5.16.4 · DØREN IND. Åbner en dør et rum eller en side under en ANDEN fane (Sæsonen fra HJEM åbner under TRÆN), sætter døren
+   S._doer = { fra, til }, og stedets «‹»/«←» fører så tilbage til den fane, man kom fra. Nicolai 25/10: «Hvis jeg går ind i sæson fra
+   hjemmeskærmen og går tilbage igen - så kommer jeg ikke samme sted hen.» Den, der krydser, sætter døren — intet gættes af tegningen.
+   ⭐ v5.16.5 · RUNDE 2: `til` er MÅLET (fane, rum-id «traen-saeson»/«ops-klub» eller «konto-data»), så døren kun gælder dét sted — og
+   efter hver tegning glemmes en dør, hvis mål ikke står på skærmen (Codes fund: et rum, der stod åbent, fik «‹ forrige fane»). */
+let _doerVist = false;   /* sat af den skærm, der tegnede døren i denne tegning */
+function _doerFor(til) { const d = S._doer; return (d && d.til === til && d.fra) ? d.fra : null; }
+function _tilFane(fra) {   /* tilbage ad døren — gennem appens egne døre, hvor der er en (stigeAabn/liveNuAabn henter) */
+  if (fra === "stige") A.stigeAabn(); else if (fra === "livenu") A.liveNuAabn(); else { S.tab = fra; render(); }
+  try { window.scrollTo(0, 0); } catch (_e) {}
+}
 function _rumFaneNavn(tab, EN) {
-  return ({ hjem: EN ? "Home" : "Hjem", "hb-hjem": EN ? "Home" : "Hjem", kamp: EN ? "Match" : "Kamp", fysisk: EN ? "Train" : "Træn", historik: "Stats",
-    opsaet: EN ? "Settings" : "Indstillinger", livenu: "Live nu", stige: "Streak Zone" })[tab] || (EN ? "Back" : "Tilbage");
+  return ({ hjem: EN ? "Home" : "Hjem", "hb-hjem": EN ? "Handbook" : "Håndbog", kamp: EN ? "Match" : "Kamp", fysisk: EN ? "Train" : "Træn", historik: "Stats",
+    opsaet: EN ? "Settings" : "Indstillinger", livenu: EN ? "Live now" : "Live nu", stige: "Streak Zone" })[tab] || (EN ? "Back" : "Tilbage");
 }
 function _rumSkaerm(EN) {
   const r = _rumAaben; _rumAaben = null;
-  if (!r) { S._rumFraTab = null; return ""; }
-  const _fra = S._rumFraTab;
+  if (!r) return "";
+  const _fra = _doerFor(r.id); if (_fra) _doerVist = true;
   return '<div id="rum-skaerm" data-rum-skaerm="' + r.id + '" style="position:fixed;inset:0;z-index:60;background:var(--dyb);overflow:auto;padding:max(12px,env(safe-area-inset-top)) 0 max(24px,env(safe-area-inset-bottom))">' +
     '<div class="wrap" style="padding-top:0">' +
     '<div style="display:flex;align-items:center;gap:10px;margin:0 0 12px">' +
     (_fra
-      ? '<button class="knap valg" data-rum-tilbage="1" data-rum-fra="' + esc(_fra) + '" style="flex:none;min-height:40px;margin:0;padding:6px 14px" data-a="rumFraTab" data-v="' + esc(r.id) + '">\u2039 ' + esc(_rumFaneNavn(_fra, EN)) + '</button>'   /* v5.16.4 · tilbage til døren ind */
+      ? '<button class="knap valg" data-rum-tilbage="1" data-rum-fra="' + esc(_fra) + '" style="flex:none;min-height:40px;margin:0;padding:6px 14px" data-a="doerTilbage" data-v="' + esc(r.id) + '">\u2039 ' + esc(_rumFaneNavn(_fra, EN)) + '</button>'   /* v5.16.4 · tilbage til døren ind */
       : '<button class="knap valg" data-rum-tilbage="1" style="flex:none;min-height:40px;margin:0;padding:6px 14px" data-a="' + r.a + '" data-v="' + (r.v || "") + '">' + r.tilbage + '</button>') +
     '<span style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">' + r.titel + '</span></div>' +
     r.html + '</div></div>';
@@ -10087,10 +10104,13 @@ function _kontoRum(kk, m, EN) {
 function _kontoRumSkaerm(EN) {
   const r = _kontoRumAaben; _kontoRumAaben = null;
   if (!r) return "";
+  const _fra = _doerFor("konto-" + r.rum); if (_fra) _doerVist = true;   /* ⭐ v5.16.5 · døren ind (DINE DATA fra Streak Zone) */
   return '<div id="konto-rum" data-kontorum-skaerm="' + r.rum + '" style="position:fixed;inset:0;z-index:60;background:var(--dyb);overflow:auto;padding:max(12px,env(safe-area-inset-top)) 0 max(24px,env(safe-area-inset-bottom))">' +
     '<div class="wrap" style="padding-top:0">' +
     '<div style="display:flex;align-items:center;gap:10px;margin:0 0 12px">' +
-    '<button class="knap valg" data-kontorum-tilbage="1" style="flex:none;min-height:40px;margin:0;padding:6px 14px" data-a="kontoRum" data-v="">‹ ' + (EN ? "Your account" : "Din konto") + '</button>' +
+    (_fra
+      ? '<button class="knap valg" data-kontorum-tilbage="1" data-rum-fra="' + esc(_fra) + '" style="flex:none;min-height:40px;margin:0;padding:6px 14px" data-a="doerTilbage" data-v="konto-' + esc(r.rum) + '">\u2039 ' + esc(_rumFaneNavn(_fra, EN)) + '</button>'
+      : '<button class="knap valg" data-kontorum-tilbage="1" style="flex:none;min-height:40px;margin:0;padding:6px 14px" data-a="kontoRum" data-v="">‹ ' + (EN ? "Your account" : "Din konto") + '</button>') +
     '<span style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">' + r.titel + '</span></div>' +
     (r.raa ? r.html : '<div class="kort dev-kant dev-kant-is" style="padding:14px">' + r.html + '</div>') +   /* v5.12.1 · raa */
     '</div></div>';
@@ -10945,12 +10965,14 @@ function __saiRute(raa) {
     if (hvad === "chat" && /^[0-9a-f]{16}$/.test(arg)) {
       if (S.rolle === "familie") return false;   // Signe-reglen
       var _v = (S.venner || []).filter(function (x) { return x && x.id === arg; })[0];
+      S._doer = (S.tab !== "stige" && S.tab !== "chat") ? { fra: S.tab, til: "chat" } : null;   /* ⭐ v5.16.5 · døren ind */
       A.chatAabn(arg + "|" + ((_v && _v.fornavn) || ""));
       return true;
     }
     if (hvad === "rum" && /^[0-9a-f-]{36}$/.test(arg)) {
       if (S.rolle === "familie") return false;
       var _g = (S.grListe || []).filter(function (x) { return x && x.id === arg; })[0];
+      S._doer = (S.tab !== "stige" && S.tab !== "rumsnak") ? { fra: S.tab, til: "rumsnak" } : null;   /* ⭐ v5.16.5 · døren ind */
       A.snakAabn(arg + "|" + ((_g && _g.navn) || ""));
       return true;
     }
@@ -10970,9 +10992,10 @@ function __saiRute(raa) {
     if (hvad === "traen")   { A.tab("fysisk"); return true; }
     if (hvad === "traener") { A.tab("traener"); return true; }
     if (hvad === "stats")   { A.tab("historik"); return true; }
-    if (hvad === "klub") { A.tab("opsaet"); S.opsAaben = "klub"; render(); try { A.klubBudHent(true); } catch (_e) {} return true; }   /* ⭐ v5.1.0 */
+    var _fraTab = S.tab;   /* ⭐ v5.16.5 · døren ind: ruten krydser en fane */
+    if (hvad === "klub") { A.tab("opsaet"); S.opsAaben = "klub"; S._doer = (_fraTab !== "opsaet") ? { fra: _fraTab, til: "ops-klub" } : null; render(); try { A.klubBudHent(true); } catch (_e) {} return true; }   /* ⭐ v5.1.0 */
     if (hvad === "port") {
-      A.tab("opsaet"); S.opsAaben = "ejer"; render();
+      A.tab("opsaet"); S.opsAaben = "ejer"; S._doer = (_fraTab !== "opsaet") ? { fra: _fraTab, til: "ops-ejer" } : null; render();
       if (A.ejerHent && S.portStatus && S.portStatus.ejer) A.ejerHent();
       return true;
     }
@@ -12254,6 +12277,7 @@ function _tegn() {
       return (uf && uf.omraade ? (EN?"focus: ":"fokus: ") + esc(uf.omraade) + " · " : "") + n + (EN?" assessments":" vurderinger");
     };
     const _hjempil = function(maal){
+      if (_doerFor(S.tab)) return '<button class="pil-tilbage" data-a="doerTilbage" data-v="' + esc(S.tab) + '" data-rum-fra="' + esc(_doerFor(S.tab)) + '">←</button>';   /* ⭐ v5.16.5 · døren ind */
       return '<button class="pil-tilbage" data-a="tab" data-v="' + maal + '">←</button>';
     };
     if (S.tab === "hjem") {
@@ -12364,7 +12388,7 @@ function _tegn() {
               '</div><span style="flex:none;opacity:.6">▸</span></div></button>';
           });
         }
-        if (!(S.venner || []).length) h += '<button class="knap valg" style="width:100%;min-height:44px;margin-top:6px" data-a="stigeAabn">👥 ' + (EN ? "Find friends in Streak Zone" : "Find venner i Streak Zone") + '</button>';
+        if (!(S.venner || []).length) h += '<button class="knap valg" style="width:100%;min-height:44px;margin-top:6px" data-a="sideAabn" data-v="stige">👥 ' + (EN ? "Find friends in Streak Zone" : "Find venner i Streak Zone") + '</button>';   /* v5.16.5 · «←» i Streak Zone fører tilbage hertil */
       }
     } else if (S.tab === "rum") {
       // ══════════════════════════════════════════════════════════════
@@ -12735,7 +12759,7 @@ function _tegn() {
           '<p class="lille" style="margin:0 0 8px">' + (EN
             ? "The streak shows how many sessions in a row each player on your team has kept going \u2014 first names and numbers, nothing else. It is OFF until you choose it under Settings."
             : "Holdets stige viser, hvor mange tr\u00e6ninger i tr\u00e6k hver spiller p\u00e5 holdet har \u2014 fornavne og tal, intet andet. Dit EGET tal ovenfor er altid t\u00e6ndt. Stigen er sl\u00e5et FRA, indtil du selv v\u00e6lger den til under Indstillinger.") + '</p>' +
-          '<button class="knap" style="background:var(--grus)" data-a="tab" data-v="opsaet">' + (EN?"Go to Settings":"G\u00e5 til Indstillinger") + '</button></div>';
+          '<button class="knap" style="background:var(--grus)" data-a="sideAabn" data-v="opsaet">' + (EN?"Go to Settings":"G\u00e5 til Indstillinger") + '</button></div>';   /* v5.16.5 · «←» i Indstillinger fører tilbage hertil */
       } else {
         const sd = S.stigeData;
         if (S.stigeHenter && !sd) h += '<div class="kort"><p class="lille" style="margin:0">' + (EN?"Fetching the streak \u2026":"Henter streaken \u2026") + '</p></div>';
@@ -13298,7 +13322,7 @@ function _tegn() {
             : "Teamet kigger med \u2014 venner inviteres fra spillerens egen telefon. Live-kampe kan altid deles fra tavlen.") + '</p>';
         } else {
           h += '<div style="display:flex;justify-content:center;margin:14px 0 2px">' +
-            '<button data-a="dataAabn" style="background:none;border:0;color:var(--daempet);font-size:11.5px;cursor:pointer;padding:9px 12px;min-height:44px;opacity:.7;letter-spacing:.3px">\u00a7 ' +
+            '<button data-a="betingelser" style="background:none;border:0;color:var(--daempet);font-size:11.5px;cursor:pointer;padding:9px 12px;min-height:44px;opacity:.7;letter-spacing:.3px">\u00a7 ' +   /* v5.16.5 · svaret står under Betingelser & privatliv («Hvad venner ser») — kortet «data» findes ikke siden v5.12.5 */
             (EN ? "What does a friend see?" : "Hvad ser en ven?") + '</button></div>';
         }
         h += '</div>';
@@ -14401,7 +14425,7 @@ function _tegn() {
         '<p class="lille" style="margin:0 0 9px">' + (EN
           ? "How StreakTennis works \u2014 the four tabs, a match ball by ball, the streak, friends, your team, live and plans \u2014 is written in the handbook."
           : "Hvordan StreakTennis virker \u2014 de fire faner, en kamp bold for bold, streaken, venner, dit team, live og planer \u2014 st\u00e5r i h\u00e5ndbogen.") + '</p>' +
-        '<button class="knap" style="width:100%;min-height:46px;background:var(--grus)" data-a="tab" data-v="guide">\ud83d\udcd8 ' + (EN ? "How the app works \u2192" : "S\u00e5dan virker appen \u2192") + '</button>' +
+        '<button class="knap" style="width:100%;min-height:46px;background:var(--grus)" data-a="sideAabn" data-v="guide">\ud83d\udcd8 ' + (EN ? "How the app works \u2192" : "S\u00e5dan virker appen \u2192") + '</button>' +   /* v5.16.5 · «←» i GUIDE fører tilbage hertil */
         '<p class="lille" style="margin:12px 0 8px">' + (EN
           ? "An idea? Something that bugs you? Write it \u2014 it is read every time we build. A clear improvement is just built; a grey area is discussed first."
           : "En id\u00e9? Noget der driller? Skriv det \u2014 det bliver l\u00e6st, hver gang der bygges. En klar forbedring bliver bare bygget; en gr\u00e5zone bliver vendt f\u00f8rst.") + '</p>' +
@@ -15782,6 +15806,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
   // ⭐ v4.40.0 · Billedet ligger OVER alt andet — derfor sidst i strengen.
   h += _rumSkaerm(EN);        /* ⭐ v5.12.0 · fanernes rum som egen skærm */
   h += _kontoRumSkaerm(EN);   /* ⭐ v5.10.4 · Din kontos rum som egen skærm (over fanernes rum) */
+  if (S._doer && !_doerVist && S._doer.til !== S.tab) S._doer = null; _doerVist = false;   /* ⭐ v5.16.5 · en dør, hvis mål ikke står på skærmen, glemmes (Codes fund 3) */
   h += _koebSkaerm(EN);   /* ⭐ v5.10.1 · betalingsskærmen — over alt andet (også over rummet) */
   h += _bilVis(EN);
   // ⛔⛔ v4.87.0 · FODNOTEN LØJ OM DATA — OG DEN STÅR PÅ HVER ENESTE SKÆRM.

@@ -910,6 +910,7 @@ let S = {
   tab: "hjem", aabenSpiller: null,
   nu: null, nuHentet: 0, prg: null, prgGodkendt: null, reg: null, vurderLige: null, prgUgedag: 0,   /* ⭐ v6.0.0 · programmet */
   prgVisning: null, imp: null, impTekst: "",   /* v6.3.0 · fliserne under PROGRAM + importen */
+  hj: null, hjSpg: "",   /* v6.22.2 · ❓ Spørg guiden: {henter, svar, kilde, brugt, loft, fejl} */
   udstil: null,   /* v6.6.0 · trin 2c */
   vurderOmraade: null, vurderGruppe: null, vurderScores: {},
   kvartalUdkast: null, kvartalAI: null, kvartalHenter: false, kvartalNote: null,
@@ -1162,7 +1163,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.22.1 \u00b7 26. oktober 2026";
+const VERSION = "v6.22.2 \u00b7 29. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1704,6 +1705,13 @@ Object.assign(EN, {   /* v6.10.0 · kortet */
   "{x} er lagt i truppen ✓ · {x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 SPILLERE.": "{x} has been added to the squad ✓ · {x} calls their own group «{x}» — put {x} in a group under 👥 PLAYERS."
 });
 Object.assign(EN, {   /* v6.14.0 · Spejlet */
+  "Spørg guiden": "Ask the guide", "❓ Spørg guiden": "❓ Ask the guide", "SPØRG GUIDEN": "ASK THE GUIDE", "svarer kun det, guiden kan": "answers only what the guide can", "svaret står i rummet": "the answer is in the room",
+  "Spørg, hvordan man gør noget i StreakCoach. Svaret kommer fra guiden — og kun derfra. Står det ikke i guiden, siger den det.": "Ask how to do something in StreakCoach. The answer comes from the guide — and only from there. If it isn't in the guide, it says so.",
+  "Fx: hvordan godkender jeg programmet?": "E.g.: how do I approve the programme?", "spørger guiden …": "asking the guide …", "FRA GUIDEN": "FROM THE GUIDE", "IKKE I GUIDEN": "NOT IN THE GUIDE",
+  "af": "of", "spørgsmål brugt i dag": "questions used today", "Guiden husker ikke, hvad du spurgte om før — hvert spørgsmål står alene.": "The guide doesn't remember what you asked before — every question stands alone.", "Læs hele guiden": "Read the whole guide",
+  "Ingen forbindelse — tjek netværket og prøv igen.": "No connection — check the network and try again.", "Du har spurgt guiden 30 gange i dag — prøv igen i morgen.": "You have asked the guide 30 times today — try again tomorrow.",
+  "Spørgsmålet er for langt — højst 300 tegn.": "The question is too long — 300 characters at most.", "Skriv et spørgsmål først.": "Write a question first.", "Guiden kan ikke spørges lige nu — prøv igen om lidt.": "The guide can't be asked right now — try again shortly.",
+  "Log ind som træner for at spørge guiden.": "Sign in as a coach to ask the guide.", "Noget gik galt — prøv igen.": "Something went wrong — try again.",
   "Spejlet": "The mirror", "🪞 Spejlet": "🪞 The mirror", "din skærm deles med {x}": "your screen is shared with {x}",
   "1 træner deler med dig": "1 coach shares with you", "{n} trænere deler med dig": "{n} coaches share with you", "del din skærm — eller se en andens": "share your screen — or see someone else's",
   "🪞 DEL MIN SKÆRM": "🪞 SHARE MY SCREEN",
@@ -3147,7 +3155,7 @@ function bundNav(){
 
 function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emoji som flisen på HJEM */
   if (tab === "indst" && S.indstVisning) return { nye: "\ud83d\udce5 Nye spillere", forbindelse: "\u2699\ufe0f Forbindelse", sky: "\u2601\ufe0f Skyen",
-    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", adgang: "\ud83d\udcf2 Invit\u00e9r og adgang", spejl: "\ud83e\ude9e Spejlet",
+    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", adgang: "\ud83d\udcf2 Invit\u00e9r og adgang", spejl: "\ud83e\ude9e Spejlet", spoerg: "\u2753 Sp\u00f8rg guiden",
     "adgang-spiller": "\ud83c\udfbe Invit\u00e9r spiller", "adgang-traener": "\ud83e\uddd1\u200d\ud83c\udfeb Invit\u00e9r tr\u00e6ner", "adgang-link": "\ud83d\udcf1 Link til appen", "adgang-klub": "\ud83d\udc65 Klubben" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen", udstil: "\ud83c\udf10 Udstil" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Spillere", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
@@ -3536,6 +3544,31 @@ function snakDag(t) {
 }
 /* ⭐⭐ v6.17.0 · WEEKENDEN — motoren `saeson` v3 med klubbens trænernøgle. Håndtaget er truppens (saltet, som hent-hold). */
 const SAESON_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/saeson";
+/* ⭐⭐ v6.22.2 · ❓ SPØRG GUIDEN — motoren `hjaelp` v1. Den kan KUN det, guiden kan (Nicolai 28/10: «lige præcist»). Kontrakten:
+   {handling:"spoerg", sprog, spoergsmaal} med trænernøglen → {svar, kilde:"guide"|"udenfor", sprog, brugt, loft}. */
+const HJAELP_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/hjaelp";
+async function hjaelpKaldK(spoergsmaal){
+  const kn = lager.hent("klubkode", "");
+  if (!kn) return { fejl: "mangler-klubkode" };
+  const st = new AbortController(); const ur = setTimeout(() => st.abort(), 45000);
+  try {
+    const r = await fetch(HJAELP_URL, { method: "POST", headers: { "content-type": "application/json", "x-klub-noegle": kn },
+      body: JSON.stringify({ handling: "spoerg", sprog: SPROG === "en" ? "en" : "da", spoergsmaal: spoergsmaal }), signal: st.signal });
+    clearTimeout(ur);
+    const d = await r.json().catch(() => ({}));
+    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || "netvaerk", status: r.status, tekst: d.fejl || "" });
+  } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+}
+function hjaelpFejltekst(r){   /* hvert udfald sin egen sætning (75) — «ingen forbindelse» KUN om netværket (94) */
+  const k = r && r.fejl;
+  if (k === "netvaerk") return T("Ingen forbindelse — tjek netværket og prøv igen.");
+  if (k === "loft") return (r.tekst ? r.tekst : T("Du har spurgt guiden 30 gange i dag — prøv igen i morgen."));
+  if (k === "for-lang") return T("Spørgsmålet er for langt — højst 300 tegn.");
+  if (k === "format") return T("Skriv et spørgsmål først.");
+  if (k === "udbyder" || k === "guide") return T("Guiden kan ikke spørges lige nu — prøv igen om lidt.");
+  if (k === "adgang" || k === "mangler-klubkode" || k === "kraever-traener") return T("Log ind som træner for at spørge guiden.");
+  return T("Noget gik galt — prøv igen.");
+}
 async function saesonKaldK(handling, krop) {
   const kn = lager.hent("klubkode", "");
   if (!kn) return { fejl: "mangler-klubkode" };
@@ -4345,6 +4378,35 @@ function indstKonto(){   /* v6.8.0 · 👤 din konto — log ud · skift klub ·
   }
   return h;
 }
+function indstSpoerg(){   /* v6.22.2 · ❓ Spørg guiden — kun det, guiden kan */
+  var hj = S.hj || {};
+  var h = '<div class="kort" data-hj-rum="1" style="--tone:var(--is)">' +
+    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\u2753 ' + T("SPØRG GUIDEN") + '</div>' +
+    '<p class="lille" style="margin:6px 0 8px">' + T("Spørg, hvordan man gør noget i StreakCoach. Svaret kommer fra guiden — og kun derfra. Står det ikke i guiden, siger den det.") + '</p>' +
+    '<input class="felt" data-felt="hjSpg" value="' + esc(S.hjSpg || "") + '" placeholder="' + T("Fx: hvordan godkender jeg programmet?") + '" maxlength="300" autocapitalize="sentences" style="width:100%;margin:0 0 6px">' +
+    '<button class="knap" style="width:100%;min-height:46px;background:var(--grus)"' + (hj.henter ? " disabled" : "") + ' data-act="hj-spoerg">' + (hj.henter ? "\u23f3 " + T("spørger guiden …") : "\u2753 " + T("Spørg guiden")) + '</button>';
+  if (hj.fejl) h += '<p class="lille" data-hj-fejl="1" style="margin:10px 0 0;color:var(--tabt)">' + esc(hj.fejl) + '</p>';
+  if (hj.svar) {
+    var fra = hj.kilde === "guide";
+    h += '<div data-hj-svar="' + (fra ? "guide" : "udenfor") + '" style="margin-top:12px;padding:10px 12px;border-radius:10px;border:1.5px solid ' + (fra ? "var(--is)" : "var(--guld)") + '">' +
+      '<b style="font-size:11px;letter-spacing:.06em;color:' + (fra ? "var(--is)" : "var(--guld)") + '">' + (fra ? "\ud83d\udcd6 " + T("FRA GUIDEN") : "\u26a0\ufe0f " + T("IKKE I GUIDEN")) + '</b>' +
+      '<p class="lille" style="margin:6px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(hj.svar) + '</p></div>';
+    if (typeof hj.brugt === "number") h += '<p class="lille" style="margin:6px 0 0;color:var(--daempet)">' + hj.brugt + " " + T("af") + " " + (hj.loft || 30) + " " + T("spørgsmål brugt i dag") + '.</p>';
+  }
+  h += '<p class="lille" style="margin:10px 0 0;color:var(--daempet)">' + T("Guiden husker ikke, hvad du spurgte om før — hvert spørgsmål står alene.") + ' <a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700">' + T("Læs hele guiden") + ' \u2197</a></p></div>';
+  return h;
+}
+function hjaelpSpoerg(){   /* v6.22.2 */
+  var spg = String(S.hjSpg || "").replace(/\s+/g, " ").trim();
+  if (spg.length < 3) { S.hj = { fejl: T("Skriv et spørgsmål først.") }; render(); return; }
+  if (spg.length > 300) { S.hj = { fejl: T("Spørgsmålet er for langt — højst 300 tegn.") }; render(); return; }
+  S.hj = { henter: true }; render();
+  hjaelpKaldK(spg).then(function(r){
+    if (r && !r.fejl && typeof r.svar === "string") S.hj = { svar: r.svar, kilde: r.kilde === "guide" ? "guide" : "udenfor", brugt: r.brugt, loft: r.loft };
+    else S.hj = { fejl: hjaelpFejltekst(r) };
+    render();
+  });
+}
 function indstSprog(){   /* v6.8.0 · 🌐 sprog: skærmen og evalueringerne */
   let h = '';
     // ── SPROG · v5.0.0
@@ -4474,6 +4536,7 @@ function indstOversigt(){   /* v6.8.0 · fliserne — hver bærer sin status, s�
   h += '<div class="dev-grid">' +
     /* guiden er et LINK, ikke en undervisning — den bor i ROD og åbner i en ny fane */
     '<a class="dev-flise dev-kant dev-kant-is" href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="text-decoration:none"><span class="dev-ikon">📖</span><b>Sådan virker StreakCoach</b><small>guide med billeder af hver skærm — åbner i en ny fane</small></a>' +
+    prgFlise("indst-vis", "spoerg", "❓", T("Spørg guiden"), (S.hj && S.hj.svar) ? T("svaret står i rummet") : T("svarer kun det, guiden kan"), "dev-kant-is") +   /* v6.22.2 */
     prgFlise("indst-vis", "adgang", "📲", "Invitér og adgang", "spillere og trænere — på brugernavn", "dev-kant-staal") +   /* v6.16.0 · nøglefri */
     prgFlise("indst-vis", "konto", "👤", "Din konto",
       _k ? ((_bs.fejl || _bs.konflikt) ? '<span style="color:var(--guld);font-weight:800">noget skal ordnes — åbn</span>' : 'logget ind som ' + esc(_k.brugernavn)) : '<span style="color:var(--guld);font-weight:800">ikke logget ind</span>',
@@ -4571,6 +4634,7 @@ function traenerIndstillinger(){   /* v6.8.0 · fliser først, undervisningen ba
   if (S.indstVisning === "adgang-traener") return adgangKortet("traener");
   if (S.indstVisning === "adgang-link") return adgangKortet("link");
   if (S.indstVisning === "adgang-klub") return adgangKortet("klub");
+  if (S.indstVisning === "spoerg") return indstSpoerg();   /* v6.22.2 */
   if (S.indstVisning === "sprog") return indstSprog();
   if (S.indstVisning === "streak") return indstStreak();
   if (S.indstVisning === "trup") return indstTrup();
@@ -5082,6 +5146,7 @@ document.addEventListener("click", function(e){
   if (e.target && e.target.tagName === "SELECT") return;   // v5.0.0 · et select i en række åbner ikke rækken
   const t = e.target.closest("[data-act]"); if (!t) return;
   const act = t.dataset.act, v = t.dataset.v;
+  if (act==="hj-spoerg"){ hjaelpSpoerg(); }   /* v6.22.2 */
   if (act==="sprog-saet"){ SPROG = (v === "en" ? "en" : "da"); lager.gem("sprog", SPROG); try { document.documentElement.lang = SPROG; } catch (_e) {} render(); }
   else if (act==="evalsprog-saet"){ EVALSPROG = (v === "en" ? "en" : "da"); lager.gem("evalsprog", EVALSPROG); render(); }
   else if (act==="ops-aabn"){ S.opsAaben = !S.opsAaben; S.kkUdkast = lager.hent("klubkode",""); render(); }

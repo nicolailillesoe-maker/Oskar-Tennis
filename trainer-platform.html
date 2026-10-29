@@ -177,6 +177,10 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 .dev-hero{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:20px 18px;border-radius:20px;border:1.5px solid transparent;background:linear-gradient(160deg,#101E3A,#0C1526) padding-box,linear-gradient(135deg,#083EA7,#4B17B6 40%,#EF3E4A 75%,#FB9B2A) border-box !important;color:var(--kridt);font-size:15px;cursor:pointer;margin-bottom:12px;font-family:inherit}
 .dev-hero b{font-size:17px;letter-spacing:1px}
 .dev-hero small{color:var(--daempet);font-weight:400}
+.dev-hero.dev-hero-lang b{font-size:15px;letter-spacing:.6px}   /* v6.22.1 · Gør nu-helten: én linje (Codes fund 7) */
+.dev-bred{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:16px 18px;border-radius:20px;color:var(--kridt);font-size:15px;cursor:pointer;margin:0 0 10px;font-family:inherit}   /* v6.22.1 · rummets brede knap: farvekanten lever (Codes fund 5) */
+.dev-bred b{font-size:16px}
+.dev-bred small{color:var(--daempet);font-weight:400}
 .dev-pil{margin-left:auto;font-size:22px;color:var(--is)}
 .dev-badge{position:absolute;top:10px;right:10px;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--tabt);color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .dev-kant{border:1px solid var(--kant) !important;background:var(--kort) !important;backdrop-filter:blur(8px)}
@@ -1158,7 +1162,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.22.0 \u00b7 25. oktober 2026";
+const VERSION = "v6.22.1 \u00b7 26. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1670,6 +1674,10 @@ Object.assign(EN, {   /* v6.22.0 · Gør nu */
   "fra spillerne — læs dem på kortet": "from the players — read them on the card",
   "Ugens fokus mangler": "This week's focus is missing", "UGENS FOKUS MANGLER": "THIS WEEK'S FOCUS IS MISSING", "vælg området, før du vurderer": "pick the area before you rate",
   "Vurdér træningen": "Rate the practice",
+});
+Object.assign(EN, {   /* v6.22.1 · Gør nu, Codes fund 1 og 7 */
+  "henter …": "fetching …", "Henter dagens pas og kladden …": "Fetching today's sessions and the draft …",
+  "UGENS FOKUS MANGLER": "SET THIS WEEK'S FOCUS", "1 PAS UDEN FREMMØDE": "1 SESSION TO REGISTER", "{n} PAS UDEN FREMMØDE": "{n} SESSIONS TO REGISTER",   /* heltens VERSALER på én linje — rummet og flisen siger stadig «… without attendance» */
 });
 Object.assign(EN, {   /* v6.13.0 · Overblik */
   "Overblik": "Overview", "📊 Overblik": "📊 Overview", "{n} pas i dag": "{n} sessions today", "1 pas i dag": "1 session today",
@@ -2698,6 +2706,7 @@ function nuUdenFremmoede(){ return (S.nu && S.nu.pas ? S.nu.pas : []).filter(fun
 function prgHent(status){
   if (S.prgHenter) return;
   S.prgHenter = true;   /* kvitteringen fra pas-gem/godkend bliver stående — kun en fejl slettes af det næste gode kald (princip 94) */
+  if ((status || "kladde") === "kladde") S.prgTid = Date.now();   /* v6.22.1 · også ved en fejl — ellers går skærmen i ring (som nuHentet) */
   traeningKald("pas-liste", { status: status || "kladde" }).then(function(r){
     S.prgHenter = false;
     if (r && !r.fejl && Array.isArray(r.pas)) {
@@ -2888,7 +2897,7 @@ function prgImport(prg){
 function traenerProgram(){
   var h = '';
   if (!lager.hent("klubkode", "")) return '<div class="kort"><h3>📅 Programmet</h3><p class="lille">Når telefonen er forbundet med din klub, kan ugeskemaet laves her.</p></div>';
-  if (!S.prg && !S.prgHenter && !S.prgBesked) { setTimeout(function(){ prgHent("kladde"); }, 0); }
+  if (!S.prgHenter && Date.now() - (S.prgTid || 0) > 30000) { setTimeout(function(){ prgHent("kladde"); }, 0); }   /* v6.22.1 · som på HJEM (Codes fund 2) */
   if (!S.prgUgedag) S.prgUgedag = ugedagAf(dkIdag());
   var prg = S.prg || { pas: [], sidst_godkendt: null, aendret_siden: 0, traenere: [], timer: [] };
   // ── status + godkend
@@ -3158,6 +3167,8 @@ function dashVurderet(){   /* v6.13.0 · spillere vurderet siden mandag — ét 
 //   Tallene er det, telefonen VED (64/70): nu (pas i dag) · prg (kladden) · tilmeldinger (hent-hold) · analyser (klub-live) · ugefokus (lager).
 function goerNu(){
   var liste = [], uf = nuUdenFremmoede(), b = nuBedste();
+  if (lager.hent("klubkode", "") && (lager.hent("truppen", []) || []).length && !(S.ugefokus || {})[ugeNoegle()])   /* v6.22.1 · FØRST: fokus før vurdering (Codes fund 3) */
+    liste.push({ id: "ugefokus", ikon: "\ud83c\udfaf", titel: "Ugens fokus mangler", tekst: "v\u00e6lg omr\u00e5det, f\u00f8r du vurderer", act: "goer-nu", v: "ugefokus", kant: "dev-kant-is" });
   if (uf && b) liste.push({ id: "reg", ikon: "\u26a1", titel: (uf === 1 ? "1 pas uden fremm\u00f8de" : uf + " pas uden fremm\u00f8de"), tekst: "registr\u00e9r fremm\u00f8de og vurd\u00e9r", act: "reg-start", v: b.id, kant: "dev-kant-grus" });
   var prg = S.prg; var nP = prg && Array.isArray(prg.pas) ? prg.pas.length : 0;
   if (S.minRolle !== "traener" && nP && (!prg.sidst_godkendt || prg.aendret_siden > 0)) {
@@ -3170,20 +3181,26 @@ function goerNu(){
   if (_n) liste.push({ id: "nye", ikon: "\ud83d\udce5", titel: (_n === 1 ? "1 ny spiller" : _n + " nye spillere"), tekst: (_t.venter.length ? "venter p\u00e5 jeres ja" : "mangler i truppen"), act: "tab", v: "grupper", kant: "dev-kant-guld" });
   var _a = 0; try { _a = analyseNye(); } catch (_e2) {}
   if (_a) liste.push({ id: "analyser", ikon: "\ud83d\udccb", titel: (_a === 1 ? "1 ny analyse" : _a + " nye analyser"), tekst: "fra spillerne \u2014 l\u00e6s dem p\u00e5 kortet", act: "tab", v: "grupper", kant: "dev-kant-guld" });
-  if (lager.hent("klubkode", "") && (lager.hent("truppen", []) || []).length && !(S.ugefokus || {})[ugeNoegle()])
-    liste.push({ id: "ugefokus", ikon: "\ud83c\udfaf", titel: "Ugens fokus mangler", tekst: "v\u00e6lg omr\u00e5det, f\u00f8r du vurderer", act: "goer-nu", v: "ugefokus", kant: "dev-kant-is" });
   return liste;
 }
-function goerNuKnap(x, hel){   /* hel = helten på HJEM (VERSALER som START KAMP) · ellers en bred knap i rummet */
-  return '<button class="dev-hero dev-kant ' + x.kant + '" data-act="' + x.act + '" data-v="' + esc(x.v || "") + '" data-goer-nu="' + x.id + '"' + (hel ? '' : ' style="margin:0 0 10px;padding:16px 18px"') + '>' +
+function goerNuHentet(){   /* v6.22.1 · «alt er gjort» må kun siges, når dagens pas OG kladden er hentet (Codes fund 1 · princip 84) */
+  if (!lager.hent("klubkode", "")) return true;
+  return !!(S.nu && Array.isArray(S.nu.pas) && !S.nuFejl && S.prg && Array.isArray(S.prg.pas) && !(S.prgBesked && S.prgBesked.fejl));
+}
+function goerNuKnap(x, hel){   /* hel = helten på HJEM (VERSALER som START KAMP, gradienten) · ellers en bred knap i rummet med farvekant (v6.22.1) */
+  return '<button class="' + (hel ? 'dev-hero dev-hero-lang dev-kant-grus' : 'dev-bred dev-kant ' + x.kant) + '" data-act="' + x.act + '" data-v="' + esc(x.v || "") + '" data-goer-nu="' + x.id + '">' +
     '<span style="font-size:30px">' + x.ikon + '</span><span><b>' + esc(hel ? x.titel.toUpperCase() : x.titel) + '</b><br><small>' + esc(x.tekst) + '</small></span><span class="dev-pil">\u2192</span></button>';
 }
 function goerNuKort(){   /* rummet «✅ Gør nu»: handlingerne · den stående dør · (dashboardet tegnes af kalderen) */
   var liste = goerNu(), h = '';
   liste.forEach(function(x){ h += goerNuKnap(x, false); });
-  if (!liste.length) h += '<p class="lille" style="margin:0 0 10px">Alt er gjort \u2014 ingen h\u00e6nder lige nu.</p>';
-  var b = nuBedste();   /* den stående dør er stål — handlingerne har farve */
-  h += '<button class="dev-hero dev-kant dev-kant-staal" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + ' data-goer-nu="vurder" style="margin:0 0 14px;padding:16px 18px"><span style="font-size:30px">\u26a1</span><span><b>Vurd\u00e9r tr\u00e6ningen</b><br><small>fremm\u00f8de og vurdering fra banen</small></span><span class="dev-pil">\u2192</span></button>';
+  if (!liste.length) {   /* v6.22.1 · hvert udfald sin egen sætning (75): fejl · henter · alt er gjort */
+    if (lager.hent("klubkode", "") && (S.nuFejl || (S.prgBesked && S.prgBesked.fejl))) h += '<p class="lille" style="margin:0 0 10px;color:var(--tabt)">' + esc(S.nuFejl || S.prgBesked.t) + '</p>';
+    else if (!goerNuHentet()) h += '<p class="lille" style="margin:0 0 10px">Henter dagens pas og kladden \u2026</p>';
+    else h += '<p class="lille" style="margin:0 0 10px">Alt er gjort \u2014 ingen h\u00e6nder lige nu.</p>';
+  }
+  var b = nuBedste();   /* den stående dør er stål — handlingerne har farve (v6.22.1: .dev-bred, så kanten lever) */
+  h += '<button class="dev-bred dev-kant dev-kant-staal" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + ' data-goer-nu="vurder" style="margin:0 0 14px"><span style="font-size:30px">\u26a1</span><span><b>Vurd\u00e9r tr\u00e6ningen</b><br><small>fremm\u00f8de og vurdering fra banen</small></span><span class="dev-pil">\u2192</span></button>';
   return h;
 }
 // ⭐ v6.22.0 · FLISEN «✅ GØR NU» — dens status er et løfte (70): tallet og den øverste handling; uden handlinger: dagen og «alt er gjort»
@@ -3192,9 +3209,10 @@ function overblikFlise(){
   var m = S.autoTrupBesked ? /^(.*?) sagde ja/.exec(S.autoTrupBesked) : null;   /* v6.13.0 · nyheden står én gang og kort på flisen */
   if (m) { dele.push('<span>' + esc('\u2713 ' + m[1] + ' sagde ja') + '</span>'); if (liste.length) dele.push('<span>' + esc(liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span>'); }
   else if (liste.length) { dele.push('<span>' + esc(liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span>'); dele.push('<span>' + esc(liste[0].titel) + '</span>'); }
+  else if (lager.hent("klubkode", "") && (S.nuFejl || (S.prgBesked && S.prgBesked.fejl))) dele.push('<span>' + esc(S.nuFejl || S.prgBesked.t) + '</span>');   /* v6.22.1 · fejlen står alene (Codes fund 1) */
+  else if (!goerNuHentet()) dele.push('<span>henter \u2026</span>');
   else {
-    if (lager.hent("klubkode", "") && S.nuFejl) dele.push('<span>' + esc(S.nuFejl) + '</span>');
-    else if (S.nu && Array.isArray(S.nu.pas)) dele.push('<span>' + esc(S.nu.pas.length ? S.nu.pas.length + ' pas i dag' : 'fri i dag') + '</span>');
+    dele.push('<span>' + esc(S.nu && Array.isArray(S.nu.pas) && S.nu.pas.length ? S.nu.pas.length + ' pas i dag' : 'fri i dag') + '</span>');
     dele.push('<span>alt er gjort</span>');
   }
   return '<button class="dev-flise dev-kant ' + (liste.length ? 'dev-kant-guld' : 'dev-kant-staal') + '" data-act="tab" data-v="overblik"><span class="dev-ikon">\u2705</span><b>G\u00f8r nu</b><small>' +
@@ -3253,7 +3271,7 @@ function renderTraener(){
     /* ⭐⭐ v6.18.0 · LIVE NU — hentes, når HJEM tegnes. v6.19.0: vist som flise forrest i gitteret, altid (liveFlise). */
     (function(){
       if (lager.hent("klubkode", "") && !S.liveHenter && Date.now() - (S.liveTid || 0) > 30000) setTimeout(function(){ liveHent(); }, 0);
-      if (lager.hent("klubkode", "") && !S.prg && !S.prgHenter && !S.prgBesked) setTimeout(function(){ prgHent("kladde"); }, 0);   /* ⭐ v6.22.0 · kladden skal kunne stå i Gør nu (Øresund 25/10: 15 pas, ingen sagde det) */
+      if (lager.hent("klubkode", "") && !S.prgHenter && Date.now() - (S.prgTid || 0) > 30000) setTimeout(function(){ prgHent("kladde"); }, 0);   /* ⭐ v6.22.0 · kladden skal kunne stå i Gør nu (Øresund 25/10: 15 pas, ingen sagde det) · v6.22.1 · højst hvert 30. sekund, fejl eller ej (Codes fund 2) */
       if (lager.hent("klubkode", "") && !S.analyseHenter && Date.now() - (S.analyseTid || 0) > 300000) setTimeout(function(){ analyseHent(); }, 0);   /* ⭐ v6.20.0 · højst hvert 5. minut */
       var k = Array.isArray(S.liveKampe) ? S.liveKampe : [];
       /* ⭐⭐ v6.19.0 · ingen helt længere — tallet står i flisen «🔴 Live nu» forrest i gitteret (Nicolai 15/10: «Klart denne») */
@@ -5279,10 +5297,10 @@ document.addEventListener("click", function(e){
       render(); nuHent(true); }); }
   else if (act==="reg-vurd-igen"){ if (!S.reg || S.reg.trin !== 3) return; regSendVurderinger(true); render(); }
   else if (act==="reg-igen"){ regNulstil(); render(); nuHent(false); }
-  if (act==="tab"){ if (v === "live" && !S.liveHenter && Date.now() - (S.liveTid || 0) > 10000) setTimeout(function(){ liveHent(); }, 0);   /* ⭐ v6.18.0 · frisk ved åbning */ if (v === "weekenden" && !S.wkHenter && (!Array.isArray(S.wkRaekker) || Date.now() - (S.wkTid || 0) > 60000)) setTimeout(function(){ wkHent(); }, 0);   /* ⭐ v6.17.0 · frisk ved åbning, højst ét kald pr. minut */ if (S.tab === "grupper" && v !== "grupper") S.autoTrupBesked = null;   /* v6.10.0 */ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { S.snakValgt = null; S.snakRulNed = true; try { snakHent(false); } catch (_e) {} try { nuHent(false); } catch (_e) {} }   /* v6.15.0 · overblikket kommer fra dagens program */ if (v === "noegler" || v === "grupper") { try { budSendteHent(); } catch (_e) {} } if (v === "grupper" && lager.hent("klubkode", "") && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }   /* v6.10.0 */
+  if (act==="tab"){ if (v === "overblik") { try { window.scrollTo(0,0); } catch(_e){} }   /* v6.22.1 · Gør nu åbner øverst (Codes fund 6: 375×667) */ if (v === "live" && !S.liveHenter && Date.now() - (S.liveTid || 0) > 10000) setTimeout(function(){ liveHent(); }, 0);   /* ⭐ v6.18.0 · frisk ved åbning */ if (v === "weekenden" && !S.wkHenter && (!Array.isArray(S.wkRaekker) || Date.now() - (S.wkTid || 0) > 60000)) setTimeout(function(){ wkHent(); }, 0);   /* ⭐ v6.17.0 · frisk ved åbning, højst ét kald pr. minut */ if (S.tab === "grupper" && v !== "grupper") S.autoTrupBesked = null;   /* v6.10.0 */ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { S.snakValgt = null; S.snakRulNed = true; try { snakHent(false); } catch (_e) {} try { nuHent(false); } catch (_e) {} }   /* v6.15.0 · overblikket kommer fra dagens program */ if (v === "noegler" || v === "grupper") { try { budSendteHent(); } catch (_e) {} } if (v === "grupper" && lager.hent("klubkode", "") && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }   /* v6.10.0 */
   else if (act==="goer-nu"){   /* ⭐ v6.22.0 · Gør nu's egne døre: kladden → PROGRAM/Ugeskemaet · ugens fokus → Vælg ugens fokus */
-    if (v === "kladde") { S.tab = "program"; S.prgVisning = "skema"; S.indstVisning = null; S.aabenSpiller = null; render(); if (!S.prgHenter) prgHent("kladde"); }
-    else if (v === "ugefokus") { S.tab = "vurder"; S.indstVisning = null; S.aabenSpiller = null; regNulstil(); S.vurderOmraade = "__fokus"; S.vurderGruppe = null; render(); }
+    if (v === "kladde") { S.tab = "program"; S.prgVisning = "skema"; S.indstVisning = null; S.aabenSpiller = null; prgNulstilForm(); S.prgSlet = null; S.prgBesked = null; try { window.scrollTo(0,0); } catch(_e){} render(); if (!S.prgHenter) prgHent("kladde"); }   /* v6.22.1 · intet armeret slet, intet gammelt svar (Codes fund 4) · til toppen (6) */
+    else if (v === "ugefokus") { S.tab = "vurder"; S.indstVisning = null; S.aabenSpiller = null; regNulstil(); S.vurderOmraade = "__fokus"; S.vurderGruppe = null; try { window.scrollTo(0,0); } catch(_e){} render(); }
   }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }

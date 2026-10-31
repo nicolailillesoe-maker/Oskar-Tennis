@@ -6,20 +6,50 @@
 <meta name="robots" content="noindex">
 <title>Træningsprogram · StreakCoach</title>
 <style>
-/* v1 · 20/9-2026 · trin 2c · klubbens program på klubbens hjemmeside — samme farver som StreakTennis (tokens fra appens :root) */
-:root{--nat:#111C33;--dyb:#070D19;--kort:rgba(255,255,255,.05);--kant:rgba(255,255,255,.12);--kant2:#31415F;--flade:#1B2A44;--kridt:#EDF2FA;--daempet:#8B99B5;--is:#9FD8E8;--grus:#2E56D6;--gruslys:#7B9BFF;--guld:#F0CF61;--vundet:#22995A;--tabt:#D2484E;--tekst2:#B9C6D8;--fod:#4A5A78}
+/* v2 · 31/10-2026 · klubbens program i klubbens eget snit: en fane pr. dag, banerne som kolonner, tiden ned ad siden —
+   sådan klubberne selv skærer deres ark (Nicolai 31/10: «De har det i dag skåret på en helt anden måde som er logisk for dem»).
+   Listen fra v1 er der stadig (knappen Liste). Samme farver som StreakTennis (tokens fra appens :root).
+   Målt i basen 31/10: pas fra 30 til 120 min, to starter uden for kvarteret (06:20) → ét gitter-trin = 5 min. Højst 10 baner på en dag.
+   Banen er tekst («1 · Svanemøllehallen», «Banen aftales», «Løbetræning») — «Bane» står kun foran en bane, der starter med et tal. */
+:root{--nat:#111C33;--dyb:#070D19;--kort:rgba(255,255,255,.05);--kant:rgba(255,255,255,.12);--kant2:#31415F;--flade:#1B2A44;--kridt:#EDF2FA;--daempet:#8B99B5;--is:#9FD8E8;--grus:#2E56D6;--gruslys:#7B9BFF;--guld:#F0CF61;--vundet:#22995A;--tabt:#D2484E;--tekst2:#B9C6D8;--fod:#4A5A78;--fem:9px;--kol:132px}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{font-family:'Helvetica Neue',Arial,sans-serif;background:radial-gradient(120% 55% at 50% -8%,#14264A 0%,#0B1220 55%) fixed #0B1220;color:var(--kridt);min-height:100vh}
-.side{max-width:760px;margin:0 auto;padding:14px 14px 40px}
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0 12px;border-bottom:1px solid var(--kant);margin-bottom:14px}
+.side{max-width:1180px;margin:0 auto;padding:14px 16px 40px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0 12px;border-bottom:1px solid var(--kant);margin-bottom:14px;flex-wrap:wrap}
 .brand{display:flex;flex-direction:column;gap:3px}
 .wordmark{font-size:11px;letter-spacing:4px;font-weight:700;color:var(--guld);line-height:1}
 .brandby{font-size:9px;letter-spacing:.6px;font-weight:600;color:var(--kridt);line-height:1}
 .brandby b{color:var(--is)}
+.knapper{display:flex;gap:6px;flex-wrap:wrap}
 h1{font-size:22px;margin:0 0 2px;font-weight:800}
 .eyebrow{font-size:11px;color:var(--daempet);letter-spacing:1.4px;font-weight:800;text-transform:uppercase}
 .lille{font-size:12.5px;color:var(--daempet);line-height:1.5}
+.knap{appearance:none;border:1px solid var(--kant2);background:transparent;color:var(--kridt);font:inherit;font-size:12px;font-weight:700;padding:7px 12px;border-radius:12px;cursor:pointer}
+.knap[aria-pressed="true"]{background:var(--flade);border-color:var(--is);color:var(--is)}
+.faner{display:flex;gap:6px;overflow-x:auto;padding:12px 0 10px;scrollbar-width:none}
+.faner::-webkit-scrollbar{display:none}
+.fane{flex:none;appearance:none;border:1px solid var(--kant2);background:var(--kort);color:var(--kridt);font:inherit;font-size:13px;font-weight:800;padding:8px 13px;border-radius:999px;cursor:pointer}
+.fane small{font-weight:700;color:var(--daempet);margin-left:5px}
+.fane[aria-selected="true"]{background:var(--grus);border-color:var(--grus)}
+.fane[aria-selected="true"] small{color:var(--kridt)}
+.dagpanel{display:none}
+.dagpanel.vis{display:block}
+.dagtitel{display:none;font-size:16px;font-weight:800;margin:6px 0 8px}
+.ramme{overflow-x:auto;border:1px solid var(--kant);border-radius:16px;background:rgba(255,255,255,.02)}
+.gitter{display:grid;position:relative}
+.hj{position:sticky;top:0;z-index:3;background:#101B30;border-bottom:1px solid var(--kant);font-size:12px;font-weight:800;color:var(--is);padding:7px 6px;text-align:center;line-height:1.25}
+.hj small{display:block;font-size:10.5px;font-weight:700;color:var(--daempet)}
+.hj.tidhj{left:0;z-index:4}
+.tidkol{position:sticky;left:0;z-index:2;background:#0E1828;border-right:1px solid var(--kant);font-size:11px;font-weight:800;color:var(--daempet);text-align:right;padding:2px 6px 0 0}
+.linje{border-top:1px dashed rgba(255,255,255,.07)}
+.pause{border-top:1px solid var(--kant);border-bottom:1px solid var(--kant);background:repeating-linear-gradient(135deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px)}
+.felt{margin:2px 3px;border-radius:10px;padding:6px 7px;background:var(--flade);border:1px solid var(--kant2);border-left:3px solid var(--gruslys);overflow:hidden;z-index:1;font-size:11.5px;line-height:1.3}
+.felt b{display:block;font-size:12px}
+.felt .t{color:var(--is);font-weight:800;font-size:11px}
+.felt .tr{color:var(--tekst2);margin-top:1px}
+.felt .nv{margin-top:3px;color:var(--kridt)}
+.felt .an{margin-top:3px;color:var(--daempet)}
 .dag{margin:18px 0 6px;display:flex;align-items:baseline;gap:8px}
 .dag b{font-size:15px;letter-spacing:.3px}
 .dag span{font-size:12px;color:var(--daempet)}
@@ -30,17 +60,27 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
 .om .tr{font-size:12.5px;color:var(--tekst2);margin-top:2px}
 .navne{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .navn{font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;border:1px solid var(--kant2);background:rgba(255,255,255,.04)}
+.navn.rest{color:var(--daempet);border-style:dashed}
 .antal{font-size:12px;color:var(--daempet);margin-top:6px}
 .besked{background:var(--kort);border:1px solid var(--kant);border-radius:16px;padding:16px;text-align:center;margin-top:20px}
 .fod{margin-top:30px;padding-top:12px;border-top:1px dashed var(--kant2);font-size:11.5px;color:var(--fod);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.knap{appearance:none;border:1px solid var(--kant2);background:transparent;color:var(--kridt);font:inherit;font-size:12px;font-weight:700;padding:7px 12px;border-radius:12px;cursor:pointer}
 @media print{
+  @page{size:landscape;margin:10mm}
   body{background:#fff !important;color:#111}
   .side{max-width:none;padding:0}
+  .knapper,.faner{display:none !important}
+  .dagpanel{display:block !important;break-after:page}
+  .dagpanel:last-of-type{break-after:auto}
+  .dagtitel{display:block;color:#111}
+  :root{--kol:60px}
+  .ramme{overflow:visible;border-color:#bbb;background:#fff}
+  .pause{background:#f2f2f2;border-color:#ccc}
+  .hj,.tidkol{position:static;background:#f2f2f2;color:#333}
+  .felt{background:#fff;border-color:#bbb;border-left-color:#1a3a8a;color:#111}
+  .felt .t{color:#1a3a8a}.felt .tr,.felt .an{color:#555}.felt .nv{color:#111}
   .pas{border:1px solid #bbb;background:#fff;break-inside:avoid}
   .tid{color:#1a3a8a}.wordmark{color:#8a6d00}.brandby,.om .tr,.lille,.antal,.dag span,.eyebrow{color:#555}
   .navn{border-color:#bbb;background:#f4f4f4;color:#111}
-  .knap{display:none}
   .fod{color:#777;border-color:#ccc}
 }
 </style>
@@ -49,56 +89,168 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
 <div class="side">
   <div class="topbar">
     <div class="brand"><span class="wordmark">STREAKCOACH</span><span class="brandby">Sports<b>AI</b>nalytics</span></div>
-    <button class="knap" id="print" type="button">🖨 Udskriv</button>
+    <div class="knapper">
+      <button class="knap" id="vSkema" type="button" aria-pressed="true">▦ Skema</button>
+      <button class="knap" id="vListe" type="button" aria-pressed="false">☰ Liste</button>
+      <button class="knap" id="sprog" type="button">English</button>
+      <button class="knap" id="print" type="button">🖨 Udskriv</button>
+    </div>
   </div>
   <div id="app"><p class="lille">Henter programmet …</p></div>
-  <div class="fod"><span>Klubbens træningsprogram · StreakCoach</span><span id="stempel"></span></div>
+  <div class="fod"><span id="fodtekst">Klubbens træningsprogram · StreakCoach</span><span id="stempel"></span></div>
 </div>
 <script>
 (function(){
   var URL_VIS = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/program-vis";
-  var DAGE = ["", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag", "Søndag"];
+  var ORD = {
+    da: { dage: ["", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag", "Søndag"], eyebrow: "Træningsprogram", tom: "Programmet er tomt lige nu.",
+          bane: "Bane", tid: "Tid", pas1: "pas", pasN: "pas", sp1: "spiller", spN: "spillere", traening: "Træning", skema: "▦ Skema", liste: "☰ Liste",
+          sprog: "English", udskriv: "🖨 Udskriv", henter: "Henter programmet …", fod: "Klubbens træningsprogram · StreakCoach", godkendt: "Godkendt",
+          link: "Der mangler et link-id. Klubben finder linket under PROGRAM → Udstil i StreakCoach.", ikke: "Programmet er ikke offentligt lige nu.",
+          fejl: "Programmet kunne ikke hentes ({s}). Prøv igen om lidt.", net: "Ingen forbindelse — prøv igen om lidt.", banekort: "bane",
+          udenTid: "{n} pas uden gyldig tid står kun under ☰ Liste." },
+    en: { dage: ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], eyebrow: "Training schedule", tom: "The schedule is empty right now.",
+          bane: "Court", tid: "Time", pas1: "session", pasN: "sessions", sp1: "player", spN: "players", traening: "Training", skema: "▦ Grid", liste: "☰ List",
+          sprog: "Dansk", udskriv: "🖨 Print", henter: "Fetching the schedule …", fod: "The club's training schedule · StreakCoach", godkendt: "Approved",
+          link: "The link id is missing. The club finds the link under SCHEDULE → Publish in StreakCoach.", ikke: "The schedule isn't public right now.",
+          fejl: "The schedule couldn't be fetched ({s}). Try again shortly.", net: "No connection — try again shortly.", banekort: "court",
+          udenTid: "{n} session(s) without a valid time only show under ☰ List." }
+  };
   var app = document.getElementById("app");
+  var tilstand = { d: 0, visning: "skema", sprog: "da" }, data = null;
+  function O(){ return ORD[tilstand.sprog] || ORD.da; }
   function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  function token(){
-    var m = /[#?&]k=([0-9a-fA-F]{24})/.exec(location.hash) || /[?&]k=([0-9a-fA-F]{24})/.exec(location.search);
-    return m ? m[1].toLowerCase() : "";
+  function param(navn){ var m = new RegExp("[#?&]" + navn + "=([^&]*)").exec(location.hash) || new RegExp("[?&]" + navn + "=([^&]*)").exec(location.search); return m ? decodeURIComponent(m[1]) : ""; }
+  function token(){ var t = param("k"); return /^[0-9a-fA-F]{24}$/.test(t) ? t.toLowerCase() : ""; }
+  function minut(x){ var m = /^(\d{1,2}):(\d{2})/.exec(String(x || "")); return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null; }
+  function hhmm(n){ return String(Math.floor(n / 60)).padStart(2, "0") + ":" + String(n % 60).padStart(2, "0"); }
+  function baneNoegle(b){ var m = /^\s*(\d+)/.exec(String(b || "")); return m ? parseInt(m[1], 10) : 9999; }   /* «Badm. 5» og «Banen aftales» bagerst */
+  function erBane(b){ return /^\s*\d/.test(String(b || "")); }
+  function baneHoved(b){   /* «18 · Tennishallen» → Bane 18 + hallen under; «Løbetræning» står, som klubben skrev det */
+    var o = O(), d = String(b || "?").split(" · "), top = erBane(b) ? o.bane + " " + d[0] : d[0];
+    return esc(top) + (d.length > 1 ? '<small>' + esc(d.slice(1).join(" · ")) + '</small>' : '');
+  }
+  function baneKort(b){ return erBane(b) ? O().banekort + " " + b : String(b || ""); }
+  function gemAdresse(){   /* linket kan deles med fanen og visningen — tokenet står forrest, som før */
+    var k = token(); if (!k) return;
+    var h = "#k=" + k + (tilstand.d ? "&d=" + tilstand.d : "") + (tilstand.visning === "liste" ? "&v=liste" : "") + (tilstand.sprog === "en" ? "&l=en" : "");
+    try { history.replaceState(null, "", location.pathname + location.search + h); } catch (_e) {}
   }
   function besked(t){ app.innerHTML = '<div class="besked"><p class="lille" style="margin:0;font-size:14px;color:var(--kridt)">' + esc(t) + '</p></div>'; }
-  function tegn(d){
-    var h = '<div class="eyebrow">Træningsprogram</div><h1>' + esc(d.klub) + '</h1>';
-    var pas = d.pas || [];
-    if (!pas.length) { h += '<p class="lille">Programmet er tomt lige nu.</p>'; app.innerHTML = h; return; }
-    var pr = {}; pas.forEach(function(p){ (pr[p.ugedag] = pr[p.ugedag] || []).push(p); });
-    /* skærmen sorterer selv — motoren skjuler intet, men rækkefølgen er sidens ansvar (dag → tid → bane) */
-    Object.keys(pr).forEach(function(u){ pr[u].sort(function(a, b){ return String(a.start).localeCompare(String(b.start)) || String(a.bane).localeCompare(String(b.bane), "da", { numeric: true }); }); });
-    for (var u = 1; u <= 7; u++) {
-      var liste = pr[u]; if (!liste || !liste.length) continue;
-      h += '<div class="dag"><b>' + DAGE[u] + '</b><span>' + liste.length + (liste.length === 1 ? ' pas' : ' pas') + '</span></div>';
-      liste.forEach(function(p){
-        var tr = [p.traener, p.traener2].filter(Boolean).join(" & ");
-        h += '<div class="pas"><div class="tid">' + esc(p.start) + '–' + esc(p.slut) + '<small>bane ' + esc(p.bane) + '</small></div><div class="om">' +
-          '<b>' + esc(p.titel || "Træning") + '</b>' + (tr ? '<div class="tr">' + esc(tr) + '</div>' : '');
-        if (p.navne && p.navne.length) h += '<div class="navne">' + p.navne.map(function(n){ return '<span class="navn">' + esc(n) + '</span>'; }).join('') + '</div>';
-        else if (p.antal) h += '<div class="antal">' + p.antal + (p.antal === 1 ? ' spiller' : ' spillere') + '</div>';
-        h += '</div></div>';
-      });
-    }
-    app.innerHTML = h;
-    if (d.opdateret) { var t = new Date(d.opdateret); document.getElementById("stempel").textContent = "Godkendt " + t.getDate() + "/" + (t.getMonth() + 1) + "-" + t.getFullYear(); }
-    document.title = esc(d.klub) + " · Træningsprogram";
+  function knapper(){
+    var o = O();
+    document.getElementById("vSkema").textContent = o.skema; document.getElementById("vListe").textContent = o.liste;
+    document.getElementById("vSkema").setAttribute("aria-pressed", tilstand.visning === "skema" ? "true" : "false");
+    document.getElementById("vListe").setAttribute("aria-pressed", tilstand.visning === "liste" ? "true" : "false");
+    document.getElementById("sprog").textContent = o.sprog; document.getElementById("print").textContent = o.udskriv;
+    document.getElementById("fodtekst").textContent = o.fod;
+    document.documentElement.lang = tilstand.sprog;
   }
+  function navneEllerAntal(p, kort){
+    var o = O();
+    var rest = (p.navne && p.navne.length && p.antal > p.navne.length) ? p.antal - p.navne.length : 0;   /* navnene er ikke altid alle — resten står som et tal, aldrig tavst */
+    if (p.navne && p.navne.length) return kort ? '<div class="nv">' + p.navne.map(esc).join(" · ") + (rest ? ' · +' + rest : '') + '</div>'
+      : '<div class="navne">' + p.navne.map(function(n){ return '<span class="navn">' + esc(n) + '</span>'; }).join('') + (rest ? '<span class="navn rest">+' + rest + ' ' + (rest === 1 ? o.sp1 : o.spN) + '</span>' : '') + '</div>';
+    if (p.antal) return '<div class="' + (kort ? 'an' : 'antal') + '">' + p.antal + ' ' + (p.antal === 1 ? o.sp1 : o.spN) + '</div>';
+    return '';
+  }
+  function skemaFor(liste){   /* banerne som kolonner, tiden ned ad siden — fem minutter pr. række; tomme timer tegnes ikke */
+    var o = O();
+    var baner = []; liste.forEach(function(p){ var b = String(p.bane || "?"); if (baner.indexOf(b) < 0) baner.push(b); });
+    baner.sort(function(a, b){ return (baneNoegle(a) - baneNoegle(b)) || a.localeCompare(b, "da", { numeric: true }); });
+    var timer = {}, gyldige = [], udenTid = 0;
+    liste.forEach(function(p){
+      var s = minut(p.start), e = minut(p.slut);
+      if (s === null || e === null || e <= s) { udenTid++; return; }
+      gyldige.push(p); for (var t = Math.floor(s / 60); t < Math.ceil(e / 60); t++) timer[t] = 1;
+    });
+    /* timerne med pas samles i stykker; mellem to stykker står en smal pause — som klubbens ark, der kun har de rækker, der bruges */
+    var stykker = []; Object.keys(timer).map(Number).sort(function(a, b){ return a - b; }).forEach(function(t){
+      var l = stykker[stykker.length - 1]; if (l && l.til === t) l.til = t + 1; else stykker.push({ fra: t, til: t + 1 }); });
+    var r = 2, rk = "auto";
+    stykker.forEach(function(g, i){ if (i) { g.pause = r; r += 1; rk += " 18px"; } g.r0 = r; r += (g.til - g.fra) * 12; rk += " repeat(" + ((g.til - g.fra) * 12) + ",var(--fem))"; });
+    function raekke(m){ for (var i = 0; i < stykker.length; i++) { var g = stykker[i]; if (m >= g.fra * 60 && m <= g.til * 60) return g.r0 + Math.round((m - g.fra * 60) / 5); } return null; }
+    var h = '<div class="ramme"><div class="gitter" data-baner="' + baner.length + '" style="grid-template-columns:52px repeat(' + baner.length + ',minmax(var(--kol),1fr));min-width:max(100%,calc(52px + ' + baner.length + ' * var(--kol)));grid-template-rows:' + rk + '">';
+    h += '<div class="hj tidhj" style="grid-column:1;grid-row:1">' + esc(o.tid) + '</div>';
+    baner.forEach(function(b, i){ h += '<div class="hj" data-bane="' + esc(b) + '" style="grid-column:' + (i + 2) + ';grid-row:1">' + baneHoved(b) + '</div>'; });
+    stykker.forEach(function(g){
+      if (g.pause) h += '<div class="pause" style="grid-column:1 / -1;grid-row:' + g.pause + '"></div>';
+      for (var t = g.fra; t < g.til; t++) {
+        var rr = g.r0 + (t - g.fra) * 12;
+        h += '<div class="tidkol" style="grid-column:1;grid-row:' + rr + ' / span 12">' + hhmm(t * 60) + '</div>';
+        h += '<div class="linje" style="grid-column:2 / -1;grid-row:' + rr + '"></div>';
+      }
+    });
+    gyldige.forEach(function(p){
+      var s = minut(p.start), e = minut(p.slut);
+      var r1 = raekke(s), r2 = Math.max(r1 + 1, raekke(e));
+      var c = baner.indexOf(String(p.bane || "?")) + 2;
+      var tr = [p.traener, p.traener2].filter(Boolean).join(" & ");
+      var hel = [p.start + "–" + p.slut, baneKort(p.bane), p.titel || o.traening, tr, (p.navne && p.navne.length) ? p.navne.join(", ") + (p.antal > p.navne.length ? " +" + (p.antal - p.navne.length) : "") : (p.antal ? p.antal + " " + (p.antal === 1 ? o.sp1 : o.spN) : "")].filter(Boolean).join(" · ");
+      h += '<div class="felt" data-pas="1" data-start="' + esc(p.start) + '" data-bane="' + esc(p.bane) + '" title="' + esc(hel) + '" style="grid-column:' + c + ';grid-row:' + r1 + ' / ' + r2 + '">' +
+        '<div class="t">' + esc(p.start) + '–' + esc(p.slut) + '</div><b>' + esc(p.titel || o.traening) + '</b>' + (tr ? '<div class="tr">' + esc(tr) + '</div>' : '') + navneEllerAntal(p, true) + '</div>';
+    });
+    h += '</div></div>';
+    if (udenTid) h += '<p class="lille">' + esc(o.udenTid.replace("{n}", udenTid)) + '</p>';   /* 75: et pas, gitteret ikke kan tegne, siges højt */
+    return h;
+  }
+  function listeFor(liste){
+    var o = O(), h = '';
+    liste.forEach(function(p){
+      var tr = [p.traener, p.traener2].filter(Boolean).join(" & ");
+      h += '<div class="pas"><div class="tid">' + esc(p.start) + '–' + esc(p.slut) + '<small>' + esc(baneKort(p.bane)) + '</small></div><div class="om">' +
+        '<b>' + esc(p.titel || o.traening) + '</b>' + (tr ? '<div class="tr">' + esc(tr) + '</div>' : '') + navneEllerAntal(p, false) + '</div></div>';
+    });
+    return h;
+  }
+  function tegn(){
+    var d = data, o = O();
+    knapper();
+    var h = '<div class="eyebrow">' + esc(o.eyebrow) + '</div><h1>' + esc(d.klub) + '</h1>';
+    var pas = d.pas || [];
+    if (!pas.length) { app.innerHTML = h + '<p class="lille">' + esc(o.tom) + '</p>'; return; }
+    var pr = {}; pas.forEach(function(p){ (pr[p.ugedag] = pr[p.ugedag] || []).push(p); });
+    /* siden sorterer selv — motoren skjuler intet, men rækkefølgen er sidens ansvar (dag → tid → bane) */
+    Object.keys(pr).forEach(function(u){ pr[u].sort(function(a, b){ return String(a.start).localeCompare(String(b.start)) || (baneNoegle(a.bane) - baneNoegle(b.bane)) || String(a.bane).localeCompare(String(b.bane), "da", { numeric: true }); }); });
+    var dage = []; for (var u = 1; u <= 7; u++) if (pr[u] && pr[u].length) dage.push(u);
+    if (dage.indexOf(tilstand.d) < 0) {   /* i dag, hvis klubben træner i dag — ellers første dag med pas */
+      var idag = (new Date().getDay() + 6) % 7 + 1;
+      tilstand.d = dage.indexOf(idag) >= 0 ? idag : dage[0];
+    }
+    h += '<div class="faner" role="tablist">' + dage.map(function(u){
+      return '<button class="fane" role="tab" type="button" data-dag="' + u + '" aria-selected="' + (u === tilstand.d ? "true" : "false") + '">' + esc(o.dage[u]) + ' <small>' + pr[u].length + '</small></button>'; }).join('') + '</div>';
+    dage.forEach(function(u){
+      h += '<section class="dagpanel' + (u === tilstand.d ? ' vis' : '') + '" data-dag="' + u + '"><div class="dagtitel">' + esc(o.dage[u]) + ' · ' + pr[u].length + ' ' + (pr[u].length === 1 ? o.pas1 : o.pasN) + '</div>' +
+        (tilstand.visning === "liste" ? listeFor(pr[u]) : skemaFor(pr[u])) + '</section>';
+    });
+    app.innerHTML = h;
+    if (d.opdateret) { var t = new Date(d.opdateret); document.getElementById("stempel").textContent = o.godkendt + " " + t.getDate() + "/" + (t.getMonth() + 1) + "-" + t.getFullYear(); }
+    document.title = d.klub + " · " + o.eyebrow;
+    gemAdresse();
+  }
+  app.addEventListener("click", function(e){
+    var f = e.target.closest ? e.target.closest(".fane") : null; if (!f) return;
+    tilstand.d = parseInt(f.getAttribute("data-dag"), 10) || tilstand.d; tegn();
+  });
+  document.getElementById("vSkema").addEventListener("click", function(){ tilstand.visning = "skema"; if (data) tegn(); });
+  document.getElementById("vListe").addEventListener("click", function(){ tilstand.visning = "liste"; if (data) tegn(); });
+  document.getElementById("sprog").addEventListener("click", function(){ tilstand.sprog = tilstand.sprog === "en" ? "da" : "en"; if (data) tegn(); else { knapper(); gemAdresse(); } });
   document.getElementById("print").addEventListener("click", function(){ window.print(); });
+  tilstand.d = parseInt(param("d"), 10) || 0;
+  if (param("v") === "liste") tilstand.visning = "liste";
+  if (param("l") === "en") tilstand.sprog = "en";
+  knapper();
   var k = token();
-  if (!k) { besked("Der mangler et link-id. Klubben finder linket under PROGRAM → Udstil i StreakCoach."); return; }
+  if (!k) { besked(O().link); return; }
+  app.innerHTML = '<p class="lille">' + esc(O().henter) + '</p>';
   fetch(URL_VIS, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ handling: "vis", token: k }) })
     .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
     .then(function(x){
-      if (x.ok) return tegn(x.d);
-      if (x.status === 404) return besked("Programmet er ikke offentligt lige nu.");
-      besked("Programmet kunne ikke hentes (" + x.status + "). Prøv igen om lidt.");
+      if (x.ok) { data = x.d; return tegn(); }
+      if (x.status === 404) return besked(O().ikke);
+      besked(O().fejl.replace("{s}", x.status));
     })
-    .catch(function(){ besked("Ingen forbindelse — prøv igen om lidt."); });
+    .catch(function(){ besked(O().net); });
 })();
 </script>
 </body>

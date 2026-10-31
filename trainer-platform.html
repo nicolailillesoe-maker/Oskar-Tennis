@@ -1163,7 +1163,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.22.2 \u00b7 29. oktober 2026";
+const VERSION = "v6.22.3 \u00b7 31. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2059,6 +2059,39 @@ Object.assign(EN, {   /* ⭐ v6.18.0 · LIVE NU */
   "Listen opdateres hvert halve minut.": "The list updates every half minute.",
   "Kun klubbens trænere kan se truppens live-kampe.": "Only the club's coaches can see the squad's live matches."
 });
+Object.assign(EN, {   /* ⭐ v6.22.3 · PROGRAMs fejl- og kvitteringstekster på engelsk · tre danske stumper (Codes fund) */
+  "Serveren kunne ikke svare lige nu — prøv igen om lidt.": "The server couldn't answer right now — try again shortly.",
+  "Serveren svarede ikke i tide — prøv igen.": "The server didn't answer in time — try again.",
+  "Guiden var for længe om at svare — prøv igen.": "The guide took too long to answer — try again.",
+  "Ingen forbindelse lige nu.": "No connection right now.",
+  "Banen er optaget i det tidsrum.": "The court is taken at that time.",
+  "Kun klubbens administrator kan godkende programmet.": "Only the club's administrator can approve the programme.",
+  "Kun kladden kan rettes — godkend igen bagefter.": "Only the draft can be edited — approve again afterwards.",
+  "Der registreres kun på det godkendte program.": "Attendance is only registered on the approved programme.",
+  "Passet ligger ikke på den ugedag.": "The session isn't on that weekday.",
+  "Datoen kan ikke bruges (fremtid, eller mere end 30 dage gammel).": "The date can't be used (in the future, or more than 30 days ago).",
+  "Der er ingen kladde at godkende.": "There is no draft to approve.",
+  "For mange pas i programmet (højst {n}).": "Too many sessions in the programme (at most {n}).",
+  "Serveren kender ikke {x} af spillerne i klubben — hent truppen igen under ⚙️.": "The server doesn't know {x} of the players in the club — fetch the squad again under ⚙️.",
+  "Udfyld {x} rigtigt.": "Fill in {x} correctly.",
+  "Serveren afviste det ({x}).": "The server refused it ({x}).",
+  "Sæt start og slut.": "Set start and end.",
+  "Slut skal ligge efter start.": "The end must be after the start.",
+  "Skriv banen.": "Write the court.",
+  "«Uden app» skal være et tal fra 0 til 40.": "«Without the app» must be a number from 0 to 40.",
+  "Passet er lagt i kladden ✓": "The session is in the draft ✓",
+  "Ændringen er gemt i kladden ✓": "The change is saved in the draft ✓",
+  "Passet er slettet fra kladden ✓ — godkend igen, så forsvinder det fra planen.": "The session is deleted from the draft ✓ — approve again and it disappears from the plan.",
+  "Programmet er godkendt og sendt ud ✓ (1 pas)": "The programme is approved and published ✓ (1 session)",
+  "Programmet er godkendt og sendt ud ✓ ({n} pas)": "The programme is approved and published ✓ ({n} sessions)",
+  "henter dagens pas …": "fetching today's sessions …",
+  "Læs hele guiden ↗": "Read the whole guide ↗",
+  "logget ind som {x}": "logged in as {x}",
+  "ingen klub · årgang {n}": "no club · age group {n}",
+  "{x} · årgang {n}": "{x} · age group {n}",
+  "Truppen er tom endnu.": "The squad is empty so far.",
+  "Invitér den første spiller under ⚙️ Indstillinger → 📲 Invitér og adgang — når spilleren siger ja, står spilleren i din trup.": "Invite the first player under ⚙️ Settings → 📲 Invite and access — when the player says yes, the player is in your squad."
+});
 var _ENr = {}, _ENx = [];
 (function(){
   Object.keys(EN).forEach(function(k){
@@ -2102,7 +2135,19 @@ function sprogVaelger(kompakt){
 }
 
 
+/* ⭐⭐ v6.22.3 · FOKUS OVERLEVER EN GENTEGNING. Målt af Code: et svar, der lander (30-sekunders-hentningen, Spørg guiden),
+     tegnede #app om, fokus endte på BODY, og resten af ordet gik tabt («10&11» → «10&»). Feltet findes igen på data-felt. */
+function feltIFokus(){ var a = document.activeElement; return !!(a && a.dataset && a.dataset.felt); }
 function render(){
+  var _a = document.activeElement, _f = _a && _a.dataset && _a.dataset.felt, _s = null, _e = null;
+  if (_f) { try { _s = _a.selectionStart; _e = _a.selectionEnd; } catch (_x) {} }
+  _renderIndre();
+  if (_f) {
+    var _n = document.querySelector('[data-felt="' + _f + '"]');
+    if (_n && _n !== document.activeElement) { try { _n.focus({ preventScroll: true }); if (_s !== null && _s !== undefined) _n.setSelectionRange(_s, _e); } catch (_x) {} }
+  }
+}
+function _renderIndre(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
   // mekanismen fra før transporten fandtes — nu bor spiller-oplevelsen i
   // spiller-appen, og evalueringen rejser ad den ægte vej (evaluering-gem).
@@ -2631,15 +2676,18 @@ async function traeningKald(handling, krop) {
   try {
     const r = await fetch(TRAENING_URL, { method: "POST", headers: h,
       body: JSON.stringify({ handling, ...(krop || {}) }), signal: st.signal });
-    clearTimeout(ur);
-    const d = await r.json().catch(() => ({}));
+    let d; try { d = await r.json(); } catch (_j) { d = st.signal.aborted ? null : {}; }
+    clearTimeout(ur);   /* ⭐ v6.22.3 · uret slukkes først, når KROPPEN er læst — et svar, der går i stå, låser ikke længere (Codes fund 10) */
+    if (d === null) return { fejl: "tid" };
     // Hvert udfald sin egen sætning (princip 75): koden rejser med, teksten står ved siden af.
-    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || "netvaerk", status: r.status, t: typeof d.fejl === "string" ? d.fejl : "", ukendte: d.ukendte, felter: d.felter, loft: d.loft, krop: d });   /* v6.3.0 · krop: importens fejl pr. række */
-  } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || (r.status >= 500 ? "server" : "ukendt"), status: r.status, t: typeof d.fejl === "string" ? d.fejl : "", ukendte: d.ukendte, felter: d.felter, loft: d.loft, krop: d });   /* v6.3.0 · krop: importens fejl pr. række */
+  } catch (e) { clearTimeout(ur); return { fejl: (e && e.name === "AbortError") ? "tid" : "netvaerk" }; }   /* v6.22.3 · en timeout er ikke netværket (94) */
 }
 function traeningFejl(r){
   if (!r) return "Ingen forbindelse lige nu.";
   if (r.fejl === "netvaerk") return "Ingen forbindelse lige nu — prøv igen.";
+  if (r.fejl === "server") return "Serveren kunne ikke svare lige nu — prøv igen om lidt.";   /* ⭐ v6.22.3 · «ingen forbindelse» KUN om netværket (94) */
+  if (r.fejl === "tid") return "Serveren svarede ikke i tide — prøv igen.";
   if (r.fejl === "mangler-klubkode") return "Forbind telefonen med din klub først.";
   if (r.fejl === "kraever-admin") return "Kun klubbens administrator kan godkende programmet.";
   if (r.fejl === "kraever-traener" || r.fejl === "adgang" || r.fejl === "mangler-noegle") return "Din adgang gælder ikke som træner.";
@@ -2712,16 +2760,22 @@ function nuUdenFremmoede(){ return (S.nu && S.nu.pas ? S.nu.pas : []).filter(fun
 
 // ── PROGRAMMET (kladden) hentes, når fanen åbnes, og efter hver ændring.
 function prgHent(status){
-  if (S.prgHenter) return;
-  S.prgHenter = true;   /* kvitteringen fra pas-gem/godkend bliver stående — kun en fejl slettes af det næste gode kald (princip 94) */
-  if ((status || "kladde") === "kladde") S.prgTid = Date.now();   /* v6.22.1 · også ved en fejl — ellers går skærmen i ring (som nuHentet) */
-  traeningKald("pas-liste", { status: status || "kladde" }).then(function(r){
+  var st = status || "kladde";
+  if (S.prgHenter) { S.prgIgen = st; return; }   /* ⭐⭐ v6.22.3 · et kald, der kommer, mens et andet er i gang, sluges ikke længere — det køres, når det første er tilbage (Codes fund 1, høj) */
+  S.prgHenter = true;   /* kvitteringen fra pas-gem/godkend bliver stående — kun hentningens EGEN fejl slettes af det næste gode kald (princip 94) */
+  if (st === "kladde") S.prgTid = Date.now();   /* v6.22.1 · også ved en fejl — ellers går skærmen i ring (som nuHentet) */
+  else S.prgGTid = Date.now();   /* v6.22.3 · det godkendte hentes højst hvert 30. sekund af sig selv (Codes fund 9: kaldsløkken) */
+  traeningKald("pas-liste", { status: st }).then(function(r){
     S.prgHenter = false;
+    var igen = S.prgIgen; S.prgIgen = null;
+    if (igen === st) { prgHent(igen); return; }   /* v6.22.3 · svaret er taget FØR skrivningen — det kasseres, og det nye hentes */
     if (r && !r.fejl && Array.isArray(r.pas)) {
-      if ((status || "kladde") === "godkendt") S.prgGodkendt = r; else S.prg = r;
-      if (S.prgBesked && S.prgBesked.fejl) S.prgBesked = null;
-    } else S.prgBesked = { fejl: true, t: traeningFejl(r) };
+      if (st === "godkendt") S.prgGodkendt = r; else S.prg = r;
+      S.prgHentFejl = null;   /* v6.22.3 · formularens fejl og kvitteringer står (Codes fund 2 og 3) */
+      if (S.prgBesked && S.prgBesked.hent) S.prgBesked = null;
+    } else { S.prgHentFejl = traeningFejl(r); S.prgBesked = { fejl: true, hent: true, t: S.prgHentFejl }; }
     render();
+    if (igen) prgHent(igen);
   });
 }
 function prgNulstilForm(){ S.prgNy = false; S.prgAaben = null; S.prgVaelg = false; S.prgSoeg = ""; S.prgStart = ""; S.prgSlut = ""; S.prgBane = ""; S.prgTraener = ""; S.prgTraener2 = ""; S.prgTitel = ""; S.prgUdenApp = ""; }
@@ -2905,7 +2959,7 @@ function prgImport(prg){
 function traenerProgram(){
   var h = '';
   if (!lager.hent("klubkode", "")) return '<div class="kort"><h3>📅 Programmet</h3><p class="lille">Når telefonen er forbundet med din klub, kan ugeskemaet laves her.</p></div>';
-  if (!S.prgHenter && Date.now() - (S.prgTid || 0) > 30000) { setTimeout(function(){ prgHent("kladde"); }, 0); }   /* v6.22.1 · som på HJEM (Codes fund 2) */
+  if (!S.prgHenter && !feltIFokus() && Date.now() - (S.prgTid || 0) > 30000) { setTimeout(function(){ prgHent("kladde"); }, 0); }   /* v6.22.3 · aldrig midt i et ord (Codes fund 3) */   /* v6.22.1 · som på HJEM (Codes fund 2) */
   if (!S.prgUgedag) S.prgUgedag = ugedagAf(dkIdag());
   var prg = S.prg || { pas: [], sidst_godkendt: null, aendret_siden: 0, traenere: [], timer: [] };
   // ── status + godkend
@@ -3115,7 +3169,7 @@ function traenerRegistrer(t){
   // trin 1 · ét sted: dagens pas fra programmet — eller en gruppe
   var harKode = !!lager.hent("klubkode", "");
   var idag = (S.regDato || dkIdag()) === dkIdag();
-  if (harKode && !idag && !S.prgGodkendt && !S.prgHenter) setTimeout(function(){ prgHent("godkendt"); }, 0);
+  if (harKode && !idag && !S.prgGodkendt && !S.prgHenter && Date.now() - (S.prgGTid || 0) > 30000) setTimeout(function(){ prgHent("godkendt"); }, 0);   /* v6.22.3 · ingen kaldsløkke (Codes fund 9) */
   if (harKode && idag && !S.nuHentet && !S.nuHenter) setTimeout(function(){ nuHent(false); }, 0);   /* én gang — ikke i ring */
   h += '<div class="kort" style="padding:11px 14px"><div class="eyebrow">📅 FRA PROGRAMMET</div>';
   if (!harKode) h += '<p class="lille" style="margin:6px 0 0">Når telefonen er forbundet med din klub, kommer dagens pas frem her, og fremmødet skrives i spillernes træningslog.</p></div>';
@@ -3193,17 +3247,17 @@ function goerNu(){
 }
 function goerNuHentet(){   /* v6.22.1 · «alt er gjort» må kun siges, når dagens pas OG kladden er hentet (Codes fund 1 · princip 84) */
   if (!lager.hent("klubkode", "")) return true;
-  return !!(S.nu && Array.isArray(S.nu.pas) && !S.nuFejl && S.prg && Array.isArray(S.prg.pas) && !(S.prgBesked && S.prgBesked.fejl));
+  return !!(S.nu && Array.isArray(S.nu.pas) && !S.nuFejl && S.prg && Array.isArray(S.prg.pas) && !S.prgHentFejl);
 }
 function goerNuKnap(x, hel){   /* hel = helten på HJEM (VERSALER som START KAMP, gradienten) · ellers en bred knap i rummet med farvekant (v6.22.1) */
-  return '<button class="' + (hel ? 'dev-hero dev-hero-lang dev-kant-grus' : 'dev-bred dev-kant ' + x.kant) + '" data-act="' + x.act + '" data-v="' + esc(x.v || "") + '" data-goer-nu="' + x.id + '">' +
+  return '<button class="' + (hel ? 'dev-hero dev-hero-lang dev-kant dev-kant-grus' : 'dev-bred dev-kant ' + x.kant) + '" data-act="' + x.act + '" data-v="' + esc(x.v || "") + '" data-goer-nu="' + x.id + '">' +
     '<span style="font-size:30px">' + x.ikon + '</span><span><b>' + esc(hel ? x.titel.toUpperCase() : x.titel) + '</b><br><small>' + esc(x.tekst) + '</small></span><span class="dev-pil">\u2192</span></button>';
 }
 function goerNuKort(){   /* rummet «✅ Gør nu»: handlingerne · den stående dør · (dashboardet tegnes af kalderen) */
   var liste = goerNu(), h = '';
   liste.forEach(function(x){ h += goerNuKnap(x, false); });
   if (!liste.length) {   /* v6.22.1 · hvert udfald sin egen sætning (75): fejl · henter · alt er gjort */
-    if (lager.hent("klubkode", "") && (S.nuFejl || (S.prgBesked && S.prgBesked.fejl))) h += '<p class="lille" style="margin:0 0 10px;color:var(--tabt)">' + esc(S.nuFejl || S.prgBesked.t) + '</p>';
+    if (lager.hent("klubkode", "") && (S.nuFejl || S.prgHentFejl)) h += '<p class="lille" style="margin:0 0 10px;color:var(--tabt)">' + esc(T(S.nuFejl || S.prgHentFejl)) + '</p>';   /* v6.22.3 · Codes fund 2 */
     else if (!goerNuHentet()) h += '<p class="lille" style="margin:0 0 10px">Henter dagens pas og kladden \u2026</p>';
     else h += '<p class="lille" style="margin:0 0 10px">Alt er gjort \u2014 ingen h\u00e6nder lige nu.</p>';
   }
@@ -3217,8 +3271,8 @@ function overblikFlise(){
   var m = S.autoTrupBesked ? /^(.*?) sagde ja/.exec(S.autoTrupBesked) : null;   /* v6.13.0 · nyheden står én gang og kort på flisen */
   if (m) { dele.push('<span>' + esc('\u2713 ' + m[1] + ' sagde ja') + '</span>'); if (liste.length) dele.push('<span>' + esc(liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span>'); }
   else if (liste.length) { dele.push('<span>' + esc(liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span>'); dele.push('<span>' + esc(liste[0].titel) + '</span>'); }
-  else if (lager.hent("klubkode", "") && (S.nuFejl || (S.prgBesked && S.prgBesked.fejl))) dele.push('<span>' + esc(S.nuFejl || S.prgBesked.t) + '</span>');   /* v6.22.1 · fejlen står alene (Codes fund 1) */
-  else if (!goerNuHentet()) dele.push('<span>henter \u2026</span>');
+  else if (lager.hent("klubkode", "") && (S.nuFejl || S.prgHentFejl)) dele.push('<span>' + esc(T(S.nuFejl || S.prgHentFejl)) + '</span>');   /* v6.22.3 · Codes fund 2 */   /* v6.22.1 · fejlen står alene (Codes fund 1) */
+  else if (!goerNuHentet()) dele.push('<span>henter dagens pas \u2026</span>');   /* v6.22.3 · egen nøgle (Codes fund 6) */
   else {
     dele.push('<span>' + esc(S.nu && Array.isArray(S.nu.pas) && S.nu.pas.length ? S.nu.pas.length + ' pas i dag' : 'fri i dag') + '</span>');
     dele.push('<span>alt er gjort</span>');
@@ -3279,7 +3333,7 @@ function renderTraener(){
     /* ⭐⭐ v6.18.0 · LIVE NU — hentes, når HJEM tegnes. v6.19.0: vist som flise forrest i gitteret, altid (liveFlise). */
     (function(){
       if (lager.hent("klubkode", "") && !S.liveHenter && Date.now() - (S.liveTid || 0) > 30000) setTimeout(function(){ liveHent(); }, 0);
-      if (lager.hent("klubkode", "") && !S.prgHenter && Date.now() - (S.prgTid || 0) > 30000) setTimeout(function(){ prgHent("kladde"); }, 0);   /* ⭐ v6.22.0 · kladden skal kunne stå i Gør nu (Øresund 25/10: 15 pas, ingen sagde det) · v6.22.1 · højst hvert 30. sekund, fejl eller ej (Codes fund 2) */
+      if (lager.hent("klubkode", "") && !S.prgHenter && !feltIFokus() && Date.now() - (S.prgTid || 0) > 30000) setTimeout(function(){ prgHent("kladde"); }, 0);   /* ⭐ v6.22.0 · kladden skal kunne stå i Gør nu (Øresund 25/10: 15 pas, ingen sagde det) · v6.22.1 · højst hvert 30. sekund, fejl eller ej (Codes fund 2) */
       if (lager.hent("klubkode", "") && !S.analyseHenter && Date.now() - (S.analyseTid || 0) > 300000) setTimeout(function(){ analyseHent(); }, 0);   /* ⭐ v6.20.0 · højst hvert 5. minut */
       var k = Array.isArray(S.liveKampe) ? S.liveKampe : [];
       /* ⭐⭐ v6.19.0 · ingen helt længere — tallet står i flisen «🔴 Live nu» forrest i gitteret (Nicolai 15/10: «Klart denne») */
@@ -3554,18 +3608,20 @@ async function hjaelpKaldK(spoergsmaal){
   try {
     const r = await fetch(HJAELP_URL, { method: "POST", headers: { "content-type": "application/json", "x-klub-noegle": kn },
       body: JSON.stringify({ handling: "spoerg", sprog: SPROG === "en" ? "en" : "da", spoergsmaal: spoergsmaal }), signal: st.signal });
-    clearTimeout(ur);
-    const d = await r.json().catch(() => ({}));
-    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || "netvaerk", status: r.status, tekst: d.fejl || "" });
-  } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+    let d; try { d = await r.json(); } catch (_j) { d = st.signal.aborted ? null : {}; }
+    clearTimeout(ur);   /* ⭐ v6.22.3 · uret slukkes først, når kroppen er læst */
+    if (d === null) return { fejl: "tid" };
+    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || (r.status >= 500 ? "server" : "ukendt"), status: r.status });   /* ⭐ v6.22.3 · en fejl uden kode er motoren eller gatewayen — ikke netværket (Codes fund 2, princip 94) */
+  } catch (e) { clearTimeout(ur); return { fejl: (e && e.name === "AbortError") ? "tid" : "netvaerk" }; }
 }
 function hjaelpFejltekst(r){   /* hvert udfald sin egen sætning (75) — «ingen forbindelse» KUN om netværket (94) */
   const k = r && r.fejl;
   if (k === "netvaerk") return T("Ingen forbindelse — tjek netværket og prøv igen.");
-  if (k === "loft") return (r.tekst ? r.tekst : T("Du har spurgt guiden 30 gange i dag — prøv igen i morgen."));
+  if (k === "loft") return T("Du har spurgt guiden 30 gange i dag — prøv igen i morgen.");   /* v6.22.3 · appens egen sætning, på skærmens sprog (Codes fund 3) */
   if (k === "for-lang") return T("Spørgsmålet er for langt — højst 300 tegn.");
   if (k === "format") return T("Skriv et spørgsmål først.");
-  if (k === "udbyder" || k === "guide") return T("Guiden kan ikke spørges lige nu — prøv igen om lidt.");
+  if (k === "udbyder" || k === "guide" || k === "server") return T("Guiden kan ikke spørges lige nu — prøv igen om lidt.");
+  if (k === "tid") return T("Guiden var for længe om at svare — prøv igen.");   /* v6.22.3 · sin egen sætning (75) */
   if (k === "adgang" || k === "mangler-klubkode" || k === "kraever-traener") return T("Log ind som træner for at spørge guiden.");
   return T("Noget gik galt — prøv igen.");
 }
@@ -4391,22 +4447,23 @@ function indstSpoerg(){   /* v6.22.2 · ❓ Spørg guiden — kun det, guiden ka
     h += '<div data-hj-svar="' + (fra ? "guide" : "udenfor") + '" style="margin-top:12px;padding:10px 12px;border-radius:10px;border:1.5px solid ' + (fra ? "var(--is)" : "var(--guld)") + '">' +
       '<b style="font-size:11px;letter-spacing:.06em;color:' + (fra ? "var(--is)" : "var(--guld)") + '">' + (fra ? "\ud83d\udcd6 " + T("FRA GUIDEN") : "\u26a0\ufe0f " + T("IKKE I GUIDEN")) + '</b>' +
       '<p class="lille" style="margin:6px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(hj.svar) + '</p></div>';
-    if (typeof hj.brugt === "number") h += '<p class="lille" style="margin:6px 0 0;color:var(--daempet)">' + hj.brugt + " " + T("af") + " " + (hj.loft || 30) + " " + T("spørgsmål brugt i dag") + '.</p>';
+    if (typeof hj.brugt === "number") h += '<p class="lille" style="margin:6px 0 0;color:var(--daempet)">' + hj.brugt + " " + T("af") + " " + (typeof hj.loft === "number" ? hj.loft : 30) + " " + T("spørgsmål brugt i dag") + '.</p>';
   }
-  h += '<p class="lille" style="margin:10px 0 0;color:var(--daempet)">' + T("Guiden husker ikke, hvad du spurgte om før — hvert spørgsmål står alene.") + ' <a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700">' + T("Læs hele guiden") + ' \u2197</a></p></div>';
+  h += '<p class="lille" style="margin:10px 0 0;color:var(--daempet)">' + T("Guiden husker ikke, hvad du spurgte om før — hvert spørgsmål står alene.") + ' <a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700">' + T("Læs hele guiden \u2197") + '</a></p></div>';
   return h;
 }
 function hjaelpSpoerg(){   /* v6.22.2 */
-  var spg = String(S.hjSpg || "").replace(/\s+/g, " ").trim();
+  var spg = String(S.hjSpg || "").replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\s+/g, " ").trim();   /* v6.22.3 · usynlige tegn tæller ikke (Codes fund 5) */
   if (spg.length < 3) { S.hj = { fejl: T("Skriv et spørgsmål først.") }; render(); return; }
   if (spg.length > 300) { S.hj = { fejl: T("Spørgsmålet er for langt — højst 300 tegn.") }; render(); return; }
   S.hj = { henter: true }; render();
   hjaelpKaldK(spg).then(function(r){
-    if (r && !r.fejl && typeof r.svar === "string") S.hj = { svar: r.svar, kilde: r.kilde === "guide" ? "guide" : "udenfor", brugt: r.brugt, loft: r.loft };
+    if (r && !r.fejl && typeof r.svar === "string" && r.svar.trim()) S.hj = { svar: r.svar, kilde: r.kilde === "guide" ? "guide" : "udenfor", brugt: r.brugt, loft: r.loft };
     else S.hj = { fejl: hjaelpFejltekst(r) };
     render();
   });
 }
+addEventListener("keydown", function (e) { if (e.key === "Enter" && e.target && e.target.dataset && e.target.dataset.felt === "hjSpg") { e.preventDefault(); hjaelpSpoerg(); } });   /* v6.22.3 · Enter spørger, som appens andre felter (Codes fund 5) */
 function indstSprog(){   /* v6.8.0 · 🌐 sprog: skærmen og evalueringerne */
   let h = '';
     // ── SPROG · v5.0.0

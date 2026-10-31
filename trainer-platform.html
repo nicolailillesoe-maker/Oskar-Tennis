@@ -177,6 +177,10 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 .dev-hero{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:20px 18px;border-radius:20px;border:1.5px solid transparent;background:linear-gradient(160deg,#101E3A,#0C1526) padding-box,linear-gradient(135deg,#083EA7,#4B17B6 40%,#EF3E4A 75%,#FB9B2A) border-box !important;color:var(--kridt);font-size:15px;cursor:pointer;margin-bottom:12px;font-family:inherit}
 .dev-hero b{font-size:17px;letter-spacing:1px}
 .dev-hero small{color:var(--daempet);font-weight:400}
+.dev-hero.dev-hero-lang b{font-size:15px;letter-spacing:.6px}   /* v6.22.1 · Gør nu-helten: én linje (Codes fund 7) */
+.dev-bred{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:16px 18px;border-radius:20px;color:var(--kridt);font-size:15px;cursor:pointer;margin:0 0 10px;font-family:inherit}   /* v6.22.1 · rummets brede knap: farvekanten lever (Codes fund 5) */
+.dev-bred b{font-size:16px}
+.dev-bred small{color:var(--daempet);font-weight:400}
 .dev-pil{margin-left:auto;font-size:22px;color:var(--is)}
 .dev-badge{position:absolute;top:10px;right:10px;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--tabt);color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .dev-kant{border:1px solid var(--kant) !important;background:var(--kort) !important;backdrop-filter:blur(8px)}
@@ -906,6 +910,7 @@ let S = {
   tab: "hjem", aabenSpiller: null,
   nu: null, nuHentet: 0, prg: null, prgGodkendt: null, reg: null, vurderLige: null, prgUgedag: 0,   /* ⭐ v6.0.0 · programmet */
   prgVisning: null, imp: null, impTekst: "",   /* v6.3.0 · fliserne under PROGRAM + importen */
+  hj: null, hjSpg: "",   /* v6.22.2 · ❓ Spørg guiden: {henter, svar, kilde, brugt, loft, fejl} */
   udstil: null,   /* v6.6.0 · trin 2c */
   vurderOmraade: null, vurderGruppe: null, vurderScores: {},
   kvartalUdkast: null, kvartalAI: null, kvartalHenter: false, kvartalNote: null,
@@ -1158,7 +1163,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.21.1 \u00b7 24. oktober 2026";
+const VERSION = "v6.23.0 \u00b7 31. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1658,6 +1663,23 @@ Object.assign(EN, {   /* v6.9.0 · automatisk backup */
   "⚠️ Din trup kunne ikke hentes eller gemmes på din konto — log ud og ind igen, hvis det bliver ved.": "⚠️ Your squad could not be fetched or saved to your account — log out and in again if it keeps happening.",
   "Din konto har en låst kopi. Sikkerhedskopien her er din egen fil ved siden af — til dig selv, ikke til os.": "Your account holds a locked copy. The backup here is your own file alongside it — for you, not for us."
 });
+Object.assign(EN, {   /* v6.22.0 · Gør nu */
+  "✅ Gør nu": "✅ Do now", "Gør nu": "Do now", "1 ting venter": "1 thing waiting", "{n} ting venter": "{n} things waiting", "alt er gjort": "all done",
+  "Alt er gjort — ingen hænder lige nu.": "All done — nothing needs a hand right now.",
+  "Godkend programmet": "Approve the schedule", "GODKEND PROGRAMMET": "APPROVE THE SCHEDULE",
+  "1 pas i kladden venter på dit ja": "1 session in the draft is waiting for your yes", "{n} pas i kladden venter på dit ja": "{n} sessions in the draft are waiting for your yes",
+  "1 ændring siden sidste godkendelse": "1 change since the last approval", "{n} ændringer siden sidste godkendelse": "{n} changes since the last approval",
+  "registrér fremmøde og vurdér": "register attendance and rate", "1 PAS UDEN FREMMØDE": "1 SESSION WITHOUT ATTENDANCE", "{n} PAS UDEN FREMMØDE": "{n} SESSIONS WITHOUT ATTENDANCE",
+  "1 ny spiller": "1 new player", "{n} nye spillere": "{n} new players",
+  "1 ny analyse": "1 new analysis", "{n} nye analyser": "{n} new analyses", "1 NY ANALYSE": "1 NEW ANALYSIS", "{n} NYE ANALYSER": "{n} NEW ANALYSES",
+  "fra spillerne — læs dem på kortet": "from the players — read them on the card",
+  "Ugens fokus mangler": "This week's focus is missing", "UGENS FOKUS MANGLER": "THIS WEEK'S FOCUS IS MISSING", "vælg området, før du vurderer": "pick the area before you rate",
+  "Vurdér træningen": "Rate the practice",
+});
+Object.assign(EN, {   /* v6.22.1 · Gør nu, Codes fund 1 og 7 */
+  "henter …": "fetching …", "Henter dagens pas og kladden …": "Fetching today's sessions and the draft …",
+  "UGENS FOKUS MANGLER": "SET THIS WEEK'S FOCUS", "1 PAS UDEN FREMMØDE": "1 SESSION TO REGISTER", "{n} PAS UDEN FREMMØDE": "{n} SESSIONS TO REGISTER",   /* heltens VERSALER på én linje — rummet og flisen siger stadig «… without attendance» */
+});
 Object.assign(EN, {   /* v6.13.0 · Overblik */
   "Overblik": "Overview", "📊 Overblik": "📊 Overview", "{n} pas i dag": "{n} sessions today", "1 pas i dag": "1 session today",
   "fri i dag": "free today", "{n} vurderet": "{n} rated", "✓ {x} sagde ja": "✓ {x} said yes",
@@ -1683,6 +1705,13 @@ Object.assign(EN, {   /* v6.10.0 · kortet */
   "{x} er lagt i truppen ✓ · {x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 SPILLERE.": "{x} has been added to the squad ✓ · {x} calls their own group «{x}» — put {x} in a group under 👥 PLAYERS."
 });
 Object.assign(EN, {   /* v6.14.0 · Spejlet */
+  "Spørg guiden": "Ask the guide", "❓ Spørg guiden": "❓ Ask the guide", "SPØRG GUIDEN": "ASK THE GUIDE", "svarer kun det, guiden kan": "answers only what the guide can", "svaret står i rummet": "the answer is in the room",
+  "Spørg, hvordan man gør noget i StreakCoach. Svaret kommer fra guiden — og kun derfra. Står det ikke i guiden, siger den det.": "Ask how to do something in StreakCoach. The answer comes from the guide — and only from there. If it isn't in the guide, it says so.",
+  "Fx: hvordan godkender jeg programmet?": "E.g.: how do I approve the programme?", "spørger guiden …": "asking the guide …", "FRA GUIDEN": "FROM THE GUIDE", "IKKE I GUIDEN": "NOT IN THE GUIDE",
+  "af": "of", "spørgsmål brugt i dag": "questions used today", "Guiden husker ikke, hvad du spurgte om før — hvert spørgsmål står alene.": "The guide doesn't remember what you asked before — every question stands alone.", "Læs hele guiden": "Read the whole guide",
+  "Ingen forbindelse — tjek netværket og prøv igen.": "No connection — check the network and try again.", "Du har spurgt guiden 30 gange i dag — prøv igen i morgen.": "You have asked the guide 30 times today — try again tomorrow.",
+  "Spørgsmålet er for langt — højst 300 tegn.": "The question is too long — 300 characters at most.", "Skriv et spørgsmål først.": "Write a question first.", "Guiden kan ikke spørges lige nu — prøv igen om lidt.": "The guide can't be asked right now — try again shortly.",
+  "Log ind som træner for at spørge guiden.": "Sign in as a coach to ask the guide.", "Noget gik galt — prøv igen.": "Something went wrong — try again.",
   "Spejlet": "The mirror", "🪞 Spejlet": "🪞 The mirror", "din skærm deles med {x}": "your screen is shared with {x}",
   "1 træner deler med dig": "1 coach shares with you", "{n} trænere deler med dig": "{n} coaches share with you", "del din skærm — eller se en andens": "share your screen — or see someone else's",
   "🪞 DEL MIN SKÆRM": "🪞 SHARE MY SCREEN",
@@ -1752,7 +1781,7 @@ Object.assign(EN, {   /* v6.14.1 · Gani — hele skærmen på engelsk */
   "Én række pr. pas. Kolonnerne:": "One row per session. The columns:",
   "ugedag · start · slut · bane · træner · medtræner · titel · spillere · uden app": "weekday · start · end · court · coach · co-coach · title · players · without app",
   ". Kopiér rækkerne i Excel og sæt dem ind her — spillere adskilles med": ". Copy the rows in Excel and paste them here — separate players with",
-  ", og «Bertil B (2)» sætter hold 2. Ukendte navne gemmes ikke; de listes, så du kan invitere dem.": ", and «Bertil B (2)» puts him on team 2. Unknown names are listed instead of saved, so you can invite them.",
+  ", og «Bertil B (2)» sætter hold 2. Spillere uden app gemmes ved navn i klubbens program, så truppen kan bygges af det.": ", and «Bertil B (2)» puts him on team 2. Players without the app are saved by name in the club's schedule, so the squad can be built from it.",
   "Træningsprogram": "Training schedule",
   "💬 TRÆNERRUMMET": "💬 THE COACHES' ROOM",
   "Kun klubbens trænere — ingen spillere, ingen familier. Beskederne bliver stående, til I selv sletter dem.": "Only the club's coaches — no players, no families. Messages stay until you delete them yourselves.",
@@ -2030,6 +2059,120 @@ Object.assign(EN, {   /* ⭐ v6.18.0 · LIVE NU */
   "Listen opdateres hvert halve minut.": "The list updates every half minute.",
   "Kun klubbens trænere kan se truppens live-kampe.": "Only the club's coaches can see the squad's live matches."
 });
+Object.assign(EN, {   /* ⭐ v6.22.3 · PROGRAMs fejl- og kvitteringstekster på engelsk · tre danske stumper (Codes fund) */
+  "Serveren kunne ikke svare lige nu — prøv igen om lidt.": "The server couldn't answer right now — try again shortly.",
+  "Serveren svarede ikke i tide — prøv igen.": "The server didn't answer in time — try again.",
+  "Guiden var for længe om at svare — prøv igen.": "The guide took too long to answer — try again.",
+  "Ingen forbindelse lige nu.": "No connection right now.",
+  "Banen er optaget i det tidsrum.": "The court is taken at that time.",
+  "Kun klubbens administrator kan godkende programmet.": "Only the club's administrator can approve the programme.",
+  "Kun kladden kan rettes — godkend igen bagefter.": "Only the draft can be edited — approve again afterwards.",
+  "Der registreres kun på det godkendte program.": "Attendance is only registered on the approved programme.",
+  "Passet ligger ikke på den ugedag.": "The session isn't on that weekday.",
+  "Datoen kan ikke bruges (fremtid, eller mere end 30 dage gammel).": "The date can't be used (in the future, or more than 30 days ago).",
+  "Der er ingen kladde at godkende.": "There is no draft to approve.",
+  "For mange pas i programmet (højst {n}).": "Too many sessions in the programme (at most {n}).",
+  "Serveren kender ikke {x} af spillerne i klubben — hent truppen igen under ⚙️.": "The server doesn't know {x} of the players in the club — fetch the squad again under ⚙️.",
+  "Udfyld {x} rigtigt.": "Fill in {x} correctly.",
+  "Serveren afviste det ({x}).": "The server refused it ({x}).",
+  "Sæt start og slut.": "Set start and end.",
+  "Slut skal ligge efter start.": "The end must be after the start.",
+  "Skriv banen.": "Write the court.",
+  "«Uden app» skal være et tal fra 0 til 40.": "«Without the app» must be a number from 0 to 40.",
+  "Passet er lagt i kladden ✓": "The session is in the draft ✓",
+  "Ændringen er gemt i kladden ✓": "The change is saved in the draft ✓",
+  "Passet er slettet fra kladden ✓ — godkend igen, så forsvinder det fra planen.": "The session is deleted from the draft ✓ — approve again and it disappears from the plan.",
+  "Programmet er godkendt og sendt ud ✓ (1 pas)": "The programme is approved and published ✓ (1 session)",
+  "Programmet er godkendt og sendt ud ✓ ({n} pas)": "The programme is approved and published ✓ ({n} sessions)",
+  "henter dagens pas …": "fetching today's sessions …",
+  "Læs hele guiden ↗": "Read the whole guide ↗",
+  "logget ind som {x}": "logged in as {x}",
+  "ingen klub · årgang {n}": "no club · age group {n}",
+  "{x} · årgang {n}": "{x} · age group {n}",
+  "Truppen er tom endnu.": "The squad is empty so far.",
+  "Invitér den første spiller under ⚙️ Indstillinger → 📲 Invitér og adgang — når spilleren siger ja, står spilleren i din trup.": "Invite the first player under ⚙️ Settings → 📲 Invite and access — when the player says yes, the player is in your squad."
+});
+Object.assign(EN, {   /* ⭐ v6.22.4 · hele sætninger (Codes fund 3 og 8) */
+  "Serveren kender ikke {n} af spillerne i klubben — hent truppen igen under ⚙️.": "The server doesn't know {n} of the players in the club — fetch the squad again under ⚙️.",
+  "Serveren kender ikke én af spillerne i klubben — hent truppen igen under ⚙️.": "The server doesn't know one of the players in the club — fetch the squad again under ⚙️.",
+  "Noget i passet er ikke udfyldt rigtigt — tjek felterne og prøv igen.": "Something in the session isn't filled in correctly — check the fields and try again.",
+  "Serveren afviste det — prøv igen, og skriv til nicolai@sportsainalytics.com, hvis det bliver ved.": "The server refused it — try again, and write to nicolai@sportsainalytics.com if it keeps happening.",
+  "Det godkendte program kunne ikke hentes — du kan prøve igen eller vælge en gruppe herunder.": "The approved schedule couldn't be fetched — you can try again or choose a group below.",
+  "{n} på banen — max {n}. Det er en advarsel, ikke en spærring.": "{n} on the court — max {n}. It's a warning, not a block.",
+  "Ingen pas i det, du satte ind.": "No sessions in what you pasted.",
+  "Kolonnerne skal være adskilt med tabulator — kopiér rækkerne direkte fra Excel og sæt dem ind.": "The columns must be separated by tabs — copy the rows straight from Excel and paste them in.",
+  "Kun overskriften kom med — sæt rækkerne ind også.": "Only the header came along — paste the rows too.",
+  "Række {n}: {n} på banen — max {n} (en advarsel, ikke en spærring)": "Row {n}: {n} on the court — max {n} (a warning, not a block)",
+  "Række {n}: {x}": "Row {n}: {x}",
+  "ugedagen (man, tir, ons, tor, fre, lør, søn)": "the weekday (mon, tue, wed, thu, fri, sat, sun)",
+  "starttiden (fx 17:00)": "the start time (e.g. 17:00)",
+  "sluttiden (fx 18:00)": "the end time (e.g. 18:00)",
+  "slut skal ligge efter start": "the end must be after the start",
+  "banen mangler": "the court is missing",
+  "«uden app» skal være et tal 0-40": "«without the app» must be a number 0-40",
+  "for mange navne (højst 40)": "too many names (at most 40)",
+  "banen er optaget af række {n} i samme tidsrum": "the court is taken by row {n} at the same time",
+  "banen er optaget i kladden i det tidsrum — ret tiden, eller ryd kladden først": "the court is taken in the draft at that time — change the time, or clear the draft first",
+  "Flertydige:": "Ambiguous:",
+  "{x} — flere i truppen hedder det; skriv det fulde navn.": "{x} — several in the squad have that name; write the full name.",
+  "Ukendte ({n}):": "Unknown ({n}):",
+  "De har ikke StreakTennis i klubben endnu og står i programmet ved navn — invitér dem under ⚙️ Indstillinger → 📲 Invitér og adgang.": "They don't have StreakTennis in the club yet and are in the schedule by name — invite them under ⚙️ Settings → 📲 Invite and access.",
+  "årgang {n}": "age group {n}",
+  "· har forladt klubben": "· has left the club",
+  "{x} sagde ja — dine vurderinger rejser med.": "{x} said yes — your ratings travel along.",
+  "{x}: gemt i din boks — når spilleren siger ja i appen, rejser den med, hvis navnet i din trup begynder med spillerens fornavn.": "{x}: saved in your box — when the player says yes in the app, it travels along if the name in your squad starts with the player's first name."
+});
+Object.assign(EN, {   /* ⭐ v6.23.0 · læs klubbens ark · hent truppen fra programmet */
+  "📥 LÆS KLUBBENS ARK": "📥 READ THE CLUB'S SHEET",
+  "Læg klubbens eget ark ind, som det er — Excel, et Google-ark, en PDF eller et billede af programmet. Det læses og bliver til et forslag, du ser, før noget lægges i kladden.": "Add the club's own sheet as it is — Excel, a Google Sheet, a PDF or a photo of the schedule. It is read and becomes a proposal you see before anything goes into the draft.",
+  "📁 Vælg fil": "📁 Choose file",
+  "🔗 Læs linket": "🔗 Read the link",
+  "⏳ Læser arket … (op til et minut)": "⏳ Reading the sheet … (up to a minute)",
+  "ELLER SÆT RÆKKER IND FRA EXCEL": "OR PASTE ROWS FROM EXCEL",
+  "{n} pas fundet i arket": "{n} sessions found in the sheet",
+  "{n} kasseret — mangler dag, tid eller bane": "{n} discarded — missing day, time or court",
+  "Fjernet før læsningen: {n} mailadresser og {n} telefonnumre": "Removed before reading: {n} email addresses and {n} phone numbers",
+  "Fjernet før læsningen: {n} mailadresse og {n} telefonnumre": "Removed before reading: {n} email address and {n} phone numbers",
+  "Fjernet før læsningen: {n} mailadresser og {n} telefonnummer": "Removed before reading: {n} email addresses and {n} phone number",
+  "Fjernet før læsningen: {n} mailadresse og {n} telefonnummer": "Removed before reading: {n} email address and {n} phone number",
+  "{n} faner kunne ikke læses — prøv igen om lidt": "{n} tabs could not be read — try again shortly",
+  "{n} fane kunne ikke læses — prøv igen om lidt": "{n} tab could not be read — try again shortly",
+  "Arket er ikke delt — vælg «Alle med linket» under Del i Google Sheets, og prøv igen.": "The sheet isn't shared — choose «Anyone with the link» under Share in Google Sheets and try again.",
+  "Filtypen kendes ikke — brug Excel, CSV, PDF eller et billede.": "Unknown file type — use Excel, CSV, PDF or a photo.",
+  "Filen er for stor — højst 4,5 MB.": "The file is too large — 4.5 MB at most.",
+  "Der blev ikke fundet nogen træningspas i arket.": "No training sessions were found in the sheet.",
+  "Du har læst 20 ark i dag — prøv igen i morgen.": "You have read 20 sheets today — try again tomorrow.",
+  "Arket kan ikke læses lige nu — prøv igen om lidt.": "The sheet can't be read right now — try again shortly.",
+  "Linket skal være et Google-ark (docs.google.com/spreadsheets/…).": "The link must be a Google Sheet (docs.google.com/spreadsheets/…).",
+  "Filen kunne ikke læses på telefonen.": "The file could not be read on the phone.",
+  "👥 Hent truppen fra programmet": "👥 Fetch the squad from the schedule",
+  "Mine pas ({n})": "My sessions ({n})",
+  "Hele klubben ({n})": "Whole club ({n})",
+  "Mine pas": "My sessions",
+  "Hele klubben": "Whole club",
+  "Læs klubbens ark": "Read the club's sheet",
+  "Hent programmet": "Fetch the schedule",
+  "Henter programmet …": "Fetching the schedule …",
+  "{n} spillere lagt i truppen · {n} nye grupper ✓": "{n} players added to the squad · {n} new groups ✓",
+  "{n} spillere lagt i truppen · {n} ny gruppe ✓": "{n} players added to the squad · {n} new group ✓",
+  "{n} spiller lagt i truppen · {n} ny gruppe ✓": "{n} player added to the squad · {n} new group ✓",
+  "{n} spiller lagt i truppen · {n} nye grupper ✓": "{n} player added to the squad · {n} new groups ✓",
+  "{n} spillere lagt i truppen ✓": "{n} players added to the squad ✓",
+  "{n} spiller lagt i truppen ✓": "{n} player added to the squad ✓",
+  "{x} sagde ja": "{x} said yes",
+  "{x} SAGDE JA": "{x} SAID YES",
+  "er det {x} i din trup?": "is it {x} in your squad?",
+  "ligner {n} navne i din trup": "matches {n} names in your squad",
+  "🔗 SAGDE JA": "🔗 SAID YES",
+  "Sagde ja til klubbens invitation. Er det en spiller, du allerede har i truppen?": "Said yes to the club's invitation. Is it a player you already have in the squad?",
+  "Ja — {x}": "Yes — {x}",
+  "Nej — ny spiller": "No — new player",
+  "Siger du ja, rejser dine vurderinger og fokuspunkter med til spilleren.": "If you say yes, your ratings and focus points go along to the player.",
+  "{x} er koblet — vurderingerne sendes …": "{x} is linked — sending the ratings …",
+  "{x} er koblet — dine vurderinger er sendt ✓": "{x} is linked — your ratings have been sent ✓",
+  "{x} er koblet, men vurderingerne er ikke sendt endnu — appen prøver igen.": "{x} is linked, but the ratings haven't been sent yet — the app will try again.",
+  "{x} står nu i din trup under «Uden gruppe».": "{x} is now in your squad under «No group»."
+});
 var _ENr = {}, _ENx = [];
 (function(){
   Object.keys(EN).forEach(function(k){
@@ -2073,7 +2216,19 @@ function sprogVaelger(kompakt){
 }
 
 
+/* ⭐⭐ v6.22.3 · FOKUS OVERLEVER EN GENTEGNING. Målt af Code: et svar, der lander (30-sekunders-hentningen, Spørg guiden),
+     tegnede #app om, fokus endte på BODY, og resten af ordet gik tabt («10&11» → «10&»). Feltet findes igen på data-felt. */
+function feltIFokus(){ var a = document.activeElement; return !!(a && a.dataset && a.dataset.felt); }
 function render(){
+  var _a = document.activeElement, _f = _a && _a.dataset && _a.dataset.felt, _s = null, _e = null;
+  if (_f) { try { _s = _a.selectionStart; _e = _a.selectionEnd; } catch (_x) {} }
+  _renderIndre();
+  if (_f) {
+    var _n = document.querySelector('[data-felt="' + _f + '"]');
+    if (_n && _n !== document.activeElement) { try { _n.focus({ preventScroll: true }); if (_s !== null && _s !== undefined) _n.setSelectionRange(_s, _e); } catch (_x) {} }
+  }
+}
+function _renderIndre(){
   // Spiller-rollen er FJERNET 18/8 (Nicolais beslutning). Den var demo-
   // mekanismen fra før transporten fandtes — nu bor spiller-oplevelsen i
   // spiller-appen, og evalueringen rejser ad den ægte vej (evaluering-gem).
@@ -2592,6 +2747,55 @@ async function budHentMine(kode){
 //   adresseres med HÅNDTAG (h) — samme som hent-hold; en spillernøgle rejser aldrig.
 // ═══════════════════════════════════════════════════════════════════════
 const TRAENING_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/traening";
+const LAES_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/program-laes";   /* ⭐ v6.23.0 · programlæseren */
+async function laesKald(krop) {   /* ⭐ v6.23.0 · samme dør som traening (trænernøglen) — et stort ark kan tage op til et minut */
+  const kn = lager.hent("klubkode", "");
+  if (!kn) return { fejl: "mangler-klubkode" };
+  const st = new AbortController(); const ur = setTimeout(() => st.abort(), 150000);
+  try {
+    const r = await fetch(LAES_URL, { method: "POST", headers: { "content-type": "application/json", "x-klub-noegle": kn },
+      body: JSON.stringify({ handling: "laes", ...(krop || {}) }), signal: st.signal });
+    let d; try { d = await r.json(); } catch (_j) { d = st.signal.aborted ? null : {}; }
+    clearTimeout(ur);
+    if (d === null) return { fejl: "tid" };
+    return r.ok ? d : { fejl: (r.status >= 500 && r.status !== 502) ? "server" : (d.kode || "ukendt"), status: r.status, krop: d };
+  } catch (e) { clearTimeout(ur); return { fejl: (e && e.name === "AbortError") ? "tid" : "netvaerk" }; }
+}
+function laesFejl(r){   /* ⭐ v6.23.0 · hvert udfald sin egen sætning (75) — resten som traeningFejl */
+  var k = r && r.fejl;
+  if (k === "ikke-delt") return "Arket er ikke delt — vælg «Alle med linket» under Del i Google Sheets, og prøv igen.";
+  if (k === "ukendt-type") return "Filtypen kendes ikke — brug Excel, CSV, PDF eller et billede.";
+  if (k === "for-stor") return "Filen er for stor — højst 4,5 MB.";
+  if (k === "intet-program") return "Der blev ikke fundet nogen træningspas i arket.";
+  if (k === "loft") return "Du har læst 20 ark i dag — prøv igen i morgen.";
+  if (k === "udbyder") return "Arket kan ikke læses lige nu — prøv igen om lidt.";
+  return traeningFejl(r);
+}
+function impVis(){   /* ⭐ v6.23.0 · svaret står under indsæt-boksen — rul det frem, ellers ser træneren intet (98) */
+  setTimeout(function(){ var e = document.getElementById("impSvarFejl") || document.getElementById("impLaestRes"); if (!e) return;
+    var y = e.getBoundingClientRect().top + window.scrollY - 90; window.scrollTo({ top: Math.max(0, y), behavior: "smooth" }); }, 60);
+}
+function impLaes(krop){   /* ⭐ v6.23.0 · fil eller link → forslaget → importens tjek (tør) */
+  S.imp = S.imp || {};
+  S.imp.laeser = true; S.imp.fejl = null; S.imp.svar = null; S.imp.lagt = null; S.imp.laest = null; render();
+  laesKald(krop).then(function(r){
+    S.imp.laeser = false;
+    if (!r || !Array.isArray(r.raekker)) { S.imp.fejl = laesFejl(r); render(); impVis(); return; }
+    S.imp.laest = r; render(); impVis();
+    var b = document.getElementById("impTjekLaest"); if (b) b.click();
+  });
+}
+window.__impFil = function(el){   /* ⭐ v6.23.0 · telefonens egen filvælger — iCloud Drive, Google Drive, OneDrive, Dropbox, billeder */
+  var f = el && el.files && el.files[0]; if (!f) return;
+  S.imp = S.imp || {};
+  if (S.imp.koerer || S.imp.laeser) return;
+  if (f.size > 4500000) { S.imp.fejl = "Filen er for stor — højst 4,5 MB."; render(); impVis(); return; }
+  var rd = new FileReader();
+  rd.onload = function(){ impLaes({ fil: String(rd.result || "").replace(/^data:[^,]*,/, ""), filnavn: f.name || "" }); };
+  rd.onerror = function(){ S.imp.fejl = "Filen kunne ikke læses på telefonen."; render(); impVis(); };
+  rd.readAsDataURL(f);
+  try { el.value = ""; } catch (_e) {}
+};
 var DAGE_KORT = ["", "Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"];
 var DAGE_LANG = ["", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag", "søndag"];
 async function traeningKald(handling, krop) {
@@ -2602,15 +2806,18 @@ async function traeningKald(handling, krop) {
   try {
     const r = await fetch(TRAENING_URL, { method: "POST", headers: h,
       body: JSON.stringify({ handling, ...(krop || {}) }), signal: st.signal });
-    clearTimeout(ur);
-    const d = await r.json().catch(() => ({}));
+    let d; try { d = await r.json(); } catch (_j) { d = st.signal.aborted ? null : {}; }
+    clearTimeout(ur);   /* ⭐ v6.22.3 · uret slukkes først, når KROPPEN er læst — et svar, der går i stå, låser ikke længere (Codes fund 10) */
+    if (d === null) return { fejl: "tid" };
     // Hvert udfald sin egen sætning (princip 75): koden rejser med, teksten står ved siden af.
-    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || "netvaerk", status: r.status, t: typeof d.fejl === "string" ? d.fejl : "", ukendte: d.ukendte, felter: d.felter, loft: d.loft, krop: d });   /* v6.3.0 · krop: importens fejl pr. række */
-  } catch (e) { clearTimeout(ur); return { fejl: "netvaerk" }; }
+    return r.ok ? d : maaskeSpaerret({ fejl: r.status >= 500 ? "server" : (d.kode || "ukendt"), status: r.status, t: typeof d.fejl === "string" ? d.fejl : "", ukendte: d.ukendte, felter: d.felter, loft: d.loft, krop: d });   /* v6.3.0 · krop: importens fejl pr. række */
+  } catch (e) { clearTimeout(ur); return { fejl: (e && e.name === "AbortError") ? "tid" : "netvaerk" }; }   /* v6.22.3 · en timeout er ikke netværket (94) */
 }
 function traeningFejl(r){
   if (!r) return "Ingen forbindelse lige nu.";
   if (r.fejl === "netvaerk") return "Ingen forbindelse lige nu — prøv igen.";
+  if (r.fejl === "server") return "Serveren kunne ikke svare lige nu — prøv igen om lidt.";   /* ⭐ v6.22.3 · «ingen forbindelse» KUN om netværket (94) */
+  if (r.fejl === "tid") return "Serveren svarede ikke i tide — prøv igen.";
   if (r.fejl === "mangler-klubkode") return "Forbind telefonen med din klub først.";
   if (r.fejl === "kraever-admin") return "Kun klubbens administrator kan godkende programmet.";
   if (r.fejl === "kraever-traener" || r.fejl === "adgang" || r.fejl === "mangler-noegle") return "Din adgang gælder ikke som træner.";
@@ -2621,9 +2828,9 @@ function traeningFejl(r){
   if (r.fejl === "dato") return "Datoen kan ikke bruges (fremtid, eller mere end 30 dage gammel).";
   if (r.fejl === "tom") return "Der er ingen kladde at godkende.";
   if (r.fejl === "loft") return "For mange pas i programmet (højst " + (r.loft || 60) + ").";
-  if (r.fejl === "ukendt-spiller") return "Serveren kender ikke " + ((r.ukendte || []).length || "en") + " af spillerne i klubben — hent truppen igen under ⚙️.";
-  if (r.fejl === "format") return "Udfyld " + ((r.felter || []).length ? r.felter.join(", ") : "felterne") + " rigtigt.";
-  return "Serveren afviste det (" + (r.fejl || "ukendt") + ").";
+  if (r.fejl === "ukendt-spiller") { var _nU = (r.ukendte || []).length; return _nU > 1 ? "Serveren kender ikke " + _nU + " af spillerne i klubben — hent truppen igen under ⚙️." : "Serveren kender ikke én af spillerne i klubben — hent truppen igen under ⚙️."; }   /* v6.22.4 · hele sætninger, så engelsk kan oversætte dem (Codes fund 3) */
+  if (r.fejl === "format") return "Noget i passet er ikke udfyldt rigtigt — tjek felterne og prøv igen.";
+  return "Serveren afviste det — prøv igen, og skriv til nicolai@sportsainalytics.com, hvis det bliver ved.";   /* v6.22.4 · ingen maskinord på skærmen */
 }
 // Navnet på et håndtag: trænerens eget navn i truppen → serverens fornavn → «spiller».
 function navnFor(h, fornavn){
@@ -2682,16 +2889,34 @@ function nuBedste(){
 function nuUdenFremmoede(){ return (S.nu && S.nu.pas ? S.nu.pas : []).filter(function(p){ return p.lige_slut && !p.registreret; }).length; }
 
 // ── PROGRAMMET (kladden) hentes, når fanen åbnes, og efter hver ændring.
-function prgHent(status){
-  if (S.prgHenter) return;
-  S.prgHenter = true;   /* kvitteringen fra pas-gem/godkend bliver stående — kun en fejl slettes af det næste gode kald (princip 94) */
-  traeningKald("pas-liste", { status: status || "kladde" }).then(function(r){
-    S.prgHenter = false;
+function prgHent(status, skrevet){
+  var st = status || "kladde";
+  /* ⭐⭐ v6.22.4 · kun en SKRIVNING kasserer et svar, der er undervejs (Codes fund 5: to almindelige kald gav en dobbelt hentning).
+     Samme liste uden skrivning: den igangværende hentning er frisk nok. En anden liste: hentes, når denne er tilbage. */
+  if (S.prgHenter) {
+    if (skrevet) { S.prgSkrevet = S.prgSkrevet || {}; S.prgSkrevet[st] = 1; }
+    else if (S.prgHenterSt !== st) S.prgIgen = st;
+    return;
+  }
+  S.prgHenter = true; S.prgHenterSt = st;
+  if (st === "kladde") S.prgTid = Date.now();   /* v6.22.1 · også ved en fejl — ellers går skærmen i ring (som nuHentet) */
+  else S.prgGTid = Date.now();   /* v6.22.3 · det godkendte hentes højst hvert 30. sekund af sig selv (kaldsløkken) */
+  traeningKald("pas-liste", { status: st }).then(function(r){
+    S.prgHenter = false; S.prgHenterSt = null;
+    var sk = S.prgSkrevet || {}; S.prgSkrevet = null;
+    var igen = S.prgIgen; S.prgIgen = null;
+    if (sk[st === "kladde" ? "godkendt" : "kladde"]) igen = (st === "kladde" ? "godkendt" : "kladde");
+    if (sk[st]) { prgHent(st); if (igen) S.prgIgen = igen; return; }   /* svaret er taget FØR skrivningen — det kasseres, og det nye hentes (det høje fund) */
     if (r && !r.fejl && Array.isArray(r.pas)) {
-      if ((status || "kladde") === "godkendt") S.prgGodkendt = r; else S.prg = r;
-      if (S.prgBesked && S.prgBesked.fejl) S.prgBesked = null;
-    } else S.prgBesked = { fejl: true, t: traeningFejl(r) };
+      if (st === "godkendt") { S.prgGodkendt = r; S.prgGFejl = null; S.prgGFejlN = 0; }
+      else { S.prg = r; S.prgHentFejl = null; if (S.prgBesked && S.prgBesked.hent) S.prgBesked = null; }
+    } else if (st === "godkendt") {
+      /* ⭐ v6.22.4 · det godkendte programs fejl har sit eget felt: VURDÉR siger den, Gør nu gør ikke (Codes fund 6 · 26-03 #9) */
+      S.prgGFejl = traeningFejl(r); S.prgGFejlN = (S.prgGFejlN || 0) + 1;
+      if (S.prgGFejlN <= 2) setTimeout(function(){ if (!S.prgGodkendt && !S.prgHenter) { S.prgGTid = 0; prgHent("godkendt"); } }, 3000);   /* to genforsøg — en kort fejl heler selv */
+    } else { S.prgHentFejl = traeningFejl(r); S.prgBesked = { fejl: true, hent: true, t: S.prgHentFejl }; }
     render();
+    if (igen) prgHent(igen);
   });
 }
 function prgNulstilForm(){ S.prgNy = false; S.prgAaben = null; S.prgVaelg = false; S.prgSoeg = ""; S.prgStart = ""; S.prgSlut = ""; S.prgBane = ""; S.prgTraener = ""; S.prgTraener2 = ""; S.prgTitel = ""; S.prgUdenApp = ""; }
@@ -2841,12 +3066,25 @@ function impFejlTekst(f, mod){
 }
 function prgImport(prg){
   var im = S.imp || {};
-  var h = '<div class="kort" style="--tone:var(--guld)"><div class="eyebrow">📥 IMPORTÉR FRA EXCEL</div>' +
-    '<p class="lille" style="margin:6px 0 8px">Én række pr. pas. Kolonnerne: <b>ugedag · start · slut · bane · træner · medtræner · titel · spillere · uden app</b>. Kopiér rækkerne i Excel og sæt dem ind her — spillere adskilles med <b>;</b>, og «Bertil B (2)» sætter hold 2. Ukendte navne gemmes ikke; de listes, så du kan invitere dem.</p>' +
+  var h = '<div class="kort" style="--tone:var(--guld)"><div class="eyebrow">📥 LÆS KLUBBENS ARK</div>' +   /* ⭐ v6.23.0 */
+    '<p class="lille" style="margin:6px 0 10px">Læg klubbens eget ark ind, som det er — Excel, et Google-ark, en PDF eller et billede af programmet. Det læses og bliver til et forslag, du ser, før noget lægges i kladden.</p>' +
+    '<input type="file" id="impFil" accept=".xlsx,.xls,.ods,.csv,.pdf,image/*" style="display:none" onchange="window.__impFil(this)">' +
+    '<button id="impTjekLaest" data-act="prg-imp-tjek-forslag" style="display:none" tabindex="-1" aria-hidden="true"></button>' +
+    '<div class="raekke"><button class="knap" style="background:var(--grus)"' + ((im.laeser || im.koerer) ? ' disabled' : '') + ' data-act="prg-imp-fil">📁 Vælg fil</button></div>' +
+    '<div style="display:flex;gap:8px;align-items:center;margin-top:8px"><input class="felt" data-felt="impLink" placeholder="https://docs.google.com/spreadsheets/…" autocapitalize="none" autocomplete="off" value="' + esc(S.impLink || '') + '" style="flex:1;min-width:0;margin:0">' +
+    '<button class="knap" style="flex:none;padding:12px 14px;background:var(--grus)"' + ((im.laeser || im.koerer) ? ' disabled' : '') + ' data-act="prg-imp-link">🔗 Læs linket</button></div>' +
+    (im.laeser ? '<p class="lille" style="margin:8px 0 0">⏳ Læser arket … (op til et minut)</p>' : '') +
+    '<div class="eyebrow" style="margin-top:14px">ELLER SÆT RÆKKER IND FRA EXCEL</div>' +
+    '<p class="lille" style="margin:6px 0 8px">Én række pr. pas. Kolonnerne: <b>ugedag · start · slut · bane · træner · medtræner · titel · spillere · uden app</b>. Kopiér rækkerne i Excel og sæt dem ind her — spillere adskilles med <b>;</b>, og «Bertil B (2)» sætter hold 2. Spillere uden app gemmes ved navn i klubbens program, så truppen kan bygges af det.</p>' +
     '<textarea class="felt" data-felt="impTekst" rows="7" spellcheck="false" placeholder="tir\t17:00\t18:00\t10&amp;11\tJonas\tMette\tU14 Elite\tAlma Askholm; Bertil B (2)\t2">' + esc(S.impTekst || "") + '</textarea>' +
     '<div class="raekke" style="margin-top:8px"><button class="knap" style="background:var(--grus)"' + (im.koerer ? ' disabled' : '') + ' data-act="prg-imp-tjek">' + (im.koerer && !im.skarp ? '⏳ …' : 'Tjek rækkerne') + '</button>' +
     '<button class="knap valg" data-act="prg-imp-nulstil">Ryd</button></div>' +
-    (im.fejl ? '<p class="lille" style="margin:8px 0 0;color:var(--tabt)">' + esc(im.fejl) + '</p>' : '') + '</div>';
+    (im.fejl ? '<p id="impSvarFejl" class="lille" style="margin:8px 0 0;color:var(--tabt)">' + esc(im.fejl) + '</p>' : '') +
+    (im.laest ? '<p id="impLaestRes" class="lille" style="margin:8px 0 0">' + (im.laest.raekker || []).length + ' pas fundet i arket</p>' +
+      (im.laest.kasseret ? '<p class="lille" style="margin:4px 0 0;color:var(--guld)">' + im.laest.kasseret + ' kasseret — mangler dag, tid eller bane</p>' : '') +
+      (((im.laest.fjernet || {}).mails || (im.laest.fjernet || {}).tlf) ? '<p class="lille" style="margin:4px 0 0">Fjernet før læsningen: ' + ((im.laest.fjernet || {}).mails || 0) + (((im.laest.fjernet || {}).mails || 0) === 1 ? ' mailadresse og ' : ' mailadresser og ') + ((im.laest.fjernet || {}).tlf || 0) + (((im.laest.fjernet || {}).tlf || 0) === 1 ? ' telefonnummer</p>' : ' telefonnumre</p>') : '') +
+      ((im.laest.ark || []).some(function(a){ return a.fejl; }) ? '<p class="lille" style="margin:4px 0 0;color:var(--guld)">' + (im.laest.ark || []).filter(function(a){ return a.fejl; }).length + ((im.laest.ark || []).filter(function(a){ return a.fejl; }).length === 1 ? ' fane kunne ikke læses — prøv igen om lidt</p>' : ' faner kunne ikke læses — prøv igen om lidt</p>') : '')
+    : '') + '</div>';
   var sv = im.svar;
   if (!sv) return h;
   var fejl = sv.fejl || [], uk = sv.ukendte || [], fl = sv.flertydige || [], adv = sv.advarsler || [], fu = sv.fundet || [];
@@ -2858,10 +3096,10 @@ function prgImport(prg){
     '<div style="font-size:14px;font-weight:800;margin-top:4px">' + (lagt ? lagt.pas_oprettet + ' pas lagt i kladden · ' + lagt.deltagere + ' spillere' + (lagt.kladde_ryddet ? ' · kladden ryddet (' + lagt.kladde_ryddet + ' pas)' : '')
       : klar + ' pas klar' + (fejlRk ? ' · <span style="color:var(--tabt)">' + fejlRk + (fejlRk === 1 ? ' række med fejl' : ' rækker med fejl') + '</span>' : '') + ' · ' + fu.length + ' spillere fundet' + (uk.length ? ' · ' + uk.length + ' ukendte' : '') + (fl.length ? ' · ' + fl.length + ' flertydige' : '')) + '</div>';
   if (!lagt && klar === 0 && !fejl.length) h += '<p class="lille" style="margin:6px 0 0">Ingen pas i det, du satte ind.</p>';
-  fejl.forEach(function(f){ h += '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">Række ' + f.raekke + ': ' + esc((f.felter || []).map(function(x){ return impFejlTekst(x, f.mod); }).join(' · ')) + '</p>'; });
+  fejl.forEach(function(f){ h += '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">Række ' + f.raekke + ': ' + esc((f.felter || []).map(function(x){ return T(impFejlTekst(x, f.mod)); }).join(' · ')) + '</p>'; });
   adv.forEach(function(a){ h += '<p class="lille" style="margin:6px 0 0;color:var(--guld)">Række ' + a.raekke + ': ' + a.antal + ' på banen — max ' + a.loft + ' (en advarsel, ikke en spærring)</p>'; });
   if (fl.length) h += '<p class="lille" style="margin:8px 0 0"><b>Flertydige:</b> ' + esc(fl.join(', ')) + ' — flere i truppen hedder det; skriv det fulde navn.</p>';
-  if (uk.length) h += '<p class="lille" style="margin:8px 0 0"><b>Ukendte (' + uk.length + '):</b> ' + esc(uk.join(', ')) + '<br>De har ikke StreakTennis i klubben endnu — invitér dem under 🔑 Invitér spiller, og kør importen igen. De gemmes ikke.</p>';
+  if (uk.length) h += '<p class="lille" style="margin:8px 0 0"><b>Ukendte (' + uk.length + '):</b> ' + esc(uk.join(', ')) + '<br>De har ikke StreakTennis i klubben endnu og står i programmet ved navn — invitér dem under ⚙️ Indstillinger → 📲 Invitér og adgang.</p>';
   if (lagt) {
     h += '<button class="knap" style="width:100%;margin-top:10px;background:var(--grus)" data-act="prg-visning" data-v="skema">Se ugeskemaet →</button>';
   } else if (!fejl.length && klar > 0) {
@@ -2875,7 +3113,7 @@ function prgImport(prg){
 function traenerProgram(){
   var h = '';
   if (!lager.hent("klubkode", "")) return '<div class="kort"><h3>📅 Programmet</h3><p class="lille">Når telefonen er forbundet med din klub, kan ugeskemaet laves her.</p></div>';
-  if (!S.prg && !S.prgHenter && !S.prgBesked) { setTimeout(function(){ prgHent("kladde"); }, 0); }
+  if (!S.prgHenter && !feltIFokus() && Date.now() - (S.prgTid || 0) > 30000) { setTimeout(function(){ prgHent("kladde"); }, 0); }   /* v6.22.3 · aldrig midt i et ord (Codes fund 3) */   /* v6.22.1 · som på HJEM (Codes fund 2) */
   if (!S.prgUgedag) S.prgUgedag = ugedagAf(dkIdag());
   var prg = S.prg || { pas: [], sidst_godkendt: null, aendret_siden: 0, traenere: [], timer: [] };
   // ── status + godkend
@@ -3039,7 +3277,7 @@ function traenerRegistrer(t){
         '<p class="lille" style="margin:6px 0 0">Passet står nu i loggen hos ' + r.svar.log_skrevet + (r.svar.log_fjernet ? ' · fjernet hos ' + r.svar.log_fjernet : '') + ' — og tæller i streaken.' + (r.svar.ikke_moedt ? ' ' + r.svar.ikke_moedt + ' ikke mødt.' : '') + '</p>';
     }
     if (vd.sendt.length) h += '<p class="lille" style="margin:6px 0 0">Vurderingen' + (r.kilde === "gruppe" ? '' : omrT) + ' står nu hos ' + vd.sendt.map(function(x){ return esc(x.split(" ")[0]); }).join(', ') + ' ✓</p>';
-    if (vd.lokalt.length) h += '<p class="lille" style="margin:6px 0 0">' + vd.lokalt.map(function(x){ return esc(x.split(" ")[0]); }).join(', ') + ': gemt i din boks — når spilleren er i appen, rejser den med.</p>';
+    if (vd.lokalt.length) h += '<p class="lille" style="margin:6px 0 0">' + vd.lokalt.map(function(x){ return esc(x.split(" ")[0]); }).join(', ') + ': gemt i din boks — når spilleren siger ja i appen, rejser den med, hvis navnet i din trup begynder med spillerens fornavn.</p>';   /* v6.22.4 · kvitteringen siger betingelsen (Codes fund 4) */
     if (vd.venter) h += '<p class="lille" style="margin:6px 0 0">⏳ Sender ' + vd.venter + (vd.venter === 1 ? ' vurdering …' : ' vurderinger …') + '</p>';
     h += '</div>';
     if (vd.fejl.length) h += '<div class="kort" style="--tone:var(--tabt)"><p class="lille" style="margin:0;color:var(--tabt)">Vurderingen kom ikke frem hos ' + vd.fejl.map(function(f){ return esc(f.navn.split(" ")[0]) + ' (' + esc(f.t) + ')'; }).join(', ') + '.' + (r.kilde === "gruppe" ? ' Scoren står i din boks.' : ' Fremmødet er gemt.') + '</p>' +
@@ -3085,7 +3323,7 @@ function traenerRegistrer(t){
   // trin 1 · ét sted: dagens pas fra programmet — eller en gruppe
   var harKode = !!lager.hent("klubkode", "");
   var idag = (S.regDato || dkIdag()) === dkIdag();
-  if (harKode && !idag && !S.prgGodkendt && !S.prgHenter) setTimeout(function(){ prgHent("godkendt"); }, 0);
+  if (harKode && !idag && !S.prgGodkendt && !S.prgHenter && Date.now() - (S.prgGTid || 0) > 30000) setTimeout(function(){ prgHent("godkendt"); }, 0);   /* v6.22.3 · ingen kaldsløkke (Codes fund 9) */
   if (harKode && idag && !S.nuHentet && !S.nuHenter) setTimeout(function(){ nuHent(false); }, 0);   /* én gang — ikke i ring */
   h += '<div class="kort" style="padding:11px 14px"><div class="eyebrow">📅 FRA PROGRAMMET</div>';
   if (!harKode) h += '<p class="lille" style="margin:6px 0 0">Når telefonen er forbundet med din klub, kommer dagens pas frem her, og fremmødet skrives i spillernes træningslog.</p></div>';
@@ -3095,6 +3333,7 @@ function traenerRegistrer(t){
     var liste = regPasListe();
     if (S.nuFejl && idag) h += '<p class="lille" style="color:var(--tabt)">' + esc(S.nuFejl) + '</p>';
     if ((idag && S.nuHenter && !S.nu) || (!idag && S.prgHenter)) h += '<p class="lille" style="text-align:center">Henter …</p>';
+    else if (!idag && S.prgGFejl && !S.prgGodkendt) h += '<div class="kort" data-g-fejl="1"><p class="lille" style="margin:0;color:var(--tabt)">' + esc(T(S.prgGFejl)) + '</p><p class="lille" style="margin:6px 0 0">' + T("Det godkendte program kunne ikke hentes — du kan prøve igen eller vælge en gruppe herunder.") + '</p><button class="knap valg" style="margin-top:8px" data-act="prg-g-igen">' + T("↻ Prøv igen") + '</button></div>';   /* v6.22.4 · en fejl ligner ikke et tomt program (26-03 #9) */
     else if (!liste.length) h += '<div class="kort"><p class="lille" style="margin:0">Ingen pas ' + (idag ? 'i dag' : DAGE_LANG[ugedagAf(S.regDato)]) + ' i det godkendte program — vælg en gruppe herunder.' + (S.prg && S.prg.pas && S.prg.pas.length && !(S.prg.sidst_godkendt) ? ' Kladden er ikke godkendt endnu — admin trykker «Godkend og send ud» under PROGRAM.' : '') + '</p></div>';
     liste.sort(function(a, b){ return (b.lige_slut && !b.registreret ? 1 : 0) - (a.lige_slut && !a.registreret ? 1 : 0) || String(a.start).localeCompare(String(b.start)); });
     liste.forEach(function(p){
@@ -3125,11 +3364,11 @@ function bundNav(){
 
 function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emoji som flisen på HJEM */
   if (tab === "indst" && S.indstVisning) return { nye: "\ud83d\udce5 Nye spillere", forbindelse: "\u2699\ufe0f Forbindelse", sky: "\u2601\ufe0f Skyen",
-    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", adgang: "\ud83d\udcf2 Invit\u00e9r og adgang", spejl: "\ud83e\ude9e Spejlet",
+    konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", adgang: "\ud83d\udcf2 Invit\u00e9r og adgang", spejl: "\ud83e\ude9e Spejlet", spoerg: "\u2753 Sp\u00f8rg guiden",
     "adgang-spiller": "\ud83c\udfbe Invit\u00e9r spiller", "adgang-traener": "\ud83e\uddd1\u200d\ud83c\udfeb Invit\u00e9r tr\u00e6ner", "adgang-link": "\ud83d\udcf1 Link til appen", "adgang-klub": "\ud83d\udc65 Klubben" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen", udstil: "\ud83c\udf10 Udstil" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Spillere", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
-           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\ud83d\udcca Overblik", weekenden: "📆 Weekenden", live: "🔴 Live nu" }[tab] || "";
+           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\u2705 G\u00f8r nu", weekenden: "📆 Weekenden", live: "🔴 Live nu" }[tab] || "";
 }
 // ⭐⭐ v6.12.0 · TRÆNERENS DASHBOARD (Nicolai 26/9: «de 3 tal og nyhed» + «hvad der skal ske i dag»). Står altid på HJEM.
 //   Tallene er det, telefonen VED: truppen (lager) · spillere vurderet siden mandag (S.vurderinger, dansk dato) · nye (hent-hold).
@@ -3138,20 +3377,66 @@ function dashVurderet(){   /* v6.13.0 · spillere vurderet siden mandag — ét 
   var vurd = {}; (S.vurderinger || []).forEach(function(v){ if (v && v.dato && String(v.dato).slice(0, 10) >= man && v.spiller) vurd[v.spiller] = 1; });
   return Object.keys(vurd).length;
 }
-// ⭐ v6.13.0 · FLISEN «📊 OVERBLIK» — dens status er et løfte (70): nyheden, ellers dagens pas + ugens vurderede
-function overblikFlise(){
-  var dele = [], uf = nuUdenFremmoede();
-  var m = S.autoTrupBesked ? /^(.*?) sagde ja/.exec(S.autoTrupBesked) : null;
-  if (m) { dele.push('<span>' + esc('✓ ' + m[1] + ' sagde ja') + '</span>'); if (uf) dele.push(_ufTekst(uf)); }   /* rødt står, også når der er nyt */
-  else {
-    /* ⭐ v6.20.1 · det, der stod i helten, står her: hvor mange pas, hvor mange uden fremmøde (rødt), og en hentefejl med sit eget ord (94) */
-    if (lager.hent("klubkode", "") && S.nuFejl) dele.push('<span>' + esc(S.nuFejl) + '</span>');
-    else if (S.nu && Array.isArray(S.nu.pas)) dele.push('<span>' + esc(S.nu.pas.length ? S.nu.pas.length + ' pas i dag' : 'fri i dag') + '</span>');
-    if (uf) dele.push(_ufTekst(uf));
-    dele.push('<span>' + esc(dashVurderet() + ' vurderet') + '</span>');
+// ⭐⭐⭐ v6.22.0 · «✅ GØR NU» — HANDLINGSCENTRET (Nicolai 25/10: «et action center … trykke sig igennem det på samme måde som man starter en kamp» · «Dynamisk og under»).
+//   goerNu() er listen over det, der kræver en hånd NU, i den rækkefølge, træneren bør tage det. Hver post er en knap, der fører derhen.
+//   Helten på HJEM er den øverste post; flisen bærer tallet og titlen; rummet har dem alle som brede knapper + den stående dør
+//   «⚡ Vurdér træningen» (kortets regel 26/9: hvert rum i bundbaren kan nås fra HJEM) + dashboardet (v6.12.0) under.
+//   Tallene er det, telefonen VED (64/70): nu (pas i dag) · prg (kladden) · tilmeldinger (hent-hold) · analyser (klub-live) · ugefokus (lager).
+function goerNu(){
+  var liste = [], uf = nuUdenFremmoede(), b = nuBedste();
+  if (lager.hent("klubkode", "") && (lager.hent("truppen", []) || []).length && !(S.ugefokus || {})[ugeNoegle()])   /* v6.22.1 · FØRST: fokus før vurdering (Codes fund 3) */
+    liste.push({ id: "ugefokus", ikon: "\ud83c\udfaf", titel: "Ugens fokus mangler", tekst: "v\u00e6lg omr\u00e5det, f\u00f8r du vurderer", act: "goer-nu", v: "ugefokus", kant: "dev-kant-is" });
+  if (uf && b) liste.push({ id: "reg", ikon: "\u26a1", titel: (uf === 1 ? "1 pas uden fremm\u00f8de" : uf + " pas uden fremm\u00f8de"), tekst: "registr\u00e9r fremm\u00f8de og vurd\u00e9r", act: "reg-start", v: b.id, kant: "dev-kant-grus" });
+  var prg = S.prg; var nP = prg && Array.isArray(prg.pas) ? prg.pas.length : 0;
+  if (S.minRolle !== "traener" && nP && (!prg.sidst_godkendt || prg.aendret_siden > 0)) {
+    var tk = !prg.sidst_godkendt ? (nP === 1 ? "1 pas i kladden venter p\u00e5 dit ja" : nP + " pas i kladden venter p\u00e5 dit ja")
+                                 : (prg.aendret_siden === 1 ? "1 \u00e6ndring siden sidste godkendelse" : prg.aendret_siden + " \u00e6ndringer siden sidste godkendelse");
+    liste.push({ id: "kladde", ikon: "\u2705", titel: "Godkend programmet", tekst: tk, act: "goer-nu", v: "kladde", kant: "dev-kant-gron" });
   }
-  return '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="overblik"><span class="dev-ikon">\ud83d\udcca</span><b>Overblik</b><small>' +
-    dele.join(' · ') + '</small></button>';
+  (S.koblSpm || []).forEach(function(k){   /* ⭐ v6.23.0 · Codes fund A: et ja, der ligner et navn i truppen, venter på trænerens ord */
+    liste.push({ id: "kobl", ikon: "\ud83d\udd17", titel: k.fornavn + " sagde ja", tekst: (k.kand.length === 1 ? "er det " + k.kand[0] + " i din trup?" : "ligner " + k.kand.length + " navne i din trup"), act: "tab", v: "grupper", kant: "dev-kant-guld" });
+  });
+  var _t = { venter: [], nye: [] }; try { _t = nyeSpillere(); } catch (_e) {}
+  var _n = _t.venter.length + _t.nye.length;
+  if (_n) liste.push({ id: "nye", ikon: "\ud83d\udce5", titel: (_n === 1 ? "1 ny spiller" : _n + " nye spillere"), tekst: (_t.venter.length ? "venter p\u00e5 jeres ja" : "mangler i truppen"), act: "tab", v: "grupper", kant: "dev-kant-guld" });
+  var _a = 0; try { _a = analyseNye(); } catch (_e2) {}
+  if (_a) liste.push({ id: "analyser", ikon: "\ud83d\udccb", titel: (_a === 1 ? "1 ny analyse" : _a + " nye analyser"), tekst: "fra spillerne \u2014 l\u00e6s dem p\u00e5 kortet", act: "tab", v: "grupper", kant: "dev-kant-guld" });
+  return liste;
+}
+function goerNuHentet(){   /* v6.22.1 · «alt er gjort» må kun siges, når dagens pas OG kladden er hentet (Codes fund 1 · princip 84) */
+  if (!lager.hent("klubkode", "")) return true;
+  return !!(S.nu && Array.isArray(S.nu.pas) && !S.nuFejl && S.prg && Array.isArray(S.prg.pas) && !S.prgHentFejl);
+}
+function goerNuKnap(x, hel){   /* hel = helten på HJEM (VERSALER som START KAMP, gradienten) · ellers en bred knap i rummet med farvekant (v6.22.1) */
+  return '<button class="' + (hel ? 'dev-hero dev-hero-lang dev-kant dev-kant-grus' : 'dev-bred dev-kant ' + x.kant) + '" data-act="' + x.act + '" data-v="' + esc(x.v || "") + '" data-goer-nu="' + x.id + '">' +
+    '<span style="font-size:30px">' + x.ikon + '</span><span><b>' + esc(hel ? x.titel.toUpperCase() : x.titel) + '</b><br><small>' + esc(x.tekst) + '</small></span><span class="dev-pil">\u2192</span></button>';
+}
+function goerNuKort(){   /* rummet «✅ Gør nu»: handlingerne · den stående dør · (dashboardet tegnes af kalderen) */
+  var liste = goerNu(), h = '';
+  liste.forEach(function(x){ h += goerNuKnap(x, false); });
+  if (!liste.length) {   /* v6.22.1 · hvert udfald sin egen sætning (75): fejl · henter · alt er gjort */
+    if (lager.hent("klubkode", "") && (S.nuFejl || S.prgHentFejl)) h += '<p class="lille" style="margin:0 0 10px;color:var(--tabt)">' + esc(T(S.nuFejl || S.prgHentFejl)) + '</p>';   /* v6.22.3 · Codes fund 2 */
+    else if (!goerNuHentet()) h += '<p class="lille" style="margin:0 0 10px">Henter dagens pas og kladden \u2026</p>';
+    else h += '<p class="lille" style="margin:0 0 10px">Alt er gjort \u2014 ingen h\u00e6nder lige nu.</p>';
+  }
+  var b = nuBedste();   /* den stående dør er stål — handlingerne har farve (v6.22.1: .dev-bred, så kanten lever) */
+  h += '<button class="dev-bred dev-kant dev-kant-staal" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + ' data-goer-nu="vurder" style="margin:0 0 14px"><span style="font-size:30px">\u26a1</span><span><b>Vurd\u00e9r tr\u00e6ningen</b><br><small>fremm\u00f8de og vurdering fra banen</small></span><span class="dev-pil">\u2192</span></button>';
+  return h;
+}
+// ⭐ v6.22.0 · FLISEN «✅ GØR NU» — dens status er et løfte (70): tallet og den øverste handling; uden handlinger: dagen og «alt er gjort»
+function overblikFlise(){
+  var liste = goerNu(), dele = [];
+  var m = S.autoTrupBesked ? /^(.*?) sagde ja/.exec(S.autoTrupBesked) : null;   /* v6.13.0 · nyheden står én gang og kort på flisen */
+  if (m) { dele.push('<span>' + esc('\u2713 ' + m[1] + ' sagde ja') + '</span>'); if (liste.length) dele.push('<span>' + esc(liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span>'); }
+  else if (liste.length) { dele.push('<span>' + esc(liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span>'); dele.push('<span>' + esc(liste[0].titel) + '</span>'); }
+  else if (lager.hent("klubkode", "") && (S.nuFejl || S.prgHentFejl)) dele.push('<span>' + esc(T(S.nuFejl || S.prgHentFejl)) + '</span>');   /* v6.22.3 · Codes fund 2 */   /* v6.22.1 · fejlen står alene (Codes fund 1) */
+  else if (!goerNuHentet()) dele.push('<span>henter dagens pas \u2026</span>');   /* v6.22.3 · egen nøgle (Codes fund 6) */
+  else {
+    dele.push('<span>' + esc(S.nu && Array.isArray(S.nu.pas) && S.nu.pas.length ? S.nu.pas.length + ' pas i dag' : 'fri i dag') + '</span>');
+    dele.push('<span>alt er gjort</span>');
+  }
+  return '<button class="dev-flise dev-kant ' + (liste.length ? 'dev-kant-guld' : 'dev-kant-staal') + '" data-act="tab" data-v="overblik"><span class="dev-ikon">\u2705</span><b>G\u00f8r nu</b><small>' +
+    dele.join(' \u00b7 ') + '</small></button>';
 }
 function _ufTekst(uf){ return '<span class="dash-roed" style="color:#ff8a8f;font-weight:700">' + uf + (uf === 1 ? ' pas uden fremmøde' : ' pas uden fremmøde') + '</span>'; }   /* ⭐ v6.20.1 · én tekstnode — ordbogen tager den hel */
 function traenerDash(){
@@ -3206,6 +3491,7 @@ function renderTraener(){
     /* ⭐⭐ v6.18.0 · LIVE NU — hentes, når HJEM tegnes. v6.19.0: vist som flise forrest i gitteret, altid (liveFlise). */
     (function(){
       if (lager.hent("klubkode", "") && !S.liveHenter && Date.now() - (S.liveTid || 0) > 30000) setTimeout(function(){ liveHent(); }, 0);
+      if (lager.hent("klubkode", "") && !S.prgHenter && !feltIFokus() && Date.now() - (S.prgTid || 0) > 30000) setTimeout(function(){ prgHent("kladde"); }, 0);   /* ⭐ v6.22.0 · kladden skal kunne stå i Gør nu (Øresund 25/10: 15 pas, ingen sagde det) · v6.22.1 · højst hvert 30. sekund, fejl eller ej (Codes fund 2) */
       if (lager.hent("klubkode", "") && !S.analyseHenter && Date.now() - (S.analyseTid || 0) > 300000) setTimeout(function(){ analyseHent(); }, 0);   /* ⭐ v6.20.0 · højst hvert 5. minut */
       var k = Array.isArray(S.liveKampe) ? S.liveKampe : [];
       /* ⭐⭐ v6.19.0 · ingen helt længere — tallet står i flisen «🔴 Live nu» forrest i gitteret (Nicolai 15/10: «Klart denne») */
@@ -3218,16 +3504,12 @@ function renderTraener(){
       var b = nuBedste();
       /* ⭐ v6.20.1 · helten er lige så høj som StreakTennis' START KAMP (Nicolai 15/10: «alt for stor» · «Selve indholdet der står der skal nok ind under overblik»).
          Én kort linje. Dagens pas — tid, bane, trænere, spillere og hvor mange uden fremmøde — står under 📊 Overblik. Knappen peger stadig på nuBedste(). */
-      h += '<button class="dev-hero dev-kant dev-kant-grus" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + '><span style="font-size:30px">\u26a1</span><span><b>VURD\u00c9R TR\u00c6NINGEN</b><br><small>fremmøde og vurdering fra banen</small></span><span class="dev-pil">\u2192</span></button>';
+      /* ⭐⭐⭐ v6.22.0 · HELTEN ER DYNAMISK («Dynamisk og under»): den øverste handling i Gør nu — ellers VURDÉR TRÆNINGEN som før */
+      var _top = goerNu()[0];
+      if (_top) h += goerNuKnap(_top, true);
+      else h += '<button class="dev-hero dev-kant dev-kant-grus" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + '><span style="font-size:30px">\u26a1</span><span><b>VURD\u00c9R TR\u00c6NINGEN</b><br><small>fremmøde og vurdering fra banen</small></span><span class="dev-pil">\u2192</span></button>';
     })();
-    /* ⭐ v6.10.0 · kortet (princip 100): nye spillere har ét rum — SPILLERE. HJEM viser dem kun, når de kræver en hånd nu. */
-    (function(){
-      var _t = { venter: [], nye: [] }; try { _t = nyeSpillere(); } catch (_e) {}
-      var _n = _t.venter.length + _t.nye.length;
-      /* v6.12.0 · nyheden («… sagde ja …») står i dashboardet nu — ikke løst midt mellem heltene */
-      if (!_n) return;
-      h += '<button class="dev-hero dev-kant dev-kant-guld" data-act="tab" data-v="grupper"><span style="font-size:30px">📥</span><span><b>' + (_n === 1 ? '1 NY SPILLER' : _n + ' NYE SPILLERE') + '</b><br><small>' + (_t.venter.length ? 'venter på jeres ja' : 'mangler i truppen') + '</small></span><span class="dev-pil">→</span></button>';
-    })();
+    /* v6.22.0 · helten «NYE SPILLERE» er væk — nye spillere er en linje i Gør nu (HJEM har ÉN helt) */
     h += '<div class="dev-grid hjem-grid">' + liveFlise() +   /* ⭐⭐ v6.19.0 · LIVE NU — altid, forrest · hjem-grid = de lavere fliser */
       // ⭐⭐⭐ v4.1.0 · AFTENENS VIGTIGSTE KNAP STÅR FORREST.
       //   ⚠️ FANGET FØR DEN BLEV BYGGET: første udkast skrev
@@ -3262,7 +3544,7 @@ function renderTraener(){
     else if (S.tab==="vurder") h += traenerVurder(t);
     else if (S.tab==="kvartal") h += traenerKvartal(t);
     else if (S.tab==="rum") h += traenerRummet();
-    else if (S.tab==="overblik") h += traenerDash();
+    else if (S.tab==="overblik") h += goerNuKort() + traenerDash();   /* v6.22.0 · handlingerne over dashboardet */
     else if (S.tab==="weekenden") h += traenerWeekenden();   /* ⭐ v6.17.0 */
     else if (S.tab==="live") h += traenerLive();   /* ⭐ v6.18.0 */   /* v6.13.0 · dashboardet har sit eget rum */
     else if (S.tab==="indst") h += traenerIndstillinger();
@@ -3341,7 +3623,7 @@ function nyeSpillere(){
   var alle = S.tilmeldinger || [];
   return {
     venter: alle.filter(function(x){ return x.status === "afventer"; }),
-    nye:    alle.filter(function(x){ return x.status === "godkendt" && !iTruppen(x); })
+    nye:    alle.filter(function(x){ return x.status === "godkendt" && !iTruppen(x) && !koblVenter(x); })   /* ⭐ v6.23.0 · et spørgsmål står ét sted */
   };
 }
 
@@ -3474,6 +3756,33 @@ function snakDag(t) {
 }
 /* ⭐⭐ v6.17.0 · WEEKENDEN — motoren `saeson` v3 med klubbens trænernøgle. Håndtaget er truppens (saltet, som hent-hold). */
 const SAESON_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/saeson";
+/* ⭐⭐ v6.22.2 · ❓ SPØRG GUIDEN — motoren `hjaelp` v1. Den kan KUN det, guiden kan (Nicolai 28/10: «lige præcist»). Kontrakten:
+   {handling:"spoerg", sprog, spoergsmaal} med trænernøglen → {svar, kilde:"guide"|"udenfor", sprog, brugt, loft}. */
+const HJAELP_URL = "https://dihzphfsffritfszqkko.supabase.co/functions/v1/hjaelp";
+async function hjaelpKaldK(spoergsmaal){
+  const kn = lager.hent("klubkode", "");
+  if (!kn) return { fejl: "mangler-klubkode" };
+  const st = new AbortController(); const ur = setTimeout(() => st.abort(), 45000);
+  try {
+    const r = await fetch(HJAELP_URL, { method: "POST", headers: { "content-type": "application/json", "x-klub-noegle": kn },
+      body: JSON.stringify({ handling: "spoerg", sprog: SPROG === "en" ? "en" : "da", spoergsmaal: spoergsmaal }), signal: st.signal });
+    let d; try { d = await r.json(); } catch (_j) { d = st.signal.aborted ? null : {}; }
+    clearTimeout(ur);   /* ⭐ v6.22.3 · uret slukkes først, når kroppen er læst */
+    if (d === null) return { fejl: "tid" };
+    return r.ok ? d : maaskeSpaerret({ fejl: d.kode || (r.status >= 500 ? "server" : "ukendt"), status: r.status });   /* ⭐ v6.22.3 · en fejl uden kode er motoren eller gatewayen — ikke netværket (Codes fund 2, princip 94) */
+  } catch (e) { clearTimeout(ur); return { fejl: (e && e.name === "AbortError") ? "tid" : "netvaerk" }; }
+}
+function hjaelpFejltekst(r){   /* hvert udfald sin egen sætning (75) — «ingen forbindelse» KUN om netværket (94) */
+  const k = r && r.fejl;
+  if (k === "netvaerk") return T("Ingen forbindelse — tjek netværket og prøv igen.");
+  if (k === "loft") return T("Du har spurgt guiden 30 gange i dag — prøv igen i morgen.");   /* v6.22.3 · appens egen sætning, på skærmens sprog (Codes fund 3) */
+  if (k === "for-lang") return T("Spørgsmålet er for langt — højst 300 tegn.");
+  if (k === "format") return T("Skriv et spørgsmål først.");
+  if (k === "udbyder" || k === "guide" || k === "server") return T("Guiden kan ikke spørges lige nu — prøv igen om lidt.");
+  if (k === "tid") return T("Guiden var for længe om at svare — prøv igen.");   /* v6.22.3 · sin egen sætning (75) */
+  if (k === "adgang" || k === "mangler-klubkode" || k === "kraever-traener") return T("Log ind som træner for at spørge guiden.");
+  return T("Noget gik galt — prøv igen.");
+}
 async function saesonKaldK(handling, krop) {
   const kn = lager.hent("klubkode", "");
   if (!kn) return { fejl: "mangler-klubkode" };
@@ -3808,7 +4117,7 @@ function qrSvg(tekst){
     return k.createSvgTag({ cellSize: 6, margin: 24 }).replace("<svg ", '<svg style="display:block;shape-rendering:crispEdges" ');   /* v6.16.1 · fast størrelse: 6 px pr. modul, hele pixels */
   } catch (_e) { return ""; }
 }
-S.budNavn = ""; S.budTraef = null; S.budHenter = false; S.budSender = false; S.budBesked = null; S.budSendte = null; S.autoTrupBesked = null;   /* v6.10.0 */
+S.budNavn = ""; S.budTraef = null; S.budHenter = false; S.budSender = false; S.budBesked = null; S.budSendte = null; S.autoTrupBesked = null;   /* v6.10.0 */ S.koblSpm = []; S.koblBesked = null; S.koblSender = false; S.koblIgang = {};   /* v6.23.0 */
 async function budKald(handling, krop) {
   const klub = lager.hent("klubkode", "");
   if (!klub) return { fejl: "mangler-klubkode" };
@@ -3864,22 +4173,80 @@ async function budSendteHent() {
    i truppen - ulategoriseret.»). klub-bud v4 `sendte`: `mine` = sendt med DENNE trænernøgle · `haandtag` kun på et taget
    bud — samme håndtag som hent-hold. Spilleren lægges uden gruppe, præcis som «Læg i trup» gør det, og kun hvis han står i
    klubben (hent-hold) og ikke allerede er i truppen. Ét tryk færre — og intet at godkende, for vi har selv inviteret. */
-function autoTrup(){
+function koblNorm(t){ return String(t || "").normalize("NFC").replace(/[\u00a0\u2007\u202f]/g, " ").replace(/-/g, " ").replace(/\s+/g, " ").trim().toLowerCase(); }
+function koblKandidater(fornavn){   /* ⭐ v6.23.0 · Codes fund A+C: hele fornavnet (også dobbelte) forrest i et UKOBLET trupnavn — et forslag til træneren, aldrig en kobling */
+  var f = koblNorm(fornavn); if (!f) return [];
+  return (S.truppen || []).filter(function(x){ if (!x || x.noegle || !x.navn) return false; var n2 = koblNorm(x.navn); return n2 === f || n2.indexOf(f + " ") === 0; })
+    .map(function(x){ return x.navn; });
+}
+function koblVenter(p){ var h2 = p && p.haandtag; return !!h2 && (S.koblSpm || []).some(function(k){ return k.h === h2; }); }
+function koblNytNavn(p){   /* ⭐ v6.23.0 · et andet barn med et navn, truppen allerede har, får sit eget — før forsvandt det (Codes fund A) */
+  var base = String(p.fornavn || "Spiller").trim() || "Spiller", tr = S.truppen || [];
+  var ledig = function(n2){ return !tr.some(function(x){ return x && x.navn === n2; }); };
+  if (ledig(base)) return base;
+  if (p.aargang && ledig(base + " (" + p.aargang + ")")) return base + " (" + p.aargang + ")";
+  for (var k = 2; k < 100; k++) if (ledig(base + " " + k)) return base + " " + k;
+  return base + " " + Date.now();
+}
+function koblSend(navn){   /* ⭐ v6.23.0 · Codes fund B: «sendt ✓» først, når serveren har sagt ja — ellers står navnet i «vurdsend», og appen prøver igen */
+  S.koblIgang = S.koblIgang || {};
+  if (S.koblIgang[navn]) return Promise.resolve(false);
+  var vs = lager.hent("vurdsend", []) || []; if (vs.indexOf(navn) < 0) { vs.push(navn); lager.gem("vurdsend", vs); }
+  S.koblIgang[navn] = true;
+  return Promise.resolve().then(function(){ return sendVurdering(navn); }).then(function(r){
+    delete S.koblIgang[navn]; S.syncBesked = null;
+    var ok = !!r && !r.fejl;
+    if (ok) lager.gem("vurdsend", (lager.hent("vurdsend", []) || []).filter(function(x){ return x !== navn; }));
+    return ok;
+  }, function(){ delete S.koblIgang[navn]; S.syncBesked = null; return false; });
+}
+function koblSendIgen(){
+  if (S.koblSender) return;
+  var vs = (lager.hent("vurdsend", []) || []).filter(function(n2){ return (S.noegler || {})[n2] && !(S.koblIgang || {})[n2]; });
+  if (!vs.length) return;
+  S.koblSender = true;
+  vs.reduce(function(pr, n2){ return pr.then(function(){ return koblSend(n2).then(function(ok){
+    if (ok) S.koblBesked = { fejl: false, t: n2 + " er koblet — dine vurderinger er sendt ✓" }; }); }); }, Promise.resolve())
+    .then(function(){ S.koblSender = false; render(); }, function(){ S.koblSender = false; });
+}
+function autoTrup(){   /* v6.10.0 · #89 · ⭐ v6.23.0 · Codes fund A: et ja kobles ALDRIG på fornavnet alene — ligner det et navn i truppen, spørger appen træneren */
   if (!Array.isArray(S.budSendte) || !Array.isArray(S.tilmeldinger)) return;
-  var nye = [];
+  var nye = [], spm = [];
+  S.truppen = S.truppen || [];
   S.budSendte.forEach(function(b){
     if (!b || b.status !== "taget" || b.mine !== true || !b.haandtag) return;
     var p = S.tilmeldinger.filter(function(x){ return x.haandtag === b.haandtag && x.status === "godkendt"; })[0];
-    if (!p || iTruppen(p)) return;
-    S.truppen = S.truppen || [];
-    S.truppen.push({ navn: p.fornavn || "Spiller", gruppe: "", noegle: p.haandtag });
-    S.noegler = S.noegler || {}; S.noegler[p.fornavn || "Spiller"] = p.haandtag;
-    nye.push(p.fornavn || "Spiller");
+    if (!p) return;
+    if (S.truppen.some(function(x){ return x && x.noegle && (x.noegle === p.haandtag || (p.spillernoegle && x.noegle === p.spillernoegle)); })) return;   /* allerede i truppen */
+    if (spm.some(function(k){ return k.h === p.haandtag; })) return;
+    var kand = koblKandidater(p.fornavn);
+    if (kand.length) { spm.push({ h: p.haandtag, fornavn: p.fornavn || "Spiller", aargang: p.aargang || "", kand: kand }); return; }   /* træneren afgør — appen gætter ikke */
+    var navn = koblNytNavn(p);
+    S.truppen.push({ navn: navn, gruppe: "", noegle: p.haandtag });
+    S.noegler = S.noegler || {}; S.noegler[navn] = p.haandtag;
+    nye.push(navn);
   });
+  S.koblSpm = spm;
+  try { koblSendIgen(); } catch (_e) {}
   if (!nye.length) return;
   lager.gem("truppen", S.truppen); lager.gem("noegler", S.noegler);
   byggTrup();
-  S.autoTrupBesked = nye.join(", ") + " sagde ja og står nu i din trup under «Uden gruppe».";
+  S.autoTrupBesked = nye.join(", ") + " sagde ja og står nu i din trup under «Uden gruppe».";   /* ⭐ v6.23.0 · én sætning, én tekstnode (Codes fund D) */
+}
+function koblKort(){   /* ⭐ v6.23.0 · Codes fund A: træneren bekræfter med ét tryk — ét kort pr. ja, én knap pr. navn, der ligner */
+  var h = '';
+  if (S.koblBesked) h += '<p class="lille" style="margin:0 2px 10px;font-weight:700;color:' + (S.koblBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.koblBesked.t) + '</p>';
+  (S.koblSpm || []).forEach(function(k, i){
+    var fn = (S.fuldeNavne || {})[k.h] || k.fornavn;
+    h += '<div class="kort" style="--tone:var(--guld)" data-kobl="' + i + '"><div class="eyebrow">🔗 SAGDE JA</div>' +
+      '<div style="font-weight:800;font-size:16px;margin-top:6px">' + esc(fn) + '</div>' +
+      (k.aargang ? '<div class="lille" style="color:var(--daempet)">' + esc('årgang ' + k.aargang) + '</div>' : '') +
+      '<p class="lille" style="margin:8px 0 4px">Sagde ja til klubbens invitation. Er det en spiller, du allerede har i truppen?</p>' +
+      k.kand.map(function(n2, j){ return '<button class="knap" style="width:100%;margin-top:6px;background:var(--grus)" data-act="kobl-ja" data-v="' + i + ':' + j + '">' + esc('Ja — ' + n2) + '</button>'; }).join('') +
+      '<button class="knap valg" style="width:100%;margin-top:6px" data-act="kobl-ny" data-v="' + i + '">Nej — ny spiller</button>' +
+      '<p class="lille" style="margin:8px 0 0;color:var(--daempet)">Siger du ja, rejser dine vurderinger og fokuspunkter med til spilleren.</p></div>';
+  });
+  return h;
 }
 function budKortet() {
   let h = '<div class="kort" style="--tone:var(--guld)">' +
@@ -4283,6 +4650,39 @@ function indstKonto(){   /* v6.8.0 · 👤 din konto — log ud · skift klub ·
   }
   return h;
 }
+function indstSpoerg(){   /* v6.22.2 · ❓ Spørg guiden — kun det, guiden kan */
+  var hj = S.hj || {};
+  var h = '<div class="kort" data-hj-rum="1" style="--tone:var(--is)">' +
+    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\u2753 ' + T("SPØRG GUIDEN") + '</div>' +
+    '<p class="lille" style="margin:6px 0 8px">' + T("Spørg, hvordan man gør noget i StreakCoach. Svaret kommer fra guiden — og kun derfra. Står det ikke i guiden, siger den det.") + '</p>' +
+    '<input class="felt" data-felt="hjSpg" value="' + esc(S.hjSpg || "") + '" placeholder="' + T("Fx: hvordan godkender jeg programmet?") + '" autocapitalize="sentences" style="width:100%;margin:0 0 6px">' +
+    '<button class="knap" style="width:100%;min-height:46px;background:var(--grus)"' + (hj.henter ? " disabled" : "") + ' data-act="hj-spoerg">' + (hj.henter ? "\u23f3 " + T("spørger guiden …") : "\u2753 " + T("Spørg guiden")) + '</button>';
+  if (hj.fejl) h += '<p class="lille" data-hj-fejl="1" style="margin:10px 0 0;color:var(--tabt)">' + esc(hj.fejl) + '</p>';
+  if (hj.svar) {
+    var fra = hj.kilde === "guide";
+    h += '<div data-hj-svar="' + (fra ? "guide" : "udenfor") + '" style="margin-top:12px;padding:10px 12px;border-radius:10px;border:1.5px solid ' + (fra ? "var(--is)" : "var(--guld)") + '">' +
+      '<b style="font-size:11px;letter-spacing:.06em;color:' + (fra ? "var(--is)" : "var(--guld)") + '">' + (fra ? "\ud83d\udcd6 " + T("FRA GUIDEN") : "\u26a0\ufe0f " + T("IKKE I GUIDEN")) + '</b>' +
+      '<p class="lille" style="margin:6px 0 0;white-space:pre-wrap;color:var(--kridt)">' + esc(hj.svar) + '</p></div>';
+    if (typeof hj.brugt === "number") h += '<p class="lille" style="margin:6px 0 0;color:var(--daempet)">' + hj.brugt + " " + T("af") + " " + (typeof hj.loft === "number" ? hj.loft : 30) + " " + T("spørgsmål brugt i dag") + '.</p>';
+  }
+  h += '<p class="lille" style="margin:10px 0 0;color:var(--daempet)">' + T("Guiden husker ikke, hvad du spurgte om før — hvert spørgsmål står alene.") + ' <a href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="color:var(--is);font-weight:700">' + T("Læs hele guiden \u2197") + '</a></p></div>';
+  return h;
+}
+function hjaelpSpoerg(){   /* v6.22.2 */
+  if ((S.hj || {}).henter) return;   /* ⭐ v6.22.4 · Enter og knappen deler låsen (Codes fund 1) */
+  var spg = String(S.hjSpg || "").replace(/[\u00AD\u115F\u1160\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\u2800\u3164\uFE00-\uFE0F\uFEFF\uFFA0]/g, "").replace(/\s+/g, " ").trim();   /* v6.22.3 · usynlige tegn tæller ikke (Codes fund 5) */
+  if (spg.length < 3) { S.hj = { fejl: T("Skriv et spørgsmål først.") }; render(); return; }
+  if (spg.length > 300) { S.hj = { fejl: T("Spørgsmålet er for langt — højst 300 tegn.") }; render(); return; }
+  S.hj = { henter: true }; render();
+  var _nr = S.hjNr = (S.hjNr || 0) + 1;
+  hjaelpKaldK(spg).then(function(r){
+    if (_nr !== S.hjNr) return;   /* v6.22.4 · et svar på et ældre spørgsmål overskriver aldrig et nyere */
+    if (r && !r.fejl && typeof r.svar === "string" && r.svar.trim()) S.hj = { svar: r.svar, kilde: r.kilde === "guide" ? "guide" : "udenfor", brugt: r.brugt, loft: r.loft };
+    else S.hj = { fejl: hjaelpFejltekst(r) };
+    render();
+  });
+}
+addEventListener("keydown", function (e) { if (e.key === "Enter" && e.target && e.target.dataset && e.target.dataset.felt === "hjSpg") { e.preventDefault(); hjaelpSpoerg(); } });   /* v6.22.3 · Enter spørger, som appens andre felter (Codes fund 5) */
 function indstSprog(){   /* v6.8.0 · 🌐 sprog: skærmen og evalueringerne */
   let h = '';
     // ── SPROG · v5.0.0
@@ -4412,6 +4812,7 @@ function indstOversigt(){   /* v6.8.0 · fliserne — hver bærer sin status, s�
   h += '<div class="dev-grid">' +
     /* guiden er et LINK, ikke en undervisning — den bor i ROD og åbner i en ny fane */
     '<a class="dev-flise dev-kant dev-kant-is" href="' + GUIDE_URL + '" target="_blank" rel="noopener" style="text-decoration:none"><span class="dev-ikon">📖</span><b>Sådan virker StreakCoach</b><small>guide med billeder af hver skærm — åbner i en ny fane</small></a>' +
+    prgFlise("indst-vis", "spoerg", "❓", T("Spørg guiden"), (S.hj && S.hj.svar) ? T("svaret står i rummet") : T("svarer kun det, guiden kan"), "dev-kant-is") +   /* v6.22.2 */
     prgFlise("indst-vis", "adgang", "📲", "Invitér og adgang", "spillere og trænere — på brugernavn", "dev-kant-staal") +   /* v6.16.0 · nøglefri */
     prgFlise("indst-vis", "konto", "👤", "Din konto",
       _k ? ((_bs.fejl || _bs.konflikt) ? '<span style="color:var(--guld);font-weight:800">noget skal ordnes — åbn</span>' : 'logget ind som ' + esc(_k.brugernavn)) : '<span style="color:var(--guld);font-weight:800">ikke logget ind</span>',
@@ -4509,6 +4910,7 @@ function traenerIndstillinger(){   /* v6.8.0 · fliser først, undervisningen ba
   if (S.indstVisning === "adgang-traener") return adgangKortet("traener");
   if (S.indstVisning === "adgang-link") return adgangKortet("link");
   if (S.indstVisning === "adgang-klub") return adgangKortet("klub");
+  if (S.indstVisning === "spoerg") return indstSpoerg();   /* v6.22.2 */
   if (S.indstVisning === "sprog") return indstSprog();
   if (S.indstVisning === "streak") return indstStreak();
   if (S.indstVisning === "trup") return indstTrup();
@@ -4523,6 +4925,7 @@ function traenerGrupper(t){
   /* ⭐⭐⭐ v6.10.0 · 👥 SPILLERE ER ÉT RUM (kortet 26/9, princip 100): invitér · nye/venter (kun når nogen) · grupperne
      («Uden gruppe» = hvor et ja lander) · ret truppen nederst. Nicolai 26/9: «Det er VIRKELIGT mange veje ind til det samme steder.» */
   if (S.autoTrupBesked) h += '<p class="lille" style="margin:0 2px 10px;color:var(--vundet);font-weight:700">' + esc(S.autoTrupBesked) + '</p>';
+  h += koblKort();   /* ⭐ v6.23.0 · Codes fund A */
   if (S.syncBesked && !S.syncBesked.hvor) h += '<p class="lille" style="margin:0 2px 10px;font-weight:700;color:' + (S.syncBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.syncBesked.t) + '</p>';
   try { var _nyS = nyeSpillere(); if (_nyS.venter.length + _nyS.nye.length) h += indstNye(); } catch (_e) {}
   const egenTrup = !!(S.truppen && S.truppen.length);
@@ -4587,11 +4990,43 @@ function traenerGrupper(t){
 }
 /* ⭐ v6.10.0 · RET TRUPPEN — princip 101: samme handlinger som «Min trup» (trup-aabn · trup-ret · trup-ret-gem · trup-slet ·
    trup-tilfoej), men uden forklaringer og uden nøglefelter. Et ja kobler spilleren selv; en hånd skriver kun navn og gruppe. */
+function trupProgramKandidater(){   /* ⭐ v6.23.0 · Nicolai: «det nemmere at lave grupper (truppen)» — navnene bor i klubbens program */
+  var kilde = (S.prgGodkendt && (S.prgGodkendt.pas || []).length) ? S.prgGodkendt : S.prg;
+  if (!kilde || !(kilde.pas || []).length) return null;
+  var mit = String(S.traener || "").trim().toLowerCase().split(/\s+/)[0] || "";
+  var har = {}; (S.truppen || []).forEach(function(x){ if (x && x.navn) har[String(x.navn).toLowerCase()] = 1; if (x && x.noegle) har["#" + x.noegle] = 1; });
+  var saet = {}, orden = [];
+  kilde.pas.forEach(function(p){
+    var erMin = !!mit && [p.traener, p.traener2].some(function(t){ return String(t || "").toLowerCase().split(/[\s,&]+/).indexOf(mit) >= 0; });
+    var kand = [];
+    (p.navne || []).forEach(function(n){ var nv = String(n).replace(/\s*\(\s*[12]\s*\)\s*$/, "").trim(); if (nv) kand.push({ navn: nv, noegle: "" }); });
+    (p.deltagere || []).forEach(function(d){
+      if (!d || !d.fornavn || d.forladt) return;
+      var tl = (S.tilmeldinger || []).filter(function(x){ return x && x.status === "godkendt" && x.haandtag && x.haandtag === d.h; })[0];   /* samme håndtag — ellers gætter appen ikke */
+      kand.push({ navn: d.fornavn, noegle: tl ? tl.haandtag : "" });
+    });
+    kand.forEach(function(k){
+      var n = k.navn.slice(0, 40), kl = n.toLowerCase();
+      if (har[kl] || (k.noegle && har["#" + k.noegle])) return;
+      var post = saet[kl]; if (!post) { post = saet[kl] = { navn: n, gruppe: String(p.titel || "").slice(0, 40), noegle: k.noegle, min: false }; orden.push(kl); }
+      if (erMin && !post.min) { post.min = true; post.gruppe = String(p.titel || "").slice(0, 40) || post.gruppe; }
+      if (k.noegle && !post.noegle) post.noegle = k.noegle;
+    });
+  });
+  var alle = orden.map(function(k){ return saet[k]; });
+  return { alle: alle, mine: alle.filter(function(x){ return x.min; }) };
+}
 function spillereRet(){
   var h = '<div class="kort"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
     '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">✏️ RET TRUPPEN</div>' +
     '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="trup-aabn">' + (S.trupAaben ? 'Luk' : 'Åbn') + '</button></div>';
   if (S.trupAaben) {
+    var _tp = trupProgramKandidater();   /* ⭐ v6.23.0 · 👥 hent truppen fra programmet */
+    h += '<div style="border-top:1px solid var(--kant);padding:8px 0"><div style="font-size:13px;font-weight:700;margin-bottom:6px">👥 Hent truppen fra programmet</div>' +
+      (_tp ? '<div style="display:flex;gap:6px"><button class="knap" style="flex:1;min-width:0;padding:9px 10px;font-size:12px;background:var(--grus)" data-act="trup-fra-prg" data-v="mine"' + (_tp.mine.length ? '' : ' disabled') + '>Mine pas (' + _tp.mine.length + ')</button>' +
+        '<button class="knap valg" style="flex:1;min-width:0;padding:9px 10px;font-size:12px" data-act="trup-fra-prg" data-v="alle"' + (_tp.alle.length ? '' : ' disabled') + '>Hele klubben (' + _tp.alle.length + ')</button></div>'
+        : '<button class="knap valg" style="width:100%;padding:9px 10px;font-size:12px" data-act="trup-fra-prg" data-v="hent">Hent programmet</button>') +
+      (S.trupFraPrgBesked ? '<p class="lille" style="margin:6px 0 0;color:var(--vundet)">' + esc(S.trupFraPrgBesked) + '</p>' : '') + '</div>';
     (S.truppen || []).forEach(function(p, i){
       h += '<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--kant);padding:8px 0">' +
         '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700">' + esc(p.navn) + '</div>' +
@@ -5020,6 +5455,7 @@ document.addEventListener("click", function(e){
   if (e.target && e.target.tagName === "SELECT") return;   // v5.0.0 · et select i en række åbner ikke rækken
   const t = e.target.closest("[data-act]"); if (!t) return;
   const act = t.dataset.act, v = t.dataset.v;
+  if (act==="hj-spoerg"){ hjaelpSpoerg(); }   /* v6.22.2 */
   if (act==="sprog-saet"){ SPROG = (v === "en" ? "en" : "da"); lager.gem("sprog", SPROG); try { document.documentElement.lang = SPROG; } catch (_e) {} render(); }
   else if (act==="evalsprog-saet"){ EVALSPROG = (v === "en" ? "en" : "da"); lager.gem("evalsprog", EVALSPROG); render(); }
   else if (act==="ops-aabn"){ S.opsAaben = !S.opsAaben; S.kkUdkast = lager.hent("klubkode",""); render(); }
@@ -5116,17 +5552,40 @@ document.addEventListener("click", function(e){
     var _ok = function(){ S.udstil.kopieret = v; render(); };
     var _nej = function(){ try { var _f = document.querySelector(v === "iframe" ? '[data-felt="udstilIframe"]' : '[data-felt="udstilLink"]'); if (_f) { _f.focus(); _f.select(); } } catch (_e) {} S.udstil.kopieret = null; S.udstil.fejl = "Kunne ikke kopiere — markér teksten og kopiér selv."; render(); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(_tx).then(_ok, _nej); else _nej(); }
-  else if (act==="prg-imp-nulstil"){ S.impTekst = ""; S.imp = null; render(); }
+  else if (act==="trup-fra-prg"){   /* ⭐ v6.23.0 · navnene lægges i truppen; grupperne efter passets titel */
+    if (v === "hent") { S.trupFraPrgBesked = "Henter programmet …"; render(); try { prgHent("godkendt"); prgHent("kladde"); } catch (_e) {} setTimeout(function(){ S.trupFraPrgBesked = null; render(); }, 2500); return; }
+    var _k = trupProgramKandidater(); if (!_k) return;
+    var _liste = v === "mine" ? _k.mine : _k.alle; if (!_liste.length) return;
+    S.truppen = S.truppen || []; S.grupper = S.grupper || [];
+    var _nyG = 0;
+    _liste.forEach(function(x){
+      if (x.gruppe && x.gruppe !== UDEN_GRUPPE && !S.grupper.some(function(g){ return g.navn.toLowerCase() === x.gruppe.toLowerCase(); })) { S.grupper.push({ navn: x.gruppe, aargang: gaetAargang(x.gruppe) || "" }); _nyG++; }
+      S.truppen.push({ navn: x.navn, gruppe: x.gruppe || "", noegle: x.noegle || "" });
+      if (x.noegle) { S.noegler = S.noegler || {}; S.noegler[x.navn] = x.noegle; }
+    });
+    lager.gem("truppen", S.truppen); if (_nyG) lager.gem("grupper", S.grupper); if (S.noegler) lager.gem("noegler", S.noegler);
+    byggTrup();
+    S.trupFraPrgBesked = _liste.length + (_liste.length === 1 ? " spiller lagt i truppen" : " spillere lagt i truppen") + (_nyG ? " · " + _nyG + (_nyG === 1 ? " ny gruppe" : " nye grupper") : "") + " ✓";
+    render();
+    _liste.forEach(function(x){ if (x.noegle) Promise.resolve().then(function(){ return sendVurdering(x.navn); }).catch(function(){}); }); }
+  else if (act==="prg-imp-fil"){ if (S.imp && (S.imp.laeser || S.imp.koerer)) return; var _fi = document.getElementById("impFil"); if (_fi) _fi.click(); }   /* ⭐ v6.23.0 */
+  else if (act==="prg-imp-link"){   /* ⭐ v6.23.0 · kun Google-ark — motoren henter selv arket */
+    if (S.imp && (S.imp.laeser || S.imp.koerer)) return;
+    var _ln = String(S.impLink || "").trim(); if (!S.imp) S.imp = {};
+    if (!/^https:\/\/docs\.google\.com\/spreadsheets\/d\//.test(_ln)) { S.imp.fejl = "Linket skal være et Google-ark (docs.google.com/spreadsheets/…)."; render(); impVis(); return; }
+    impLaes({ link: _ln }); }
+  else if (act==="prg-imp-nulstil"){ S.impTekst = ""; S.impLink = ""; S.imp = null; render(); }
   else if (act==="prg-imp-ryd"){ if (!S.imp) S.imp = {}; S.imp.ryd = !S.imp.ryd; render(); }
-  else if (act==="prg-imp-tjek" || act==="prg-imp-laeg"){
+  else if (act==="prg-imp-tjek" || act==="prg-imp-tjek-forslag" || act==="prg-imp-laeg"){   /* ⭐ v6.23.0 · forslaget har sin egen handling */
     if (S.imp && S.imp.koerer) return;
     if (!S.imp) S.imp = {};
-    var _pa = impParse(S.impTekst);
+    if (act !== "prg-imp-laeg") S.imp.fraLaest = (act === "prg-imp-tjek-forslag");   /* ⭐ v6.23.0 · indsæt-knappen læser altid boksen; læseren sit forslag */
+    var _pa = (S.imp.fraLaest && S.imp.laest && Array.isArray(S.imp.laest.raekker)) ? { raekker: S.imp.laest.raekker, fejl: null } : impParse(S.impTekst);
     if (_pa.fejl) { S.imp.fejl = _pa.fejl; S.imp.svar = null; S.imp.lagt = null; render(); return; }
     var _skarp = act === "prg-imp-laeg";
     S.imp.fejl = null; S.imp.koerer = true; S.imp.skarp = _skarp; S.imp.lagt = null; render();
     /* kontrakten (traening v2, målt 20/9): {raekker, toer, ryd_kladde?} — præcis de felter, motoren læser */
-    var _krop = { raekker: _pa.raekker, toer: !_skarp };
+    var _krop = { raekker: _pa.raekker, toer: !_skarp, gem_navne: true };   /* ⭐ v6.23.0 · skærmen siger, at navnene gemmes (traening v5) */
     if (_skarp && S.imp.ryd) _krop.ryd_kladde = true;
     traeningKald("import", _krop).then(function(r){
       S.imp.koerer = false;
@@ -5138,7 +5597,31 @@ document.addEventListener("click", function(e){
       if (_skarp && !_sv.kode && (_sv.pas_oprettet || 0) > 0) { S.imp.lagt = _sv; S.prg = null; S.prgGodkendt = null;
         var _d1 = (_pa.raekker[0] || {}).ugedag; if (_d1 >= 1 && _d1 <= 7) S.prgUgedag = _d1; }   /* ugeskemaet åbner på den første importerede dag */
       render();
-      if (S.imp.lagt) { try { prgHent("kladde"); } catch (_e) {} } }); }
+      if (S.imp.lagt) { try { prgHent("kladde", true); } catch (_e) {} } }); }
+  else if (act==="kobl-ja" || act==="kobl-ny"){   /* ⭐ v6.23.0 · Codes fund A: trænerens ord kobler — og kun det */
+    var _kv = String(v || "").split(":"), _ks = (S.koblSpm || [])[+_kv[0]];
+    if (!_ks) return;
+    var _kp = (S.tilmeldinger || []).filter(function(x){ return x.haandtag === _ks.h && x.status === "godkendt"; })[0];
+    if (!_kp || (S.truppen || []).some(function(x){ return x && x.noegle === _ks.h; })) { autoTrup(); render(); return; }
+    S.noegler = S.noegler || {};
+    if (act === "kobl-ja") {
+      var _kn = _ks.kand[+_kv[1]], _ke = (S.truppen || []).filter(function(x){ return x && x.navn === _kn && !x.noegle; })[0];
+      if (!_ke) { autoTrup(); render(); return; }
+      _ke.noegle = _ks.h; S.noegler[_kn] = _ks.h;
+      lager.gem("truppen", S.truppen); lager.gem("noegler", S.noegler); byggTrup();
+      S.koblBesked = { fejl: false, t: _kn + " er koblet — vurderingerne sendes …" };
+      autoTrup(); render();
+      koblSend(_kn).then(function(ok){
+        S.koblBesked = ok ? { fejl: false, t: _kn + " er koblet — dine vurderinger er sendt ✓" } : { fejl: true, t: _kn + " er koblet, men vurderingerne er ikke sendt endnu — appen prøver igen." };
+        render(); });
+    } else {
+      var _nn = koblNytNavn(_kp);
+      S.truppen.push({ navn: _nn, gruppe: "", noegle: _ks.h }); S.noegler[_nn] = _ks.h;
+      lager.gem("truppen", S.truppen); lager.gem("noegler", S.noegler); byggTrup();
+      S.koblBesked = { fejl: false, t: _nn + " står nu i din trup under «Uden gruppe»." };
+      autoTrup(); render();
+    }
+  }
   else if (act==="prg-dag"){ S.prgUgedag = +v; prgNulstilForm(); render(); }
   else if (act==="prg-ny"){ prgNulstilForm(); S.prgNy = true; render(); }
   else if (act==="prg-luk"){ prgNulstilForm(); render(); }
@@ -5164,7 +5647,7 @@ document.addEventListener("click", function(e){
       var _ny = !S.prgAaben; prgNulstilForm();
       if (!_ny) S.prgAaben = r.pas.id;
       S.prgBesked = { fejl: false, t: _ny ? "Passet er lagt i kladden \u2713" : "\u00c6ndringen er gemt i kladden \u2713" };
-      prgHent("kladde"); }); }
+      prgHent("kladde", true); }); }
   else if (act==="prg-delt-tilfoej" || act==="prg-delt-fjern" || act==="prg-hold"){
     if (!S.prgAaben || S.prgGemmer) return;
     var _k2 = { id: S.prgAaben };
@@ -5176,7 +5659,7 @@ document.addEventListener("click", function(e){
       var _p2 = prgPas(S.prgAaben); if (_p2) _p2.deltagere = r.deltagere || [];
       S.prgBesked = r.advarsel ? { fejl: true, t: r.advarsel.antal + " p\u00e5 banen \u2014 max " + r.advarsel.loft + ". Det er en advarsel, ikke en sp\u00e6rring." } : null;
       if (S.prg) S.prg.aendret_siden = (S.prg.aendret_siden || 0);   /* tallet hentes rigtigt ved næste pas-liste */
-      render(); }); }
+      render(); prgHent("kladde", true); }); }   /* v6.22.4 · samme regel som de andre skrivninger (Codes fund 7) */
   else if (act==="prg-vaelg"){ S.prgVaelg = !S.prgVaelg; S.prgSoeg = ""; render(); if (S.prgVaelg && !(S.tilmeldinger || []).length && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }
   else if (act==="prg-slet"){
     if (S.prgSlet !== v) { S.prgSlet = v; render(); return; }
@@ -5185,7 +5668,8 @@ document.addEventListener("click", function(e){
       S.prgGemmer = false;
       if (!r || r.fejl) { S.prgBesked = { fejl: true, t: traeningFejl(r) }; render(); return; }
       prgNulstilForm(); S.prgBesked = { fejl: false, t: "Passet er slettet fra kladden \u2713 \u2014 godkend igen, s\u00e5 forsvinder det fra planen." };
-      prgHent("kladde"); }); }
+      prgHent("kladde", true); }); }
+  else if (act==="prg-g-igen"){ S.prgGFejl = null; S.prgGFejlN = 0; S.prgGTid = 0; prgHent("godkendt"); render(); }   /* v6.22.4 */
   else if (act==="prg-godkend"){
     if (S.prgGodkender) return;
     S.prgGodkender = true; S.prgBesked = null; render();
@@ -5193,7 +5677,7 @@ document.addEventListener("click", function(e){
       S.prgGodkender = false;
       if (!r || r.fejl) { S.prgBesked = { fejl: true, t: traeningFejl(r) }; render(); return; }
       S.prgBesked = { fejl: false, t: "Programmet er godkendt og sendt ud \u2713 (" + r.godkendt + (r.godkendt === 1 ? " pas)" : " pas)") };
-      S.prgGodkendt = null; S.nuHentet = 0; nuHent(true); prgHent("kladde"); }); }
+      S.prgGodkendt = null; S.prgGTid = 0; S.prgGFejl = null; S.prgGFejlN = 0; S.nuHentet = 0; nuHent(true); prgHent("kladde", true); prgHent("godkendt", true); }); }   /* v6.22.4 · VURDÉR har passet med det samme (Codes fund 2) */
   // ══ v6.0.0 · REGISTRÉR ════════════════════════════════════════════════
   else if (act==="reg-start"){
     regNulstil(); S.tab = "vurder"; S.aabenSpiller = null; S.vurderOmraade = null;   /* v6.5.0 · hero'en lander på bjælkens VURDÉR — samme skærm */
@@ -5235,7 +5719,11 @@ document.addEventListener("click", function(e){
       render(); nuHent(true); }); }
   else if (act==="reg-vurd-igen"){ if (!S.reg || S.reg.trin !== 3) return; regSendVurderinger(true); render(); }
   else if (act==="reg-igen"){ regNulstil(); render(); nuHent(false); }
-  if (act==="tab"){ if (v === "live" && !S.liveHenter && Date.now() - (S.liveTid || 0) > 10000) setTimeout(function(){ liveHent(); }, 0);   /* ⭐ v6.18.0 · frisk ved åbning */ if (v === "weekenden" && !S.wkHenter && (!Array.isArray(S.wkRaekker) || Date.now() - (S.wkTid || 0) > 60000)) setTimeout(function(){ wkHent(); }, 0);   /* ⭐ v6.17.0 · frisk ved åbning, højst ét kald pr. minut */ if (S.tab === "grupper" && v !== "grupper") S.autoTrupBesked = null;   /* v6.10.0 */ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { S.snakValgt = null; S.snakRulNed = true; try { snakHent(false); } catch (_e) {} try { nuHent(false); } catch (_e) {} }   /* v6.15.0 · overblikket kommer fra dagens program */ if (v === "noegler" || v === "grupper") { try { budSendteHent(); } catch (_e) {} } if (v === "grupper" && lager.hent("klubkode", "") && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }   /* v6.10.0 */
+  if (act==="tab"){ if (v === "overblik") { try { window.scrollTo(0,0); } catch(_e){} }   /* v6.22.1 · Gør nu åbner øverst (Codes fund 6: 375×667) */ if (v === "live" && !S.liveHenter && Date.now() - (S.liveTid || 0) > 10000) setTimeout(function(){ liveHent(); }, 0);   /* ⭐ v6.18.0 · frisk ved åbning */ if (v === "weekenden" && !S.wkHenter && (!Array.isArray(S.wkRaekker) || Date.now() - (S.wkTid || 0) > 60000)) setTimeout(function(){ wkHent(); }, 0);   /* ⭐ v6.17.0 · frisk ved åbning, højst ét kald pr. minut */ if (S.tab === "grupper" && v !== "grupper") { S.autoTrupBesked = null; S.koblBesked = null; }   /* v6.10.0 */ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { S.snakValgt = null; S.snakRulNed = true; try { snakHent(false); } catch (_e) {} try { nuHent(false); } catch (_e) {} }   /* v6.15.0 · overblikket kommer fra dagens program */ if (v === "noegler" || v === "grupper") { try { budSendteHent(); } catch (_e) {} } if (v === "grupper" && lager.hent("klubkode", "") && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }   /* v6.10.0 */
+  else if (act==="goer-nu"){   /* ⭐ v6.22.0 · Gør nu's egne døre: kladden → PROGRAM/Ugeskemaet · ugens fokus → Vælg ugens fokus */
+    if (v === "kladde") { S.tab = "program"; S.prgVisning = "skema"; S.indstVisning = null; S.aabenSpiller = null; prgNulstilForm(); S.prgSlet = null; S.prgBesked = null; try { window.scrollTo(0,0); } catch(_e){} render(); if (!S.prgHenter) prgHent("kladde"); }   /* v6.22.1 · intet armeret slet, intet gammelt svar (Codes fund 4) · til toppen (6) */
+    else if (v === "ugefokus") { S.tab = "vurder"; S.indstVisning = null; S.aabenSpiller = null; regNulstil(); S.vurderOmraade = "__fokus"; S.vurderGruppe = null; try { window.scrollTo(0,0); } catch(_e){} render(); }
+  }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }
   else if (act==="vurder-omraade"){ S.vurderOmraade=v; render(); }   /* v6.5.0 · kun UGENS FOKUS (__fokus) bruger den */

@@ -10,7 +10,8 @@
    sådan klubberne selv skærer deres ark (Nicolai 31/10: «De har det i dag skåret på en helt anden måde som er logisk for dem»).
    Listen fra v1 er der stadig (knappen Liste). Samme farver som StreakTennis (tokens fra appens :root).
    Målt i basen 31/10: pas fra 30 til 120 min, to starter uden for kvarteret (06:20) → ét gitter-trin = 5 min. Højst 10 baner på en dag.
-   Banen er tekst («1 · Svanemøllehallen», «Banen aftales», «Løbetræning») — «Bane» står kun foran en bane, der starter med et tal. */
+   Banen er tekst («1 · Svanemøllehallen», «Banen aftales», «Løbetræning») — «Bane» står kun foran en bane, der starter med et tal.
+   v2.3 · 1/11-2026 · Codes svar-02: Q2 kun vandret contain · Q6 listen åbner, hvor fingeren var · Q13 fokus · Q14 data-i · Q15 · Q16. */
 :root{--nat:#111C33;--dyb:#070D19;--kort:rgba(255,255,255,.05);--kant:rgba(255,255,255,.12);--kant2:#31415F;--flade:#1B2A44;--kridt:#EDF2FA;--daempet:#8B99B5;--is:#9FD8E8;--grus:#2E56D6;--gruslys:#7B9BFF;--guld:#F0CF61;--vundet:#22995A;--tabt:#D2484E;--tekst2:#B9C6D8;--fod:#4A5A78;--fem:9px;--kol:132px}
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -36,7 +37,7 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
 .dagpanel{display:none}
 .dagpanel.vis{display:block}
 .dagtitel{display:none;font-size:16px;font-weight:800;margin:6px 0 8px}
-.ramme{overflow:auto;overscroll-behavior:contain;max-height:calc(100vh - 16px);border:1px solid var(--kant);border-radius:16px;background:rgba(255,255,255,.02)}
+.ramme{overflow:auto;overscroll-behavior-x:contain;max-height:calc(100vh - 16px);border:1px solid var(--kant);border-radius:16px;background:rgba(255,255,255,.02)}
 .gitter{display:grid;position:relative}
 .hj{position:sticky;top:0;z-index:3;background:#101B30;border-bottom:1px solid var(--kant);font-size:12px;font-weight:800;color:var(--is);padding:7px 6px;text-align:center;line-height:1.25}
 .hj small{display:block;font-size:10.5px;font-weight:700;color:var(--daempet)}
@@ -195,7 +196,7 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
       var c = baner.indexOf(String(p.bane || "?")) + 2;
       var tr = [p.traener, p.traener2].filter(Boolean).join(" & ");
       var hel = [p.start + "–" + p.slut, baneKort(p.bane), p.titel || o.traening, tr, (p.navne && p.navne.length) ? p.navne.join(", ") + (p.antal > p.navne.length ? " +" + (p.antal - p.navne.length) : "") : (p.antal ? p.antal + " " + (p.antal === 1 ? o.sp1 : o.spN) : "")].filter(Boolean).join(" · ");
-      h += '<div class="felt" data-pas="1" data-start="' + esc(p.start) + '" data-bane="' + esc(p.bane) + '" title="' + esc(hel) + '" style="grid-column:' + c + ';grid-row:' + r1 + ' / ' + r2 + '">' +
+      h += '<div class="felt" data-pas="1" data-i="' + liste.indexOf(p) + '" data-start="' + esc(p.start) + '" data-bane="' + esc(p.bane) + '" title="' + esc(hel) + '" style="grid-column:' + c + ';grid-row:' + r1 + ' / ' + r2 + '">' +
         '<div class="t">' + esc(p.start) + '–' + esc(p.slut) + '</div><b>' + esc(p.titel || o.traening) + '</b>' + (tr ? '<div class="tr">' + esc(tr) + '</div>' : '') + navneEllerAntal(p, true) + '</div>';
     });
     h += '</div></div>';
@@ -204,26 +205,34 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
   }
   function listeFor(liste){
     var o = O(), h = '';
-    liste.forEach(function(p){
+    liste.forEach(function(p, _i){
       var tr = [p.traener, p.traener2].filter(Boolean).join(" & ");
-      h += '<div class="pas" data-start="' + esc(p.start) + '" data-bane="' + esc(p.bane) + '"><div class="tid">' + esc(p.start) + '–' + esc(p.slut) + '<small>' + esc(baneKort(p.bane)) + '</small></div><div class="om">' +
+      h += '<div class="pas" data-i="' + _i + '" data-start="' + esc(p.start) + '" data-bane="' + esc(p.bane) + '"><div class="tid">' + esc(p.start) + '–' + esc(p.slut) + '<small>' + esc(baneKort(p.bane)) + '</small></div><div class="om">' +
         '<b>' + esc(p.titel || o.traening) + '</b>' + (tr ? '<div class="tr">' + esc(tr) + '</div>' : '') + navneEllerAntal(p, false) + '</div></div>';
     });
     return h;
   }
   function maerkKlippet(){   /* v2.2 · Codes N14: regnes ved hver tegning OG når bredden ændrer sig */
     Array.prototype.forEach.call(app.querySelectorAll(".dagpanel.vis .felt"), function(f){
-      var k = f.scrollHeight > f.clientHeight + 2 || Array.prototype.some.call(f.children, function(c){ return c.scrollWidth > c.clientWidth + 1; });
+      var _sl = f.lastElementChild, _fb = f.getBoundingClientRect().bottom;   /* v2.3 · Codes Q16: polstringen er ikke en klipning */
+      var k = (!!_sl && _sl.getBoundingClientRect().bottom > _fb + 1) || Array.prototype.some.call(f.children, function(c){ return c.scrollWidth > c.clientWidth + 1; });
       f.classList.toggle("klippet", k);
       if (k) { f.setAttribute("tabindex", "0"); f.setAttribute("role", "button"); } else { f.removeAttribute("tabindex"); f.removeAttribute("role"); }
     });
   }
-  function aabnListe(kk){   /* v2.2 · Codes N6: listen åbner ved det pas, der blev trykket på — og flytter kun sin egen side */
-    var st = kk.getAttribute("data-start"), ba = kk.getAttribute("data-bane");
+  function aabnListe(kk){   /* v2.2 · Codes N6: listen åbner ved det pas, der blev trykket på — og flytter kun sin egen side
+                               v2.3 · Codes Q6+Q13+Q14: parret på data-i · passet lander, hvor kortet stod (også i en iframe over skærmen) · fokus følger */
+    var ii = kk.getAttribute("data-i"), _y0 = kk.getBoundingClientRect().top;
     tilstand.visning = "liste"; tegn();
-    var m = null;
-    Array.prototype.forEach.call(app.querySelectorAll(".dagpanel.vis .pas"), function(p){ if (!m && p.getAttribute("data-start") === st && p.getAttribute("data-bane") === ba) m = p; });
-    if (m) { m.classList.add("valgt"); try { window.scrollTo(0, Math.max(0, m.getBoundingClientRect().top + (window.pageYOffset || 0) - 12)); } catch (_e) {} }
+    var m = app.querySelector('.dagpanel.vis .pas[data-i="' + ii + '"]');
+    if (m) {
+      m.classList.add("valgt");
+      try {
+        var _hoej = window.innerHeight || 600, _maal = Math.max(12, Math.min(_y0, _hoej - 80));
+        window.scrollTo(0, Math.max(0, m.getBoundingClientRect().top + (window.pageYOffset || 0) - _maal));
+      } catch (_e) {}
+      try { m.setAttribute("tabindex", "-1"); m.focus({ preventScroll: true }); } catch (_e) {}
+    }
   }
   function tegn(fraFane){
     var d = data, o = O();
@@ -291,11 +300,13 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
   });
   var _klipUr = null;
   window.addEventListener("resize", function(){ clearTimeout(_klipUr); _klipUr = setTimeout(function(){ if (data && tilstand.visning !== "liste") maerkKlippet(); }, 150); });
+  var _indlaeser = true;   /* v2.3 · Codes Q15: en indlæsning, der fejlede, må prøves igen */
   window.addEventListener("hashchange", function(){   /* v2.1 · Codes P9 */
     if (token() !== (data ? data.__k : k)) { location.reload(); return; }   /* v2.2 · Codes N15c: k er det token, der hentes */
+    if (!data && !_indlaeser && token()) { location.reload(); return; }   /* v2.3 · Codes Q15 */
     var dd = parseInt(param("d"), 10) || 0; tilstand.d = dd; tilstand.dValgt = !!dd;   /* v2.2 · Codes N15b */
     tilstand.visning = param("v") === "liste" ? "liste" : "skema"; tilstand.sprog = param("l") === "en" ? "en" : "da";
-    if (data) tegn();
+    if (data) tegn(); else knapper();   /* v2.3 · Codes Q15: l=en virker, også før noget er hentet */
   });
   tilstand.d = parseInt(param("d"), 10) || 0; tilstand.dValgt = !!tilstand.d;   /* v2.1 · Codes P4 */
   if (param("v") === "liste") tilstand.visning = "liste";
@@ -307,11 +318,12 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
   fetch(URL_VIS, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ handling: "vis", token: k }) })
     .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
     .then(function(x){
+      _indlaeser = false;
       if (x.ok) { data = x.d; data.__k = k; return tegn(); }
       if (x.status === 404) return besked(O().ikke);
       besked(O().fejl.replace("{s}", x.status));
     })
-    .catch(function(){ besked(O().net); });
+    .catch(function(){ _indlaeser = false; besked(O().net); });
 })();
 </script>
 </body>

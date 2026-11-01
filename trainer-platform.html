@@ -515,6 +515,7 @@ async function boksSend(){
 function boksLaegInd(t, stempel){
   BOKS_TING.forEach(function(n){ try { if (t[n] === null || t[n] === undefined) localStorage.removeItem("tp-" + n); else localStorage.setItem("tp-" + n, JSON.stringify(t[n])); } catch (_e) {} });
   try { localStorage.setItem("tp-boks-lokal", JSON.stringify(stempel)); localStorage.setItem("tp-boks-sendt", JSON.stringify(stempel)); } catch (_e) {}
+  try { localStorage.removeItem("tp-fpvent"); } catch (_e) {}   /* ⭐ v6.24.4 · Codes Q5: ventelisten hørte til telefonens tilstand, ikke kontoens */
   S.truppen = lager.hent("truppen", []); S.grupper = lager.hent("grupper", null); S.vurderinger = lager.hent("vurderinger", []);
   S.fokuspunkter = lager.hent("fokuspunkter", {}); S.evalueringer = lager.hent("evalueringer", {}); S.ugefokus = lager.hent("ugefokus", {});
   S.stigeHold = lager.hent("stigehold", []); S.noegler = lager.hent("noegler", {}); S.srvNavne = lager.hent("srvnavne", {});
@@ -651,7 +652,7 @@ async function tjekAdgang(){
   var kn = lager.hent("klubkode", "");
   if (!kn) return;                      // ingen nøgle at spørge om
   var r = await kontoKald("min-status", {}, kn);
-  if (!r || r.fejl) return;             // ⛔ netværk eller fejl → rør INTET
+  if (!r || r.fejl) { S.ventRute = null; return; }   // ⛔ netværk eller fejl → rør INTET · ⭐ v6.24.4 · Codes Q8: ruten venter ikke på et svar, der ikke kom
   if (r.kendt === true && (r.rolle === "admin" || r.rolle === "traener") && S.minRolle !== r.rolle) {   /* ⭐ v6.24.2 · rollen opfriskes ved åbning */
     S.minRolle = r.rolle; try { lager.gem("minrolle", r.rolle); } catch (_e) {} try { render(); } catch (_e) {}
   }
@@ -681,6 +682,7 @@ var KLUB_TING = ["truppen","grupper","vurderinger","fokuspunkter","evalueringer"
 
 function ryddKlubben(){
   KLUB_TING.forEach(function(n){ try { localStorage.removeItem("tp-" + n); } catch(_e){} });
+  try { localStorage.removeItem("tp-fpvent"); } catch (_e) {}   /* ⭐ v6.24.4 · Codes Q5 */
   S.truppen = []; S.grupper = []; S.vurderinger = []; S.fokuspunkter = {}; S.evalueringer = {};
   S.ugefokus = {}; S.stigeHold = []; S.noegler = {}; S.minRolle = null;
   S.tilmeldinger = []; S.tilmHentet = null; S.tilmHenter = false;
@@ -854,8 +856,9 @@ function hentTilmeldinger(){
     S.tilmHenter = true; S.syncBesked = null; render();
     sync("hent-hold", {}).then(function(r){
       S.tilmHenter = false;
-      if (r && r.fejl) { S.syncBesked={fejl:true,t:"Kunne ikke hente: "+r.fejl}; render(); return; }
+      if (r && r.fejl) { S.tilmFejl = true; S.syncBesked={fejl:true,t:"Kunne ikke hente: "+r.fejl}; render(); return; }   /* ⭐ v6.24.4 · Codes Q12 */
       S.tilmeldinger = (r && r.hold) || [];   // maalt: hent-hold svarer { hold: [...] }
+      S.tilmFejl = false; if (S.fpBesked && S.fpBesked.henter) S.fpBesked = null;   /* ⭐ v6.24.4 · Codes Q12: listen er her — «Henter …» er ikke sand mere */
       S.stigeHold = (r && r.stige_hold) || []; lager.gem("stigehold", S.stigeHold);
       // v2.5 den anden vej (fund 18/8 sen aften): serverens tal laa i svaret,
       // men naaede aldrig trupvisningen — detaljen viste lokale nuller for en
@@ -898,6 +901,7 @@ function hentTilmeldinger(){
       S.navneHenter = true;   /* ⭐ v6.24.3 · Codes M3: et ja venter, til de fulde navne er her */
       kontoKald("trup-navne", {}).then(function(r2){
         S.navneHenter = false;
+        if (S.koblBesked && /^Henter de fulde navne/.test(S.koblBesked.t || "")) S.koblBesked = null;   /* ⭐ v6.24.4 · Codes Q12 */
         if (!r2 || r2.fejl || !Array.isArray(r2.navne)) { render(); return; }
         var fn = {};
         r2.navne.forEach(function(x){ if (x && x.haandtag && x.fuldt_navn) fn[x.haandtag] = String(x.fuldt_navn); });
@@ -1181,7 +1185,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.24.3 \u00b7 1. november 2026";
+const VERSION = "v6.24.4 \u00b7 1. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2231,6 +2235,12 @@ Object.assign(EN, {   /* ⭐ v6.24.0 · notifikationer · klubbens aftale */
   "tjekker …": "checking …",
   "Henter spillerens fokuspunkter fra klubben …": "Fetching the player's focus points from the club …",
   "Henter de fulde navne — tryk igen om et øjeblik.": "Fetching the full names — tap again in a moment.",
+  "Fokuspunkterne er sendt til {x} ✓": "The focus points were sent to {x} ✓",
+  "Fokuspunkterne til {x} nåede ikke frem — appen prøver igen.": "The focus points for {x} didn't get through — the app will try again.",
+  "Fokuspunkterne til {x} kunne ikke sendes: {x}": "The focus points for {x} could not be sent: {x}",
+  "Henter {x}s fokuspunkter fra klubben — tryk igen om et øjeblik.": "Fetching {x}'s focus points from the club — tap again in a moment.",
+  "Kortet ændrede sig, så intet er koblet til «{x}».": "The card changed, so nothing is linked to «{x}».",
+  "Kunne ikke hente spillerens fokuspunkter fra klubben.": "Could not fetch the player's focus points from the club.",
   "kunne ikke hentes — åbn": "couldn't be fetched — open",
   "ikke registreret endnu": "not registered yet",
   "pilot · trin {n} · {n} aktive denne måned": "pilot · tier {n} · {n} active this month",
@@ -3069,7 +3079,7 @@ function coachRuteGaa(sti){   /* ⭐ v6.24.0 · en notifikation peger på et rum
   if (s.indexOf("#aftale") >= 0 && (S.minRolle || lager.hent("minrolle", "")) === "admin") { S.tab = "indst"; S.indstVisning = "aftale"; S.aabenSpiller = null; setTimeout(function(){ aftaleHent(); }, 0); return true; }
   return false;
 }
-window.__coachRute = function(sti){ if (coachRuteGaa(sti)) render(); };
+window.__coachRute = function(sti){ S.ventRute = null; if (coachRuteGaa(sti)) render(); };   /* ⭐ v6.24.4 · Codes Q8 */
 function coachRuteFraAdresse(){   /* ⭐ v6.24.2 · en kendt rute ryddes altid af adressen — også #aftale for en, der ikke er admin */
   var h = String(location.hash || "");
   if (h.indexOf("#goer-nu") < 0 && h.indexOf("#aftale") < 0) return;
@@ -4570,6 +4580,9 @@ function koblSrvFp(h2){   /* ⭐ v6.24.2 · barnets liste, som hent-hold sidst s
   var p = (S.tilmeldinger || []).filter(function(x){ return x && x.haandtag === h2; })[0];
   return (p && Array.isArray(p.fokuspunkter)) ? p.fokuspunkter : null;
 }
+function fpSrvSaet(h2, liste){   /* ⭐ v6.24.4 · Codes Q1: en sending, der lykkes, ER serverens liste nu — ellers ruller næste fpKendt trykket tilbage */
+  (S.tilmeldinger || []).forEach(function(x){ if (x && x.haandtag === h2) x.fokuspunkter = (liste || []).slice(0, 10); });
+}
 /* ⭐ v6.24.3 · Codes N3+N4: trænerens fokusliste, der endnu ikke har nået serveren (navn → håndtag). Den overlever en genindlæsning,
    hent-hold skriver ikke barnets liste hen over den, og den sendes igen højst hvert minut, til serveren har svaret. */
 function fpVent(){ var o = lager.hent("fpvent", {}) || {}; return (o && typeof o === "object" && !Array.isArray(o)) ? o : {}; }
@@ -4579,20 +4592,39 @@ function fpKendt(navn){   /* ⭐ v6.24.3 · Codes N5: kender vi barnets liste? U
   if (fpVent()[navn] === h2) return true;
   var srv = koblSrvFp(h2); if (!srv) return false;
   S.fokuspunkter = S.fokuspunkter || {};
-  if (JSON.stringify(S.fokuspunkter[navn] || []) !== JSON.stringify(srv)) { S.fokuspunkter[navn] = srv.slice(0, 20); lager.gem("fokuspunkter", S.fokuspunkter); }
+  var _srv10 = srv.slice(0, 10);   /* ⭐ v6.24.4 · Codes Q10: hent-hold og sendingen bruger 10 — samme snit her, og klubbens liste stempler ikke boksen */
+  if (JSON.stringify(S.fokuspunkter[navn] || []) !== JSON.stringify(_srv10)) {
+    S.fokuspunkter[navn] = _srv10;
+    window.__boksStille = true; try { lager.gem("fokuspunkter", S.fokuspunkter); } finally { window.__boksStille = false; }
+  }
   return true;
 }
-function fpSend(navn){   /* ⭐ v6.24.3 · Codes N4: et tryk på et fokuspunkt ligger i køen, til det er nået frem */
+function fpSend(navn){   /* ⭐ v6.24.3 · Codes N4: et tryk på et fokuspunkt ligger i køen, til det er nået frem
+                            ⭐ v6.24.4 · Codes Q1+Q4: ét kald ad gangen pr. spiller. Et tryk under et kald sendes bagefter (det nyeste vinder),
+                            og en sending, der lykkes, bliver serverens kendte liste — så ruller intet tilbage, og intet tryk tabes */
   var h2 = (S.noegler || {})[navn]; if (!h2) return Promise.resolve({ ok: true });
   var fn = navn.split(" ")[0];
   fpVentSaet(navn, h2);
-  return Promise.resolve().then(function(){ return sendVurdering(navn, { stille: true, fokus: ((S.fokuspunkter || {})[navn] || []).slice(0, 10) }); }).then(function(r){
+  S.fpIgang = S.fpIgang || {};
+  if (S.fpIgang[navn]) { S.fpIgang[navn].igen = true; return S.fpIgang[navn].p; }
+  var post = { igen: false, liste: ((S.fokuspunkter || {})[navn] || []).slice(0, 10) };
+  S.fpIgang[navn] = post;
+  var naesteTryk = function(){ return (post.igen && (S.noegler || {})[navn] === h2) ? fpSend(navn) : null; };
+  post.p = Promise.resolve().then(function(){ return sendVurdering(navn, { stille: true, fokus: post.liste }); }).then(function(r){
+    delete S.fpIgang[navn];
     var lyk = !!r && !r.fejl, slut = lyk || koblVarig(r);
+    if (lyk) fpSrvSaet(h2, post.liste);
+    var nx = naesteTryk(); if (nx) return nx;
     if (slut && fpVent()[navn] === h2) fpVentSaet(navn, null);
     S.fpBesked = lyk ? { navn: navn, fejl: false, t: "Fokuspunkterne er sendt til " + fn + " ✓" }
       : { navn: navn, fejl: true, t: slut ? "Fokuspunkterne til " + fn + " kunne ikke sendes: " + syncFejltekst(r) : "Fokuspunkterne til " + fn + " nåede ikke frem — appen prøver igen." };
     render(); return { ok: lyk };
-  }, function(){ S.fpBesked = { navn: navn, fejl: true, t: "Fokuspunkterne til " + fn + " nåede ikke frem — appen prøver igen." }; render(); return { ok: false }; });
+  }, function(){
+    delete S.fpIgang[navn];
+    var nx = naesteTryk(); if (nx) return nx;
+    S.fpBesked = { navn: navn, fejl: true, t: "Fokuspunkterne til " + fn + " nåede ikke frem — appen prøver igen." }; render(); return { ok: false };
+  });
+  return post.p;
 }
 function fpSendIgen(){
   if (S.fpSender || Date.now() - (S.fpSidst || 0) < 60000) return;
@@ -4616,13 +4648,15 @@ function koblSend(navn){   /* ⭐ v6.23.0 · fund B · ⭐ v6.24.1 · fund F+G: 
   /* ⭐ v6.24.2 · Codes fund H3+M1+M2: barnets fokuspunkter er klubbens. Har barnet en liste, bliver den trænerens kopi, og intet sendes;
      har barnet ingen (målt i hent-hold), rejser trænerens liste for navnet med. Ukendt (hent-hold ikke svaret) → intet sendes. */
   var srv = koblSrvFp(h2), egen = (S.fokuspunkter || {})[navn], opt = { stille: true };
-  if (srv && srv.length) { S.fokuspunkter = S.fokuspunkter || {}; S.fokuspunkter[navn] = srv.slice(0, 20); lager.gem("fokuspunkter", S.fokuspunkter); }
-  else if (srv && Array.isArray(egen) && egen.length) opt.fokus = egen.slice(0, 10);
+  var _vent = fpVent()[navn] === h2;   /* ⭐ v6.24.4 · Codes Q7: et tryk, der venter, er trænerens nyeste vilje — serverens liste skriver ikke hen over det */
+  if (srv && srv.length && !_vent) { S.fokuspunkter = S.fokuspunkter || {}; S.fokuspunkter[navn] = srv.slice(0, 20); lager.gem("fokuspunkter", S.fokuspunkter); }
+  else if (srv && Array.isArray(egen) && (egen.length || _vent)) opt.fokus = egen.slice(0, 10);
   if (opt.fokus) fpVentSaet(navn, h2);   /* ⭐ v6.24.3 · Codes N3 */
   return Promise.resolve().then(function(){ return sendVurdering(navn, opt); }).then(function(r){
     delete S.koblIgang[navn];
     var ok = !!r && !r.fejl, varig = !ok && koblVarig(r);
-    if ((ok || varig) && opt.fokus && fpVent()[navn] === h2) fpVentSaet(navn, null);   /* ⭐ v6.24.3 · Codes N3: nået frem — eller kan ikke */
+    if (ok && opt.fokus) fpSrvSaet(h2, opt.fokus);   /* ⭐ v6.24.4 · Codes Q1 */
+    if ((ok || varig) && opt.fokus && fpVent()[navn] === h2 && JSON.stringify(((S.fokuspunkter || {})[navn] || []).slice(0, 10)) === JSON.stringify(opt.fokus)) fpVentSaet(navn, null);   /* ⭐ v6.24.3 · N3 · ⭐ v6.24.4 · Q4: kun når det sendte stadig er listen */
     if (ok || varig) koblSendGem(koblSendListe().filter(function(x){ return !(x.navn === navn && x.h === h2); }));   /* ⭐ fund H2: en varig fejl prøves ikke igen og igen */
     return { ok: ok, varig: varig, r: r };
   }, function(){ delete S.koblIgang[navn]; return { ok: false }; });
@@ -5668,7 +5702,8 @@ function spillerDetalje(navn){
       ? '<div class="flise-grid">' +
         mine.map(id => '<span class="flise-valg til" style="cursor:default">'+esc(navnPaa(id))+'</span>').join('') + '</div>'
       : (_fpKendt ? '<p class="lille" style="margin:6px 0 0">Ingen valgt endnu. Vælg op til tre — de følger spilleren, hvis træneren skifter.</p>'
-                  : '<p class="lille" style="margin:6px 0 0" data-fp-henter="1">Henter spillerens fokuspunkter fra klubben …</p>');
+                  : ((S.tilmFejl && !S.tilmHenter) ? '<p class="lille" style="margin:6px 0 0" data-fp-henter="1">Kunne ikke hente spillerens fokuspunkter fra klubben. <button class="knap valg" style="padding:4px 10px;font-size:11px" data-act="tilm-hent">Prøv igen</button></p>'   /* ⭐ v6.24.4 · Codes Q12 */
+                     : '<p class="lille" style="margin:6px 0 0" data-fp-henter="1">Henter spillerens fokuspunkter fra klubben …</p>'));
   } else {
     alle.forEach(([omr, liste]) => {
       const o = UGEOMRAADER.find(x=>x.id===omr);
@@ -6004,7 +6039,7 @@ document.addEventListener("click", function(e){
   else if (act==="fp-aabn"){ S.fpAaben = (S.fpAaben === v ? null : v); render(); }
   else if (act==="fp-slaa"){
     const sp = t.dataset.sp;
-    if (!fpKendt(sp)) { if (!S.tilmHenter) hentTilmeldinger(); S.fpBesked = { navn: sp, fejl: true, t: "Henter " + sp.split(" ")[0] + "s fokuspunkter fra klubben — tryk igen om et øjeblik." }; render(); return; }   /* ⭐ v6.24.3 · Codes N5 */
+    if (!fpKendt(sp)) { if (!S.tilmHenter) hentTilmeldinger(); S.fpBesked = { navn: sp, fejl: true, henter: true, t: "Henter " + sp.split(" ")[0] + "s fokuspunkter fra klubben — tryk igen om et øjeblik." }; render(); return; }   /* ⭐ v6.24.3 · Codes N5 */
     const nu = S.fokuspunkter[sp] || [];
     S.fokuspunkter[sp] = nu.includes(v) ? nu.filter(x => x !== v) : nu.concat([v]);
     if ((S.noegler || {})[sp]) fpVentSaet(sp, S.noegler[sp]); lager.gem("fokuspunkter", S.fokuspunkter); render(); fpSend(sp); }   /* ⭐ v6.24.2 · H3: trykket ER viljen · ⭐ v6.24.3 · N4: ventende før gentegningen, og et tryk, der ikke nåede frem, prøves igen */
@@ -6230,7 +6265,7 @@ document.addEventListener("click", function(e){
       render(); nuHent(true); }); }
   else if (act==="reg-vurd-igen"){ if (!S.reg || S.reg.trin !== 3) return; regSendVurderinger(true); render(); }
   else if (act==="reg-igen"){ regNulstil(); render(); nuHent(false); }
-  if (act==="tab"){ if (v === "overblik") { try { window.scrollTo(0,0); } catch(_e){} }   /* v6.22.1 · Gør nu åbner øverst (Codes fund 6: 375×667) */ if (v === "live" && !S.liveHenter && Date.now() - (S.liveTid || 0) > 10000) setTimeout(function(){ liveHent(); }, 0);   /* ⭐ v6.18.0 · frisk ved åbning */ if (v === "weekenden" && !S.wkHenter && (!Array.isArray(S.wkRaekker) || Date.now() - (S.wkTid || 0) > 60000)) setTimeout(function(){ wkHent(); }, 0);   /* ⭐ v6.17.0 · frisk ved åbning, højst ét kald pr. minut */ if (S.tab === "grupper" && v !== "grupper") { S.autoTrupBesked = null; S.koblBesked = null; }   /* v6.10.0 */ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { S.snakValgt = null; S.snakRulNed = true; try { snakHent(false); } catch (_e) {} try { nuHent(false); } catch (_e) {} }   /* v6.15.0 · overblikket kommer fra dagens program */ if (v === "noegler" || v === "grupper") { try { budSendteHent(); } catch (_e) {} } if (v === "grupper" && lager.hent("klubkode", "") && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }   /* v6.10.0 */
+  if (act==="tab"){ S.ventRute = null;   /* ⭐ v6.24.4 · Codes Q8: træneren valgte selv */ if (v === "overblik") { try { window.scrollTo(0,0); } catch(_e){} }   /* v6.22.1 · Gør nu åbner øverst (Codes fund 6: 375×667) */ if (v === "live" && !S.liveHenter && Date.now() - (S.liveTid || 0) > 10000) setTimeout(function(){ liveHent(); }, 0);   /* ⭐ v6.18.0 · frisk ved åbning */ if (v === "weekenden" && !S.wkHenter && (!Array.isArray(S.wkRaekker) || Date.now() - (S.wkTid || 0) > 60000)) setTimeout(function(){ wkHent(); }, 0);   /* ⭐ v6.17.0 · frisk ved åbning, højst ét kald pr. minut */ if (S.tab === "grupper" && v !== "grupper") { S.autoTrupBesked = null; S.koblBesked = null; }   /* v6.10.0 */ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { S.snakValgt = null; S.snakRulNed = true; try { snakHent(false); } catch (_e) {} try { nuHent(false); } catch (_e) {} }   /* v6.15.0 · overblikket kommer fra dagens program */ if (v === "noegler" || v === "grupper") { try { budSendteHent(); } catch (_e) {} } if (v === "grupper" && lager.hent("klubkode", "") && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }   /* v6.10.0 */
   else if (act==="goer-nu"){   /* ⭐ v6.22.0 · Gør nu's egne døre: kladden → PROGRAM/Ugeskemaet · ugens fokus → Vælg ugens fokus */
     if (v === "kladde") { S.tab = "program"; S.prgVisning = "skema"; S.indstVisning = null; S.aabenSpiller = null; prgNulstilForm(); S.prgSlet = null; S.prgBesked = null; try { window.scrollTo(0,0); } catch(_e){} render(); if (!S.prgHenter) prgHent("kladde"); }   /* v6.22.1 · intet armeret slet, intet gammelt svar (Codes fund 4) · til toppen (6) */
     else if (v === "ugefokus") { S.tab = "vurder"; S.indstVisning = null; S.aabenSpiller = null; regNulstil(); S.vurderOmraade = "__fokus"; S.vurderGruppe = null; try { window.scrollTo(0,0); } catch(_e){} render(); }

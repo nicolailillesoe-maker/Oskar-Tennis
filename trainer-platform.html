@@ -652,6 +652,9 @@ async function tjekAdgang(){
   if (!kn) return;                      // ingen nøgle at spørge om
   var r = await kontoKald("min-status", {}, kn);
   if (!r || r.fejl) return;             // ⛔ netværk eller fejl → rør INTET
+  if (r.kendt === true && (r.rolle === "admin" || r.rolle === "traener") && S.minRolle !== r.rolle) {   /* ⭐ v6.24.2 · rollen opfriskes ved åbning */
+    S.minRolle = r.rolle; try { lager.gem("minrolle", r.rolle); } catch (_e) {} try { render(); } catch (_e) {}
+  }
   // ⛔⭐⭐ FANGET AF EN RØD REGRESSIONSPRØVE 31/8 (princip 76).
   //   Første udkast lukkede ned på `!r.kendt` — altså også på et svar,
   //   der slet ikke bar feltet. Et 200-svar fra en mellemstation, en
@@ -680,6 +683,7 @@ function ryddKlubben(){
   S.truppen = []; S.grupper = []; S.vurderinger = []; S.fokuspunkter = {}; S.evalueringer = {};
   S.ugefokus = {}; S.stigeHold = []; S.noegler = {}; S.minRolle = null;
   S.tilmeldinger = []; S.tilmHentet = null; S.tilmHenter = false;
+  S.koblSpm = []; S.budSendte = null;   /* ⭐ v6.24.2 · Codes fund L3: kortene hører til klubben */
   S.nu = null; S.nuHentet = 0; S.prg = null; S.prgGodkendt = null; S.reg = null; S.vurderLige = null;   /* v6.0.0 · klubskifte tømmer programmet */
   S.prgVisning = null; S.imp = null; S.impTekst = ""; S.udstil = null; S.indstVisning = null;   /* v6.3.0 · v6.6.0 · v6.8.0 */
   S.aabenSpiller = null; S.vurderOmraade = null; S.vurderGruppe = null;
@@ -775,7 +779,7 @@ async function sendVurdering(spillerNavn, opt) {   /* ⭐ v6.24.1 · opt.stille 
   const krop = Object.assign(spillerRef(n), { vurderinger: mine });
   /* ⭐ v6.24.1 · Codes fund A3+G: fokuspunkterne er barnets på serveren (spiller-sync v69 rører dem kun, når feltet er med) — de
      sendes kun, når træneren har en liste for netop denne spiller; en kobling sender trænerens egen liste fra øjeblikket for ja'et */
-  const fp = (opt && Object.prototype.hasOwnProperty.call(opt, "fokus")) ? opt.fokus : (S.fokuspunkter || {})[spillerNavn];
+  const fp = (opt && Object.prototype.hasOwnProperty.call(opt, "fokus")) ? opt.fokus : undefined;   /* ⭐ v6.24.2 · Codes fund H3: en score sender ALDRIG fokuspunkterne — kun et tryk på et fokuspunkt (og en kobling til et barn uden liste) gør */
   if (Array.isArray(fp)) krop.fokuspunkter = fp.slice(0, 10);
   const r = await sync("vurdering-gem", krop);
   if (!(opt && opt.stille)) {   /* ⭐ v6.24.1 · en kobling skriver sin egen kvittering og sletter ikke en anden handlings besked */
@@ -1174,7 +1178,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.24.1 \u00b7 31. oktober 2026";
+const VERSION = "v6.24.2 \u00b7 31. oktober 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2178,7 +2182,7 @@ Object.assign(EN, {   /* ⭐ v6.23.0 · læs klubbens ark · hent truppen fra pr
   "Sagde ja til klubbens invitation. Er det en spiller, du allerede har i truppen?": "Said yes to the club's invitation. Is it a player you already have in the squad?",
   "Ja — {x}": "Yes — {x}",
   "Nej — ny spiller": "No — new player",
-  "Siger du ja, rejser dine vurderinger og fokuspunkter med til spilleren.": "If you say yes, your ratings and focus points go along to the player.",
+  "Siger du ja, rejser dine vurderinger med til spilleren — og dine fokuspunkter, hvis spilleren ingen har endnu.": "If you say yes, your ratings go along to the player — and your focus points, if the player has none yet.",
   "{x} er i klubben": "{x} is in the club",   /* ⭐ v6.24.1 */
   "{x} ER I KLUBBEN": "{x} IS IN THE CLUB",
   "🔗 I KLUBBEN": "🔗 IN THE CLUB",
@@ -2230,7 +2234,7 @@ Object.assign(EN, {   /* ⭐ v6.24.0 · notifikationer · klubbens aftale */
   "trin {n} · {n} aktiv denne måned": "tier {n} · {n} active this month",
   "NOTIFIKATIONER": "NOTIFICATIONS",
   "Kl. 20 får du besked, hvis et af dine pas i dag mangler fremmøde. Et tryk åbner ✅ Gør nu.": "At 8 pm you get a notification if one of your sessions today is missing attendance. One tap opens ✅ Do now.",
-  "Som admin får du klubbens pas — og besked, når klubben rykker et trin op på spillertrappen.": "As admin you get the club's sessions — and a notification when the club moves up a tier on the player ladder.",
+  "Som admin får du klubbens pas — og besked, når klubben rykker op på spillertrappen.": "As admin you get the club's sessions — and a notification when the club moves up the player ladder.",
   "På iPhone kommer beskeder kun, når StreakCoach ligger på hjemmeskærmen: tryk Del → «Føj til hjemmeskærm», åbn StreakCoach derfra, log ind, og slå notifikationer til her.": "On iPhone, notifications only arrive when StreakCoach is on the home screen: tap Share → «Add to Home Screen», open StreakCoach from there, log in, and turn notifications on here.",
   "Denne browser kan ikke modtage notifikationer. Brug Safari fra hjemmeskærmen på iPhone, eller Chrome.": "This browser can't receive notifications. Use Safari from the home screen on iPhone, or Chrome.",
   "Notifikationer er blokeret for StreakCoach på denne telefon. Slå dem til i telefonens indstillinger, og kom tilbage hertil.": "Notifications are blocked for StreakCoach on this phone. Turn them on in the phone's settings and come back here.",
@@ -2242,9 +2246,20 @@ Object.assign(EN, {   /* ⭐ v6.24.0 · notifikationer · klubbens aftale */
   "Notifikationer er slået til på denne telefon ✓": "Notifications are on for this phone ✓",
   "Notifikationer er slået fra på denne telefon.": "Notifications are off for this phone.",
   "Telefonen kunne ikke slå notifikationer til — prøv igen.": "The phone couldn't turn notifications on — try again.",
+  "uden fremmøde": "no attendance",
+  "🔔 Notifikationer": "🔔 Notifications",
+  "🏷️ Klubbens aftale": "🏷️ The club's plan",
+  "kræver iOS 16.4": "needs iOS 16.4",
+  "kunne ikke tjekkes — åbn": "couldn't be checked — open",
+  "Beskeder kræver iOS 16.4 eller nyere. Opdatér iPhonen under Indstillinger → Generelt → Softwareopdatering, og kom tilbage hertil.": "Notifications need iOS 16.4 or newer. Update the iPhone under Settings → General → Software Update, and come back here.",
+  "Kunne ikke se, om beskeder er slået til på denne telefon.": "Couldn't see whether notifications are on for this phone.",
+  "Notifikationer er slået til på denne telefon ✓ En gammel tilmelding på en anden telefon blev fjernet.": "Notifications are on for this phone ✓ An old sign-up on another phone was removed.",
+  "trappen er ikke sat endnu": "the tier ladder isn't set yet",
+  "pilot · trappen er ikke sat endnu": "pilot · the tier ladder isn't set yet",
+  "Spillertrappen er ikke sat for klubben endnu. Skriv til os, så sætter vi den op.": "The club's tier ladder isn't set yet. Write to us, and we'll set it up.",
+  "Rykker op til": "Moving up to",
   "Telefonen kunne ikke slå notifikationer fra — prøv igen.": "The phone couldn't turn notifications off — try again.",
   "Telefonens push-tjeneste kendes ikke — prøv Safari eller Chrome.": "The phone's push service isn't known — try Safari or Chrome.",
-  "Telefonen gav ikke de nøgler, der skal til — prøv igen.": "The phone didn't provide the keys that are needed — try again.",
   "Notifikationer er slået til på 5 enheder — slå dem fra på én af dem først.": "Notifications are on for 5 devices — turn them off on one of them first.",
   "Kun klubbens admin ser aftalen.": "Only the club's admin sees the plan.",
   "KLUBBENS AFTALE": "THE CLUB'S PLAN",
@@ -2266,8 +2281,8 @@ Object.assign(EN, {   /* ⭐ v6.24.0 · notifikationer · klubbens aftale */
   "op til {n} aktive": "up to {n} active",
   "{n} kr/md": "{n} kr/month",
   "gratis i pilotperioden": "free during the pilot",
-  "I er over trinnet — klubben rykker automatisk et trin op. Intet bliver spærret.": "You're above the tier — the club moves up a tier automatically. Nothing is blocked.",
-  "En aktiv spiller har mindst én registrering i måneden — et fremmøde, en træning eller en kamp. Kommer klubben over trinnet, rykker den automatisk et trin op fra næste måned, og du får besked. Intet bliver spærret.": "An active player has at least one registration in the month — an attendance, a training or a match. If the club goes above its tier, it moves up a tier automatically from next month, and you get a notification. Nothing is blocked."
+  "I er over trinnet — klubben rykker automatisk op til trin {n}. Intet bliver spærret.": "You're above the tier — the club moves up to tier {n} automatically. Nothing is blocked.",
+  "En aktiv spiller har mindst én registrering i måneden — et fremmøde, en træning eller en kamp. Kommer klubben over trinnet, rykker den automatisk op til det trin, der passer, fra næste måned, og du får besked. Intet bliver spærret.": "An active player has at least one registration in the month — an attendance, a training or a match. If the club goes above its tier, it moves up automatically to the tier that fits from next month, and you get a notification. Nothing is blocked."
 });
 var _ENr = {}, _ENx = [];
 (function(){
@@ -2793,8 +2808,8 @@ async function budSvar(id, ja){
   if (!r.taget) { S.tbudBesked = { fejl: false, t: "Du sagde nej tak til " + (b.klub || "klubben") + "." }; render(); return; }
   // ⭐ Et ja. Var telefonen i en ANDEN klub, ryddes den først (KLUB_TING) — samme regel som før.
   var skiftede = !!(k.klub && r.klub && r.klub !== k.klub);
-  if (skiftede) ryddKlubben();
-  if (r.noegle) lager.gem("klubkode", r.noegle);
+  if (skiftede) { notifAfmeldStille(lager.hent("klubkode", "")); ryddKlubben(); }   /* ⭐ v6.24.2 · fund U: med den gamle nøgle */
+  if (r.noegle) { var _glk = lager.hent("klubkode", ""); if (_glk && _glk !== r.noegle) notifAfmeldStille(_glk); lager.gem("klubkode", r.noegle); }
   var nk = { brugernavn: r.brugernavn || k.brugernavn, navn: r.navn || k.navn, klub: r.klub, rolle: r.rolle };
   lager.gem("konto", nk); S.konto = nk;
   lager.gem("traenernavn", nk.navn); lager.gem("klubnavn", r.klub);
@@ -2861,7 +2876,7 @@ async function coachKald(url, krop) {   /* ⭐ v6.24.0 · trænerens dør (x-klu
 function notifFejl(r){   /* ⭐ v6.24.0 · hvert udfald sin egen sætning (75) — resten som traeningFejl */
   var k = r && r.fejl;
   if (k === "endpoint") return "Telefonens push-tjeneste kendes ikke — prøv Safari eller Chrome.";
-  if (k === "noegler") return "Telefonen gav ikke de nøgler, der skal til — prøv igen.";
+  if (k === "noegler") return "Telefonen kunne ikke slå notifikationer til — prøv igen.";   /* ⭐ v6.24.2 · motorrummets ord bliver i motorrummet (97, noeglefri) */
   if (k === "loft") return "Notifikationer er slået til på 5 enheder — slå dem fra på én af dem først.";
   if (k === "kun-admin") return "Kun klubbens admin ser aftalen.";
   return traeningFejl(r);
@@ -2871,25 +2886,57 @@ function notifIOSUdenHjem(){   /* iPhone giver kun beskeder til en app på hjemm
   var hjem = navigator.standalone === true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
   return ios && !hjem;
 }
+function notifIOSGammel(){   /* ⭐ v6.24.2 · beskeder til en web-app kom med iOS 16.4 */
+  var ua = navigator.userAgent || "", v = /OS (\d+)_(\d+)/.exec(ua);
+  if (!/iPhone|iPad|iPod/.test(ua) || !v) return false;
+  var a = parseInt(v[1], 10), b = parseInt(v[2], 10);
+  return a < 16 || (a === 16 && b < 4);
+}
 function notifKan(){ return ("serviceWorker" in navigator) && ("PushManager" in window) && ("Notification" in window); }
 function vapidBytes(b64){
   var p = "=".repeat((4 - b64.length % 4) % 4), s = atob((b64 + p).replace(/-/g, "+").replace(/_/g, "/")), u = new Uint8Array(s.length);
   for (var i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
   return u;
 }
+async function coachReg(lav){   /* ⭐ v6.24.2 · StreakCoachs EGEN registrering (scope …/trainer-platform.html) — aldrig rodens (Codes fund R3/R4) */
+  var regs = [];
+  try { regs = await navigator.serviceWorker.getRegistrations(); } catch (_e) {}
+  var r = regs.filter(function(x){ return /\/trainer-platform\.html$/.test(String(x.scope || "")); })[0] || null;
+  if (!r && lav) r = await navigator.serviceWorker.register("./coach-sw.js", { scope: "./trainer-platform.html" });
+  if (r && lav && !r.active) await new Promise(function(ok){
+    var w = r.installing || r.waiting; if (!w) return ok();
+    w.addEventListener("statechange", function(){ if (w.state === "activated") ok(); }); setTimeout(ok, 10000); });
+  return r;
+}
+async function notifAfmeldStille(gammelKode){   /* ⭐ v6.24.2 · Codes fund U: log ud, start forfra og et klubskifte tager telefonen ud af beskederne — med den nøgle, den var tilmeldt med */
+  try {
+    if (!notifKan()) return;
+    var reg = await coachReg(false), sub = reg ? await reg.pushManager.getSubscription() : null;
+    if (!sub) return;
+    var kn = gammelKode || lager.hent("klubkode", "");
+    if (kn) {
+      var st = new AbortController(), ur = setTimeout(function(){ st.abort(); }, 4000);
+      try { await fetch(COACH_PUSH_URL, { method: "POST", headers: { "content-type": "application/json", "x-klub-noegle": kn }, body: JSON.stringify({ handling: "afmeld", endpoint: sub.endpoint }), signal: st.signal }); } catch (_f) {}
+      clearTimeout(ur);
+    }
+    try { await sub.unsubscribe(); } catch (_u) {}
+  } catch (_e) {}
+  if (S.notif) S.notif.status = null;
+}
 async function notifStatus(){   /* ⭐ v6.24.0 · tilstanden på telefonen gøres synlig (98) — og serveren spørges, om netop denne telefon er med */
   S.notif = S.notif || {};
+  if (notifIOSGammel()) { S.notif.status = "ios-gammel"; render(); return; }   /* ⭐ v6.24.2 · før hjemmeskærmen: under 16.4 hjælper den ikke */
   if (notifIOSUdenHjem()) { S.notif.status = "kraever-hjem"; render(); return; }
   if (!notifKan()) { S.notif.status = "ikke-understoettet"; render(); return; }
   if (Notification.permission === "denied") { S.notif.status = "afvist"; render(); return; }
   try {
-    var reg = await navigator.serviceWorker.getRegistration();
+    var reg = await coachReg(false);
     var sub = reg ? await reg.pushManager.getSubscription() : null;
     if (!sub) { S.notif.status = "fra"; render(); return; }
     var r = await coachKald(COACH_PUSH_URL, { handling: "status", endpoint: sub.endpoint });
-    if (r && r.fejl) { S.notif.status = "fra"; S.notif.fejl = notifFejl(r); render(); return; }
+    if (r && r.fejl) { S.notif.status = "ukendt"; S.notif.fejl = notifFejl(r); render(); return; }   /* ⭐ v6.24.2 · et svar, der ikke kom, er ikke «Fra» (75) */
     S.notif.status = (r && r.denne) ? "til" : "fra"; render();
-  } catch (_e) { S.notif.status = "fra"; render(); }
+  } catch (_e) { S.notif.status = "ukendt"; render(); }
 }
 async function notifTil(){
   S.notif = S.notif || {};
@@ -2898,16 +2945,15 @@ async function notifTil(){
   try {
     var p = await Notification.requestPermission();
     if (p !== "granted") { S.notif.arbejder = false; S.notif.status = (p === "denied") ? "afvist" : "fra"; render(); return; }
-    var reg = await navigator.serviceWorker.getRegistration();
-    if (!reg) reg = await navigator.serviceWorker.register("./sw.js");
-    await navigator.serviceWorker.ready;
+    var reg = await coachReg(true);
+    if (!reg) throw new Error("ingen service worker");
     var sub = await reg.pushManager.getSubscription();
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidBytes(COACH_VAPID) });
     var j = (sub && sub.toJSON) ? sub.toJSON() : {}, ks = j.keys || {};
     var r = await coachKald(COACH_PUSH_URL, { handling: "tilmeld", abonnement: { endpoint: j.endpoint || sub.endpoint, keys: { p256dh: ks.p256dh || "", auth: ks.auth || "" } } });
     S.notif.arbejder = false;
     if (r && r.fejl) { S.notif.status = "fra"; S.notif.fejl = notifFejl(r); render(); return; }
-    S.notif.status = "til"; S.notif.besked = "Notifikationer er slået til på denne telefon ✓"; render();
+    S.notif.status = "til"; S.notif.besked = "Notifikationer er slået til på denne telefon ✓" + ((r && r.fjernet_gamle) ? " En gammel tilmelding på en anden telefon blev fjernet." : ""); render();   /* ⭐ v6.24.2 · coach-push v2 siger det (75) */
   } catch (_e) { S.notif.arbejder = false; S.notif.status = "fra"; S.notif.fejl = "Telefonen kunne ikke slå notifikationer til — prøv igen."; render(); }
 }
 async function notifFra(){   /* kun DENNE telefon — de andre enheder røres ikke */
@@ -2915,7 +2961,7 @@ async function notifFra(){   /* kun DENNE telefon — de andre enheder røres ik
   if (S.notif.arbejder) return;
   S.notif.arbejder = true; S.notif.fejl = null; S.notif.besked = null; render();
   try {
-    var reg = await navigator.serviceWorker.getRegistration();
+    var reg = await coachReg(false);
     var sub = reg ? await reg.pushManager.getSubscription() : null;
     if (sub) {
       var r = await coachKald(COACH_PUSH_URL, { handling: "afmeld", endpoint: sub.endpoint });
@@ -2930,14 +2976,14 @@ function notifFliseStatus(){
   if (!n.status && !n.tjekket) { n.tjekket = true; S.notif = n; setTimeout(function(){ notifStatus(); }, 0); }
   var st = n.status || "";
   return st === "til" ? "til på denne telefon" : st === "fra" ? "fra — slå til" : st === "kraever-hjem" ? "kræver hjemmeskærmen" :
-    st === "afvist" ? "blokeret på telefonen" : st === "ikke-understoettet" ? "kan ikke i denne browser" : "tjekker …";
+    st === "afvist" ? "blokeret på telefonen" : st === "ikke-understoettet" ? "kan ikke i denne browser" : st === "ios-gammel" ? "kræver iOS 16.4" : st === "ukendt" ? "kunne ikke tjekkes — åbn" : "tjekker …";
 }
 function indstNotif(){   /* ⭐ v6.24.0 · 🔔 NOTIFIKATIONER */
   var n = S.notif || {}, st = n.status || "", adm = (S.minRolle || lager.hent("minrolle", "")) === "admin";
   var h = '<div class="kort" data-notif-rum="1" style="--tone:var(--is)">' +
     '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--is)">🔔 ' + T("NOTIFIKATIONER") + '</div>' +
     '<p class="lille" style="margin:6px 0 4px">' + T("Kl. 20 får du besked, hvis et af dine pas i dag mangler fremmøde. Et tryk åbner ✅ Gør nu.") + '</p>' +
-    (adm ? '<p class="lille" style="margin:0 0 4px">' + T("Som admin får du klubbens pas — og besked, når klubben rykker et trin op på spillertrappen.") + '</p>' : '');
+    (adm ? '<p class="lille" style="margin:0 0 4px">' + T("Som admin får du klubbens pas — og besked, når klubben rykker op på spillertrappen.") + '</p>' : '');
   if (st === "kraever-hjem") h += '<p class="lille" data-notif-status="kraever-hjem" style="margin:8px 0 0;color:var(--guld)">' + T("På iPhone kommer beskeder kun, når StreakCoach ligger på hjemmeskærmen: tryk Del → «Føj til hjemmeskærm», åbn StreakCoach derfra, log ind, og slå notifikationer til her.") + '</p>';
   else if (st === "ikke-understoettet") h += '<p class="lille" data-notif-status="ikke-understoettet" style="margin:8px 0 0;color:var(--guld)">' + T("Denne browser kan ikke modtage notifikationer. Brug Safari fra hjemmeskærmen på iPhone, eller Chrome.") + '</p>';
   else if (st === "afvist") h += '<p class="lille" data-notif-status="afvist" style="margin:8px 0 0;color:var(--guld)">' + T("Notifikationer er blokeret for StreakCoach på denne telefon. Slå dem til i telefonens indstillinger, og kom tilbage hertil.") + '</p>';
@@ -2945,6 +2991,9 @@ function indstNotif(){   /* ⭐ v6.24.0 · 🔔 NOTIFIKATIONER */
     '<button class="knap valg" style="width:100%;margin-top:8px"' + (n.arbejder ? ' disabled' : '') + ' data-act="notif-fra">' + (n.arbejder ? '⏳ …' : T("Slå fra")) + '</button>';
   else if (st === "fra") h += '<p class="lille" data-notif-status="fra" style="margin:8px 0 0">' + T("Fra på denne telefon.") + '</p>' +
     '<button class="knap" style="width:100%;margin-top:8px;background:var(--grus)"' + (n.arbejder ? ' disabled' : '') + ' data-act="notif-til">' + (n.arbejder ? '⏳ …' : '🔔 ' + T("Slå til")) + '</button>';
+  else if (st === "ios-gammel") h += '<p class="lille" data-notif-status="ios-gammel" style="margin:8px 0 0;color:var(--guld)">' + T("Beskeder kræver iOS 16.4 eller nyere. Opdatér iPhonen under Indstillinger → Generelt → Softwareopdatering, og kom tilbage hertil.") + '</p>';
+  else if (st === "ukendt") h += '<p class="lille" data-notif-status="ukendt" style="margin:8px 0 0;color:var(--guld)">' + T("Kunne ikke se, om beskeder er slået til på denne telefon.") + '</p>' +
+    '<button class="knap valg" style="width:100%;margin-top:8px" data-act="notif-tjek">' + T("Prøv igen") + '</button>';
   else h += '<p class="lille" style="margin:8px 0 0">' + T("Tjekker telefonen …") + '</p>';
   if (n.besked) h += '<p class="lille" style="margin:8px 0 0;color:var(--vundet)">' + esc(n.besked) + '</p>';
   if (n.fejl) h += '<p class="lille" data-notif-fejl="1" style="margin:8px 0 0;color:var(--tabt)">' + esc(n.fejl) + '</p>';
@@ -2966,9 +3015,14 @@ function aftaleFliseStatus(){
     return a.fejl ? "kunne ikke hentes — åbn" : "henter …";
   }
   if (!d.aftale) return "ikke registreret endnu";
+  if (d.trin == null) return (d.aftale === "pilot" ? "pilot · " : "") + "trappen er ikke sat endnu";   /* ⭐ v6.24.2 */
   return (d.aftale === "pilot" ? "pilot · " : "") + "trin " + d.trin + " · " + d.aktive + (d.aktive === 1 ? " aktiv" : " aktive") + " denne måned";
 }
 function aftaleKr(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+function aftalePris(n){   /* ⭐ v6.24.2 · på engelsk med komma (3,999 kr/month) */
+  var t = T(aftaleKr(n) + " kr/md");
+  return SPROG === "en" ? t.replace(/(\d)\.(?=\d{3}(?!\d))/g, "$1,") : t;
+}
 function aftaleRk(label, vaerdi, farve){
   return '<div class="lille" style="display:flex;justify-content:space-between;gap:10px;margin-top:8px"><span>' + T(label) + '</span><b style="text-align:right' + (farve ? ';color:' + farve : '') + '">' + vaerdi + '</b></div>';
 }
@@ -2979,28 +3033,41 @@ function indstAftale(){   /* ⭐ v6.24.0 · 🏷️ KLUBBENS AFTALE — det, klu
   if (a.henter && !d) h += '<p class="lille" style="margin:8px 0 0">' + T("Henter aftalen …") + '</p>';
   if (a.fejl) h += '<p class="lille" data-aftale-fejl="1" style="margin:8px 0 0;color:var(--tabt)">' + esc(a.fejl) + '</p>';
   if (d && !d.aftale) h += '<p class="lille" style="margin:8px 0 0">' + T("Klubbens aftale er ikke registreret endnu. Skriv til os, så sætter vi den op.") + '</p>';
-  if (d && d.aftale) {
+  if (d && d.aftale && d.trin == null) h += '<p class="lille" data-aftale-ingen-trappe="1" style="margin:8px 0 0">' + T("Spillertrappen er ikke sat for klubben endnu. Skriv til os, så sætter vi den op.") + '</p>';   /* ⭐ v6.24.2 */
+  if (d && d.aftale && d.trin != null) {
     var pilot = d.aftale === "pilot";
     var aft = pilot ? (d.pilot_til ? '<span>' + T("Pilot") + '</span> · <span>' + T("til " + parseInt(d.pilot_til.slice(8, 10), 10) + "/" + parseInt(d.pilot_til.slice(5, 7), 10)) + '</span>' : '<span>' + T("Pilot") + '</span>')
       : '<span>' + T(d.aftale === "partner" ? "Udviklingspartner" : "Betalende") + '</span>';
     h += aftaleRk("Aftale", aft) +
       aftaleRk("Trin", '<span>' + d.trin + '</span> · <span>' + T(d.trin_navn || "") + '</span>' + (d.graense ? ' · <span>' + T("op til " + d.graense + " aktive") + '</span>' : '')) +
-      aftaleRk("Pris", '<span>' + T(aftaleKr(d.pris_kr) + " kr/md") + '</span>' + (pilot ? ' · <span>' + T("gratis i pilotperioden") + '</span>' : '')) +
+      aftaleRk("Pris", '<span>' + aftalePris(d.pris_kr) + '</span>' + (pilot ? ' · <span>' + T("gratis i pilotperioden") + '</span>' : '')) +
       aftaleRk("Aktive spillere denne måned", '<span>' + d.aktive + '</span>', d.over ? "var(--guld)" : "") +
-      (d.naeste ? aftaleRk("Næste trin", '<span>' + d.naeste.trin + '</span> · <span>' + T(d.naeste.navn) + '</span> · <span>' + T(aftaleKr(d.naeste.pris_kr) + " kr/md") + '</span>') : '');
-    if (d.over) h += '<p class="lille" data-aftale-over="1" style="margin:10px 0 0;color:var(--guld)">' + T("I er over trinnet — klubben rykker automatisk et trin op. Intet bliver spærret.") + '</p>';
+      (d.naeste ? aftaleRk(d.over ? "Rykker op til" : "Næste trin", '<span>' + d.naeste.trin + '</span> · <span>' + T(d.naeste.navn) + '</span> · <span>' + aftalePris(d.naeste.pris_kr) + '</span>') : '');
+    if (d.over) h += '<p class="lille" data-aftale-over="1" style="margin:10px 0 0;color:var(--guld)">' + T("I er over trinnet — klubben rykker automatisk op til trin " + (d.naeste ? d.naeste.trin : d.trin + 1) + ". Intet bliver spærret.") + '</p>';
   }
-  h += '<p class="lille" style="margin:12px 0 0;color:var(--daempet)">' + T("En aktiv spiller har mindst én registrering i måneden — et fremmøde, en træning eller en kamp. Kommer klubben over trinnet, rykker den automatisk et trin op fra næste måned, og du får besked. Intet bliver spærret.") + '</p>';
+  h += '<p class="lille" style="margin:12px 0 0;color:var(--daempet)">' + T("En aktiv spiller har mindst én registrering i måneden — et fremmøde, en træning eller en kamp. Kommer klubben over trinnet, rykker den automatisk op til det trin, der passer, fra næste måned, og du får besked. Intet bliver spærret.") + '</p>';
   return h + '</div>';
 }
 function coachRuteGaa(sti){   /* ⭐ v6.24.0 · en notifikation peger på et rum: #goer-nu → ✅ Gør nu · #aftale → klubbens aftale */
   var s = String(sti || "");
-  if (s.indexOf("#goer-nu") >= 0) { S.tab = "overblik"; S.indstVisning = null; S.aabenSpiller = null; try { window.scrollTo(0, 0); } catch (_e) {} return true; }
+  if (s.indexOf("#goer-nu") >= 0) { S.tab = "overblik"; S.indstVisning = null; S.aabenSpiller = null; try { window.scrollTo(0, 0); } catch (_e) {}
+    setTimeout(function(){ try { nuHent(true); prgHent("kladde"); } catch (_h) {} }, 0);   /* ⭐ v6.24.2 · Codes fund R2: dagens pas OG kladden, før Gør nu siger noget */
+    return true; }
   if (s.indexOf("#aftale") >= 0 && (S.minRolle || lager.hent("minrolle", "")) === "admin") { S.tab = "indst"; S.indstVisning = "aftale"; S.aabenSpiller = null; setTimeout(function(){ aftaleHent(); }, 0); return true; }
   return false;
 }
 window.__coachRute = function(sti){ if (coachRuteGaa(sti)) render(); };
-function coachRuteFraAdresse(){ if (coachRuteGaa(location.hash)) { try { history.replaceState(null, "", location.pathname + location.search); } catch (_e) {} } }
+function coachRuteFraAdresse(){   /* ⭐ v6.24.2 · en kendt rute ryddes altid af adressen — også #aftale for en, der ikke er admin */
+  var h = String(location.hash || "");
+  if (h.indexOf("#goer-nu") < 0 && h.indexOf("#aftale") < 0) return;
+  coachRuteGaa(h);
+  try { history.replaceState(null, "", location.pathname + location.search); } catch (_e) {}
+}
+document.addEventListener("visibilitychange", function(){   /* ⭐ v6.24.2 · R2: appen, der kommer frem igen timer senere, spørger igen (højst hvert minut) */
+  if (document.visibilityState !== "visible" || !lager.hent("klubkode", "")) return;
+  try { nuHent(false); } catch (_e) {}
+  if (S.tab === "overblik") { try { prgHent("kladde"); } catch (_e) {} }
+});
 async function laesKald(krop) {   /* ⭐ v6.23.0 · samme dør som traening (trænernøglen) — et stort ark kan tage op til et minut */
   const kn = lager.hent("klubkode", "");
   if (!kn) return { fejl: "mangler-klubkode" };
@@ -3150,10 +3217,14 @@ function nuBedste(){
   var ls = S.nu.pas.filter(function(p){ return p.lige_slut && !p.registreret; });
   ls.sort(function(a, b){ return (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || a.slut_for_min - b.slut_for_min; });
   if (ls.length) return ls[0];
+  /* ⭐ v6.24.2 · Codes fund R1: et pas, der sluttede tidligere i dag og mangler fremmøde, er stadig dagens opgave — beskeden kl. 20 tæller det */
+  var tid = S.nu.pas.filter(function(p){ return p.slut_for_min >= 0 && !p.registreret; });
+  tid.sort(function(a, b){ return (b.mine ? 1 : 0) - (a.mine ? 1 : 0) || a.slut_for_min - b.slut_for_min; });
+  if (tid.length) return tid[0];
   var kommer = S.nu.pas.filter(function(p){ return p.slut_for_min < 0; });
   return kommer.length ? kommer[0] : null;
 }
-function nuUdenFremmoede(){ return (S.nu && S.nu.pas ? S.nu.pas : []).filter(function(p){ return p.lige_slut && !p.registreret; }).length; }
+function nuUdenFremmoede(){ return (S.nu && S.nu.pas ? S.nu.pas : []).filter(function(p){ return p.slut_for_min >= 0 && !p.registreret; }).length; }   /* ⭐ v6.24.2 · hele dagen (R1) */
 
 // ── PROGRAMMET (kladden) hentes, når fanen åbnes, og efter hver ændring.
 function prgHent(status, skrevet){
@@ -3636,7 +3707,7 @@ function bundNav(){
 function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emoji som flisen på HJEM */
   if (tab === "indst" && S.indstVisning) return { nye: "\ud83d\udce5 Nye spillere", forbindelse: "\u2699\ufe0f Forbindelse", sky: "\u2601\ufe0f Skyen",
     konto: "\ud83d\udc64 Din konto", sprog: "\ud83c\udf10 Sprog", streak: "\ud83d\udd25 Streak", trup: "\ud83d\udc65 Min trup", adgang: "\ud83d\udcf2 Invit\u00e9r og adgang", spejl: "\ud83e\ude9e Spejlet", spoerg: "\u2753 Sp\u00f8rg guiden",
-    "adgang-spiller": "\ud83c\udfbe Invit\u00e9r spiller", "adgang-traener": "\ud83e\uddd1\u200d\ud83c\udfeb Invit\u00e9r tr\u00e6ner", "adgang-link": "\ud83d\udcf1 Link til appen", "adgang-klub": "\ud83d\udc65 Klubben" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
+    "adgang-spiller": "\ud83c\udfbe Invit\u00e9r spiller", "adgang-traener": "\ud83e\uddd1\u200d\ud83c\udfeb Invit\u00e9r tr\u00e6ner", "adgang-link": "\ud83d\udcf1 Link til appen", "adgang-klub": "\ud83d\udc65 Klubben", notif: "🔔 Notifikationer", aftale: "🏷️ Klubbens aftale" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen", udstil: "\ud83c\udf10 Udstil" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Spillere", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
            kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\u2705 G\u00f8r nu", weekenden: "📆 Weekenden", live: "🔴 Live nu" }[tab] || "";
@@ -3725,9 +3796,9 @@ function traenerDash(){
   else if (!(S.nu.pas || []).length) h += '<div class="dash-fri">Fri i dag 🎾</div>';
   else (function(){ var uf = nuUdenFremmoede(); if (uf) h += '<div class="dash-fri">' + _ufTekst(uf) + '</div>'; })();
   if (S.nu && (S.nu.pas || []).length && lager.hent("klubkode", "") && !S.nuFejl) (S.nu.pas || []).map(function(p, i){ return { p: p, i: i }; }).sort(function(x, y){
-    return ((x.p.lige_slut && !x.p.registreret) ? 0 : 1) - ((y.p.lige_slut && !y.p.registreret) ? 0 : 1) || x.i - y.i;   /* ⭐ v6.20.1 · dem uden fremmøde først */
+    return ((x.p.slut_for_min >= 0 && !x.p.registreret) ? 0 : 1) - ((y.p.slut_for_min >= 0 && !y.p.registreret) ? 0 : 1) || x.i - y.i;   /* ⭐ v6.20.1 · dem uden fremmøde først · v6.24.2 hele dagen */
   }).map(function(o){ return o.p; }).slice(0, 4).forEach(function(p){
-    var m = p.registreret ? '<span class="dash-maerke ok">registreret ✓</span>' : p.lige_slut ? '<span class="dash-maerke nu">lige slut</span>' : p.mine ? '<span class="dash-maerke">dit pas</span>' : '';
+    var m = p.registreret ? '<span class="dash-maerke ok">registreret ✓</span>' : p.lige_slut ? '<span class="dash-maerke nu">lige slut</span>' : p.slut_for_min >= 0 ? '<span class="dash-maerke nu">uden fremmøde</span>' : p.mine ? '<span class="dash-maerke">dit pas</span>' : '';
     var n = (p.deltagere || []).length;
     /* hver del sin egen tekstnode — så oversættes de hver for sig (ordbogen tager hele tekstnoder) */
     var ua = +p.uden_app || 0;   /* ⭐ v6.20.2 · dem uden app tæller med (Nicolai 16/10: 25 pas, alle «0 spillere» — målt: 142 uden app) */
@@ -4481,18 +4552,26 @@ function koblEkstra(){ return (lager.hent("koblekstra", []) || []).filter(functi
 function koblEkstraTil(h2){ var l = koblEkstra(); if (l.indexOf(h2) < 0) { l.push(h2); lager.gem("koblekstra", l); } }
 function koblEkstraFra(h2){ lager.gem("koblekstra", koblEkstra().filter(function(x){ return x !== h2; })); }
 function koblVarig(r){ var st = r && r.status; return st === 400 || st === 401 || st === 403 || st === 404 || st === 409 || st === 422; }
+function koblSrvFp(h2){   /* ⭐ v6.24.2 · barnets liste, som hent-hold sidst så den — null = ukendt */
+  var p = (S.tilmeldinger || []).filter(function(x){ return x && x.haandtag === h2; })[0];
+  return (p && Array.isArray(p.fokuspunkter)) ? p.fokuspunkter : null;
+}
 function koblSend(navn){   /* ⭐ v6.23.0 · fund B · ⭐ v6.24.1 · fund F+G: køen husker barnet og trænerens EGNE fokuspunkter fra det øjeblik, der blev sagt ja */
   var h2 = (S.noegler || {})[navn]; if (!h2) return Promise.resolve({ ok: false });
   S.koblIgang = S.koblIgang || {};
   if (S.koblIgang[navn]) return Promise.resolve({ ok: false, igang: true });
   var l = koblSendListe(), e = l.filter(function(x){ return x.navn === navn && x.h === h2; })[0];
   if (!e) {
-    var fp = (S.fokuspunkter || {})[navn];
-    e = { navn: navn, h: h2, fp: (Array.isArray(fp) && fp.length) ? fp.slice(0, 10) : null };   /* ingen egen liste = barnets liste røres ikke */
+    e = { navn: navn, h: h2 };   /* ⭐ v6.24.2 · Codes fund M1: køen fryser ingen liste — den måles, når der sendes */
     l = l.filter(function(x){ return x.navn !== navn; }); l.push(e); koblSendGem(l);
   }
   S.koblIgang[navn] = true;
-  return Promise.resolve().then(function(){ return sendVurdering(navn, { stille: true, fokus: e.fp }); }).then(function(r){
+  /* ⭐ v6.24.2 · Codes fund H3+M1+M2: barnets fokuspunkter er klubbens. Har barnet en liste, bliver den trænerens kopi, og intet sendes;
+     har barnet ingen (målt i hent-hold), rejser trænerens liste for navnet med. Ukendt (hent-hold ikke svaret) → intet sendes. */
+  var srv = koblSrvFp(h2), egen = (S.fokuspunkter || {})[navn], opt = { stille: true };
+  if (srv && srv.length) { S.fokuspunkter = S.fokuspunkter || {}; S.fokuspunkter[navn] = srv.slice(0, 20); lager.gem("fokuspunkter", S.fokuspunkter); }
+  else if (srv && Array.isArray(egen) && egen.length) opt.fokus = egen.slice(0, 10);
+  return Promise.resolve().then(function(){ return sendVurdering(navn, opt); }).then(function(r){
     delete S.koblIgang[navn];
     var ok = !!r && !r.fejl, varig = !ok && koblVarig(r);
     if (ok || varig) koblSendGem(koblSendListe().filter(function(x){ return !(x.navn === navn && x.h === h2); }));   /* ⭐ fund H2: en varig fejl prøves ikke igen og igen */
@@ -4562,7 +4641,7 @@ function koblKort(){   /* ⭐ v6.23.0 · Codes fund A: træneren bekræfter med 
       '<p class="lille" style="margin:8px 0 4px">' + (bud ? 'Sagde ja til din invitation. Er det en spiller, du allerede har i truppen?' : 'Er i klubben og ligner et navn i din trup. Er det den samme spiller?') + '</p>' +
       k.kand.map(function(n2, j){ return '<button class="knap" style="width:100%;margin-top:6px;background:var(--grus)"' + (laast ? ' disabled' : '') + ' data-act="kobl-ja" data-v="' + esc(k.h) + ':' + j + '">' + esc('Ja — ' + n2) + '</button>'; }).join('') +
       '<button class="knap valg" style="width:100%;margin-top:6px"' + (laast ? ' disabled' : '') + ' data-act="kobl-ny" data-v="' + esc(k.h) + '">Nej — ny spiller</button>' +
-      '<p class="lille" style="margin:8px 0 0;color:var(--daempet)">Siger du ja, rejser dine vurderinger og fokuspunkter med til spilleren.</p></div>';
+      '<p class="lille" style="margin:8px 0 0;color:var(--daempet)">Siger du ja, rejser dine vurderinger med til spilleren — og dine fokuspunkter, hvis spilleren ingen har endnu.</p></div>';
   });
   return h;
 }
@@ -5340,8 +5419,9 @@ function trupProgramKandidater(){   /* ⭐ v6.23.0 · Nicolai: «det nemmere at 
     (p.navne || []).forEach(function(n){ var nv = String(n).replace(/\s*\(\s*[12]\s*\)\s*$/, "").replace(/\s+/g, " ").trim(); if (nv) kand.push({ navn: nv.slice(0, 40), noegle: "", aargang: "" }); });
     (p.deltagere || []).forEach(function(d){
       if (!d || !d.fornavn || d.forladt) return;
-      var tl = (S.tilmeldinger || []).filter(function(x){ return x && x.status === "godkendt" && x.haandtag && x.haandtag === d.h; })[0];   /* samme håndtag — ellers gætter appen ikke */
-      kand.push({ navn: String(d.fornavn).slice(0, 40), noegle: tl ? tl.haandtag : "", aargang: (tl && tl.aargang) || d.aargang || "" });
+      var tl = (S.tilmeldinger || []).filter(function(x){ return x && x.status === "godkendt" && x.haandtag && x.haandtag === d.h; })[0];
+      var hh = /^[0-9a-f]{16}$/.test(String(d.h || "")) ? String(d.h) : "";   /* ⭐ v6.24.2 · Codes fund H1: passets deltager bærer sit håndtag fra serveren — ikke afhængigt af, om hent-hold har svaret */
+      kand.push({ navn: String(d.fornavn).slice(0, 40), noegle: hh, aargang: (tl && tl.aargang) || d.aargang || "" });
     });
     kand.forEach(function(k){
       var nk = k.noegle ? "#" + k.noegle : "n:" + k.navn.toLowerCase();
@@ -5364,7 +5444,7 @@ function trupProgramKandidater(){   /* ⭐ v6.23.0 · Nicolai: «det nemmere at 
     var optaget = {};
     return l.map(function(x){
       var nv = x.navn;
-      if (optaget[nv.toLowerCase()] || (x.noegle && !koblLedig(nv))) nv = koblNytNavn({ fornavn: x.navn, aargang: x.aargang }, optaget);   /* et barn med app arver aldrig et andet navns vurderinger */
+      if (optaget[nv.toLowerCase()] || !koblLedig(nv)) nv = koblNytNavn({ fornavn: x.navn, aargang: x.aargang }, optaget);   /* ⭐ v6.24.2 · H1: heller ikke et navn uden app arver en slettet posts tal */   /* et barn med app arver aldrig et andet navns vurderinger */
       optaget[nv.toLowerCase()] = 1;
       return { navn: nv, gruppe: x.gruppe, noegle: x.noegle, min: x.min };
     });
@@ -5873,7 +5953,7 @@ document.addEventListener("click", function(e){
     const sp = t.dataset.sp;
     const nu = S.fokuspunkter[sp] || [];
     S.fokuspunkter[sp] = nu.includes(v) ? nu.filter(x => x !== v) : nu.concat([v]);
-    lager.gem("fokuspunkter", S.fokuspunkter); render(); sendVurdering(sp); }
+    lager.gem("fokuspunkter", S.fokuspunkter); render(); sendVurdering(sp, { fokus: S.fokuspunkter[sp] || [] }); }   /* ⭐ v6.24.2 · H3: trykket ER viljen */
   // ══ v6.0.0 · PROGRAMMET ═══════════════════════════════════════════════
   // ══ v6.3.0 · PROGRAM SOM FLISER + IMPORTEN ═══════════════════════════════
   // ══ v6.8.0 · INDSTILLINGER SOM FLISER ═══════════════════════════════════
@@ -5974,6 +6054,7 @@ document.addEventListener("click", function(e){
     S.noegler = S.noegler || {};
     if (act === "kobl-ja") {
       var _kn = _ks.kand[+_kv[1]], _ke = (S.truppen || []).filter(function(x){ return x && x.navn === _kn && !x.noegle; })[0];
+      if (koblKandidater(_ks.fornavn, (S.fuldeNavne || {})[_ks.h]).indexOf(_kn) < 0) { S.koblBesked = { fejl: true, t: "Kortet ændrede sig — se efter, og tryk igen." }; autoTrup(); render(); return; }   /* ⭐ v6.24.2 · Codes fund M3 */
       if (!_ke) { S.koblBesked = { fejl: true, t: "«" + _kn + "» er ikke længere ukoblet i truppen — intet er koblet." }; autoTrup(); render(); return; }
       _ke.noegle = _ks.h; S.noegler[_kn] = _ks.h; koblEkstraFra(_ks.h);
       lager.gem("truppen", S.truppen); lager.gem("noegler", S.noegler); byggTrup();
@@ -5993,6 +6074,7 @@ document.addEventListener("click", function(e){
     }
   }
   else if (act==="notif-til"){ notifTil(); }   /* ⭐ v6.24.0 */
+  else if (act==="notif-tjek"){ S.notif = S.notif || {}; S.notif.status = null; S.notif.fejl = null; render(); notifStatus(); }   /* ⭐ v6.24.2 */
   else if (act==="notif-fra"){ notifFra(); }   /* ⭐ v6.24.0 */
   else if (act==="prg-dag"){ S.prgUgedag = +v; prgNulstilForm(); render(); }
   else if (act==="prg-ny"){ prgNulstilForm(); S.prgNy = true; render(); }
@@ -6180,7 +6262,7 @@ document.addEventListener("click", function(e){
           sidste:true, bolde:false };
         render(); return;
       }
-      if (r.noegle) lager.gem("klubkode", r.noegle);
+      if (r.noegle) { var _glk = lager.hent("klubkode", ""); if (_glk && _glk !== r.noegle) notifAfmeldStille(_glk); lager.gem("klubkode", r.noegle); }
       lager.gem("konto", { brugernavn: r.brugernavn, navn: r.navn, klub: r.klub, rolle: r.rolle });
       lager.gem("traenernavn", r.navn); lager.gem("klubnavn", r.klub);
       S.konto = { brugernavn: r.brugernavn, navn: r.navn, klub: r.klub, rolle: r.rolle };
@@ -6269,18 +6351,19 @@ document.addEventListener("click", function(e){
   // ══ v4.3.0 · DEN LUKKEDE SKÆRMS TRE KNAPPER ══════════════════════
   else if (act==="luk-vis-kode"){ S.lukVisKode = !S.lukVisKode; render(); }
 
-  else if (act==="luk-log-ud"){
+  else if (act==="luk-log-ud"){ notifAfmeldStille().then(function(){   /* ⭐ v6.24.2 · fund U */
     ["konto","klubkode","traenernavn","klubnavn","minrolle","doer","boksnoegle","boks-sendt"].forEach(function(n){
       try { localStorage.removeItem("tp-" + n); } catch(_e){} });
-    try { window.location.reload(); } catch(_e){} }
+    try { window.location.reload(); } catch(_e){} }); }
 
   // ── LOG UD · rydder telefonen, ikke kontoen. ──────────────────────
   else if (act==="log-ud"){
     if (!S.logUdSpoerg) { S.logUdSpoerg = true; render(); return; }
     S.logUdSpoerg = false;
+    notifAfmeldStille().then(function(){   /* ⭐ v6.24.2 · fund U */
     ["konto","klubkode","traenernavn","klubnavn","minrolle","doer","boksnoegle","boks-sendt"].forEach(function(n){
       try { localStorage.removeItem("tp-" + n); } catch(_e){} });
-    try { window.location.reload(); } catch(_e){} }
+    try { window.location.reload(); } catch(_e){} }); }
 
   // ── ⭐ START FORFRA · Nicolai 30/8: «fjerne alt jeg har lagt ind». ─
   //   Før fandtes den ikke: eneste vej var Safari → sitedata. Den er
@@ -6288,6 +6371,7 @@ document.addEventListener("click", function(e){
   else if (act==="start-forfra"){
     if (!S.forfraBekraeft) { S.forfraBekraeft = true; render(); return; }
     S.forfraBekraeft = false;
+    notifAfmeldStille().then(function(){   /* ⭐ v6.24.2 · fund U */
     try {
       var _v = [];
       for (var _j = 0; _j < localStorage.length; _j++) {
@@ -6296,7 +6380,7 @@ document.addEventListener("click", function(e){
       }
       _v.forEach(function(n){ try { localStorage.removeItem(n); } catch(_e){} });
     } catch(_e){}
-    try { window.location.reload(); } catch(_e){} }
+    try { window.location.reload(); } catch(_e){} }); }
 
   else if (act==="tilm-hent"){ hentTilmeldinger(); }
   else if (act==="bud-soeg"){ budSoeg(); }
@@ -6377,14 +6461,17 @@ document.addEventListener("click", function(e){
       // Godkendt spiller foejes til truppen, saa traeneren kan vurdere med det samme.
       if (nyStatus === "godkendt" && post) {
         S.truppen = S.truppen || [];
-        if (!S.truppen.some(function(x){ return x.noegle === noegle || x.navn === post.fornavn; })) {
-          S.truppen.push({ navn: post.fornavn || "Spiller", gruppe: gruppeFraHold(post.hold), noegle: noegle });
+        if (!S.truppen.some(function(x){ return x.noegle === noegle; })) {   /* ⭐ v6.24.2 · Codes fund H2: samme vej som de andre — aldrig fornavnet råt */
+          var _tilmNavn = koblNytNavn(post);
+          S.truppen.push({ navn: _tilmNavn, gruppe: gruppeFraHold(post.hold), noegle: noegle });
           lager.gem("truppen", S.truppen);
-          S.noegler = S.noegler || {}; S.noegler[post.fornavn] = noegle; lager.gem("noegler", S.noegler);
+          S.noegler = S.noegler || {}; S.noegler[_tilmNavn] = noegle; lager.gem("noegler", S.noegler);
+          var _tilmFp = koblSrvFp(noegle); if (_tilmFp) { S.fokuspunkter = S.fokuspunkter || {}; S.fokuspunkter[_tilmNavn] = _tilmFp.slice(0, 20); lager.gem("fokuspunkter", S.fokuspunkter); }
+          post.koblTrupNavn = _tilmNavn;
           byggTrup();
         }
       }
-      S.syncBesked = { fejl:false, t: (post && post.fornavn ? post.fornavn : "Spilleren") +
+      S.syncBesked = { fejl:false, t: (post && (post.koblTrupNavn || post.fornavn) ? (post.koblTrupNavn || post.fornavn) : "Spilleren") +
         (nyStatus === "godkendt" ? " er godkendt og lagt i truppen \u2713" : " er sat som ikke aktiv.") };
       render();
     }).catch(function(){ S.syncBesked={fejl:true,t:"Ingen forbindelse."}; render(); }); }
@@ -6510,6 +6597,7 @@ document.addEventListener("click", function(e){
     var fjernet = (S.truppen[ix]||{}).navn;
     S.truppen.splice(ix,1); lager.gem("truppen", S.truppen);
     if (fjernet && S.noegler) { delete S.noegler[fjernet]; lager.gem("noegler", S.noegler); }
+    if (fjernet && S.fokuspunkter && Object.prototype.hasOwnProperty.call(S.fokuspunkter, fjernet)) { delete S.fokuspunkter[fjernet]; lager.gem("fokuspunkter", S.fokuspunkter); }   /* ⭐ v6.24.2 · Codes fund L4 */
     if (fjernet) koblSendGem(koblSendListe().filter(function(e){ return e.navn !== fjernet; }));   /* ⭐ v6.24.1 · Codes fund F: en slettet post sender ikke */
     S.trupSlet = null;
     if (!S.truppen.length) { S.syncBesked={fejl:false,t:"Truppen er tom \u2014 eksempeldata vises igen ved genindl\u00e6sning."}; }
@@ -6585,10 +6673,10 @@ window.__oskarInit();
 
 </script>
 <script>
-if ("serviceWorker" in navigator && location.protocol === "https:") {
-  navigator.serviceWorker.register("./sw.js").catch(function(){});
+if ("serviceWorker" in navigator && location.protocol === "https:") {   /* ⭐ v6.24.2 · egen service worker (Codes fund R3/R4) — rodens sw.js er StreakTennis' */
+  navigator.serviceWorker.register("./coach-sw.js", { scope: "./trainer-platform.html" }).catch(function(){});
 }
-if ("serviceWorker" in navigator) {   /* ⭐ v6.24.0 · et tryk på en notifikation flytter et åbent vindue (rodens sw.js poster ruten) */
+if ("serviceWorker" in navigator) {   /* ⭐ v6.24.0 · et tryk på en notifikation flytter et åbent vindue (v6.24.2: coach-sw.js poster ruten) */
   navigator.serviceWorker.addEventListener("message", function(e){ var d = e && e.data; if (d && d.sai === "gaa" && window.__coachRute) window.__coachRute(String(d.sti || "")); });
 }
 </script>

@@ -60,9 +60,10 @@
       navigator.serviceWorker.getRegistrations().then(function(regs){
         regs.forEach(function(r){
           // KUN rodens egen. StreakTennis' egen (scope /StreakTennis/)
-          // skal blive — den er appens offline-kopi.
+          // skal blive — den er appens offline-kopi. Og StreakCoachs egen
+          // (scope /trainer-platform.html) bærer trænernes beskeder.
           var s = String(r.scope || "");
-          if (!/\/StreakTennis\/?$/.test(s)) r.unregister();
+          if (!/\/StreakTennis\/?$/.test(s) && !/\/trainer-platform\.html$/.test(s)) r.unregister();
         });
       }).catch(function(){});
     }

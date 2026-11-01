@@ -15,7 +15,7 @@
 *{box-sizing:border-box}
 html,body{margin:0}
 body{font-family:'Helvetica Neue',Arial,sans-serif;background:radial-gradient(120% 55% at 50% -8%,#14264A 0%,#0B1220 55%) fixed #0B1220;color:var(--kridt);min-height:100vh}
-.side{max-width:1180px;margin:0 auto;padding:14px 16px 40px}
+.side{max-width:1180px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left))}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0 12px;border-bottom:1px solid var(--kant);margin-bottom:14px;flex-wrap:wrap}
 .brand{display:flex;flex-direction:column;gap:3px}
 .wordmark{font-size:11px;letter-spacing:4px;font-weight:700;color:var(--guld);line-height:1}
@@ -36,7 +36,7 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
 .dagpanel{display:none}
 .dagpanel.vis{display:block}
 .dagtitel{display:none;font-size:16px;font-weight:800;margin:6px 0 8px}
-.ramme{overflow-x:auto;border:1px solid var(--kant);border-radius:16px;background:rgba(255,255,255,.02)}
+.ramme{overflow:auto;max-height:calc(100vh - 16px);border:1px solid var(--kant);border-radius:16px;background:rgba(255,255,255,.02)}
 .gitter{display:grid;position:relative}
 .hj{position:sticky;top:0;z-index:3;background:#101B30;border-bottom:1px solid var(--kant);font-size:12px;font-weight:800;color:var(--is);padding:7px 6px;text-align:center;line-height:1.25}
 .hj small{display:block;font-size:10.5px;font-weight:700;color:var(--daempet)}
@@ -50,6 +50,11 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
 .felt .tr{color:var(--tekst2);margin-top:1px}
 .felt .nv{margin-top:3px;color:var(--kridt)}
 .felt .an{margin-top:3px;color:var(--daempet)}
+.felt b,.felt .t,.felt .tr,.felt .nv,.felt .an{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.felt.klippet{cursor:pointer;box-shadow:inset 0 -14px 10px -10px rgba(123,155,255,.55)}
+.felt.klippet::after{content:"⋯";position:absolute;right:6px;bottom:1px;font-weight:800;color:var(--is)}
+.felt{position:relative}
+.dagtryk{display:none}
 .dag{margin:18px 0 6px;display:flex;align-items:baseline;gap:8px}
 .dag b{font-size:15px;letter-spacing:.3px}
 .dag span{font-size:12px;color:var(--daempet)}
@@ -65,12 +70,13 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
 .besked{background:var(--kort);border:1px solid var(--kant);border-radius:16px;padding:16px;text-align:center;margin-top:20px}
 .fod{margin-top:30px;padding-top:12px;border-top:1px dashed var(--kant2);font-size:11.5px;color:var(--fod);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
 @media print{
-  @page{size:landscape;margin:10mm}
+  @page{margin:10mm}
   body{background:#fff !important;color:#111}
   .side{max-width:none;padding:0}
   .knapper,.faner{display:none !important}
-  .dagpanel{display:block !important;break-after:page}
-  .dagpanel:last-of-type{break-after:auto}
+  .dagpanel,.dagpanel.vis{display:none !important}
+  .dagtryk{display:block;break-before:page}
+  .dagtryk.foerst{break-before:auto}
   .dagtitel{display:block;color:#111}
   :root{--kol:60px}
   .ramme{overflow:visible;border-color:#bbb;background:#fff}
@@ -120,8 +126,8 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
   var tilstand = { d: 0, visning: "skema", sprog: "da" }, data = null;
   function O(){ return ORD[tilstand.sprog] || ORD.da; }
   function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  function param(navn){ var m = new RegExp("[#?&]" + navn + "=([^&]*)").exec(location.hash) || new RegExp("[?&]" + navn + "=([^&]*)").exec(location.search); return m ? decodeURIComponent(m[1]) : ""; }
-  function token(){ var t = param("k"); return /^[0-9a-fA-F]{24}$/.test(t) ? t.toLowerCase() : ""; }
+  function param(navn){ var m = new RegExp("[#?&]" + navn + "=([^&]*)").exec(location.hash) || new RegExp("[?&]" + navn + "=([^&]*)").exec(location.search); if (!m) return ""; try { return decodeURIComponent(m[1]); } catch (_e) { return m[1]; } }   /* v2.1 · et løst «%» (Codes P5) */
+  function token(){ var m = /^\s*([0-9a-fA-F]{24})/.exec(param("k")); return m ? m[1].toLowerCase() : ""; }   /* v2.1 · de første 24 hex, som v1 (Codes P5) */
   function minut(x){ var m = /^(\d{1,2}):(\d{2})/.exec(String(x || "")); return m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : null; }
   function hhmm(n){ return String(Math.floor(n / 60)).padStart(2, "0") + ":" + String(n % 60).padStart(2, "0"); }
   function baneNoegle(b){ var m = /^\s*(\d+)/.exec(String(b || "")); return m ? parseInt(m[1], 10) : 9999; }   /* «Badm. 5» og «Banen aftales» bagerst */
@@ -133,7 +139,7 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
   function baneKort(b){ return erBane(b) ? O().banekort + " " + b : String(b || ""); }
   function gemAdresse(){   /* linket kan deles med fanen og visningen — tokenet står forrest, som før */
     var k = token(); if (!k) return;
-    var h = "#k=" + k + (tilstand.d ? "&d=" + tilstand.d : "") + (tilstand.visning === "liste" ? "&v=liste" : "") + (tilstand.sprog === "en" ? "&l=en" : "");
+    var h = "#k=" + k + (tilstand.d && tilstand.dValgt ? "&d=" + tilstand.d : "") + (tilstand.visning === "liste" ? "&v=liste" : "") + (tilstand.sprog === "en" ? "&l=en" : "");
     try { history.replaceState(null, "", location.pathname + location.search + h); } catch (_e) {}
   }
   function besked(t){ app.innerHTML = '<div class="besked"><p class="lille" style="margin:0;font-size:14px;color:var(--kridt)">' + esc(t) + '</p></div>'; }
@@ -203,8 +209,10 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
     });
     return h;
   }
-  function tegn(){
+  function tegn(fraFane){
     var d = data, o = O();
+    var _fr = app.querySelector(".faner"), _ruller = { f: _fr ? _fr.scrollLeft : 0, r: {} };   /* v2.1 · Codes P6: rul og fokus overlever en gentegning */
+    Array.prototype.forEach.call(app.querySelectorAll(".dagpanel .ramme"), function(r){ var u = r.closest(".dagpanel").getAttribute("data-dag"); _ruller.r[u] = [r.scrollLeft, r.scrollTop]; });
     knapper();
     var h = '<div class="eyebrow">' + esc(o.eyebrow) + '</div><h1>' + esc(d.klub) + '</h1>';
     var pas = d.pas || [];
@@ -223,20 +231,42 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
       h += '<section class="dagpanel' + (u === tilstand.d ? ' vis' : '') + '" data-dag="' + u + '"><div class="dagtitel">' + esc(o.dage[u]) + ' · ' + pr[u].length + ' ' + (pr[u].length === 1 ? o.pas1 : o.pasN) + '</div>' +
         (tilstand.visning === "liste" ? listeFor(pr[u]) : skemaFor(pr[u])) + '</section>';
     });
+    dage.forEach(function(u, i){   /* v2.1 · Codes P1: papiret er listen — hver dag på en ny side, intet klippet */
+      h += '<section class="dagtryk' + (i === 0 ? ' foerst' : '') + '" data-dag="' + u + '"><div class="dagtitel">' + esc(d.klub) + ' · ' + esc(o.dage[u]) + ' · ' + pr[u].length + ' ' + (pr[u].length === 1 ? o.pas1 : o.pasN) + '</div>' + listeFor(pr[u]) + '</section>';
+    });
     app.innerHTML = h;
+    var _nf = app.querySelector(".faner");
+    if (_nf) {
+      _nf.scrollLeft = _ruller.f;
+      var _sel = _nf.querySelector('.fane[aria-selected="true"]');
+      if (_sel) { try { _sel.scrollIntoView({ block: "nearest", inline: "nearest" }); } catch (_e) {} if (fraFane) { try { _sel.focus({ preventScroll: true }); } catch (_e) {} } }
+      _nf.addEventListener("wheel", function(e){ if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && _nf.scrollWidth > _nf.clientWidth) { _nf.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+    }
+    Array.prototype.forEach.call(app.querySelectorAll(".dagpanel .ramme"), function(r){ var u = r.closest(".dagpanel").getAttribute("data-dag"); var g = _ruller.r[u]; if (g) { r.scrollLeft = g[0]; r.scrollTop = g[1]; } });
+    Array.prototype.forEach.call(app.querySelectorAll(".dagpanel.vis .felt"), function(f){   /* v2.1 · Codes P2: et kort, der ikke kan vise alt, siger det */
+      if (f.scrollHeight > f.clientHeight + 2 || Array.prototype.some.call(f.children, function(c){ return c.scrollWidth > c.clientWidth + 1; })) f.classList.add("klippet");
+    });
     if (d.opdateret) { var t = new Date(d.opdateret); document.getElementById("stempel").textContent = o.godkendt + " " + t.getDate() + "/" + (t.getMonth() + 1) + "-" + t.getFullYear(); }
     document.title = d.klub + " · " + o.eyebrow;
     gemAdresse();
   }
   app.addEventListener("click", function(e){
+    var kk = e.target.closest ? e.target.closest(".felt.klippet") : null;   /* v2.1 · Codes P2: et klippet kort åbner listen for dagen, som viser alt */
+    if (kk) { tilstand.visning = "liste"; tegn(); return; }
     var f = e.target.closest ? e.target.closest(".fane") : null; if (!f) return;
-    tilstand.d = parseInt(f.getAttribute("data-dag"), 10) || tilstand.d; tegn();
+    tilstand.d = parseInt(f.getAttribute("data-dag"), 10) || tilstand.d; tilstand.dValgt = true; tegn(true);
   });
   document.getElementById("vSkema").addEventListener("click", function(){ tilstand.visning = "skema"; if (data) tegn(); });
   document.getElementById("vListe").addEventListener("click", function(){ tilstand.visning = "liste"; if (data) tegn(); });
   document.getElementById("sprog").addEventListener("click", function(){ tilstand.sprog = tilstand.sprog === "en" ? "da" : "en"; if (data) tegn(); else { knapper(); gemAdresse(); } });
   document.getElementById("print").addEventListener("click", function(){ window.print(); });
-  tilstand.d = parseInt(param("d"), 10) || 0;
+  window.addEventListener("hashchange", function(){   /* v2.1 · Codes P9 */
+    if (token() !== (data && data.__k)) { location.reload(); return; }
+    var dd = parseInt(param("d"), 10) || 0; if (dd) { tilstand.d = dd; tilstand.dValgt = true; }
+    tilstand.visning = param("v") === "liste" ? "liste" : "skema"; tilstand.sprog = param("l") === "en" ? "en" : "da";
+    if (data) tegn();
+  });
+  tilstand.d = parseInt(param("d"), 10) || 0; tilstand.dValgt = !!tilstand.d;   /* v2.1 · Codes P4 */
   if (param("v") === "liste") tilstand.visning = "liste";
   if (param("l") === "en") tilstand.sprog = "en";
   knapper();
@@ -246,7 +276,7 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
   fetch(URL_VIS, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ handling: "vis", token: k }) })
     .then(function(r){ return r.json().then(function(d){ return { ok: r.ok, status: r.status, d: d }; }); })
     .then(function(x){
-      if (x.ok) { data = x.d; return tegn(); }
+      if (x.ok) { data = x.d; data.__k = k; return tegn(); }
       if (x.status === 404) return besked(O().ikke);
       besked(O().fejl.replace("{s}", x.status));
     })

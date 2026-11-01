@@ -1,13 +1,17 @@
-// StreakCoach · service worker · v6.24.2 (31/10-2026) — KUN beskeder.
+// StreakCoach · service worker · v6.24.3 (1/11-2026) — beskeder + siden selv uden net.
 //
-// ⭐ Ingen fetch-lytter. En service worker, der kun lytter efter beskeder, kan aldrig servere en gammel udgave af appen
-//   (beslutningen fra 29/8: «en SW, der kun lytter på push, kan aldrig servere en forældet app»).
+// ⭐ v6.24.3 · Codes N2: v6.24.2 havde ingen fetch-lytter og tog dermed offline-åbningen fra de telefoner, der havde den gennem rodens
+//   sw.js. Nu tager lytteren KUN navigationen til selve siden, og NETTET FØRST: er der net, er det altid den nyeste udgave, og kopien
+//   bruges kun, når nettet fejler. Data, motorer og billeder røres aldrig (beslutningen fra 29/8 står: en forældet app, når der er net,
+//   kan den ikke servere).
 // ⭐ Scope er /trainer-platform.html — ikke domænets rod. Derfor:
 //   · et tryk på en besked lander aldrig i et StreakTennis-vindue (Codes fund R3: rodens sw.js valgte det første vindue på domænet)
 //   · domænets forside lader registreringen være (fund R4: den afmelder alt, der ikke er /StreakTennis/ — eller denne side)
 // ⭐ Ruten er en lukket liste: #goer-nu og #aftale. Alt andet i en besked er data udefra og bliver til siden uden rute.
 
 const RUTER = ["#goer-nu", "#aftale"];
+
+const KOPI = "coach-side-v1";
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
@@ -50,5 +54,25 @@ self.addEventListener("notificationclick", (e) => {
     }
     if (self.clients.openWindow) return self.clients.openWindow(side + rute);
     return null;
+  })());
+});
+
+self.addEventListener("fetch", (e) => {
+  const q = e.request;
+  if (q.method !== "GET" || q.mode !== "navigate") return;            // kun selve siden — aldrig data, motorer eller billeder
+  let u; try { u = new URL(q.url); } catch (_e) { return; }
+  const vej = new URL(self.registration.scope).pathname;
+  if (u.origin !== self.location.origin || u.pathname !== vej) return;
+  const noegle = u.origin + u.pathname;                               // uden ?r= og #rute — én kopi af siden
+  e.respondWith((async () => {
+    try {
+      const r = await fetch(q);                                       // nettet først
+      if (r && r.ok) { try { const c = await caches.open(KOPI); await c.put(noegle, r.clone()); } catch (_c) {} }
+      return r;
+    } catch (fejl) {
+      const gl = await caches.match(noegle);                          // vores kopi — eller rodens sw.js' fra før v6.24.2
+      if (gl) return gl;
+      throw fejl;
+    }
   })());
 });

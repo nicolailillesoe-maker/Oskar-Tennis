@@ -655,6 +655,7 @@ async function tjekAdgang(){
   if (r.kendt === true && (r.rolle === "admin" || r.rolle === "traener") && S.minRolle !== r.rolle) {   /* ⭐ v6.24.2 · rollen opfriskes ved åbning */
     S.minRolle = r.rolle; try { lager.gem("minrolle", r.rolle); } catch (_e) {} try { render(); } catch (_e) {}
   }
+  if (S.ventRute) { var _vr = S.ventRute; S.ventRute = null; if (r.kendt === true && r.rolle === "admin" && coachRuteGaa(_vr)) { try { render(); } catch (_e) {} } }   /* ⭐ v6.24.3 */
   // ⛔⭐⭐ FANGET AF EN RØD REGRESSIONSPRØVE 31/8 (princip 76).
   //   Første udkast lukkede ned på `!r.kendt` — altså også på et svar,
   //   der slet ikke bar feltet. Et 200-svar fra en mellemstation, en
@@ -867,7 +868,7 @@ function hentTilmeldinger(){
       var _fpSrv = false;   /* ⭐ v6.21.0 · fokuspunkterne er klubbens: serverens liste pr. spiller er sandheden (Nicolai 23/10) */
       (S.truppen||[]).forEach(function(t3){
         var srv = t3.noegle && _prNoegle[t3.noegle]; if (!srv) return;
-        if (Array.isArray(srv.fokuspunkter)) { S.fokuspunkter = S.fokuspunkter || {}; S.fokuspunkter[t3.navn] = srv.fokuspunkter.slice(0, 10).map(String); _fpSrv = true; }   /* v6.21.0 */
+        if (Array.isArray(srv.fokuspunkter) && fpVent()[t3.navn] !== t3.noegle) { S.fokuspunkter = S.fokuspunkter || {}; S.fokuspunkter[t3.navn] = srv.fokuspunkter.slice(0, 10).map(String); _fpSrv = true; }   /* v6.21.0 */
         if (srv.fornavn) { S.srvNavne = S.srvNavne || {}; S.srvNavne[t3.noegle] = srv.fornavn; }
         var d3 = DATA.spillere[t3.navn]; if (!d3) return;
         var kr = Array.isArray(srv.kampresume) ? srv.kampresume : [];
@@ -894,12 +895,14 @@ function hentTilmeldinger(){
       //   det fulde navn»). Spilleren skriver det selv i StreakTennis; motoren
       //   udleverer det KUN til klubbens egen nøgle. Fejler kaldet, står de
       //   navne, vi havde — og træneren ser aldrig en tom skærm for det.
+      S.navneHenter = true;   /* ⭐ v6.24.3 · Codes M3: et ja venter, til de fulde navne er her */
       kontoKald("trup-navne", {}).then(function(r2){
-        if (!r2 || r2.fejl || !Array.isArray(r2.navne)) return;
+        S.navneHenter = false;
+        if (!r2 || r2.fejl || !Array.isArray(r2.navne)) { render(); return; }
         var fn = {};
         r2.navne.forEach(function(x){ if (x && x.haandtag && x.fuldt_navn) fn[x.haandtag] = String(x.fuldt_navn); });
-        S.fuldeNavne = fn; lager.gem("fuldenavne", fn); render();
-      }).catch(function(){});
+        S.fuldeNavne = fn; lager.gem("fuldenavne", fn); autoTrup(); render();   /* ⭐ v6.24.3 · kortene med de fulde navne */
+      }).catch(function(){ S.navneHenter = false; });
       S.tilmHentet = new Date().toISOString();
       // ⭐ v4.7.0 · tælles begge grupper. Før talte den kun 'afventer' og
       //   sagde «Ingen nye tilmeldinger ✓», mens en ny spiller stod i
@@ -1178,7 +1181,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.24.2 \u00b7 31. oktober 2026";
+const VERSION = "v6.24.3 \u00b7 1. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2226,6 +2229,8 @@ Object.assign(EN, {   /* ⭐ v6.24.0 · notifikationer · klubbens aftale */
   "blokeret på telefonen": "blocked on the phone",
   "kan ikke i denne browser": "not possible in this browser",
   "tjekker …": "checking …",
+  "Henter spillerens fokuspunkter fra klubben …": "Fetching the player's focus points from the club …",
+  "Henter de fulde navne — tryk igen om et øjeblik.": "Fetching the full names — tap again in a moment.",
   "kunne ikke hentes — åbn": "couldn't be fetched — open",
   "ikke registreret endnu": "not registered yet",
   "pilot · trin {n} · {n} aktive denne måned": "pilot · tier {n} · {n} active this month",
@@ -2253,7 +2258,7 @@ Object.assign(EN, {   /* ⭐ v6.24.0 · notifikationer · klubbens aftale */
   "kunne ikke tjekkes — åbn": "couldn't be checked — open",
   "Beskeder kræver iOS 16.4 eller nyere. Opdatér iPhonen under Indstillinger → Generelt → Softwareopdatering, og kom tilbage hertil.": "Notifications need iOS 16.4 or newer. Update the iPhone under Settings → General → Software Update, and come back here.",
   "Kunne ikke se, om beskeder er slået til på denne telefon.": "Couldn't see whether notifications are on for this phone.",
-  "Notifikationer er slået til på denne telefon ✓ En gammel tilmelding på en anden telefon blev fjernet.": "Notifications are on for this phone ✓ An old sign-up on another phone was removed.",
+  "Notifikationer er slået til på denne telefon ✓ En gammel tilmelding blev fjernet.": "Notifications are on for this phone ✓ An old sign-up was removed.",
   "trappen er ikke sat endnu": "the tier ladder isn't set yet",
   "pilot · trappen er ikke sat endnu": "pilot · the tier ladder isn't set yet",
   "Spillertrappen er ikke sat for klubben endnu. Skriv til os, så sætter vi den op.": "The club's tier ladder isn't set yet. Write to us, and we'll set it up.",
@@ -2912,17 +2917,22 @@ async function notifAfmeldStille(gammelKode){   /* ⭐ v6.24.2 · Codes fund U: 
   try {
     if (!notifKan()) return;
     var reg = await coachReg(false), sub = reg ? await reg.pushManager.getSubscription() : null;
-    if (!sub) return;
+    var _ep2 = sub ? sub.endpoint : notifGemtEp(); if (!_ep2) return;   /* ⭐ v6.24.3 · et tabt abonnement afmeldes med den gemte adresse */
     var kn = gammelKode || lager.hent("klubkode", "");
     if (kn) {
       var st = new AbortController(), ur = setTimeout(function(){ st.abort(); }, 4000);
-      try { await fetch(COACH_PUSH_URL, { method: "POST", headers: { "content-type": "application/json", "x-klub-noegle": kn }, body: JSON.stringify({ handling: "afmeld", endpoint: sub.endpoint }), signal: st.signal }); } catch (_f) {}
+      try { await fetch(COACH_PUSH_URL, { method: "POST", headers: { "content-type": "application/json", "x-klub-noegle": kn }, body: JSON.stringify({ handling: "afmeld", endpoint: _ep2 }), signal: st.signal }); } catch (_f) {}
       clearTimeout(ur);
     }
-    try { await sub.unsubscribe(); } catch (_u) {}
+    if (sub) { try { await sub.unsubscribe(); } catch (_u) {} }
+    notifGemEp("");
   } catch (_e) {}
   if (S.notif) S.notif.status = null;
+  var _nk = lager.hent("klubkode", "");
+  if (gammelKode && _nk && _nk !== gammelKode) { try { notifStatus(); } catch (_s) {} }   /* ⭐ v6.24.3 · Codes N10: klubskiftet — flisen måles igen */
 }
+function notifGemtEp(){ try { return String(localStorage.getItem("coach-notifep") || ""); } catch (_e) { return ""; } }   /* ⭐ v6.24.3 · kun denne telefon — aldrig i boksen */
+function notifGemEp(ep){ try { if (ep) localStorage.setItem("coach-notifep", ep); else localStorage.removeItem("coach-notifep"); } catch (_e) {} }
 async function notifStatus(){   /* ⭐ v6.24.0 · tilstanden på telefonen gøres synlig (98) — og serveren spørges, om netop denne telefon er med */
   S.notif = S.notif || {};
   if (notifIOSGammel()) { S.notif.status = "ios-gammel"; render(); return; }   /* ⭐ v6.24.2 · før hjemmeskærmen: under 16.4 hjælper den ikke */
@@ -2953,7 +2963,8 @@ async function notifTil(){
     var r = await coachKald(COACH_PUSH_URL, { handling: "tilmeld", abonnement: { endpoint: j.endpoint || sub.endpoint, keys: { p256dh: ks.p256dh || "", auth: ks.auth || "" } } });
     S.notif.arbejder = false;
     if (r && r.fejl) { S.notif.status = "fra"; S.notif.fejl = notifFejl(r); render(); return; }
-    S.notif.status = "til"; S.notif.besked = "Notifikationer er slået til på denne telefon ✓" + ((r && r.fjernet_gamle) ? " En gammel tilmelding på en anden telefon blev fjernet." : ""); render();   /* ⭐ v6.24.2 · coach-push v2 siger det (75) */
+    notifGemEp(j.endpoint || sub.endpoint);   /* ⭐ v6.24.3 */
+    S.notif.status = "til"; S.notif.besked = "Notifikationer er slået til på denne telefon ✓" + ((r && r.fjernet_gamle) ? " En gammel tilmelding blev fjernet." : ""); render();   /* ⭐ v6.24.2 · coach-push v2 siger det (75) */
   } catch (_e) { S.notif.arbejder = false; S.notif.status = "fra"; S.notif.fejl = "Telefonen kunne ikke slå notifikationer til — prøv igen."; render(); }
 }
 async function notifFra(){   /* kun DENNE telefon — de andre enheder røres ikke */
@@ -2963,10 +2974,12 @@ async function notifFra(){   /* kun DENNE telefon — de andre enheder røres ik
   try {
     var reg = await coachReg(false);
     var sub = reg ? await reg.pushManager.getSubscription() : null;
-    if (sub) {
-      var r = await coachKald(COACH_PUSH_URL, { handling: "afmeld", endpoint: sub.endpoint });
+    var _ep = sub ? sub.endpoint : notifGemtEp();   /* ⭐ v6.24.3 · Codes: «Slå fra» med et tabt abonnement sletter også telefonens gamle række */
+    if (_ep) {
+      var r = await coachKald(COACH_PUSH_URL, { handling: "afmeld", endpoint: _ep });
       if (r && r.fejl) { S.notif.arbejder = false; S.notif.fejl = notifFejl(r); render(); return; }
-      try { await sub.unsubscribe(); } catch (_u) {}
+      if (sub) { try { await sub.unsubscribe(); } catch (_u) {} }
+      notifGemEp("");
     }
     S.notif.arbejder = false; S.notif.status = "fra"; S.notif.besked = "Notifikationer er slået fra på denne telefon."; render();
   } catch (_e) { S.notif.arbejder = false; S.notif.fejl = "Telefonen kunne ikke slå notifikationer fra — prøv igen."; render(); }
@@ -3060,13 +3073,14 @@ window.__coachRute = function(sti){ if (coachRuteGaa(sti)) render(); };
 function coachRuteFraAdresse(){   /* ⭐ v6.24.2 · en kendt rute ryddes altid af adressen — også #aftale for en, der ikke er admin */
   var h = String(location.hash || "");
   if (h.indexOf("#goer-nu") < 0 && h.indexOf("#aftale") < 0) return;
-  coachRuteGaa(h);
+  if (!coachRuteGaa(h) && h.indexOf("#aftale") >= 0) S.ventRute = "#aftale";   /* ⭐ v6.24.3 · rollen kan være på vej fra min-status */
   try { history.replaceState(null, "", location.pathname + location.search); } catch (_e) {}
 }
+setInterval(function(){ try { fpSendIgen(); } catch (_e) {} }, 65000);   /* ⭐ v6.24.3 · Codes N4: køen prøves igen af sig selv */
 document.addEventListener("visibilitychange", function(){   /* ⭐ v6.24.2 · R2: appen, der kommer frem igen timer senere, spørger igen (højst hvert minut) */
   if (document.visibilityState !== "visible" || !lager.hent("klubkode", "")) return;
   try { nuHent(false); } catch (_e) {}
-  if (S.tab === "overblik") { try { prgHent("kladde"); } catch (_e) {} }
+  if (S.tab === "overblik" && Date.now() - (S.kladdeSidst || 0) >= 60000) { S.kladdeSidst = Date.now(); try { prgHent("kladde"); } catch (_e) {} }   /* ⭐ v6.24.3 · Codes N11 */
 });
 async function laesKald(krop) {   /* ⭐ v6.23.0 · samme dør som traening (trænernøglen) — et stort ark kan tage op til et minut */
   const kn = lager.hent("klubkode", "");
@@ -4556,6 +4570,39 @@ function koblSrvFp(h2){   /* ⭐ v6.24.2 · barnets liste, som hent-hold sidst s
   var p = (S.tilmeldinger || []).filter(function(x){ return x && x.haandtag === h2; })[0];
   return (p && Array.isArray(p.fokuspunkter)) ? p.fokuspunkter : null;
 }
+/* ⭐ v6.24.3 · Codes N3+N4: trænerens fokusliste, der endnu ikke har nået serveren (navn → håndtag). Den overlever en genindlæsning,
+   hent-hold skriver ikke barnets liste hen over den, og den sendes igen højst hvert minut, til serveren har svaret. */
+function fpVent(){ var o = lager.hent("fpvent", {}) || {}; return (o && typeof o === "object" && !Array.isArray(o)) ? o : {}; }
+function fpVentSaet(navn, h2){ var o = fpVent(); if (h2) o[navn] = h2; else delete o[navn]; lager.gem("fpvent", o); }
+function fpKendt(navn){   /* ⭐ v6.24.3 · Codes N5: kender vi barnets liste? Ukendt → et tryk må ikke erstatte den */
+  var h2 = (S.noegler || {})[navn]; if (!h2) return true;
+  if (fpVent()[navn] === h2) return true;
+  var srv = koblSrvFp(h2); if (!srv) return false;
+  S.fokuspunkter = S.fokuspunkter || {};
+  if (JSON.stringify(S.fokuspunkter[navn] || []) !== JSON.stringify(srv)) { S.fokuspunkter[navn] = srv.slice(0, 20); lager.gem("fokuspunkter", S.fokuspunkter); }
+  return true;
+}
+function fpSend(navn){   /* ⭐ v6.24.3 · Codes N4: et tryk på et fokuspunkt ligger i køen, til det er nået frem */
+  var h2 = (S.noegler || {})[navn]; if (!h2) return Promise.resolve({ ok: true });
+  var fn = navn.split(" ")[0];
+  fpVentSaet(navn, h2);
+  return Promise.resolve().then(function(){ return sendVurdering(navn, { stille: true, fokus: ((S.fokuspunkter || {})[navn] || []).slice(0, 10) }); }).then(function(r){
+    var lyk = !!r && !r.fejl, slut = lyk || koblVarig(r);
+    if (slut && fpVent()[navn] === h2) fpVentSaet(navn, null);
+    S.fpBesked = lyk ? { navn: navn, fejl: false, t: "Fokuspunkterne er sendt til " + fn + " ✓" }
+      : { navn: navn, fejl: true, t: slut ? "Fokuspunkterne til " + fn + " kunne ikke sendes: " + syncFejltekst(r) : "Fokuspunkterne til " + fn + " nåede ikke frem — appen prøver igen." };
+    render(); return { ok: lyk };
+  }, function(){ S.fpBesked = { navn: navn, fejl: true, t: "Fokuspunkterne til " + fn + " nåede ikke frem — appen prøver igen." }; render(); return { ok: false }; });
+}
+function fpSendIgen(){
+  if (S.fpSender || Date.now() - (S.fpSidst || 0) < 60000) return;
+  var o = fpVent(), koe = koblSendListe();
+  Object.keys(o).forEach(function(n2){ if ((S.noegler || {})[n2] !== o[n2]) fpVentSaet(n2, null); });   /* en slettet eller omkoblet post sender ikke */
+  var navne = Object.keys(fpVent()).filter(function(n2){ return !koe.some(function(e){ return e.navn === n2; }); });   /* koblingens kø sender selv */
+  if (!navne.length) return;
+  S.fpSender = true; S.fpSidst = Date.now();
+  navne.reduce(function(pr, n2){ return pr.then(function(){ return fpSend(n2); }); }, Promise.resolve()).then(function(){ S.fpSender = false; }, function(){ S.fpSender = false; });
+}
 function koblSend(navn){   /* ⭐ v6.23.0 · fund B · ⭐ v6.24.1 · fund F+G: køen husker barnet og trænerens EGNE fokuspunkter fra det øjeblik, der blev sagt ja */
   var h2 = (S.noegler || {})[navn]; if (!h2) return Promise.resolve({ ok: false });
   S.koblIgang = S.koblIgang || {};
@@ -4571,9 +4618,11 @@ function koblSend(navn){   /* ⭐ v6.23.0 · fund B · ⭐ v6.24.1 · fund F+G: 
   var srv = koblSrvFp(h2), egen = (S.fokuspunkter || {})[navn], opt = { stille: true };
   if (srv && srv.length) { S.fokuspunkter = S.fokuspunkter || {}; S.fokuspunkter[navn] = srv.slice(0, 20); lager.gem("fokuspunkter", S.fokuspunkter); }
   else if (srv && Array.isArray(egen) && egen.length) opt.fokus = egen.slice(0, 10);
+  if (opt.fokus) fpVentSaet(navn, h2);   /* ⭐ v6.24.3 · Codes N3 */
   return Promise.resolve().then(function(){ return sendVurdering(navn, opt); }).then(function(r){
     delete S.koblIgang[navn];
     var ok = !!r && !r.fejl, varig = !ok && koblVarig(r);
+    if ((ok || varig) && opt.fokus && fpVent()[navn] === h2) fpVentSaet(navn, null);   /* ⭐ v6.24.3 · Codes N3: nået frem — eller kan ikke */
     if (ok || varig) koblSendGem(koblSendListe().filter(function(x){ return !(x.navn === navn && x.h === h2); }));   /* ⭐ fund H2: en varig fejl prøves ikke igen og igen */
     return { ok: ok, varig: varig, r: r };
   }, function(){ delete S.koblIgang[navn]; return { ok: false }; });
@@ -4617,6 +4666,7 @@ function autoTrup(){   /* v6.10.0 · #89 · ⭐ v6.23.0 · Codes fund A: et ja k
   spm.sort(function(a, b){ return S.koblOrden.indexOf(a.h) - S.koblOrden.indexOf(b.h); });
   S.koblSpm = spm;
   try { koblSendIgen(); } catch (_e) {}
+  try { fpSendIgen(); } catch (_e) {}   /* ⭐ v6.24.3 · Codes N4 */
   if (!nye.length) return;
   lager.gem("truppen", S.truppen); lager.gem("noegler", S.noegler);
   byggTrup();
@@ -5603,6 +5653,7 @@ function spillerDetalje(navn){
   // — og klubbens andre trænere kan se dem." Det løser samtidig Carstens eget
   // spørgsmål: hvorfor gav jeg 3-4, når spilleren selv gav 7-8? Står fokus på
   // forhånd, forklarer vurderingen halvvejs sig selv.
+  const _fpKendt = fpKendt(navn);   /* ⭐ v6.24.3 · Codes N5: barnets liste, før den vises */
   const mine = S.fokuspunkter[navn] || [];
   const alle = Object.entries(KATEGORIER);
   const navnPaa = id => { for (const [,liste] of alle) { const k = liste.find(x=>x.id===id); if (k) return k.navn; } return id; };
@@ -5610,12 +5661,14 @@ function spillerDetalje(navn){
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🎯 FOKUSPUNKTER<div class="lille fp-klub-note" style="letter-spacing:0;font-weight:400;margin-top:2px">Klubbens — alle klubbens trænere ser dem.</div></div>' +   /* v6.21.0 */
       '<button class="knap valg" style="flex:none;padding:5px 11px;font-size:11px" data-act="fp-aabn" data-v="'+esc(navn)+'">' +
-      (S.fpAaben===navn ? 'Færdig' : (mine.length ? 'Ret' : 'Vælg')) + '</button></div>';
+      (S.fpAaben===navn ? 'Færdig' : (mine.length ? 'Ret' : 'Vælg')) + '</button></div>' +
+    ((S.fpBesked && S.fpBesked.navn === navn) ? '<p class="lille" data-fp-besked="1" style="margin:6px 0 0;color:' + (S.fpBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.fpBesked.t) + '</p>' : '');   /* ⭐ v6.24.3 · beskeden står, hvor fingeren er */
   if (S.fpAaben !== navn) {
     h += mine.length
       ? '<div class="flise-grid">' +
         mine.map(id => '<span class="flise-valg til" style="cursor:default">'+esc(navnPaa(id))+'</span>').join('') + '</div>'
-      : '<p class="lille" style="margin:6px 0 0">Ingen valgt endnu. Vælg op til tre — de følger spilleren, hvis træneren skifter.</p>';
+      : (_fpKendt ? '<p class="lille" style="margin:6px 0 0">Ingen valgt endnu. Vælg op til tre — de følger spilleren, hvis træneren skifter.</p>'
+                  : '<p class="lille" style="margin:6px 0 0" data-fp-henter="1">Henter spillerens fokuspunkter fra klubben …</p>');
   } else {
     alle.forEach(([omr, liste]) => {
       const o = UGEOMRAADER.find(x=>x.id===omr);
@@ -5951,9 +6004,10 @@ document.addEventListener("click", function(e){
   else if (act==="fp-aabn"){ S.fpAaben = (S.fpAaben === v ? null : v); render(); }
   else if (act==="fp-slaa"){
     const sp = t.dataset.sp;
+    if (!fpKendt(sp)) { if (!S.tilmHenter) hentTilmeldinger(); S.fpBesked = { navn: sp, fejl: true, t: "Henter " + sp.split(" ")[0] + "s fokuspunkter fra klubben — tryk igen om et øjeblik." }; render(); return; }   /* ⭐ v6.24.3 · Codes N5 */
     const nu = S.fokuspunkter[sp] || [];
     S.fokuspunkter[sp] = nu.includes(v) ? nu.filter(x => x !== v) : nu.concat([v]);
-    lager.gem("fokuspunkter", S.fokuspunkter); render(); sendVurdering(sp, { fokus: S.fokuspunkter[sp] || [] }); }   /* ⭐ v6.24.2 · H3: trykket ER viljen */
+    if ((S.noegler || {})[sp]) fpVentSaet(sp, S.noegler[sp]); lager.gem("fokuspunkter", S.fokuspunkter); render(); fpSend(sp); }   /* ⭐ v6.24.2 · H3: trykket ER viljen · ⭐ v6.24.3 · N4: ventende før gentegningen, og et tryk, der ikke nåede frem, prøves igen */
   // ══ v6.0.0 · PROGRAMMET ═══════════════════════════════════════════════
   // ══ v6.3.0 · PROGRAM SOM FLISER + IMPORTEN ═══════════════════════════════
   // ══ v6.8.0 · INDSTILLINGER SOM FLISER ═══════════════════════════════════
@@ -6044,6 +6098,7 @@ document.addEventListener("click", function(e){
       if (S.imp.lagt) { try { prgHent("kladde", true); } catch (_e) {} } }); }
   else if (act==="kobl-ja" || act==="kobl-ny"){   /* ⭐ v6.23.0 · Codes fund A: trænerens ord kobler — og kun det · ⭐ v6.24.1 · fund K+L: knappen bærer barnets håndtag, og intet forsvinder uden et ord */
     if (Date.now() < (S.koblLaas || 0)) { S.koblBesked = { fejl: true, t: "Kortene flyttede sig — se efter, og tryk igen." }; render(); return; }   /* 35: knappen svarer */
+    if (act === "kobl-ja" && S.navneHenter) { S.koblBesked = { fejl: true, t: "Henter de fulde navne — tryk igen om et øjeblik." }; render(); return; }   /* ⭐ v6.24.3 · Codes M3 */
     var _kv = String(v || "").split(":"), _kh = _kv[0], _ks = (S.koblSpm || []).filter(function(k){ return k.h === _kh; })[0];
     if (!_ks) { S.koblBesked = { fejl: true, t: "Kortet er allerede besvaret — se truppen herunder." }; autoTrup(); render(); return; }
     var _kp = (S.tilmeldinger || []).filter(function(x){ return x.haandtag === _ks.h && x.status === "godkendt"; })[0];
@@ -6054,7 +6109,9 @@ document.addEventListener("click", function(e){
     S.noegler = S.noegler || {};
     if (act === "kobl-ja") {
       var _kn = _ks.kand[+_kv[1]], _ke = (S.truppen || []).filter(function(x){ return x && x.navn === _kn && !x.noegle; })[0];
-      if (koblKandidater(_ks.fornavn, (S.fuldeNavne || {})[_ks.h]).indexOf(_kn) < 0) { S.koblBesked = { fejl: true, t: "Kortet ændrede sig — se efter, og tryk igen." }; autoTrup(); render(); return; }   /* ⭐ v6.24.2 · Codes fund M3 */
+      if (koblKandidater(_ks.fornavn, (S.fuldeNavne || {})[_ks.h]).indexOf(_kn) < 0) { autoTrup();   /* ⭐ v6.24.3 · Codes N9 */
+        S.koblBesked = (S.koblSpm || []).some(function(k){ return k.h === _kh; }) ? { fejl: true, t: "Kortet ændrede sig — se efter, og tryk igen." } : { fejl: true, t: "Kortet ændrede sig, så intet er koblet til «" + _kn + "»." };
+        render(); return; }   /* ⭐ v6.24.2 · Codes fund M3 */
       if (!_ke) { S.koblBesked = { fejl: true, t: "«" + _kn + "» er ikke længere ukoblet i truppen — intet er koblet." }; autoTrup(); render(); return; }
       _ke.noegle = _ks.h; S.noegler[_kn] = _ks.h; koblEkstraFra(_ks.h);
       lager.gem("truppen", S.truppen); lager.gem("noegler", S.noegler); byggTrup();

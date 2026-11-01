@@ -36,7 +36,7 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
 .dagpanel{display:none}
 .dagpanel.vis{display:block}
 .dagtitel{display:none;font-size:16px;font-weight:800;margin:6px 0 8px}
-.ramme{overflow:auto;max-height:calc(100vh - 16px);border:1px solid var(--kant);border-radius:16px;background:rgba(255,255,255,.02)}
+.ramme{overflow:auto;overscroll-behavior:contain;max-height:calc(100vh - 16px);border:1px solid var(--kant);border-radius:16px;background:rgba(255,255,255,.02)}
 .gitter{display:grid;position:relative}
 .hj{position:sticky;top:0;z-index:3;background:#101B30;border-bottom:1px solid var(--kant);font-size:12px;font-weight:800;color:var(--is);padding:7px 6px;text-align:center;line-height:1.25}
 .hj small{display:block;font-size:10.5px;font-weight:700;color:var(--daempet)}
@@ -50,7 +50,9 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
 .felt .tr{color:var(--tekst2);margin-top:1px}
 .felt .nv{margin-top:3px;color:var(--kridt)}
 .felt .an{margin-top:3px;color:var(--daempet)}
-.felt b,.felt .t,.felt .tr,.felt .nv,.felt .an{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.felt b,.felt .t,.felt .tr{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.felt.klippet:focus-visible{outline:2px solid var(--is);outline-offset:1px}
+.pas.valgt{outline:2px solid var(--is);outline-offset:2px}
 .felt.klippet{cursor:pointer;box-shadow:inset 0 -14px 10px -10px rgba(123,155,255,.55)}
 .felt.klippet::after{content:"⋯";position:absolute;right:6px;bottom:1px;font-weight:800;color:var(--is)}
 .felt{position:relative}
@@ -204,10 +206,24 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
     var o = O(), h = '';
     liste.forEach(function(p){
       var tr = [p.traener, p.traener2].filter(Boolean).join(" & ");
-      h += '<div class="pas"><div class="tid">' + esc(p.start) + '–' + esc(p.slut) + '<small>' + esc(baneKort(p.bane)) + '</small></div><div class="om">' +
+      h += '<div class="pas" data-start="' + esc(p.start) + '" data-bane="' + esc(p.bane) + '"><div class="tid">' + esc(p.start) + '–' + esc(p.slut) + '<small>' + esc(baneKort(p.bane)) + '</small></div><div class="om">' +
         '<b>' + esc(p.titel || o.traening) + '</b>' + (tr ? '<div class="tr">' + esc(tr) + '</div>' : '') + navneEllerAntal(p, false) + '</div></div>';
     });
     return h;
+  }
+  function maerkKlippet(){   /* v2.2 · Codes N14: regnes ved hver tegning OG når bredden ændrer sig */
+    Array.prototype.forEach.call(app.querySelectorAll(".dagpanel.vis .felt"), function(f){
+      var k = f.scrollHeight > f.clientHeight + 2 || Array.prototype.some.call(f.children, function(c){ return c.scrollWidth > c.clientWidth + 1; });
+      f.classList.toggle("klippet", k);
+      if (k) { f.setAttribute("tabindex", "0"); f.setAttribute("role", "button"); } else { f.removeAttribute("tabindex"); f.removeAttribute("role"); }
+    });
+  }
+  function aabnListe(kk){   /* v2.2 · Codes N6: listen åbner ved det pas, der blev trykket på — og flytter kun sin egen side */
+    var st = kk.getAttribute("data-start"), ba = kk.getAttribute("data-bane");
+    tilstand.visning = "liste"; tegn();
+    var m = null;
+    Array.prototype.forEach.call(app.querySelectorAll(".dagpanel.vis .pas"), function(p){ if (!m && p.getAttribute("data-start") === st && p.getAttribute("data-bane") === ba) m = p; });
+    if (m) { m.classList.add("valgt"); try { window.scrollTo(0, Math.max(0, m.getBoundingClientRect().top + (window.pageYOffset || 0) - 12)); } catch (_e) {} }
   }
   function tegn(fraFane){
     var d = data, o = O();
@@ -222,6 +238,7 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
     Object.keys(pr).forEach(function(u){ pr[u].sort(function(a, b){ return String(a.start).localeCompare(String(b.start)) || (baneNoegle(a.bane) - baneNoegle(b.bane)) || String(a.bane).localeCompare(String(b.bane), "da", { numeric: true }); }); });
     var dage = []; for (var u = 1; u <= 7; u++) if (pr[u] && pr[u].length) dage.push(u);
     if (dage.indexOf(tilstand.d) < 0) {   /* i dag, hvis klubben træner i dag — ellers første dag med pas */
+      tilstand.dValgt = false;   /* v2.2 · Codes N15a */
       var idag = (new Date().getDay() + 6) % 7 + 1;
       tilstand.d = dage.indexOf(idag) >= 0 ? idag : dage[0];
     }
@@ -239,20 +256,27 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
     if (_nf) {
       _nf.scrollLeft = _ruller.f;
       var _sel = _nf.querySelector('.fane[aria-selected="true"]');
-      if (_sel) { try { _sel.scrollIntoView({ block: "nearest", inline: "nearest" }); } catch (_e) {} if (fraFane) { try { _sel.focus({ preventScroll: true }); } catch (_e) {} } }
-      _nf.addEventListener("wheel", function(e){ if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && _nf.scrollWidth > _nf.clientWidth) { _nf.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+      if (_sel) {   /* v2.2 · Codes N1: kun rækkens egen scrollLeft — klubbens side og iframen rører sig ikke */
+        var _rs = _sel.getBoundingClientRect(), _rn = _nf.getBoundingClientRect();
+        if (_rs.left < _rn.left) _nf.scrollLeft -= (_rn.left - _rs.left); else if (_rs.right > _rn.right) _nf.scrollLeft += (_rs.right - _rn.right);
+        if (fraFane) { try { _sel.focus({ preventScroll: true }); } catch (_e) {} }
+      }
+      _nf.addEventListener("wheel", function(e){   /* v2.2 · Codes N13 */
+        if (e.ctrlKey || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+        var _max = _nf.scrollWidth - _nf.clientWidth; if (_max <= 0) return;
+        var _ny = Math.max(0, Math.min(_max, _nf.scrollLeft + e.deltaY)); if (_ny === _nf.scrollLeft) return;
+        _nf.scrollLeft = _ny; e.preventDefault();
+      }, { passive: false });
     }
     Array.prototype.forEach.call(app.querySelectorAll(".dagpanel .ramme"), function(r){ var u = r.closest(".dagpanel").getAttribute("data-dag"); var g = _ruller.r[u]; if (g) { r.scrollLeft = g[0]; r.scrollTop = g[1]; } });
-    Array.prototype.forEach.call(app.querySelectorAll(".dagpanel.vis .felt"), function(f){   /* v2.1 · Codes P2: et kort, der ikke kan vise alt, siger det */
-      if (f.scrollHeight > f.clientHeight + 2 || Array.prototype.some.call(f.children, function(c){ return c.scrollWidth > c.clientWidth + 1; })) f.classList.add("klippet");
-    });
+    maerkKlippet();   /* v2.1 · Codes P2: et kort, der ikke kan vise alt, siger det (v2.2: også efter en ny bredde) */
     if (d.opdateret) { var t = new Date(d.opdateret); document.getElementById("stempel").textContent = o.godkendt + " " + t.getDate() + "/" + (t.getMonth() + 1) + "-" + t.getFullYear(); }
     document.title = d.klub + " · " + o.eyebrow;
     gemAdresse();
   }
   app.addEventListener("click", function(e){
     var kk = e.target.closest ? e.target.closest(".felt.klippet") : null;   /* v2.1 · Codes P2: et klippet kort åbner listen for dagen, som viser alt */
-    if (kk) { tilstand.visning = "liste"; tegn(); return; }
+    if (kk) { aabnListe(kk); return; }
     var f = e.target.closest ? e.target.closest(".fane") : null; if (!f) return;
     tilstand.d = parseInt(f.getAttribute("data-dag"), 10) || tilstand.d; tilstand.dValgt = true; tegn(true);
   });
@@ -260,9 +284,16 @@ h1{font-size:22px;margin:0 0 2px;font-weight:800}
   document.getElementById("vListe").addEventListener("click", function(){ tilstand.visning = "liste"; if (data) tegn(); });
   document.getElementById("sprog").addEventListener("click", function(){ tilstand.sprog = tilstand.sprog === "en" ? "da" : "en"; if (data) tegn(); else { knapper(); gemAdresse(); } });
   document.getElementById("print").addEventListener("click", function(){ window.print(); });
+  app.addEventListener("keydown", function(e){   /* v2.2 · Codes N14 */
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var kk = e.target.closest ? e.target.closest(".felt.klippet") : null; if (!kk) return;
+    e.preventDefault(); aabnListe(kk);
+  });
+  var _klipUr = null;
+  window.addEventListener("resize", function(){ clearTimeout(_klipUr); _klipUr = setTimeout(function(){ if (data && tilstand.visning !== "liste") maerkKlippet(); }, 150); });
   window.addEventListener("hashchange", function(){   /* v2.1 · Codes P9 */
-    if (token() !== (data && data.__k)) { location.reload(); return; }
-    var dd = parseInt(param("d"), 10) || 0; if (dd) { tilstand.d = dd; tilstand.dValgt = true; }
+    if (token() !== (data ? data.__k : k)) { location.reload(); return; }   /* v2.2 · Codes N15c: k er det token, der hentes */
+    var dd = parseInt(param("d"), 10) || 0; tilstand.d = dd; tilstand.dValgt = !!dd;   /* v2.2 · Codes N15b */
     tilstand.visning = param("v") === "liste" ? "liste" : "skema"; tilstand.sprog = param("l") === "en" ? "en" : "da";
     if (data) tegn();
   });

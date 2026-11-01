@@ -269,6 +269,8 @@ body{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .reg-rk{padding:10px 0;border-top:1px solid var(--kant)}
 .reg-rk:first-of-type{border-top:none}
 .reg-rk .reg-top{display:flex;align-items:center;gap:9px}
+.reg-fokus{margin:6px 0 2px}
+.reg-fp-knap{display:block;width:100%;text-align:left;background:none;border:1px dashed var(--kant);border-radius:10px;color:var(--is);font-size:12px;padding:5px 9px;cursor:pointer}
 .reg-rk .nv{flex:1;font-size:14px;font-weight:700}
 .reg-rk .reg-vaek{flex:none;width:34px;height:34px;border-radius:10px;border:1.5px solid var(--kant);background:transparent;color:var(--daempet);font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .reg-rk.nej .nv{color:var(--daempet)}
@@ -1185,7 +1187,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.24.4 \u00b7 1. november 2026";
+const VERSION = "v6.25.0 \u00b7 1. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2233,6 +2235,10 @@ Object.assign(EN, {   /* ⭐ v6.24.0 · notifikationer · klubbens aftale */
   "blokeret på telefonen": "blocked on the phone",
   "kan ikke i denne browser": "not possible in this browser",
   "tjekker …": "checking …",
+  "Ingen fokus endnu — vælg op til tre": "No focus yet — choose up to three",
+  "🎯 Ingen fokus endnu — vælg op til tre": "🎯 No focus yet — choose up to three",
+  "🎯 Henter fokuspunkterne …": "🎯 Fetching the focus points …",
+  "Ingen i gruppen er på StreakTennis endnu — kun spillere på StreakTennis vurderes.": "No one in the group is on StreakTennis yet — only players on StreakTennis are rated.",
   "Henter spillerens fokuspunkter fra klubben …": "Fetching the player's focus points from the club …",
   "Henter de fulde navne — tryk igen om et øjeblik.": "Fetching the full names — tap again in a moment.",
   "Fokuspunkterne er sendt til {x} ✓": "The focus points were sent to {x} ✓",
@@ -3572,6 +3578,23 @@ function vurdFejltekst(r){   /* princip 94: «ingen forbindelse» siges KUN om n
   if (r.fejl === "validering") return "afvist af vagten: " + ((((r.detaljer || [])[0]) || {}).grund || "");
   return "serveren sagde nej (" + (r.fejl || "?") + (r.status ? " " + r.status : "") + ")";
 }
+function regFokusLinje(navn){   /* ⭐ v6.25.0 · trin 1 · fokuspunkterne står, hvor karakteren gives */
+  var kendt = fpKendt(navn), mine = (S.fokuspunkter || {})[navn] || [], aaben = S.fpAaben === navn;
+  var navnPaa = function(id){ for (var k in KATEGORIER) { var x = (KATEGORIER[k] || []).filter(function(y){ return y.id === id; })[0]; if (x) return x.navn; } return id; };
+  var h = '<div class="reg-fokus" data-reg-fokus="' + esc(navn) + '">';
+  if (!kendt) h += '<span class="lille">🎯 Henter fokuspunkterne …</span>';
+  else h += '<button class="reg-fp-knap" data-act="fp-aabn" data-v="' + esc(navn) + '">🎯 ' + (mine.length ? mine.slice(0, 3).map(function(id){ return esc(navnPaa(id)); }).join(' · ') + (mine.length > 3 ? ' +' + (mine.length - 3) : '') : 'Ingen fokus endnu — vælg op til tre') + '</button>';
+  if (aaben && kendt) {
+    Object.keys(KATEGORIER).forEach(function(omr){
+      var o = UGEOMRAADER.filter(function(x){ return x.id === omr; })[0] || { ikon: "", navn: omr };
+      h += '<div class="flise-omr">' + o.ikon + ' ' + o.navn + '</div><div class="flise-grid">' +
+        (KATEGORIER[omr] || []).map(function(k){ return '<button class="flise-valg' + (mine.indexOf(k.id) >= 0 ? ' til' : '') + '" data-act="fp-slaa" data-sp="' + esc(navn) + '" data-v="' + k.id + '">' + esc(k.navn) + '</button>'; }).join('') + '</div>';
+    });
+    h += '<button class="knap valg" style="width:100%;margin-top:8px" data-act="fp-aabn" data-v="' + esc(navn) + '">Færdig</button>';
+  }
+  if (S.fpBesked && S.fpBesked.navn === navn) h += '<p class="lille" data-fp-besked="1" style="margin:4px 0 0;color:' + (S.fpBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.fpBesked.t) + '</p>';
+  return h + '</div>';
+}
 function regDeltagerePas(p){   /* v6.5.0 · rækkerne fra et pas: nøglen er håndtaget */
   return (p.deltagere || []).map(function(d){ return { k: d.h, h: d.h, navn: navnFor(d.h, d.fornavn), fornavn: d.fornavn }; });
 }
@@ -3654,6 +3677,8 @@ function traenerRegistrer(t){
   if (r.trin === 2 && r.deltagere) {
     /* en farve = mødt + score · ✗ = ikke mødt · ingen farve = mødt uden score (den billige vej bliver billig, princip 41) */
     var p = r.pas, alle = r.deltagere, erPas = r.kilde !== "gruppe";
+    var _udenApp = erPas ? 0 : alle.filter(function(d){ return !d.h; }).length;   /* ⭐ v6.25.0 · Nicolai 1/11: «Kun dem som er skal vurderes.» */
+    if (!erPas) alle = alle.filter(function(d){ return !!d.h; });
     var antal = alle.filter(function(d){ return r.moedt[d.k]; }).length;
     var vurd = alle.filter(function(d){ return r.moedt[d.k] && r.score[d.k]; }).length, uf2 = ugensFokus();
     h += '<div class="kort" style="padding:11px 14px"><div style="display:flex;justify-content:space-between;align-items:center">';
@@ -3664,11 +3689,13 @@ function traenerRegistrer(t){
     h += '<p class="lille" style="margin:8px 0 0">' + '<span>' + (uf2 ? 'Scores kobles til ugens fokus: ' + UGEOMRAADER.filter(function(o){ return o.id === uf2; }).map(function(o){ return o.ikon + ' ' + (SPROG === "en" ? T(o.navn) : o.navn.toLowerCase()); })[0] : 'Ugens fokus er ikke valgt') + '</span> · <span data-act="vurder-omraade" data-v="__fokus" style="color:var(--guld);cursor:pointer;font-weight:700">skift</span></p>';
     h += '</div>';
     h += '<div class="kort">';
-    if (!alle.length) h += '<p class="lille">' + (erPas ? 'Ingen spillere på passet — læg dem på under PROGRAM og godkend igen.' : 'Ingen spillere i gruppen — læg dem i under GRUPPER.') + '</p>';
+    if (!alle.length) h += '<p class="lille">' + (erPas ? 'Ingen spillere på passet — læg dem på under PROGRAM og godkend igen.' : (_udenApp ? 'Ingen i gruppen er på StreakTennis endnu — kun spillere på StreakTennis vurderes.' : 'Ingen spillere i gruppen — læg dem i under GRUPPER.')) + '</p>';
     alle.forEach(function(d){
-      var ja = !!r.moedt[d.k], kan = erPas ? !!regTrupNavn(d.h) : true, valgt = r.score[d.k];
+      var ja = !!r.moedt[d.k], kan = erPas ? !!regTrupNavn(d.h) : !!d.h, valgt = r.score[d.k];
+      var _fn = erPas ? regTrupNavn(d.h) : (d.h ? d.navn : null);   /* ⭐ v6.25.0 · navnet, fokuspunkterne bor på */
       h += '<div class="reg-rk ' + (ja ? 'ja' : 'nej') + '" data-h="' + esc(d.k) + '"><div class="reg-top"><div class="nv"><span class="reg-navn">' + esc(d.navn) + '</span>' + (ja ? '' : ' <span class="lille">· ikke mødt</span>') + '</div>' +
         '<button class="reg-vaek" data-act="reg-slaa" data-v="' + esc(d.k) + '" aria-label="' + (ja ? 'ikke mødt' : 'mødt alligevel') + '">' + (ja ? '✗' : '↩') + '</button></div>';
+      if (_fn) h += regFokusLinje(_fn);   /* ⭐ v6.25.0 · trin 1 */
       if (ja && kan) {
         h += '<div class="reg-dots">';
         KONFIG.farveskala.forEach(function(b){
@@ -3680,6 +3707,7 @@ function traenerRegistrer(t){
       h += '</div>';
     });
     h += '</div>';
+    if (_udenApp && alle.length) h += '<p class="lille" data-reg-uden-app="1" style="margin:0 0 8px">' + _udenApp + (_udenApp === 1 ? ' spiller' : ' spillere') + ' i gruppen er ikke på StreakTennis endnu — kun spillere på StreakTennis vurderes.</p>';   /* 75: dem, der ikke står her, siges højt */
     if (r.fejl) h += '<p class="lille" style="color:var(--tabt);margin:0 0 8px">' + esc(r.fejl) + '</p>';
     h += '<button class="knap stor gron"' + (r.sender || !alle.length ? ' disabled' : '') + ' data-act="reg-send">' + (r.sender ? '⏳ gemmer …' : '✓ Gem · ' + antal + ' mødt · ' + vurd + ' vurderet') + '</button>';
     h += '<p class="lille" style="text-align:center;margin-top:8px">' + (erPas ? 'Én farve pr. spiller = mødt og vurderet. ✗ = ikke mødt. Ingen farve = mødt uden score. Passet skrives i spillernes træningslog og tæller i streaken.' : 'Én farve pr. spiller = vurderet. ✗ = ikke mødt. Scores gemmes hos spillerne — læg passet i PROGRAM, så tæller fremmødet også i deres streak.') + '</p>';
@@ -5457,7 +5485,7 @@ function traenerGrupper(t){
       const kanFlyttes = egenTrup && (S.truppen||[]).some(function(p){ return p.navn === s.navn; });
       h += '<div class="spiller-rk" data-act="spiller-detalje" data-v="'+esc(s.navn)+'">' +
         '<div class="avatar" style="width:32px;height:32px;font-size:13px;'+(s.erBruger?'background:var(--is);color:var(--nat)':'')+'">'+init(s.navn)+'</div>' +
-        '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">'+esc(s.navn)+(s.erBruger?' ⭐':'')+'</div>' +
+        '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">'+esc(s.navn)+(s.erBruger?' ⭐':'')+((S.noegler||{})[s.navn]?' <span data-st-maerke="1" title="På StreakTennis">🎾</span>':'')+'</div>' +
         (fuldtNavnFor(s.navn) ? '<div class="lille" style="color:var(--is)">'+esc(fuldtNavnFor(s.navn))+'</div>' : '') +   /* ⭐ v5.2.0 */
         '<div class="lille">'+(s.rang?'DTF #'+s.rang+' · ':'')+s.kampe+(s.kampe===1?' kamp':' kampe')+' · sidst: '+s.sidsteTraening+'</div></div>' +
         '<div style="display:flex;align-items:center;gap:6px"><span style="width:11px;height:11px;border-radius:50%;background:'+b.farve+';display:inline-block"></span><b style="font-size:13px">'+sn.toFixed(1)+'</b></div>' +
@@ -5688,9 +5716,15 @@ function spillerDetalje(navn){
   // spørgsmål: hvorfor gav jeg 3-4, når spilleren selv gav 7-8? Står fokus på
   // forhånd, forklarer vurderingen halvvejs sig selv.
   const _fpKendt = fpKendt(navn);   /* ⭐ v6.24.3 · Codes N5: barnets liste, før den vises */
+  const _harApp = !!(S.noegler || {})[navn];   /* ⭐ v6.25.0 · fokuspunkter følger spillere på StreakTennis */
   const mine = S.fokuspunkter[navn] || [];
   const alle = Object.entries(KATEGORIER);
   const navnPaa = id => { for (const [,liste] of alle) { const k = liste.find(x=>x.id===id); if (k) return k.navn; } return id; };
+  if (!_harApp) {   /* ⭐ v6.25.0 · Nicolai 1/11: et barn uden app får ingen karakterer og ingen fokuspunkter — boksens gamle liste slettes ikke */
+    var _fnu = esc(navn.split(" ")[0]);
+    h += '<div class="kort" style="--tone:var(--is)" data-fp-uden-app="1"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🎯 FOKUSPUNKTER</div>' +
+      '<p class="lille" style="margin:6px 0 0">Fokuspunkter følger spillere på StreakTennis. ' + _fnu + ' er ikke på StreakTennis endnu.' + (mine.length ? ' ' + mine.length + (mine.length === 1 ? ' tidligere valgt ligger' : ' tidligere valgte ligger') + ' i din boks og rejser med, når ' + _fnu + ' kommer på.' : '') + '</p></div>';
+  } else {
   h += '<div class="kort" style="--tone:var(--is)">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
       '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🎯 FOKUSPUNKTER<div class="lille fp-klub-note" style="letter-spacing:0;font-weight:400;margin-top:2px">Klubbens — alle klubbens trænere ser dem.</div></div>' +   /* v6.21.0 */
@@ -5719,6 +5753,7 @@ function spillerDetalje(navn){
         : mine.length + ' af 3 valgt \u00b7 faste valg, ingen fritekst \u2014 hurtigere p\u00e5 banen, og analysen kan regne p\u00e5 dem.') + '</p>';
   }
   h += '</div>';
+  }   /* ⭐ v6.25.0 · slut på kortet for en spiller på StreakTennis */
   h += faellesLag(s);
   // Vurdering pr. område (score + tekst)
   h += '<div class="kort"><h3>📋 Seneste vurdering pr. område</h3>';

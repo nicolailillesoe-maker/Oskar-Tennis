@@ -518,6 +518,7 @@ function boksLaegInd(t, stempel){
   BOKS_TING.forEach(function(n){ try { if (t[n] === null || t[n] === undefined) localStorage.removeItem("tp-" + n); else localStorage.setItem("tp-" + n, JSON.stringify(t[n])); } catch (_e) {} });
   try { localStorage.setItem("tp-boks-lokal", JSON.stringify(stempel)); localStorage.setItem("tp-boks-sendt", JSON.stringify(stempel)); } catch (_e) {}
   try { localStorage.removeItem("tp-fpvent"); } catch (_e) {}   /* ⭐ v6.24.4 · Codes Q5: ventelisten hørte til telefonens tilstand, ikke kontoens */
+  Object.keys(S.fpIgang || {}).forEach(function(n2){ if (S.fpIgang[n2]) S.fpIgang[n2].igen = false; }); S.fpBesked = null;   /* ⭐ v6.25.1 · Codes Z7 + Z19: et tryk, der venter i hukommelsen, og dets besked hører også til telefonens tilstand */
   S.truppen = lager.hent("truppen", []); S.grupper = lager.hent("grupper", null); S.vurderinger = lager.hent("vurderinger", []);
   S.fokuspunkter = lager.hent("fokuspunkter", {}); S.evalueringer = lager.hent("evalueringer", {}); S.ugefokus = lager.hent("ugefokus", {});
   S.stigeHold = lager.hent("stigehold", []); S.noegler = lager.hent("noegler", {}); S.srvNavne = lager.hent("srvnavne", {});
@@ -685,6 +686,7 @@ var KLUB_TING = ["truppen","grupper","vurderinger","fokuspunkter","evalueringer"
 function ryddKlubben(){
   KLUB_TING.forEach(function(n){ try { localStorage.removeItem("tp-" + n); } catch(_e){} });
   try { localStorage.removeItem("tp-fpvent"); } catch (_e) {}   /* ⭐ v6.24.4 · Codes Q5 */
+  Object.keys(S.fpIgang || {}).forEach(function(n2){ if (S.fpIgang[n2]) S.fpIgang[n2].igen = false; }); S.fpBesked = null;   /* ⭐ v6.25.1 · Codes Z7 + Z19 */
   S.truppen = []; S.grupper = []; S.vurderinger = []; S.fokuspunkter = {}; S.evalueringer = {};
   S.ugefokus = {}; S.stigeHold = []; S.noegler = {}; S.minRolle = null;
   S.tilmeldinger = []; S.tilmHentet = null; S.tilmHenter = false;
@@ -856,10 +858,14 @@ function hentTilmeldinger(){
     if (S.tilmHenter) return;
     if (!lager.hent("klubkode","")) { S.syncBesked={fejl:true,t:"Forbind telefonen med din klub f\u00f8rst."}; render(); return; }
     S.tilmHenter = true; S.syncBesked = null; render();
+    var _fpT0 = Date.now();   /* ⭐ v6.25.1 · Codes Z2: hvornår læsningen gik ud */
     sync("hent-hold", {}).then(function(r){
       S.tilmHenter = false;
       if (r && r.fejl) { S.tilmFejl = true; S.syncBesked={fejl:true,t:"Kunne ikke hente: "+r.fejl}; render(); return; }   /* ⭐ v6.24.4 · Codes Q12 */
+      var _fpGl = {};   /* ⭐ v6.25.1 · Codes Z2: en fokusliste, der blev sendt EFTER denne læsning gik ud, er nyere end svaret — den bliver */
+      (S.tilmeldinger || []).forEach(function(x){ if (x && x.haandtag && ((S.fpSkrevet || {})[x.haandtag] || 0) >= _fpT0) _fpGl[x.haandtag] = x.fokuspunkter; });
       S.tilmeldinger = (r && r.hold) || [];   // maalt: hent-hold svarer { hold: [...] }
+      S.tilmeldinger.forEach(function(x){ if (x && x.haandtag && Object.prototype.hasOwnProperty.call(_fpGl, x.haandtag)) x.fokuspunkter = _fpGl[x.haandtag]; });
       S.tilmFejl = false; if (S.fpBesked && S.fpBesked.henter) S.fpBesked = null;   /* ⭐ v6.24.4 · Codes Q12: listen er her — «Henter …» er ikke sand mere */
       S.stigeHold = (r && r.stige_hold) || []; lager.gem("stigehold", S.stigeHold);
       // v2.5 den anden vej (fund 18/8 sen aften): serverens tal laa i svaret,
@@ -1187,7 +1193,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.25.0 \u00b7 1. november 2026";
+const VERSION = "v6.25.1 \u00b7 2. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1980,7 +1986,7 @@ Object.assign(EN, {   /* v6.16.0 · nøglefri — invitationer på brugernavn */
   "Du kan logge ind på enhver telefon med dit brugernavn — din adgang til klubben følger med.": "You can log in on any phone with your username — your access to the club comes along.",
   "Start forfra sletter trup, vurderinger, klubbens adgang og login på denne telefon. Kontoen på serveren røres ikke.": "Start over deletes squad, ratings, the club's access and login on this phone. The account on the server is untouched.",
   "Log ind og tænd skyen — spejlet bor i den.": "Log in and turn on the cloud — the mirror lives in it.",
-  "📲 Ikke i appen endnu — vurderinger bliver på denne enhed, til spilleren har sagt ja til invitationen.": "📲 Not in the app yet — ratings stay on this device until the player has accepted the invitation.",
+  "📲 Ikke i appen endnu — kun spillere på StreakTennis vurderes. Gamle vurderinger ligger på denne enhed og rejser med, når spilleren siger ja.": "📲 Not in the app yet — only players on StreakTennis are rated. Earlier ratings stay on this device and travel along when the player says yes.",
   "Telefonens adgang hører ikke til din konto — log ud og ind igen.": "This phone's access does not belong to your account — log out and in again.",
   "Telefonens adgang til klubben gælder ikke længere — tal med din cheftræner.": "This phone's access to the club is no longer valid — talk to your head coach."
 });
@@ -2247,6 +2253,22 @@ Object.assign(EN, {   /* ⭐ v6.24.0 · notifikationer · klubbens aftale */
   "Henter {x}s fokuspunkter fra klubben — tryk igen om et øjeblik.": "Fetching {x}'s focus points from the club — tap again in a moment.",
   "Kortet ændrede sig, så intet er koblet til «{x}».": "The card changed, so nothing is linked to «{x}».",
   "Kunne ikke hente spillerens fokuspunkter fra klubben.": "Could not fetch the player's focus points from the club.",
+  /* ⭐ v6.25.1 · Codes Z6 + Z17 + de nye linjer */
+  "På StreakTennis": "On StreakTennis",
+  "🎯 Kunne ikke hente spillerens fokuspunkter fra klubben.": "🎯 Could not fetch the player's focus points from the club.",
+  "🎯 Klubben kender ikke spilleren længere — fokuspunkterne kan ikke hentes.": "🎯 The club no longer has this player — the focus points can't be fetched.",
+  "🎯 Fokuspunkterne er ikke hentet endnu.": "🎯 The focus points haven't been fetched yet.",
+  "Hent": "Fetch",
+  "{n} spiller i gruppen er ikke på StreakTennis endnu — kun spillere på StreakTennis vurderes.": "{n} player in the group is not on StreakTennis yet — only players on StreakTennis are rated.",
+  "{n} spillere i gruppen er ikke på StreakTennis endnu — kun spillere på StreakTennis vurderes.": "{n} players in the group are not on StreakTennis yet — only players on StreakTennis are rated.",
+  "{n} ligner en spiller i klubben — læg spilleren i truppen under 👥 Spillere → Nye i klubben, så kobles de.": "{n} looks like a player in the club — add the player to the squad under 👥 Players → New in the club, and they are linked.",
+  "Fokuspunkter følger spillere på StreakTennis.": "Focus points follow players on StreakTennis.",
+  "{x} er ikke på StreakTennis endnu.": "{x} is not on StreakTennis yet.",
+  "{n} tidligere valgt ligger i din boks og rejser med, når {x} kommer på.": "{n} earlier pick is in your box and travels along when {x} joins.",
+  "{n} tidligere valgte ligger i din boks og rejser med, når {x} kommer på.": "{n} earlier picks are in your box and travel along when {x} joins.",
+  "En spiller i klubben ligner {x} — læg spilleren i truppen under 👥 Spillere → Nye i klubben, så kobles de.": "A player in the club looks like {x} — add the player to the squad under 👥 Players → New in the club, and they are linked.",
+  "{n} tidligere valgt ligger i din boks og rejser med, når de er koblet.": "{n} earlier pick is in your box and travels along once they are linked.",
+  "{n} tidligere valgte ligger i din boks og rejser med, når de er koblet.": "{n} earlier picks are in your box and travel along once they are linked.",
   "kunne ikke hentes — åbn": "couldn't be fetched — open",
   "ikke registreret endnu": "not registered yet",
   "pilot · trin {n} · {n} aktive denne måned": "pilot · tier {n} · {n} active this month",
@@ -3582,8 +3604,14 @@ function regFokusLinje(navn){   /* ⭐ v6.25.0 · trin 1 · fokuspunkterne står
   var kendt = fpKendt(navn), mine = (S.fokuspunkter || {})[navn] || [], aaben = S.fpAaben === navn;
   var navnPaa = function(id){ for (var k in KATEGORIER) { var x = (KATEGORIER[k] || []).filter(function(y){ return y.id === id; })[0]; if (x) return x.navn; } return id; };
   var h = '<div class="reg-fokus" data-reg-fokus="' + esc(navn) + '">';
-  if (!kendt) h += '<span class="lille">🎯 Henter fokuspunkterne …</span>';
-  else h += '<button class="reg-fp-knap" data-act="fp-aabn" data-v="' + esc(navn) + '">🎯 ' + (mine.length ? mine.slice(0, 3).map(function(id){ return esc(navnPaa(id)); }).join(' · ') + (mine.length > 3 ? ' +' + (mine.length - 3) : '') : 'Ingen fokus endnu — vælg op til tre') + '</button>';
+  if (!kendt) {   /* ⭐ v6.25.1 · Codes Z3 + Z8: «Henter …» siges kun, mens der hentes — hvert andet udfald får sin egen sætning (75), og tegningen kalder intet */
+    var _hh = (S.noegler || {})[navn], _vk = !!S.tilmHentet && !(S.tilmeldinger || []).some(function(x){ return x && x.haandtag === _hh; });
+    if (S.tilmHenter) h += '<span class="lille" data-reg-fp-tilstand="henter">🎯 Henter fokuspunkterne …</span>';
+    else if (S.tilmFejl) h += '<span class="lille" data-reg-fp-tilstand="fejl">🎯 Kunne ikke hente spillerens fokuspunkter fra klubben.</span> <button class="knap valg" style="padding:4px 10px;font-size:11px" data-act="tilm-hent">Prøv igen</button>';
+    else if (_vk) h += '<span class="lille" data-reg-fp-tilstand="ukendt">🎯 Klubben kender ikke spilleren længere — fokuspunkterne kan ikke hentes.</span>';
+    else h += '<span class="lille" data-reg-fp-tilstand="ikke-hentet">🎯 Fokuspunkterne er ikke hentet endnu.</span> <button class="knap valg" style="padding:4px 10px;font-size:11px" data-act="tilm-hent">Hent</button>';
+  }
+  else h += '<button class="reg-fp-knap" data-act="fp-aabn" data-v="' + esc(navn) + '">🎯 ' + (mine.length ? mine.slice(0, 3).map(function(id){ return '<span>' + esc(navnPaa(id)) + '</span>'; }).join(' · ') + (mine.length > 3 ? ' +' + (mine.length - 3) : '') : 'Ingen fokus endnu — vælg op til tre') + '</button>';
   if (aaben && kendt) {
     Object.keys(KATEGORIER).forEach(function(omr){
       var o = UGEOMRAADER.filter(function(x){ return x.id === omr; })[0] || { ikon: "", navn: omr };
@@ -3608,7 +3636,7 @@ function regSendVurderinger(kunFejlede){
   var igen = kunFejlede && r.vurd ? r.vurd.fejl.map(function(f){ return f.navn; }) : null;
   r.deltagere.forEach(function(d){
     if (!r.moedt[d.k] || !r.score[d.k]) return;
-    var navn = erPas ? regTrupNavn(d.h) : d.navn; if (!navn) return;
+    var navn = erPas ? regTrupNavn(d.h) : ((S.noegler || {})[d.navn] ? d.navn : null); if (!navn) return;   /* ⭐ v6.25.1 · Codes Z5 */
     if (igen && igen.indexOf(navn) < 0) return;
     liste.push({ navn: navn, score: r.score[d.k] });
   });
@@ -3677,6 +3705,8 @@ function traenerRegistrer(t){
   if (r.trin === 2 && r.deltagere) {
     /* en farve = mødt + score · ✗ = ikke mødt · ingen farve = mødt uden score (den billige vej bliver billig, princip 41) */
     var p = r.pas, alle = r.deltagere, erPas = r.kilde !== "gruppe";
+    if (!erPas) alle.forEach(function(d){ d.h = (S.noegler || {})[d.navn] || null; });   /* ⭐ v6.25.1 · Codes Z5: håndtaget måles, når der tegnes — ikke da gruppen blev åbnet */
+    var _ligner = erPas ? 0 : alle.filter(function(d){ return !d.h && koblLigner(d.navn); }).length;   /* ⭐ v6.25.1 · Codes Z4 */
     var _udenApp = erPas ? 0 : alle.filter(function(d){ return !d.h; }).length;   /* ⭐ v6.25.0 · Nicolai 1/11: «Kun dem som er skal vurderes.» */
     if (!erPas) alle = alle.filter(function(d){ return !!d.h; });
     var antal = alle.filter(function(d){ return r.moedt[d.k]; }).length;
@@ -3707,7 +3737,8 @@ function traenerRegistrer(t){
       h += '</div>';
     });
     h += '</div>';
-    if (_udenApp && alle.length) h += '<p class="lille" data-reg-uden-app="1" style="margin:0 0 8px">' + _udenApp + (_udenApp === 1 ? ' spiller' : ' spillere') + ' i gruppen er ikke på StreakTennis endnu — kun spillere på StreakTennis vurderes.</p>';   /* 75: dem, der ikke står her, siges højt */
+    if (_udenApp && alle.length) h += '<p class="lille" data-reg-uden-app="1" style="margin:0 0 8px">' + _udenApp + (_udenApp === 1 ? ' spiller' : ' spillere') + ' i gruppen er ikke på StreakTennis endnu — kun spillere på StreakTennis vurderes.</p>';
+    if (_ligner) h += '<p class="lille" data-reg-ligner="1" style="margin:0 0 8px">' + _ligner + ' ligner en spiller i klubben — læg spilleren i truppen under 👥 Spillere → Nye i klubben, så kobles de.</p>';   /* ⭐ v6.25.1 · Codes Z4: det usande «ikke på StreakTennis» får sin sandhed ved siden af */   /* 75: dem, der ikke står her, siges højt */
     if (r.fejl) h += '<p class="lille" style="color:var(--tabt);margin:0 0 8px">' + esc(r.fejl) + '</p>';
     h += '<button class="knap stor gron"' + (r.sender || !alle.length ? ' disabled' : '') + ' data-act="reg-send">' + (r.sender ? '⏳ gemmer …' : '✓ Gem · ' + antal + ' mødt · ' + vurd + ' vurderet') + '</button>';
     h += '<p class="lille" style="text-align:center;margin-top:8px">' + (erPas ? 'Én farve pr. spiller = mødt og vurderet. ✗ = ikke mødt. Ingen farve = mødt uden score. Passet skrives i spillernes træningslog og tæller i streaken.' : 'Én farve pr. spiller = vurderet. ✗ = ikke mødt. Scores gemmes hos spillerne — læg passet i PROGRAM, så tæller fremmødet også i deres streak.') + '</p>';
@@ -4007,7 +4038,7 @@ function faneKnap(id,label){ return '<button class="'+(S.tab===id?"aktiv":"")+'"
 function iTruppen(p){
   var n2 = p.haandtag || p.spillernoegle;
   return (S.truppen || []).some(function(x){
-    return (n2 && x.noegle === n2) || (p.fornavn && x.navn === p.fornavn);
+    return (n2 && x.noegle === n2) || (p.spillernoegle && x.noegle === p.spillernoegle) || (!p.haandtag && !p.spillernoegle && p.fornavn && x.navn === p.fornavn);   /* ⭐ v6.25.1 · Codes Z4: fornavnet tæller kun for en række uden håndtag — ligner barnet et håndskrevet navn, spørger «Læg i trup» kortet */
   });
 }
 // To grupper, to forskellige handlinger:
@@ -4583,6 +4614,9 @@ function koblKandidater(fornavn, fuldt){   /* ⭐ v6.23.0 · Codes fund A+C: hel
       return !(fuldt && koblEfternavnSkiller(fuldt, x.navn)); })
     .map(function(x){ return x.navn; });
 }
+function koblLigner(navn){   /* ⭐ v6.25.1 · Codes Z4: et godkendt barn i klubben, der ikke er i truppen, men ligner det ukoblede navn */
+  return (S.tilmeldinger || []).some(function(p){ return p && p.haandtag && p.status === "godkendt" && !iTruppen(p) && koblKandidater(p.fornavn, (S.fuldeNavne || {})[p.haandtag]).indexOf(navn) >= 0; });
+}
 function koblVenter(p){ var h2 = p && p.haandtag; return !!h2 && (S.koblSpm || []).some(function(k){ return k.h === h2; }); }
 function koblSendListe(){ return (lager.hent("vurdsend", []) || []).filter(function(e){ return e && typeof e === "object" && e.navn && e.h; }); }   /* ⭐ v6.24.1 · fund F: navnet OG barnet */
 function koblSendGem(l){ lager.gem("vurdsend", l); }
@@ -4635,10 +4669,12 @@ function fpSend(navn){   /* ⭐ v6.24.3 · Codes N4: et tryk på et fokuspunkt l
   fpVentSaet(navn, h2);
   S.fpIgang = S.fpIgang || {};
   if (S.fpIgang[navn]) { S.fpIgang[navn].igen = true; return S.fpIgang[navn].p; }
+  var _kp = (S.koblIgang || {})[navn];   /* ⭐ v6.25.1 · Codes Z1: koblingens sending og et tryk går i samme kø — trykket sendes, når koblingen har svaret */
+  if (_kp && typeof _kp.then === "function") return _kp.then(function(){ return fpSend(navn); }, function(){ return fpSend(navn); });
   var post = { igen: false, liste: ((S.fokuspunkter || {})[navn] || []).slice(0, 10) };
   S.fpIgang[navn] = post;
   var naesteTryk = function(){ return (post.igen && (S.noegler || {})[navn] === h2) ? fpSend(navn) : null; };
-  post.p = Promise.resolve().then(function(){ return sendVurdering(navn, { stille: true, fokus: post.liste }); }).then(function(r){
+  post.p = Promise.resolve().then(function(){ (S.fpSkrevet = S.fpSkrevet || {})[h2] = Date.now(); return sendVurdering(navn, { stille: true, fokus: post.liste }); }).then(function(r){   /* ⭐ v6.25.1 · Z2 */
     delete S.fpIgang[navn];
     var lyk = !!r && !r.fejl, slut = lyk || koblVarig(r);
     if (lyk) fpSrvSaet(h2, post.liste);
@@ -4667,6 +4703,8 @@ function koblSend(navn){   /* ⭐ v6.23.0 · fund B · ⭐ v6.24.1 · fund F+G: 
   var h2 = (S.noegler || {})[navn]; if (!h2) return Promise.resolve({ ok: false });
   S.koblIgang = S.koblIgang || {};
   if (S.koblIgang[navn]) return Promise.resolve({ ok: false, igang: true });
+  var _fi = (S.fpIgang || {})[navn];   /* ⭐ v6.25.1 · Codes Z1: et tryk er undervejs — koblingen venter på det og måler bagefter */
+  if (_fi && _fi.p) return _fi.p.then(function(){ return koblSend(navn); }, function(){ return koblSend(navn); });
   var l = koblSendListe(), e = l.filter(function(x){ return x.navn === navn && x.h === h2; })[0];
   if (!e) {
     e = { navn: navn, h: h2 };   /* ⭐ v6.24.2 · Codes fund M1: køen fryser ingen liste — den måles, når der sendes */
@@ -4680,14 +4718,16 @@ function koblSend(navn){   /* ⭐ v6.23.0 · fund B · ⭐ v6.24.1 · fund F+G: 
   if (srv && srv.length && !_vent) { S.fokuspunkter = S.fokuspunkter || {}; S.fokuspunkter[navn] = srv.slice(0, 20); lager.gem("fokuspunkter", S.fokuspunkter); }
   else if (srv && Array.isArray(egen) && (egen.length || _vent)) opt.fokus = egen.slice(0, 10);
   if (opt.fokus) fpVentSaet(navn, h2);   /* ⭐ v6.24.3 · Codes N3 */
-  return Promise.resolve().then(function(){ return sendVurdering(navn, opt); }).then(function(r){
+  var _kpr = Promise.resolve().then(function(){ if (opt.fokus) (S.fpSkrevet = S.fpSkrevet || {})[h2] = Date.now(); return sendVurdering(navn, opt); }).then(function(r){   /* ⭐ v6.25.1 · Z2 */
     delete S.koblIgang[navn];
     var ok = !!r && !r.fejl, varig = !ok && koblVarig(r);
     if (ok && opt.fokus) fpSrvSaet(h2, opt.fokus);   /* ⭐ v6.24.4 · Codes Q1 */
     if ((ok || varig) && opt.fokus && fpVent()[navn] === h2 && JSON.stringify(((S.fokuspunkter || {})[navn] || []).slice(0, 10)) === JSON.stringify(opt.fokus)) fpVentSaet(navn, null);   /* ⭐ v6.24.3 · N3 · ⭐ v6.24.4 · Q4: kun når det sendte stadig er listen */
+    if (ok && opt.fokus && !fpVent()[navn] && S.fpBesked && S.fpBesked.navn === navn && S.fpBesked.fejl) S.fpBesked = { navn: navn, fejl: false, t: "Fokuspunkterne er sendt til " + navn.split(" ")[0] + " ✓" };   /* ⭐ v6.25.1 · Codes Z19: køen leverede — «prøver igen» er ikke sand mere */
     if (ok || varig) koblSendGem(koblSendListe().filter(function(x){ return !(x.navn === navn && x.h === h2); }));   /* ⭐ fund H2: en varig fejl prøves ikke igen og igen */
     return { ok: ok, varig: varig, r: r };
   }, function(){ delete S.koblIgang[navn]; return { ok: false }; });
+  S.koblIgang[navn] = _kpr; return _kpr;   /* ⭐ v6.25.1 · Codes Z1: løftet er låsen — et tryk kan vente på det */
 }
 function koblSendIgen(){
   if (S.koblSender || Date.now() - (S.koblSidst || 0) < 60000) return;   /* ⭐ v6.24.1 · fund H2: højst ét forsøg i minuttet */
@@ -5642,7 +5682,7 @@ function spillerDetalje(navn){
   // ── SPILLERNØGLE-kortet FJERNET 19/8 (Nicolai): spilleropsætning bor
   // under Indstillinger → MIN TRUP, hvor gruppe og nøgle nu kan rettes direkte.
   const minN = (S.noegler||{})[navn];
-  if (!minN) h += '<p class="lille" style="margin:0 0 8px">\ud83d\udcf2 Ikke i appen endnu \u2014 vurderinger bliver p\u00e5 denne enhed, til spilleren har sagt ja til invitationen.</p>';
+  if (!minN) h += '<p class="lille" style="margin:0 0 8px">📲 Ikke i appen endnu — kun spillere på StreakTennis vurderes. Gamle vurderinger ligger på denne enhed og rejser med, når spilleren siger ja.</p>';   /* ⭐ v6.25.1 · Codes Z9 */
 
   // ── SENESTE KAMPE (19/8) · tr\u00e6nerens weekend-kig: hvordan gik det?
   // Fra kampresum\u00e9et \u2014 fem tal pr. kamp, aldrig boldene.
@@ -5723,7 +5763,9 @@ function spillerDetalje(navn){
   if (!_harApp) {   /* ⭐ v6.25.0 · Nicolai 1/11: et barn uden app får ingen karakterer og ingen fokuspunkter — boksens gamle liste slettes ikke */
     var _fnu = esc(navn.split(" ")[0]);
     h += '<div class="kort" style="--tone:var(--is)" data-fp-uden-app="1"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🎯 FOKUSPUNKTER</div>' +
-      '<p class="lille" style="margin:6px 0 0">Fokuspunkter følger spillere på StreakTennis. ' + _fnu + ' er ikke på StreakTennis endnu.' + (mine.length ? ' ' + mine.length + (mine.length === 1 ? ' tidligere valgt ligger' : ' tidligere valgte ligger') + ' i din boks og rejser med, når ' + _fnu + ' kommer på.' : '') + '</p></div>';
+      (koblLigner(navn)   /* ⭐ v6.25.1 · Codes Z4 + Z6: en sætning pr. tekstnode, så den oversættes — og sandheden, når et barn i klubben ligner navnet */
+        ? '<p class="lille" style="margin:6px 0 0" data-fp-ligner="1"><span>En spiller i klubben ligner ' + _fnu + ' — læg spilleren i truppen under 👥 Spillere → Nye i klubben, så kobles de.</span>' + (mine.length ? ' <span>' + mine.length + (mine.length === 1 ? ' tidligere valgt ligger' : ' tidligere valgte ligger') + ' i din boks og rejser med, når de er koblet.</span>' : '') + '</p></div>'
+        : '<p class="lille" style="margin:6px 0 0"><span>Fokuspunkter følger spillere på StreakTennis.</span> <span>' + _fnu + ' er ikke på StreakTennis endnu.</span>' + (mine.length ? ' <span>' + mine.length + (mine.length === 1 ? ' tidligere valgt ligger' : ' tidligere valgte ligger') + ' i din boks og rejser med, når ' + _fnu + ' kommer på.</span>' : '') + '</p></div>');
   } else {
   h += '<div class="kort" style="--tone:var(--is)">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
@@ -6074,6 +6116,7 @@ document.addEventListener("click", function(e){
   else if (act==="fp-aabn"){ S.fpAaben = (S.fpAaben === v ? null : v); render(); }
   else if (act==="fp-slaa"){
     const sp = t.dataset.sp;
+    if (!(S.noegler || {})[sp]) { render(); return; }   /* ⭐ v6.25.1 · Codes Z5: et barn uden app får ingen fokuspunkter */
     if (!fpKendt(sp)) { if (!S.tilmHenter) hentTilmeldinger(); S.fpBesked = { navn: sp, fejl: true, henter: true, t: "Henter " + sp.split(" ")[0] + "s fokuspunkter fra klubben — tryk igen om et øjeblik." }; render(); return; }   /* ⭐ v6.24.3 · Codes N5 */
     const nu = S.fokuspunkter[sp] || [];
     S.fokuspunkter[sp] = nu.includes(v) ? nu.filter(x => x !== v) : nu.concat([v]);
@@ -6278,6 +6321,7 @@ document.addEventListener("click", function(e){
   else if (act==="reg-slaa"){ if (!S.reg) return; S.reg.moedt[v] = !S.reg.moedt[v]; if (!S.reg.moedt[v]) delete S.reg.score[v]; render(); }
   else if (act==="reg-score"){
     if (!S.reg || !S.reg.moedt[t.dataset.sp]) return;
+    if (S.reg.kilde === "gruppe" ? !(S.noegler || {})[t.dataset.sp] : !regTrupNavn(t.dataset.sp)) { render(); return; }   /* ⭐ v6.25.1 · Codes Z5: et barn uden app får ingen karakter */
     /* samme farve igen = fortryd scoren (mødt uden score) — en glidende finger må ikke blive til en dom */
     if (S.reg.score[t.dataset.sp] === +v) delete S.reg.score[t.dataset.sp]; else S.reg.score[t.dataset.sp] = +v;
     render(); }

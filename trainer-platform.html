@@ -187,6 +187,8 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 .dev-bred b{font-size:16px}
 .dev-bred small{color:var(--daempet);font-weight:400}
 .dev-pil{margin-left:auto;font-size:22px;color:var(--is)}
+.gn-raekke{display:flex;gap:8px;align-items:stretch;margin:0 0 10px}.gn-raekke .dev-bred{margin:0;flex:1;min-width:0}   /* ⭐ v6.25.4 · Gør nu bagud: passet og «Spring over» i én række */
+.gn-spring{flex:none;width:88px;padding:0 8px;border-radius:16px;background:var(--kort);border:1px solid var(--kant);color:var(--is);font-size:12.5px;line-height:1.25;cursor:pointer;font-family:inherit}.gn-spring[disabled]{opacity:.5}
 .dev-badge{position:absolute;top:10px;right:10px;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--tabt);color:#fff;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .dev-kant{border:1px solid var(--kant) !important;background:var(--kort) !important;backdrop-filter:blur(8px)}
 .dev-kant-staal{box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
@@ -1193,7 +1195,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.25.3 \u00b7 8. november 2026";
+const VERSION = "v6.25.4 \u00b7 8. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2235,6 +2237,15 @@ Object.assign(EN, {   /* ⭐ v6.23.0 · læs klubbens ark · hent truppen fra pr
   "{x} er koblet, men vurderingerne er ikke sendt endnu — appen prøver igen.": "{x} is linked, but the ratings haven't been sent yet — the app will try again.",
   "{x} står nu i din trup under «Uden gruppe».": "{x} is now in your squad under «No group»."
 });
+Object.assign(EN, {   /* ⭐ v6.25.4 · Gør nu bagud · spring over · døren */
+  "uden fremmøde · bane {x} · {x}": "without attendance · court {x} · {x}",
+  "Spring over": "Skip", "Spring alle {n} over": "Skip all {n}",
+  "Dine pas de sidste 7 dage — dit navn står på programmet.": "Your sessions from the last 7 days — your name is on the programme.",
+  "Hele klubbens pas de sidste 7 dage — dit navn står ikke på programmet.": "The whole club's sessions from the last 7 days — your name is not on the programme.",
+  "{n} flere end de {n} viste.": "{n} more than the {n} shown.",
+  "Henter tidligere dage …": "Fetching earlier days …",
+  "Tidligere dage kunne ikke hentes —": "Earlier days could not be fetched —",
+});
 Object.assign(EN, {   /* ⭐ v6.24.0 · notifikationer · klubbens aftale */
   "Notifikationer": "Notifications",
   "Klubbens aftale": "The club's plan",
@@ -3262,6 +3273,13 @@ function nuHent(tving){
   if (!tving && S.nuHentet && Date.now() - S.nuHentet < 60000) return;
   if (S.nuHenter) return;
   S.nuHenter = true;
+  S.bagudHenter = true;   /* ⭐ v6.25.4 · de sidste 7 dages pas uden fremmøde hentes sammen med dagens — eget svar, egen tilstand (75) */
+  traeningKald("bagud", {}).then(function(r){
+    S.bagudHenter = false;
+    if (r && !r.fejl && Array.isArray(r.pas)) { S.bagud = r; S.bagudFejl = null; }
+    else S.bagudFejl = traeningFejl(r);
+    try { render(); } catch (_e) {}
+  });
   traeningKald("nu", {}).then(function(r){
     S.nuHenter = false;
     S.nuHentet = Date.now();   /* også ved en fejl — ellers beder hver gentegning om et nyt kald, og skærmen går i ring (målt 20/9 med regressionen) */
@@ -3814,11 +3832,18 @@ function dashVurderet(){   /* v6.13.0 · spillere vurderet siden mandag — ét 
 //   Helten på HJEM er den øverste post; flisen bærer tallet og titlen; rummet har dem alle som brede knapper + den stående dør
 //   «⚡ Vurdér træningen» (kortets regel 26/9: hvert rum i bundbaren kan nås fra HJEM) + dashboardet (v6.12.0) under.
 //   Tallene er det, telefonen VED (64/70): nu (pas i dag) · prg (kladden) · tilmeldinger (hent-hold) · analyser (klub-live) · ugefokus (lager).
+var BAGUD_VIS = 8;   /* ⭐ v6.25.4 · højst otte rækker bagud i Gør nu — resten tælles og kan springes over samlet */
+function bagudListe(){ return (S.bagud && Array.isArray(S.bagud.pas) ? S.bagud.pas : []).slice(0, BAGUD_VIS); }
+function bagudTitel(p){ var d = datoTekst(p.dato); return d.charAt(0).toUpperCase() + d.slice(1) + " \u00b7 " + String(p.start || "").slice(0, 5); }   /* «Onsdag 4/11 · 12:00» */
+function bagudTekst(p){ return "uden fremm\u00f8de \u00b7 bane " + String(p.bane || "") + " \u00b7 " + String(p.traener || p.titel || "Tr\u00e6ning"); }
 function goerNu(){
   var liste = [], uf = nuUdenFremmoede(), b = nuBedste();
   if (lager.hent("klubkode", "") && (lager.hent("truppen", []) || []).length && !(S.ugefokus || {})[ugeNoegle()])   /* v6.22.1 · FØRST: fokus før vurdering (Codes fund 3) */
     liste.push({ id: "ugefokus", ikon: "\ud83c\udfaf", titel: "Ugens fokus mangler", tekst: "v\u00e6lg omr\u00e5det, f\u00f8r du vurderer", act: "goer-nu", v: "ugefokus", kant: "dev-kant-is" });
   if (uf && b) liste.push({ id: "reg", ikon: "\u26a1", titel: (uf === 1 ? "1 pas uden fremm\u00f8de" : uf + " pas uden fremm\u00f8de"), tekst: "registr\u00e9r fremm\u00f8de og vurd\u00e9r", act: "reg-start", v: b.id, kant: "dev-kant-grus" });
+  bagudListe().forEach(function(p){   /* ⭐ v6.25.4 · det, træneren ikke har vurderet — ældste først, ét pas pr. række (Nicolai 6/11) */
+    liste.push({ id: "bagud", ikon: "\u23f3", titel: bagudTitel(p), tekst: bagudTekst(p), act: "reg-dato", v: p.id, d: p.dato, kant: "dev-kant-grus" });
+  });
   var prg = S.prg; var nP = prg && Array.isArray(prg.pas) ? prg.pas.length : 0;
   if (S.minRolle !== "traener" && nP && (!prg.sidst_godkendt || prg.aendret_siden > 0)) {
     var tk = !prg.sidst_godkendt ? (nP === 1 ? "1 pas i kladden venter p\u00e5 dit ja" : nP + " pas i kladden venter p\u00e5 dit ja")
@@ -3837,15 +3862,33 @@ function goerNu(){
 }
 function goerNuHentet(){   /* v6.22.1 · «alt er gjort» må kun siges, når dagens pas OG kladden er hentet (Codes fund 1 · princip 84) */
   if (!lager.hent("klubkode", "")) return true;
-  return !!(S.nu && Array.isArray(S.nu.pas) && !S.nuFejl && S.prg && Array.isArray(S.prg.pas) && !S.prgHentFejl);
+  return !!(S.nu && Array.isArray(S.nu.pas) && !S.nuFejl && S.prg && Array.isArray(S.prg.pas) && !S.prgHentFejl && S.bagud && !S.bagudFejl);   /* ⭐ v6.25.4 · også bagud */
 }
 function goerNuKnap(x, hel){   /* hel = helten på HJEM (VERSALER som START KAMP, gradienten) · ellers en bred knap i rummet med farvekant (v6.22.1) */
-  return '<button class="' + (hel ? 'dev-hero dev-hero-lang dev-kant dev-kant-grus' : 'dev-bred dev-kant ' + x.kant) + '" data-act="' + x.act + '" data-v="' + esc(x.v || "") + '" data-goer-nu="' + x.id + '">' +
+  return '<button class="' + (hel ? 'dev-hero dev-hero-lang dev-kant dev-kant-grus' : 'dev-bred dev-kant ' + x.kant) + '" data-act="' + x.act + '" data-v="' + esc(x.v || "") + '"' + (x.d ? ' data-d="' + esc(x.d) + '"' : '') + ' data-goer-nu="' + x.id + '">' +   /* ⭐ v6.25.4 · data-d: passets dato */
     '<span style="font-size:30px">' + x.ikon + '</span><span><b>' + esc(hel ? x.titel.toUpperCase() : x.titel) + '</b><br><small>' + esc(x.tekst) + '</small></span><span class="dev-pil">\u2192</span></button>';
+}
+function bagudLinjer(){   /* ⭐ v6.25.4 · under rækkerne bagud — hvert udfald sin egen sætning (75): fejl · henter · dine/klubbens · flere end vist · spring alle over */
+  if (!lager.hent("klubkode", "")) return '';
+  var h = '';
+  if (S.springFejl) h += '<p class="lille" style="margin:0 0 10px;color:var(--tabt)">' + esc(T(S.springFejl)) + '</p>';
+  if (S.bagudFejl) return h + '<p class="lille" style="margin:0 0 10px;color:var(--tabt)"><span>Tidligere dage kunne ikke hentes \u2014</span> <span>' + esc(S.bagudFejl) + '</span></p>';
+  if (!S.bagud) return h + (S.bagudHenter ? '<p class="lille" style="margin:0 0 10px">Henter tidligere dage \u2026</p>' : '');
+  var n = S.bagud.i_alt || 0; if (!n) return h;
+  h += '<p class="lille" style="margin:0 0 10px"><span>' + (S.bagud.mine ? 'Dine pas de sidste 7 dage \u2014 dit navn st\u00e5r p\u00e5 programmet.' : 'Hele klubbens pas de sidste 7 dage \u2014 dit navn st\u00e5r ikke p\u00e5 programmet.') + '</span>' + (n > BAGUD_VIS ? ' <span>' + (n - BAGUD_VIS) + ' flere end de ' + BAGUD_VIS + ' viste.</span>' : '') + '</p>';
+  if (n > 1) h += '<button class="knap valg" data-act="spring-alle" data-v="' + n + '"' + (S.springer === "alle" ? ' disabled' : '') + ' style="margin:0 0 14px;width:100%">' + (S.springer === "alle" ? "\u2026" : "Spring alle " + n + " over") + '</button>';
+  return h;
 }
 function goerNuKort(){   /* rummet «✅ Gør nu»: handlingerne · den stående dør · (dashboardet tegnes af kalderen) */
   var liste = goerNu(), h = '';
-  liste.forEach(function(x){ h += goerNuKnap(x, false); });
+  var _sidsteBagud = null; liste.forEach(function(x){ if (x.id === "bagud") _sidsteBagud = x; });
+  liste.forEach(function(x){
+    if (x.id !== "bagud") { h += goerNuKnap(x, false); return; }
+    var _sp = S.springer === x.v + "|" + x.d;   /* ⭐ v6.25.4 · passet og «Spring over» i én række — en markering, aldrig en sletning */
+    h += '<div class="gn-raekke">' + goerNuKnap(x, false) + '<button class="gn-spring" data-act="spring-over" data-v="' + esc(x.v) + '" data-d="' + esc(x.d) + '"' + (_sp ? ' disabled' : '') + '>' + (_sp ? "\u2026" : "Spring over") + '</button></div>';
+    if (x === _sidsteBagud) h += bagudLinjer();   /* linjerne står lige under den sidste række bagud */
+  });
+  if (!_sidsteBagud) h += bagudLinjer();
   if (!liste.length) {   /* v6.22.1 · hvert udfald sin egen sætning (75): fejl · henter · alt er gjort */
     if (lager.hent("klubkode", "") && (S.nuFejl || S.prgHentFejl)) h += '<p class="lille" style="margin:0 0 10px;color:var(--tabt)">' + esc(T(S.nuFejl || S.prgHentFejl)) + '</p>';   /* v6.22.3 · Codes fund 2 */
     else if (!goerNuHentet()) h += '<p class="lille" style="margin:0 0 10px">Henter dagens pas og kladden \u2026</p>';
@@ -3967,10 +4010,10 @@ function renderTraener(){
       '</div>';
   } else {
     /* v6.2.0 · StreakTennis' titelrække, ordret (linje 10425 i v5.3.1): ← og fanens navn i én række */
-    var _tilbage = (S.tab === "weekenden") ? 'data-act="tab" data-v="program"' :   /* ⭐ v6.17.0 · Weekenden bor i Program */
+    var _tilbage = (S.tab === "weekenden") ? 'data-act="tab" data-v="program"' :   /* ⭐ v6.17.0 · Weekenden bor i Program */   /* ⭐ v6.25.4 · døren (S.vejTilbage): ← går til det rum, der tegnede knappen — HJEM eller Gør nu (Nicolai 5/11: «Man skal ALTID komme samme vej tilbage») */
       (S.tab === "indst" && S.indstVisning && S.indstVisning.indexOf("adgang-") === 0) ? 'data-act="indst-vis" data-v="adgang"' :   /* v6.16.2 · fra et underrum til fliserne */
       (S.tab === "indst" && S.indstVisning) ? 'data-act="indst-vis" data-v=""' :   /* v6.8.0 */
-      (S.tab === "program" && S.prgVisning) ? 'data-act="prg-visning" data-v=""' : (((S.tab === "vurder" || S.tab === "registrer") && S.reg && S.reg.trin > 1 && !S.vurderOmraade) ? 'data-act="reg-igen"' : 'data-act="tab" data-v="hjem"');   /* v6.5.0 · fra trin 2/3 går ← til trin 1 */   /* v6.3.0 · fra en undervisning går ← til fliserne */
+      (S.tab === "program" && S.prgVisning) ? 'data-act="prg-visning" data-v=""' : (((S.tab === "vurder" || S.tab === "registrer") && S.reg && S.reg.trin > 1 && !S.vurderOmraade && !S.vejTilbage) ? 'data-act="reg-igen"' : 'data-act="tab" data-v="' + (S.vejTilbage || "hjem") + '"');   /* v6.5.0 · fra trin 2/3 går ← til trin 1 — ⭐ v6.25.4: medmindre man kom gennem en dør, så går ← til døren */   /* v6.3.0 · fra en undervisning går ← til fliserne */
     h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px"><button class="pil-tilbage" ' + _tilbage + '>\u2190</button><b style="font-size:16px">' + faneTitel(S.tab) + '</b></div>';
     if (S.tab==="noegler") h += noegleKortet();
     else if (S.tab==="grupper") h += traenerGrupper(t);
@@ -6066,6 +6109,8 @@ document.addEventListener("click", function(e){
   if (e.target && e.target.tagName === "SELECT") return;   // v5.0.0 · et select i en række åbner ikke rækken
   const t = e.target.closest("[data-act]"); if (!t) return;
   const act = t.dataset.act, v = t.dataset.v;
+  if (t.dataset.goerNu !== undefined) S.vejTilbage = S.tab;   /* ⭐ v6.25.4 · døren: en knap fra HJEM eller Gør nu husker, hvor den stod — ← går dertil */
+  else if (act === "tab") S.vejTilbage = null;   /* bundbaren, fliserne og ← selv starter forfra — ← går til HJEM som før */
   if (act==="hj-spoerg"){ hjaelpSpoerg(); }   /* v6.22.2 */
   if (act==="sprog-saet"){ SPROG = (v === "en" ? "en" : "da"); lager.gem("sprog", SPROG); try { document.documentElement.lang = SPROG; } catch (_e) {} render(); }
   else if (act==="evalsprog-saet"){ EVALSPROG = (v === "en" ? "en" : "da"); lager.gem("evalsprog", EVALSPROG); render(); }
@@ -6316,6 +6361,27 @@ document.addEventListener("click", function(e){
     var _pn = v && S.nu && S.nu.pas ? S.nu.pas.filter(function(p){ return p.id === v; })[0] : null;
     if (_pn) { S.reg.kilde = "pas"; S.reg.pas = _pn; S.reg.dato = dkIdag(); S.reg.deltagere = regDeltagerePas(_pn); S.reg.trin = 2; S.reg.deltagere.forEach(function(d){ S.reg.moedt[d.k] = true; }); }
     render(); if (!_pn) nuHent(false); }
+  else if (act==="reg-dato"){   /* ⭐ v6.25.4 · et pas fra en tidligere dag (Gør nu bagud) — samme skærm som reg-start, datoen er passets */
+    var _pd = bagudListe().filter(function(p){ return p.id === v && p.dato === t.dataset.d; })[0]; if (!_pd) return;
+    regNulstil(); S.tab = "vurder"; S.aabenSpiller = null; S.vurderOmraade = null;
+    S.regDato = _pd.dato; S.reg.kilde = "pas"; S.reg.pas = _pd; S.reg.dato = _pd.dato; S.reg.deltagere = regDeltagerePas(_pd); S.reg.trin = 2; S.reg.deltagere.forEach(function(d){ S.reg.moedt[d.k] = true; });
+    render(); }
+  else if (act==="spring-over"){   /* ⭐ v6.25.4 · en markering i basen, aldrig en sletning — et fremmøde bagefter fjerner den (motoren) */
+    if (S.springer) return;
+    var _sd = t.dataset.d; S.springer = v + "|" + _sd; S.springFejl = null; render();
+    traeningKald("spring-over", { pas_id: v, dato: _sd }).then(function(r){
+      S.springer = null;
+      if (!r || r.fejl) { S.springFejl = traeningFejl(r); render(); return; }
+      if (S.bagud && Array.isArray(S.bagud.pas)) { S.bagud.pas = S.bagud.pas.filter(function(p){ return !(p.id === v && p.dato === _sd); }); S.bagud.i_alt = Math.max(0, (S.bagud.i_alt || 1) - 1); }
+      render(); S.nuHentet = 0; nuHent(true); }); }
+  else if (act==="spring-alle"){   /* ⭐ v6.25.4 · alle de pas, bagud viste — motoren springer præcis den liste over */
+    if (S.springer) return;
+    S.springer = "alle"; S.springFejl = null; render();
+    traeningKald("spring-over", { alle: true }).then(function(r){
+      S.springer = null;
+      if (!r || r.fejl) { S.springFejl = traeningFejl(r); render(); return; }
+      if (S.bagud) { S.bagud.pas = []; S.bagud.i_alt = 0; }
+      render(); S.nuHentet = 0; nuHent(true); }); }
   else if (act==="reg-vaelg"){
     if (!S.reg) regNulstil();
     var _pv = regPasListe().filter(function(p){ return p.id === v; })[0]; if (!_pv) return;

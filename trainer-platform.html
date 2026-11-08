@@ -1193,7 +1193,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.25.2 \u00b7 8. november 2026";
+const VERSION = "v6.25.3 \u00b7 8. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2075,6 +2075,9 @@ Object.assign(EN, {   /* ⭐ v6.19.0 · LIVE NU-flisen + engelsk overalt, også 
   "Lige slut:": "Just ended:", "Næste:": "Next:",
   "Dagens 1 pas er registreret ✓": "Today's session is registered ✓", "Dagens {n} pas er registreret ✓": "Today's {n} sessions are registered ✓",
   "{n} pas uden fremmøde": "{n} sessions without attendance",
+  /* ⭐ v6.25.3 · de lange nøgler FØRST — den første, der matcher, vinder, og «{x}» sluger ellers «· +2 uden app» */
+  "1 spiller: {x} · +{n} uden app": "1 player: {x} · +{n} without the app", "{n} spillere: {x} · +{n} uden app": "{n} players: {x} · +{n} without the app",
+  "Godkendt {x} kl. {x} · ingen ændringer siden": "Approved {x} at {x} · no changes since", "Godkendt {x} kl. {x} ·": "Approved {x} at {x} ·",
   "1 spiller: {x}": "1 player: {x}", "{n} spillere: {x}": "{n} players: {x}",
   "Teknisk": "Technical", "Taktisk": "Tactical", "Fysisk": "Physical", "Mentalt": "Mental",
   "🎯 DATA-DREVET FOKUS": "🎯 DATA-DRIVEN FOCUS", "Laveste score er": "Lowest score is",
@@ -3528,7 +3531,7 @@ function traenerProgram(){
       '<div style="font-size:13px;margin-top:3px">' + (S.prgHenter && !S.prg ? 'Henter …' :
         (sgT ? 'Godkendt ' + sgT + (prg.aendret_siden ? ' · <b style="color:var(--guld)">' + prg.aendret_siden + (prg.aendret_siden === 1 ? ' ændring' : ' ændringer') + ' siden</b>' : ' · ingen ændringer siden')
               : (prg.pas.length ? '<b style="color:var(--guld)">Kladde — ikke godkendt endnu</b>' : 'Tomt — tryk + og læg det første pas ind'))) + '</div></div>' +
-      (S.minRolle === "traener" ? '' : '<button class="knap" style="flex:none;background:var(--vundet);color:#fff;padding:9px 12px;font-size:12.5px"' + (S.prgGodkender || !prg.pas.length ? ' disabled' : '') + ' data-act="prg-godkend">' + (S.prgGodkender ? '⏳' : '✓ Godkend og send ud') + '</button>') +
+      (S.minRolle === "traener" || (sgT && !prg.aendret_siden) ? '' : '<button class="knap" style="flex:none;background:var(--vundet);color:#fff;padding:9px 12px;font-size:12.5px"' + (S.prgGodkender || !prg.pas.length ? ' disabled' : '') + ' data-act="prg-godkend">' + (S.prgGodkender ? '⏳' : '✓ Godkend og send ud') + '</button>') +
     '</div>' +
     '<p class="lille" style="margin:6px 0 0">Trænerne retter kladden. Når admin godkender, er det dét program, der registreres fremmøde på — og hvert fremmøde skrives i spillerens træningslog.</p>';
   if (S.prgBesked) h += '<p class="lille" style="margin:8px 0 0;color:' + (S.prgBesked.fejl ? 'var(--tabt)' : 'var(--vundet)') + '">' + esc(S.prgBesked.t) + '</p>';
@@ -3849,6 +3852,7 @@ function goerNuKort(){   /* rummet «✅ Gør nu»: handlingerne · den stående
     else h += '<p class="lille" style="margin:0 0 10px">Alt er gjort \u2014 ingen h\u00e6nder lige nu.</p>';
   }
   var b = nuBedste();   /* den stående dør er stål — handlingerne har farve (v6.22.1: .dev-bred, så kanten lever) */
+  if (S.nu && (S.nu.pas || []).length)   /* ⭐ v6.25.3 · døren står kun, når dagen har et pas — uden et pas fører den til en score uden en træning bag (Nicolai 8/11) */
   h += '<button class="dev-bred dev-kant dev-kant-staal" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + ' data-goer-nu="vurder" style="margin:0 0 14px"><span style="font-size:30px">\u26a1</span><span><b>Vurd\u00e9r tr\u00e6ningen</b><br><small>fremm\u00f8de og vurdering fra banen</small></span><span class="dev-pil">\u2192</span></button>';
   return h;
 }

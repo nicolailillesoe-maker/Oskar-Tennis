@@ -335,7 +335,8 @@ const lager = {
     catch (e) { console.warn("kunne ikke gemme", n); }
     // v5.1.0 · en ændring af boksens indhold får et stempel og en sending på vej
     // (traenernavn, srvnavne og stigehold følger med i boksen, men kommer fra serveren/login — de er ikke trænerens ændringer)
-    if (BOKS_TING.indexOf(n) !== -1 && n !== "traenernavn" && n !== "srvnavne" && n !== "stigehold" && !window.__boksStille) { try { boksRoert(); } catch (_e) {} } },
+    if (BOKS_TING.indexOf(n) !== -1 && n !== "traenernavn" && n !== "srvnavne" && n !== "stigehold" && !window.__boksStille) { try { boksRoert(); } catch (_e) {} }
+    if ((n === "truppen" || n === "grupper") && !window.__boksStille && !window.__trupStille) { try { klubTrupRoert(); } catch (_e) {} } },   /* ⭐ v6.26.0 · klubbens trup */
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -552,6 +553,106 @@ async function boksHent(tving){
   } else if (boksUsendt()) {
     boksRoert();
   }
+  try { klubTrupHent(); } catch (_e) {}   /* ⭐ v6.26.0 · klubbens trup lægges oven på boksens — klubbens stand vinder */
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ⭐⭐⭐ v6.26.0 · KLUBBENS TRUP — «kan der eksistere to sandheder?» (Nicolai 8/11). Ja, til nu: truppen og grupperne lå
+//   i hver træners egen boks, én kopi pr. træner og pr. enhed. Nu er de KLUBBENS (traening v7 · klub_trup/klub_grupper).
+//   Boksen beholder sin kopi, så telefonen virker uden net — men klubbens stand vinder, og det, der kun lå her, går op.
+//   Et barn uden app (noegle "") rører aldrig serveren: ingen navne på serveren (79). Skærmen siger, at det kun står her.
+// ═══════════════════════════════════════════════════════════════════════
+var _trupUr = null, _trupSender = false, _trupIgen = false;
+function trupH(x){ return /^[0-9a-f]{16}$/.test(String(x || "")); }
+function klubTrupHent(){
+  if (!lager.hent("klubkode", "") || S.klubTrupHenter) return;
+  S.klubTrupHenter = true;
+  traeningKald("trup-hent", {}).then(function(r){
+    S.klubTrupHenter = false;
+    if (!r || r.fejl || !Array.isArray(r.medlemmer)) { S.trupStatus = { fejl: trupFejltekst(r) }; try { render(); } catch (_e) {} return; }
+    klubTrupFlet(r);
+    klubTrupSend();   /* det, der kun lå lokalt, går op — nu hvor klubbens stand er kendt */
+  }).catch(function(){ S.klubTrupHenter = false; });
+}
+function klubTrupFlet(r){
+  S.klubTrupSrv = r; S.klubTrupHentet = new Date().toISOString();
+  var aendret = false;
+  S.truppen = S.truppen || []; S.grupper = Array.isArray(S.grupper) ? S.grupper : [];
+  window.__trupStille = true;
+  try {
+    var grp = {}; S.grupper.forEach(function(g){ if (g && g.navn) grp[g.navn] = g; });
+    var srvG = [];
+    (r.grupper || []).forEach(function(g){
+      if (!g || !g.navn) return;
+      var e = grp[g.navn];
+      if (e) { if (String(g.aargang || "") !== String(e.aargang || "")) { e.aargang = String(g.aargang || ""); aendret = true; } srvG.push(e); }
+      else { var ny = { navn: String(g.navn), aargang: String(g.aargang || "") }; grp[ny.navn] = ny; srvG.push(ny); aendret = true; }
+    });
+    var kunHer = S.grupper.filter(function(g){ return g && g.navn && !srvG.some(function(x){ return x.navn === g.navn; }); });
+    var orden = srvG.concat(kunHer);
+    if (orden.map(function(g){ return g.navn; }).join("|") !== S.grupper.map(function(g){ return g && g.navn; }).join("|")) aendret = true;
+    S.grupper = orden;
+    (r.medlemmer || []).forEach(function(m){
+      if (!m || !trupH(m.h) || m.forladt) return;
+      var g = String(m.gruppe || "");
+      if (g && !grp[g]) { grp[g] = { navn: g, aargang: "" }; S.grupper.push(grp[g]); aendret = true; }
+      var p = S.truppen.filter(function(x){ return x && x.noegle === m.h; })[0];
+      if (p) { if (String(p.gruppe || "") !== g) { p.gruppe = g; aendret = true; } return; }
+      var navn = koblNytNavn({ fornavn: m.fornavn || (S.srvNavne || {})[m.h] || "Spiller" });
+      S.truppen.push({ navn: navn, gruppe: g, noegle: m.h });
+      S.noegler = S.noegler || {}; S.noegler[navn] = m.h; aendret = true;
+    });
+    if (aendret) { lager.gem("grupper", S.grupper); lager.gem("truppen", S.truppen); lager.gem("noegler", S.noegler || {}); byggTrup(); }
+  } finally { window.__trupStille = false; }
+  try { render(); } catch (_e) {}
+}
+function klubTrupRoert(){ clearTimeout(_trupUr); _trupUr = setTimeout(function(){ klubTrupSend(); }, 2000); }
+function klubTrupDiff(){   /* forskellen mellem denne enhed og klubbens sidst kendte stand — rækkevis, aldrig hele listen */
+  var srv = S.klubTrupSrv || { grupper: [], medlemmer: [] }, krop = {};
+  var grupper = (S.grupper || []).filter(function(g){ return g && g.navn; }).map(function(g, i){ return { navn: String(g.navn), aargang: String(g.aargang || ""), raekkefoelge: i }; });
+  var srvG = {}; (srv.grupper || []).forEach(function(g){ if (g && g.navn) srvG[g.navn] = g; });
+  var gOp = grupper.filter(function(g){ var e = srvG[g.navn]; return !e || String(e.aargang || "") !== g.aargang || (e.raekkefoelge | 0) !== g.raekkefoelge; });
+  var gFjern = Object.keys(srvG).filter(function(n){ return !grupper.some(function(g){ return g.navn === n; }); });
+  var srvM = {}; (srv.medlemmer || []).forEach(function(m){ if (m && m.h) srvM[m.h] = m; });
+  var saet = [], her = {};
+  (S.truppen || []).forEach(function(p){
+    if (!p || !trupH(p.noegle)) return;
+    her[p.noegle] = 1; var e = srvM[p.noegle], g = String(p.gruppe || "");
+    if (!e || String(e.gruppe || "") !== g) saet.push({ h: p.noegle, gruppe: g });
+  });
+  var fjern = Object.keys(srvM).filter(function(h){ return !her[h] && !srvM[h].forladt; });
+  if (gOp.length) krop.grupper = gOp; if (gFjern.length) krop.grupper_fjern = gFjern; if (saet.length) krop.saet = saet; if (fjern.length) krop.fjern = fjern;
+  return Object.keys(krop).length ? krop : null;
+}
+async function klubTrupSend(){
+  if (!S.klubTrupSrv) return;   /* ALDRIG før klubbens stand er hentet én gang — en gammel telefon må ikke overskrive klubben */
+  if (_trupSender) { _trupIgen = true; return; }
+  var krop = klubTrupDiff(); if (!krop) return;
+  _trupSender = true; S.trupStatus = { sender: true }; try { render(); } catch (_e) {}
+  var r = await traeningKald("trup-gem", krop);
+  _trupSender = false;
+  if (r && !r.fejl && Array.isArray(r.medlemmer)) { S.klubTrupSrv = r; S.trupStatus = { ok: true, tid: new Date().toISOString() }; }
+  else S.trupStatus = { fejl: trupFejltekst(r) };
+  try { render(); } catch (_e) {}
+  if (_trupIgen) { _trupIgen = false; klubTrupRoert(); }
+}
+function trupFejltekst(r){   /* hvert udfald sin egen sætning (75) */
+  if (!r || r.fejl === "netvaerk" || r.fejl === "tid") return "Ingen forbindelse \u2014 sendes igen ved n\u00e6ste \u00e6ndring.";
+  if (r.fejl === "ukendt-spiller") return "Klubben kender ikke " + ((r.ukendte || []).length || 1) + " af spillerne \u2014 tryk Opdat\u00e9r under Nye spillere.";
+  if (r.fejl === "loft") return "Klubben afviste: for mange grupper eller spillere.";
+  return "Klubben afviste grupperne (" + (r.fejl || "ukendt") + ").";
+}
+function trupStatusLinje(){   /* under 👥 GRUPPER: klubbens · status · dem uden app, der kun står her */
+  var EN = lager.hent("sprog", "da") === "en";
+  var udenApp = (S.truppen || []).filter(function(p){ return p && !trupH(p.noegle); }).length;
+  var st = S.trupStatus, t = "";
+  if (st && st.sender) t = "Sender \u2026";
+  else if (st && st.fejl) t = st.fejl;
+  else if (S.klubTrupSrv) t = "Delt med klubbens tr\u00e6nere \u2713";
+  else t = "Henter klubbens grupper \u2026";
+  var h = '<p class="lille" style="margin:6px 0 0;color:' + (st && st.fejl ? 'var(--tabt)' : 'var(--daempet)') + '">' + esc(t) + '</p>';
+  if (udenApp) h += '<p class="lille" style="margin:2px 0 0;color:var(--daempet)">' + esc(udenApp === 1 ? "1 uden app st\u00e5r kun p\u00e5 denne enhed" : udenApp + " uden app st\u00e5r kun p\u00e5 denne enhed") + '</p>';
+  return h;
 }
 
 // ⭐⭐⭐ v4.0.0 · KLUBBENS NAVN KOMMER FRA SERVEREN, IKKE FRA KODEN.
@@ -958,6 +1059,7 @@ let S = {
   srvNavne: lager.hent("srvnavne", {}),
   fuldeNavne: lager.hent("fuldenavne", {}),   /* ⭐ v5.2.0 */
   syncBesked: null, syncHenter: false,
+  klubTrupSrv: null, klubTrupHentet: null, klubTrupHenter: false, trupStatus: null,   /* ⭐ v6.26.0 · klubbens trup */
   opsAaben: false, kkUdkast: "", noegleFor: null, noegleUdkast: "", visKode: false, visTrupN: false, trupRet: null, retGruppe: undefined, retNoegle: undefined,
   // Godkendte evalueringer. Fritekst, som FØR kun levede i hukommelsen og
   // forsvandt ved reload. Teksten bliver på trænerens enhed — den sendes
@@ -1195,7 +1297,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.25.4 \u00b7 8. november 2026";
+const VERSION = "v6.26.0 \u00b7 9. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1724,7 +1826,13 @@ Object.assign(EN, {   /* v6.11.0 · HJEM er kortet */
   "Spillere": "Players", "{n} i truppen": "{n} in your squad", "invitér den første": "invite the first", "ugeskemaet": "the weekly schedule",
 });
 Object.assign(EN, {   /* v6.10.0 · kortet */
-  "SPILLERE": "PLAYERS", "👥 Spillere": "👥 Players", 
+  "SPILLERE": "PLAYERS", "👥 Spillere": "👥 Players",
+  /* ⭐ v6.26.0 · klubbens trup */
+  "Delt med klubbens trænere ✓": "Shared with the club's coaches ✓", "Henter klubbens grupper …": "Fetching the club's groups …", "Sender …": "Sending …",
+  "1 uden app står kun på denne enhed": "1 without the app is only on this device", "{n} uden app står kun på denne enhed": "{n} without the app are only on this device",
+  "Ingen forbindelse — sendes igen ved næste ændring.": "No connection — sent again at the next change.",
+  "Klubben kender ikke {n} af spillerne — tryk Opdatér under Nye spillere.": "The club doesn't know {n} of the players — tap Refresh under New players.",
+  "Klubben afviste: for mange grupper eller spillere.": "The club refused: too many groups or players.", "Klubben afviste grupperne ({x}).": "The club refused the groups ({x}).",
   "trænere og familier": "coaches and families", 
   "Invitér den første spiller under 👥 SPILLERE — når han siger ja, står han i din trup.": "Invite the first player under 👥 PLAYERS — when they say yes, they are in your squad.",
   "1 NY SPILLER": "1 NEW PLAYER", "{n} NYE SPILLERE": "{n} NEW PLAYERS", "venter på jeres ja": "waiting for your yes", "mangler i truppen": "not in your squad yet",
@@ -5540,7 +5648,7 @@ function traenerGrupper(t){
       '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
         '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">\ud83d\udc65 GRUPPER</div>' +
         '<span data-act="grp-aabn" style="cursor:pointer;font-size:13px;opacity:.65">' + (S.grpAaben ? '\u2715' : '\u270f\ufe0f') + '</span></div>' +
-      '';   /* v6.10.0 · princip 101: ✏️ er handlingen — ingen forklaring */
+      trupStatusLinje();   /* ⭐ v6.26.0 · klubbens grupper: status + dem uden app, der kun står her · v6.10.0 · princip 101: ✏️ er handlingen — ingen forklaring */
     if (S.grpAaben) {
       (S.grupper || []).forEach(function(g, i){
         var antal = (S.truppen || []).filter(function(p){ return p.gruppe === g.navn; }).length;
@@ -6909,6 +7017,7 @@ window.__oskarInit = function(){
   //   eneste, der lukker ned — udebliver det, sker der intet.
   setTimeout(function(){ try { tjekAdgang(); } catch (e) {} }, 900);
   setTimeout(function(){ try { boksHent(false); } catch (e) {} }, 1500);   // v5.1.0 · skyen
+  setTimeout(function(){ try { if (!S.klubTrupHentet) klubTrupHent(); } catch (e) {} }, 3500);   /* ⭐ v6.26.0 · klubbens trup — reserven, når boksen ikke hentes */
   try { coachRuteFraAdresse(); } catch (_e) {}   /* ⭐ v6.24.0 · #goer-nu / #aftale fra en notifikation */
   render();
 };

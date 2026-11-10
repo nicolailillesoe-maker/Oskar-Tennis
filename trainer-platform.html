@@ -808,7 +808,7 @@ function ryddKlubben(){
   S.tilmeldinger = []; S.tilmHentet = null; S.tilmHenter = false;
   S.koblSpm = []; S.budSendte = null;   /* ⭐ v6.24.2 · Codes fund L3: kortene hører til klubben */
   S.nu = null; S.nuHentet = 0; S.prg = null; S.prgGodkendt = null; S.reg = null; S.vurderLige = null;   /* v6.0.0 · klubskifte tømmer programmet */
-  S.prgVisning = null; S.imp = null; S.impTekst = ""; S.udstil = null; S.indstVisning = null;   /* v6.3.0 · v6.6.0 · v6.8.0 */
+  S.prgVisning = null; S.imp = null; S.impTekst = ""; S.udstil = null; S.indstVisning = null; S.liveSkaerm = null;   /* v6.3.0 · v6.6.0 · v6.8.0 · v6.27.0 */
   S.aabenSpiller = null; S.vurderOmraade = null; S.vurderGruppe = null;
   S.fpAaben = null; S.noegleFor = null; S.stigeHold = [];
   genskabDemo();                 // ⛔ ellers står den gamle klubs børn i DATA
@@ -1310,7 +1310,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.26.1 \u00b7 9. november 2026";
+const VERSION = "v6.27.0 \u00b7 9. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2477,6 +2477,16 @@ Object.assign(EN, {   /* ⭐ v6.24.0 · notifikationer · klubbens aftale */
   "gratis i pilotperioden": "free during the pilot",
   "I er over trinnet — klubben rykker automatisk op til trin {n}. Intet bliver spærret.": "You're above the tier — the club moves up to tier {n} automatically. Nothing is blocked.",
   "En aktiv spiller har mindst én registrering i måneden — et fremmøde, en træning eller en kamp. Kommer klubben over trinnet, rykker den automatisk op til det trin, der passer, fra næste måned, og du får besked. Intet bliver spærret.": "An active player has at least one registration in the month — an attendance, a training or a match. If the club goes above its tier, it moves up automatically to the tier that fits from next month, and you get a notification. Nothing is blocked."
+});
+Object.assign(EN, {   /* ⭐ v6.27.0 · klubbens live-skærm */
+  "📺 KLUBBENS LIVE-SKÆRM": "📺 THE CLUB'S LIVE SCREEN",
+  "— skærmen viser truppens live-kampe": "— the screen shows the squad's live matches",
+  "Til TV'et i klubhuset og pc'en: fornavn, turnering og stillingen — modstanderen står som «Modstander». Kun kampe, spilleren selv deler live. Skærmen opdaterer sig selv hvert halve minut.": "For the TV in the clubhouse and the PC: first name, tournament and score — the opponent shows as “Opponent”. Only matches the player shares live. The screen updates itself every 30 seconds.",
+  "Skærmen er tændt — åbn linket på TV'et i klubhuset eller på pc'en.": "The screen is on — open the link on the TV in the clubhouse or on the PC.",
+  "Klubbens administrator kan tænde en live-skærm til TV'et i klubhuset.": "The club's administrator can switch on a live screen for the TV in the clubhouse.",
+  "Åbn skærmen ↗": "Open the screen ↗",
+  "Kun klubbens administrator kan tænde skærmen.": "Only the club's administrator can switch on the screen.",
+  "Live-skærmen er ikke åbnet for klubben endnu.": "The live screen isn't open for the club yet.",
 });
 var _ENr = {}, _ENx = [];
 (function(){
@@ -4656,7 +4666,60 @@ function traenerLive() {
   });
   h += '<p class="lille" style="margin:10px 0 0;color:var(--daempet)">Kun kampe, spilleren selv deler live. Det er gratis at se med.</p>';
   h += '<p class="lille" style="margin:4px 0 0;color:var(--daempet)">Listen opdateres hvert halve minut.</p>';
+  h += liveSkaermKort();   /* ⭐ v6.27.0 */
   return h;
+}
+/* ⭐⭐ v6.27.0 · KLUBBENS LIVE-SKÆRM — Nicolai 9/11: «jeg vil have et link til hver klubs live så de kan sætte det op i klubben… og
+   følge med» · «På TV, på pc'en..». traening v9 `live-link`: enhver træner læser, kun admin tænder, slukker og laver et nyt link.
+   Skærmen er live.html (program-vis v3 `live`, kender kun tokenet): fornavn · turnering · stillingen — modstanderen står som «Modstander».
+   Kortet står KUN, når motoren siger `aaben` (til Julie har set sætningen i privatlivsteksten: demoen og prøveklubberne). */
+function liveSkaermHent(krop){
+  S.liveSkaerm = S.liveSkaerm || {}; S.liveSkaerm.henter = true; S.liveSkaerm.fejl = null;
+  if (S.tab === "live") { try { render(); } catch (_e) {} }
+  traeningKald("live-link", krop || {}).then(function(r){
+    S.liveSkaerm.henter = false;
+    if (!r || r.fejl) S.liveSkaerm.fejl = liveSkaermFejl(r);   /* den sidste stand bliver stående — fejlen siges i kortet (75) */
+    else { S.liveSkaerm.data = r; S.liveSkaerm.kopieret = false; }
+    if (S.tab === "live") render();
+  });
+}
+function liveSkaermFejl(r){
+  if (r && r.fejl === "kraever-admin") return "Kun klubbens administrator kan tænde skærmen.";
+  if (r && r.fejl === "afventer-privatliv") return "Live-skærmen er ikke åbnet for klubben endnu.";
+  return traeningFejl(r);
+}
+function liveSkaermLink(d){ return d && d.link ? d.link + (SPROG === "en" ? "&l=en" : "") : ""; }
+function liveSkaermKort(){
+  var u = S.liveSkaerm;
+  if (!u) { setTimeout(function(){ if (!S.liveSkaerm) liveSkaermHent({}); }, 0); return ""; }
+  var d = u.data, fejlLinje = u.fejl ? '<p class="lille" data-live-skaerm-fejl="1" style="margin:6px 0 0;color:var(--tabt)">' + esc(u.fejl) + '</p>' : '';
+  if (!d) return u.fejl ? '<div class="kort" data-live-skaerm="fejl" style="padding:11px 14px;margin-top:14px"><div class="eyebrow">📺 KLUBBENS LIVE-SKÆRM</div>' + fejlLinje +
+    '<button class="knap valg" style="margin-top:8px;min-height:36px;padding:0 14px" data-act="live-skaerm" data-v="hent">Prøv igen</button></div>' : '';
+  if (!d.aaben) return '';
+  var link = liveSkaermLink(d);
+  var h = '<div class="kort" data-live-skaerm="' + (d.taendt ? 'taendt' : 'slukket') + '" style="padding:11px 14px;margin-top:14px"><div class="eyebrow">📺 KLUBBENS LIVE-SKÆRM</div>';
+  if (d.kan_aendre) {
+    h += '<h3 style="margin:4px 0 0">' + (d.taendt ? '<span style="color:var(--vundet)">Tændt</span> — skærmen viser truppens live-kampe' : '<span style="color:var(--daempet)">Slukket</span> — linket viser ingenting endnu') + '</h3>';
+    h += "<p class=\"lille\" style=\"margin:6px 0 0\">Til TV'et i klubhuset og pc'en: fornavn, turnering og stillingen — modstanderen står som «Modstander». Kun kampe, spilleren selv deler live. Skærmen opdaterer sig selv hvert halve minut.</p>";
+    h += fejlLinje;
+    h += '<button class="knap ' + (d.taendt ? 'valg' : 'gron') + '" style="width:100%;margin-top:10px"' + (u.henter ? ' disabled' : '') + ' data-act="live-skaerm" data-v="' + (d.taendt ? 'sluk' : 'taend') + '">' + (d.taendt ? '⏻ Sluk' : '⏻ Tænd') + '</button>';
+  } else {
+    h += '<p class="lille" style="margin:6px 0 0">' + (d.taendt ? "Skærmen er tændt — åbn linket på TV'et i klubhuset eller på pc'en." : "Klubbens administrator kan tænde en live-skærm til TV'et i klubhuset.") + '</p>' + fejlLinje;
+  }
+  if (link) {
+    h += '<input class="felt" style="margin-top:10px;font-family:ui-monospace,Menlo,monospace;font-size:12px" readonly value="' + esc(link) + '" data-felt="liveSkaermLink" aria-label="link">' +
+      '<div class="raekke" style="margin-top:8px;gap:8px">' +
+        '<button class="knap valg" style="flex:1" data-act="live-skaerm" data-v="kopier">' + (u.kopieret ? '✓ Kopieret' : 'Kopiér linket') + '</button>' +
+        '<a class="knap valg" style="flex:1;display:inline-flex;align-items:center;justify-content:center;text-decoration:none" href="' + esc(link) + '" target="_blank" rel="noopener" data-live-skaerm-aabn="1">Åbn skærmen ↗</a>' +
+      '</div>';
+  }
+  if (d.kan_aendre && link) {
+    h += '<p class="lille" style="margin:10px 0 6px">Et nyt link gør det gamle dødt i samme sekund — brug det, hvis linket er havnet et sted, det ikke skulle.</p>' +
+      (u.bekraeftNyt
+        ? '<div class="raekke" style="gap:8px"><button class="knap gron" style="flex:1" data-act="live-skaerm" data-v="nyt">Ja, lav et nyt link</button><button class="knap valg" style="flex:1" data-act="live-skaerm" data-v="nyt-fortryd">Fortryd</button></div>'
+        : '<button class="knap valg" style="width:100%" data-act="live-skaerm" data-v="nyt-spoerg">Lav et nyt link …</button>');
+  }
+  return h + '</div>';
 }
 function traenerRummet() {
   // Intet kort i kort: rummet fylder skærmen ned til bundbaren, så skrivefeltet står nederst — også når der kun er få beskeder.
@@ -6559,7 +6622,7 @@ document.addEventListener("click", function(e){
       render(); nuHent(true); }); }
   else if (act==="reg-vurd-igen"){ if (!S.reg || S.reg.trin !== 3) return; regSendVurderinger(true); render(); }
   else if (act==="reg-igen"){ regNulstil(); render(); nuHent(false); }
-  if (act==="tab"){ S.ventRute = null;   /* ⭐ v6.24.4 · Codes Q8: træneren valgte selv */ if (v === "overblik") { try { window.scrollTo(0,0); } catch(_e){} }   /* v6.22.1 · Gør nu åbner øverst (Codes fund 6: 375×667) */ if (v === "live" && !S.liveHenter && Date.now() - (S.liveTid || 0) > 10000) setTimeout(function(){ liveHent(); }, 0);   /* ⭐ v6.18.0 · frisk ved åbning */ if (v === "weekenden" && !S.wkHenter && (!Array.isArray(S.wkRaekker) || Date.now() - (S.wkTid || 0) > 60000)) setTimeout(function(){ wkHent(); }, 0);   /* ⭐ v6.17.0 · frisk ved åbning, højst ét kald pr. minut */ if (S.tab === "grupper" && v !== "grupper") { S.autoTrupBesked = null; S.koblBesked = null; }   /* v6.10.0 */ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { S.snakValgt = null; S.snakRulNed = true; try { snakHent(false); } catch (_e) {} try { nuHent(false); } catch (_e) {} }   /* v6.15.0 · overblikket kommer fra dagens program */ if (v === "noegler" || v === "grupper") { try { budSendteHent(); } catch (_e) {} } if (v === "grupper" && lager.hent("klubkode", "") && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }   /* v6.10.0 */
+  if (act==="tab"){ S.ventRute = null;   /* ⭐ v6.24.4 · Codes Q8: træneren valgte selv */ if (v === "overblik") { try { window.scrollTo(0,0); } catch(_e){} }   /* v6.22.1 · Gør nu åbner øverst (Codes fund 6: 375×667) */ if (v === "live" && !S.liveHenter && Date.now() - (S.liveTid || 0) > 10000) setTimeout(function(){ liveHent(); }, 0);   /* ⭐ v6.18.0 · frisk ved åbning */ if (v === "live") S.liveSkaerm = null;   /* ⭐ v6.27.0 · live-skærmen hentes frisk ved åbning */ if (v === "weekenden" && !S.wkHenter && (!Array.isArray(S.wkRaekker) || Date.now() - (S.wkTid || 0) > 60000)) setTimeout(function(){ wkHent(); }, 0);   /* ⭐ v6.17.0 · frisk ved åbning, højst ét kald pr. minut */ if (S.tab === "grupper" && v !== "grupper") { S.autoTrupBesked = null; S.koblBesked = null; }   /* v6.10.0 */ S.tab=v; S.indstVisning=null; S.aabenSpiller=null;   /* v6.8.0 */ S.vurderOmraade=null; S.vurderGruppe=null; S.vurderLige=null; S.kvartalUdkast=null; if (v === "registrer" || v === "vurder") regNulstil(); render(); if (v === "program") { S.prgBesked = null; S.prgVisning = null; try { prgHent("kladde"); } catch (_e) {} } if (v === "hjem" || v === "registrer" || v === "vurder") { try { nuHent(false); } catch (_e) {} } if (v === "rum") { S.snakValgt = null; S.snakRulNed = true; try { snakHent(false); } catch (_e) {} try { nuHent(false); } catch (_e) {} }   /* v6.15.0 · overblikket kommer fra dagens program */ if (v === "noegler" || v === "grupper") { try { budSendteHent(); } catch (_e) {} } if (v === "grupper" && lager.hent("klubkode", "") && !S.tilmHenter) { try { hentTilmeldinger(); } catch (_e) {} } }   /* v6.10.0 */
   else if (act==="goer-nu"){   /* ⭐ v6.22.0 · Gør nu's egne døre: kladden → PROGRAM/Ugeskemaet · ugens fokus → Vælg ugens fokus */
     if (v === "kladde") { S.tab = "program"; S.prgVisning = "skema"; S.indstVisning = null; S.aabenSpiller = null; prgNulstilForm(); S.prgSlet = null; S.prgBesked = null; try { window.scrollTo(0,0); } catch(_e){} render(); if (!S.prgHenter) prgHent("kladde"); }   /* v6.22.1 · intet armeret slet, intet gammelt svar (Codes fund 4) · til toppen (6) */
     else if (v === "ugefokus") { S.tab = "vurder"; S.indstVisning = null; S.aabenSpiller = null; regNulstil(); S.vurderOmraade = "__fokus"; S.vurderGruppe = null; try { window.scrollTo(0,0); } catch(_e){} render(); }
@@ -6784,6 +6847,20 @@ document.addEventListener("click", function(e){
   /* ⭐ v6.17.0 · WEEKENDEN */
   else if (act==="wk-hent"){ S.wkFejl = null; wkHent(); }
   else if (act==="live-hent"){ liveHent(true); }   /* ⭐ v6.18.0 */
+  else if (act==="live-skaerm"){   /* ⭐ v6.27.0 · klubbens live-skærm */
+    S.liveSkaerm = S.liveSkaerm || {};
+    if (v === "hent") liveSkaermHent({});
+    else if (v === "taend") liveSkaermHent({ taendt: true });
+    else if (v === "sluk") liveSkaermHent({ taendt: false });
+    else if (v === "nyt-spoerg") { S.liveSkaerm.bekraeftNyt = true; render(); }
+    else if (v === "nyt-fortryd") { S.liveSkaerm.bekraeftNyt = false; render(); }
+    else if (v === "nyt") { S.liveSkaerm.bekraeftNyt = false; liveSkaermHent({ nyt_token: true }); }
+    else if (v === "kopier") {
+      var _lsL = liveSkaermLink(S.liveSkaerm.data); if (!_lsL) return;
+      var _lsOk = function(){ S.liveSkaerm.kopieret = true; render(); };
+      var _lsNej = function(){ try { var _f = document.querySelector('[data-felt="liveSkaermLink"]'); if (_f) { _f.focus(); _f.select(); } } catch (_e) {} S.liveSkaerm.kopieret = false; S.liveSkaerm.fejl = "Kunne ikke kopiere — markér teksten og kopiér selv."; render(); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(_lsL).then(_lsOk, _lsNej); else _lsNej();
+    } }
   else if (act==="analyse-aabn"){ S.analyseAaben = (S.analyseAaben === v ? null : v);   /* ⭐ v6.20.0 · åbnet = læst på denne telefon */
     if (S.analyseAaben) { var _a = (S.analyser || []).filter(function(x){ return x.kamp_id === v; })[0];
       if (_a) { var _set = analyseSet(); var _k = _a.kamp_id + "|" + _a.delt; if (_set.indexOf(_k) < 0) { _set.push(_k); lager.gem("analyse-set", _set.slice(-200)); } } }

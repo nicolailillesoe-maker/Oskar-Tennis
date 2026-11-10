@@ -570,6 +570,7 @@ function klubTrupHent(){
   traeningKald("trup-hent", {}).then(function(r){
     S.klubTrupHenter = false;
     if (!r || r.fejl || !Array.isArray(r.medlemmer)) { S.trupStatus = { fejl: trupFejltekst(r) }; try { render(); } catch (_e) {} return; }
+    S.klubTrupUkendte = null;   /* ⭐ v6.26.1 · de ukendte prøves igen én gang pr. åbning — en spiller kan være kommet ind i klubben siden */
     klubTrupFlet(r);
     klubTrupSend();   /* det, der kun lå lokalt, går op — nu hvor klubbens stand er kendt */
   }).catch(function(){ S.klubTrupHenter = false; });
@@ -614,9 +615,10 @@ function klubTrupDiff(){   /* forskellen mellem denne enhed og klubbens sidst ke
   var gOp = grupper.filter(function(g){ var e = srvG[g.navn]; return !e || String(e.aargang || "") !== g.aargang || (e.raekkefoelge | 0) !== g.raekkefoelge; });
   var gFjern = Object.keys(srvG).filter(function(n){ return !grupper.some(function(g){ return g.navn === n; }); });
   var srvM = {}; (srv.medlemmer || []).forEach(function(m){ if (m && m.h) srvM[m.h] = m; });
-  var saet = [], her = {};
+  var saet = [], her = {}, uk = S.klubTrupUkendte || [];
   (S.truppen || []).forEach(function(p){
     if (!p || !trupH(p.noegle)) return;
+    if (uk.indexOf(p.noegle) >= 0) return;   /* ⭐ v6.26.1 · klubben kender ikke spilleren — sendes ikke igen før næste åbning */
     her[p.noegle] = 1; var e = srvM[p.noegle], g = String(p.gruppe || "");
     if (!e || String(e.gruppe || "") !== g) saet.push({ h: p.noegle, gruppe: g });
   });
@@ -631,14 +633,17 @@ async function klubTrupSend(){
   _trupSender = true; S.trupStatus = { sender: true }; try { render(); } catch (_e) {}
   var r = await traeningKald("trup-gem", krop);
   _trupSender = false;
-  if (r && !r.fejl && Array.isArray(r.medlemmer)) { S.klubTrupSrv = r; S.trupStatus = { ok: true, tid: new Date().toISOString() }; }
+  if (r && !r.fejl && Array.isArray(r.medlemmer)) {
+    S.klubTrupSrv = r; S.trupStatus = { ok: true, tid: new Date().toISOString() };
+    if (r.advarsel && r.advarsel.kode === "ukendt-spiller" && Array.isArray(r.advarsel.ukendte)) S.klubTrupUkendte = r.advarsel.ukendte.filter(trupH);   /* ⭐ v6.26.1 · traening v8: en advarsel, ikke et nej */
+  }
   else S.trupStatus = { fejl: trupFejltekst(r) };
   try { render(); } catch (_e) {}
   if (_trupIgen) { _trupIgen = false; klubTrupRoert(); }
 }
 function trupFejltekst(r){   /* hvert udfald sin egen sætning (75) */
   if (!r || r.fejl === "netvaerk" || r.fejl === "tid") return "Ingen forbindelse \u2014 sendes igen ved n\u00e6ste \u00e6ndring.";
-  if (r.fejl === "ukendt-spiller") return "Klubben kender ikke " + ((r.ukendte || []).length || 1) + " af spillerne \u2014 tryk Opdat\u00e9r under Nye spillere.";
+  if (r.fejl === "ukendt-spiller") return "Klubben kender ikke " + ((r.ukendte || []).length || 1) + " af spillerne \u2014 de st\u00e5r kun p\u00e5 denne enhed.";   /* ⭐ v6.26.1 · intet råd, der ikke virker */
   if (r.fejl === "loft") return "Klubben afviste: for mange grupper eller spillere.";
   return "Klubben afviste grupperne (" + (r.fejl || "ukendt") + ").";
 }
@@ -652,7 +657,15 @@ function trupStatusLinje(){   /* under 👥 GRUPPER: klubbens · status · dem u
   else t = "Henter klubbens grupper \u2026";
   var h = '<p class="lille" style="margin:6px 0 0;color:' + (st && st.fejl ? 'var(--tabt)' : 'var(--daempet)') + '">' + esc(t) + '</p>';
   if (udenApp) h += '<p class="lille" style="margin:2px 0 0;color:var(--daempet)">' + esc(udenApp === 1 ? "1 uden app st\u00e5r kun p\u00e5 denne enhed" : udenApp + " uden app st\u00e5r kun p\u00e5 denne enhed") + '</p>';
+  h += trupUkendteLinje();
   return h;
+}
+function trupUkendteLinje(){   /* ⭐ v6.26.1 · dem, klubben ikke kender (traening v8's advarsel) — navnene er lokale og bliver her (79) */
+  var uk = S.klubTrupUkendte || []; if (!uk.length) return '';
+  var navne = (S.truppen || []).filter(function(p){ return p && uk.indexOf(p.noegle) >= 0; }).map(function(p){ return p.navn; });
+  if (!navne.length) return '';
+  var x = navne.length === 1 ? navne[0] : navne.slice(0, -1).join(", ") + " og " + navne[navne.length - 1];
+  return '<p class="lille" style="margin:2px 0 0;color:var(--daempet)">' + esc(x + (navne.length === 1 ? " st\u00e5r kun p\u00e5 denne enhed \u2014 ikke spiller i klubben" : " st\u00e5r kun p\u00e5 denne enhed \u2014 ikke spillere i klubben")) + '</p>';
 }
 
 // ⭐⭐⭐ v4.0.0 · KLUBBENS NAVN KOMMER FRA SERVEREN, IKKE FRA KODEN.
@@ -1059,7 +1072,7 @@ let S = {
   srvNavne: lager.hent("srvnavne", {}),
   fuldeNavne: lager.hent("fuldenavne", {}),   /* ⭐ v5.2.0 */
   syncBesked: null, syncHenter: false,
-  klubTrupSrv: null, klubTrupHentet: null, klubTrupHenter: false, trupStatus: null,   /* ⭐ v6.26.0 · klubbens trup */
+  klubTrupSrv: null, klubTrupHentet: null, klubTrupHenter: false, trupStatus: null, klubTrupUkendte: null,   /* ⭐ v6.26.0 · klubbens trup · v6.26.1 de ukendte */
   opsAaben: false, kkUdkast: "", noegleFor: null, noegleUdkast: "", visKode: false, visTrupN: false, trupRet: null, retGruppe: undefined, retNoegle: undefined,
   // Godkendte evalueringer. Fritekst, som FØR kun levede i hukommelsen og
   // forsvandt ved reload. Teksten bliver på trænerens enhed — den sendes
@@ -1297,7 +1310,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.26.0 \u00b7 9. november 2026";
+const VERSION = "v6.26.1 \u00b7 9. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1796,6 +1809,17 @@ Object.assign(EN, {   /* v6.9.0 · automatisk backup */
   "⚠️ Ingen forbindelse — det gemmes på din konto ved næste ændring.": "⚠️ No connection — it is saved to your account at the next change.",
   "⚠️ Din trup kunne ikke hentes eller gemmes på din konto — log ud og ind igen, hvis det bliver ved.": "⚠️ Your squad could not be fetched or saved to your account — log out and in again if it keeps happening.",
   "Din konto har en låst kopi. Sikkerhedskopien her er din egen fil ved siden af — til dig selv, ikke til os.": "Your account holds a locked copy. The backup here is your own file alongside it — for you, not for us."
+});
+Object.assign(EN, {   /* ⭐ v6.26.1 · Action Center — samme navn på begge sprog · «ikke registreret» · påmindelsen · klubbens trup */
+  "✅ Action Center": "✅ Action Center",
+  "1 pas ikke registreret": "1 session not registered", "{n} pas ikke registreret": "{n} sessions not registered", "ikke registreret": "not registered",
+  "Påmindelsen kl. 20 er ikke slået til": "The 8 pm reminder is not turned on", "på denne telefon — slå den til under 🔔 Notifikationer": "on this phone — turn it on under 🔔 Notifications",
+  "{x} står kun på denne enhed — ikke spiller i klubben": "{x} is only on this device — not a player in the club",
+  "{x} står kun på denne enhed — ikke spillere i klubben": "{x} are only on this device — not players in the club",
+  "Klubben kender ikke {n} af spillerne — de står kun på denne enhed.": "The club doesn't know {n} of the players — they are only on this device.",
+  /* ⭐ v6.26.1 · spillerkortets TRÆNING-blok var aldrig i ordbogen (målt 9/11) */
+  "📅 TRÆNING · SENESTE UGER": "📅 TRAINING · LAST WEEKS", "Fra spillerens egen registrering — antal og tid, aldrig indhold.": "From the player's own log — count and time, never content.",
+  "Uge {n}": "Week {n}", "🎾 {n} · 💪 {n} · {n} t": "🎾 {n} · 💪 {n} · {n} h", "1 pas": "1 session", "{n} pas": "{n} sessions", "Pas denne uge": "Sessions this week",
 });
 Object.assign(EN, {   /* v6.22.0 · Gør nu */
   "✅ Gør nu": "✅ Do now", "Gør nu": "Do now", "1 ting venter": "1 thing waiting", "{n} ting venter": "{n} things waiting", "alt er gjort": "all done",
@@ -2346,6 +2370,7 @@ Object.assign(EN, {   /* ⭐ v6.23.0 · læs klubbens ark · hent truppen fra pr
   "{x} står nu i din trup under «Uden gruppe».": "{x} is now in your squad under «No group»."
 });
 Object.assign(EN, {   /* ⭐ v6.25.4 · Gør nu bagud · spring over · døren */
+  "ikke registreret · bane {x} · {x}": "not registered · court {x} · {x}",   /* ⭐ v6.26.1 */
   "uden fremmøde · bane {x} · {x}": "without attendance · court {x} · {x}",
   "Spring over": "Skip", "Spring alle {n} over": "Skip all {n}",
   "Dine pas de sidste 7 dage — dit navn står på programmet.": "Your sessions from the last 7 days — your name is on the programme.",
@@ -2398,7 +2423,7 @@ Object.assign(EN, {   /* ⭐ v6.24.0 · notifikationer · klubbens aftale */
   "trin {n} · {n} aktive denne måned": "tier {n} · {n} active this month",
   "trin {n} · {n} aktiv denne måned": "tier {n} · {n} active this month",
   "NOTIFIKATIONER": "NOTIFICATIONS",
-  "Kl. 20 får du besked, hvis et af dine pas i dag mangler fremmøde. Et tryk åbner ✅ Gør nu.": "At 8 pm you get a notification if one of your sessions today is missing attendance. One tap opens ✅ Do now.",
+  "Kl. 20 får du besked, hvis et af dine pas i dag ikke er registreret. Et tryk åbner ✅ Action Center.": "At 8 pm you get a notification if one of your sessions today is not registered. One tap opens ✅ Action Center.",
   "Som admin får du klubbens pas — og besked, når klubben rykker op på spillertrappen.": "As admin you get the club's sessions — and a notification when the club moves up the player ladder.",
   "På iPhone kommer beskeder kun, når StreakCoach ligger på hjemmeskærmen: tryk Del → «Føj til hjemmeskærm», åbn StreakCoach derfra, log ind, og slå notifikationer til her.": "On iPhone, notifications only arrive when StreakCoach is on the home screen: tap Share → «Add to Home Screen», open StreakCoach from there, log in, and turn notifications on here.",
   "Denne browser kan ikke modtage notifikationer. Brug Safari fra hjemmeskærmen på iPhone, eller Chrome.": "This browser can't receive notifications. Use Safari from the home screen on iPhone, or Chrome.",
@@ -3159,7 +3184,7 @@ function indstNotif(){   /* ⭐ v6.24.0 · 🔔 NOTIFIKATIONER */
   var n = S.notif || {}, st = n.status || "", adm = (S.minRolle || lager.hent("minrolle", "")) === "admin";
   var h = '<div class="kort" data-notif-rum="1" style="--tone:var(--is)">' +
     '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--is)">🔔 ' + T("NOTIFIKATIONER") + '</div>' +
-    '<p class="lille" style="margin:6px 0 4px">' + T("Kl. 20 får du besked, hvis et af dine pas i dag mangler fremmøde. Et tryk åbner ✅ Gør nu.") + '</p>' +
+    '<p class="lille" style="margin:6px 0 4px">' + T("Kl. 20 får du besked, hvis et af dine pas i dag ikke er registreret. Et tryk åbner ✅ Action Center.") + '</p>' +
     (adm ? '<p class="lille" style="margin:0 0 4px">' + T("Som admin får du klubbens pas — og besked, når klubben rykker op på spillertrappen.") + '</p>' : '');
   if (st === "kraever-hjem") h += '<p class="lille" data-notif-status="kraever-hjem" style="margin:8px 0 0;color:var(--guld)">' + T("På iPhone kommer beskeder kun, når StreakCoach ligger på hjemmeskærmen: tryk Del → «Føj til hjemmeskærm», åbn StreakCoach derfra, log ind, og slå notifikationer til her.") + '</p>';
   else if (st === "ikke-understoettet") h += '<p class="lille" data-notif-status="ikke-understoettet" style="margin:8px 0 0;color:var(--guld)">' + T("Denne browser kan ikke modtage notifikationer. Brug Safari fra hjemmeskærmen på iPhone, eller Chrome.") + '</p>';
@@ -3926,7 +3951,7 @@ function faneTitel(tab){   /* v6.2.0 · fanens navn i titelrækken — samme emo
     "adgang-spiller": "\ud83c\udfbe Invit\u00e9r spiller", "adgang-traener": "\ud83e\uddd1\u200d\ud83c\udfeb Invit\u00e9r tr\u00e6ner", "adgang-link": "\ud83d\udcf1 Link til appen", "adgang-klub": "\ud83d\udc65 Klubben", notif: "🔔 Notifikationer", aftale: "🏷️ Klubbens aftale" }[S.indstVisning] || "\u2699\ufe0f Indstillinger";   /* v6.8.0 */
   if (tab === "program" && S.prgVisning) return { skema: "\ud83d\udcc5 Ugeskemaet", import: "\ud83d\udce5 Import\u00e9r", timer: "\u23f1 Timer om ugen", udstil: "\ud83c\udf10 Udstil" }[S.prgVisning] || "\ud83d\udcc5 Program";   /* v6.3.0 */
   return { noegler: "\ud83d\udd11 Invit\u00e9r spiller", program: "\ud83d\udcc5 Program", grupper: "\ud83d\udc65 Spillere", vurder: "\u26a1 Vurd\u00e9r tr\u00e6ningen",
-           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\u2705 G\u00f8r nu", weekenden: "📆 Weekenden", live: "🔴 Live nu" }[tab] || "";
+           kvartal: "\ud83d\udccb Evaluering", rum: "\ud83d\udcac Tr\u00e6nerrummet", indst: "\u2699\ufe0f Indstillinger", registrer: "\u26a1 Vurd\u00e9r tr\u00e6ningen", overblik: "\u2705 Action Center", weekenden: "📆 Weekenden", live: "🔴 Live nu" }[tab] || "";
 }
 // ⭐⭐ v6.12.0 · TRÆNERENS DASHBOARD (Nicolai 26/9: «de 3 tal og nyhed» + «hvad der skal ske i dag»). Står altid på HJEM.
 //   Tallene er det, telefonen VED: truppen (lager) · spillere vurderet siden mandag (S.vurderinger, dansk dato) · nye (hent-hold).
@@ -3943,12 +3968,12 @@ function dashVurderet(){   /* v6.13.0 · spillere vurderet siden mandag — ét 
 var BAGUD_VIS = 8;   /* ⭐ v6.25.4 · højst otte rækker bagud i Gør nu — resten tælles og kan springes over samlet */
 function bagudListe(){ return (S.bagud && Array.isArray(S.bagud.pas) ? S.bagud.pas : []).slice(0, BAGUD_VIS); }
 function bagudTitel(p){ var d = datoTekst(p.dato); return d.charAt(0).toUpperCase() + d.slice(1) + " \u00b7 " + String(p.start || "").slice(0, 5); }   /* «Onsdag 4/11 · 12:00» */
-function bagudTekst(p){ return "uden fremm\u00f8de \u00b7 bane " + String(p.bane || "") + " \u00b7 " + String(p.traener || p.titel || "Tr\u00e6ning"); }
+function bagudTekst(p){ return "ikke registreret \u00b7 bane " + String(p.bane || "") + " \u00b7 " + String(p.traener || p.titel || "Tr\u00e6ning"); }
 function goerNu(){
   var liste = [], uf = nuUdenFremmoede(), b = nuBedste();
   if (lager.hent("klubkode", "") && (lager.hent("truppen", []) || []).length && !(S.ugefokus || {})[ugeNoegle()])   /* v6.22.1 · FØRST: fokus før vurdering (Codes fund 3) */
     liste.push({ id: "ugefokus", ikon: "\ud83c\udfaf", titel: "Ugens fokus mangler", tekst: "v\u00e6lg omr\u00e5det, f\u00f8r du vurderer", act: "goer-nu", v: "ugefokus", kant: "dev-kant-is" });
-  if (uf && b) liste.push({ id: "reg", ikon: "\u26a1", titel: (uf === 1 ? "1 pas uden fremm\u00f8de" : uf + " pas uden fremm\u00f8de"), tekst: "registr\u00e9r fremm\u00f8de og vurd\u00e9r", act: "reg-start", v: b.id, kant: "dev-kant-grus" });
+  if (uf && b) liste.push({ id: "reg", ikon: "\u26a1", titel: (uf === 1 ? "1 pas ikke registreret" : uf + " pas ikke registreret"), tekst: "registr\u00e9r fremm\u00f8de og vurd\u00e9r", act: "reg-start", v: b.id, kant: "dev-kant-grus" });
   bagudListe().forEach(function(p){   /* ⭐ v6.25.4 · det, træneren ikke har vurderet — ældste først, ét pas pr. række (Nicolai 6/11) */
     liste.push({ id: "bagud", ikon: "\u23f3", titel: bagudTitel(p), tekst: bagudTekst(p), act: "reg-dato", v: p.id, d: p.dato, kant: "dev-kant-grus" });
   });
@@ -3965,8 +3990,20 @@ function goerNu(){
   var _n = _t.venter.length + _t.nye.length;
   if (_n) liste.push({ id: "nye", ikon: "\ud83d\udce5", titel: (_n === 1 ? "1 ny spiller" : _n + " nye spillere"), tekst: (_t.venter.length ? "venter p\u00e5 jeres ja" : "mangler i truppen"), act: "tab", v: "grupper", kant: "dev-kant-guld" });
   var _a = 0; try { _a = analyseNye(); } catch (_e2) {}
+  var _nr = null; try { _nr = notifRaekke(); } catch (_e3) {}   /* ⭐ v6.26.1 · påmindelsen kl. 20 er ikke slået til — sidst, den haster ikke */
   if (_a) liste.push({ id: "analyser", ikon: "\ud83d\udccb", titel: (_a === 1 ? "1 ny analyse" : _a + " nye analyser"), tekst: "fra spillerne \u2014 l\u00e6s dem p\u00e5 kortet", act: "tab", v: "grupper", kant: "dev-kant-guld" });
+  if (_nr) liste.push(_nr);
   return liste;
+}
+// ⭐ v6.26.1 · PÅMINDELSEN I ACTION CENTER (Carsten 9/11: traener_push havde 0 rækker — ingen træner fik beskeden kl. 20, fordi ingen havde slået den til).
+//   Kun når telefonen KAN og ikke er blokeret (status «fra»): «kræver hjemmeskærmen», «blokeret» og «kan ikke» har deres egne sætninger under 🔔 (75).
+//   Uden abonnement spørger notifStatus ikke serveren — rækken koster intet kald.
+function notifRaekke(){
+  if (!lager.hent("klubkode", "")) return null;
+  var n = S.notif || {};
+  if (!n.status && !n.tjekket) { n.tjekket = true; S.notif = n; setTimeout(function(){ try { notifStatus(); } catch (_e) {} }, 0); }
+  if (n.status !== "fra") return null;
+  return { id: "notif", ikon: "\ud83d\udd14", titel: "P\u00e5mindelsen kl. 20 er ikke sl\u00e5et til", tekst: "p\u00e5 denne telefon \u2014 sl\u00e5 den til under \ud83d\udd14 Notifikationer", act: "goer-nu", v: "notif", kant: "dev-kant-is" };
 }
 function goerNuHentet(){   /* v6.22.1 · «alt er gjort» må kun siges, når dagens pas OG kladden er hentet (Codes fund 1 · princip 84) */
   if (!lager.hent("klubkode", "")) return true;
@@ -3987,7 +4024,7 @@ function bagudLinjer(){   /* ⭐ v6.25.4 · under rækkerne bagud — hvert udfa
   if (n > 1) h += '<button class="knap valg" data-act="spring-alle" data-v="' + n + '"' + (S.springer === "alle" ? ' disabled' : '') + ' style="margin:0 0 14px;width:100%">' + (S.springer === "alle" ? "\u2026" : "Spring alle " + n + " over") + '</button>';
   return h;
 }
-function goerNuKort(){   /* rummet «✅ Gør nu»: handlingerne · den stående dør · (dashboardet tegnes af kalderen) */
+function goerNuKort(){   /* rummet «✅ Action Center»: handlingerne · (dashboardet tegnes af kalderen) */
   var liste = goerNu(), h = '';
   var _sidsteBagud = null; liste.forEach(function(x){ if (x.id === "bagud") _sidsteBagud = x; });
   liste.forEach(function(x){
@@ -4002,13 +4039,13 @@ function goerNuKort(){   /* rummet «✅ Gør nu»: handlingerne · den stående
     else if (!goerNuHentet()) h += '<p class="lille" style="margin:0 0 10px">Henter dagens pas og kladden \u2026</p>';
     else h += '<p class="lille" style="margin:0 0 10px">Alt er gjort \u2014 ingen h\u00e6nder lige nu.</p>';
   }
-  var b = nuBedste();   /* den stående dør er stål — handlingerne har farve (v6.22.1: .dev-bred, så kanten lever) */
-  if (S.nu && (S.nu.pas || []).length)   /* ⭐ v6.25.3 · døren står kun, når dagen har et pas — uden et pas fører den til en score uden en træning bag (Nicolai 8/11) */
-  h += '<button class="dev-bred dev-kant dev-kant-staal" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + ' data-goer-nu="vurder" style="margin:0 0 14px"><span style="font-size:30px">\u26a1</span><span><b>Vurd\u00e9r tr\u00e6ningen</b><br><small>fremm\u00f8de og vurdering fra banen</small></span><span class="dev-pil">\u2192</span></button>';
+  /* ⭐ v6.26.1 · den stående dør «⚡ Vurdér træningen» er væk (Nicolai 8/11: «man kommer lidt de samme steder hen») — rækkerne fører derhen, og VURDÉR står i bjælken */
   return h;
 }
-// ⭐ v6.22.0 · FLISEN «✅ GØR NU» — dens status er et løfte (70): tallet og den øverste handling; uden handlinger: dagen og «alt er gjort»
-function overblikFlise(){
+// ⭐⭐⭐ v6.26.1 · HELTEN «✅ ACTION CENTER» — ALTID øverst på HOME (Nicolai 9/11: «Den vigtige er Do Now.. giver det ikke mening at sætte den
+//   øverst og kun have den? Og så vil jeg gerne kalde den for Action Center.»). Status i underlinjen er et løfte (70): tallet og den øverste
+//   handling; uden handlinger: dagen og «alt er gjort». Flisen i gitteret og VURDÉR TRÆNINGEN-helten er væk — én dør, ét navn på begge sprog.
+function actionCenterHelt(){
   var liste = goerNu(), dele = [];
   var m = S.autoTrupBesked ? /^(.*?) sagde ja/.exec(S.autoTrupBesked) : null;   /* v6.13.0 · nyheden står én gang og kort på flisen */
   if (m) { dele.push('<span>' + esc('\u2713 ' + m[1] + ' sagde ja') + '</span>'); if (liste.length) dele.push('<span>' + esc(liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span>'); }
@@ -4019,10 +4056,10 @@ function overblikFlise(){
     dele.push('<span>' + esc(S.nu && Array.isArray(S.nu.pas) && S.nu.pas.length ? S.nu.pas.length + ' pas i dag' : 'fri i dag') + '</span>');
     dele.push('<span>alt er gjort</span>');
   }
-  return '<button class="dev-flise dev-kant ' + (liste.length ? 'dev-kant-guld' : 'dev-kant-staal') + '" data-act="tab" data-v="overblik"><span class="dev-ikon">\u2705</span><b>G\u00f8r nu</b><small>' +
-    dele.join(' \u00b7 ') + '</small></button>';
+  return '<button class="dev-hero dev-kant dev-kant-grus" data-act="tab" data-v="overblik" data-action-center="1"><span style="font-size:30px">\u2705</span><span><b>ACTION CENTER</b><br><small>' +
+    dele.join(' \u00b7 ') + '</small></span><span class="dev-pil">\u2192</span></button>';
 }
-function _ufTekst(uf){ return '<span class="dash-roed" style="color:#ff8a8f;font-weight:700">' + uf + (uf === 1 ? ' pas uden fremmøde' : ' pas uden fremmøde') + '</span>'; }   /* ⭐ v6.20.1 · én tekstnode — ordbogen tager den hel */
+function _ufTekst(uf){ return '<span class="dash-roed" style="color:#ff8a8f;font-weight:700">' + uf + ' pas ikke registreret</span>'; }   /* ⭐ v6.26.1 · «ikke registreret» (Nicolai 8/11) */   /* ⭐ v6.20.1 · én tekstnode — ordbogen tager den hel */
 function traenerDash(){
   var trup = (lager.hent("truppen", []) || []).length;
   var vurd = dashVurderet();
@@ -4040,7 +4077,7 @@ function traenerDash(){
   if (S.nu && (S.nu.pas || []).length && lager.hent("klubkode", "") && !S.nuFejl) (S.nu.pas || []).map(function(p, i){ return { p: p, i: i }; }).sort(function(x, y){
     return ((x.p.slut_for_min >= 0 && !x.p.registreret) ? 0 : 1) - ((y.p.slut_for_min >= 0 && !y.p.registreret) ? 0 : 1) || x.i - y.i;   /* ⭐ v6.20.1 · dem uden fremmøde først · v6.24.2 hele dagen */
   }).map(function(o){ return o.p; }).slice(0, 4).forEach(function(p){
-    var m = p.registreret ? '<span class="dash-maerke ok">registreret ✓</span>' : p.lige_slut ? '<span class="dash-maerke nu">lige slut</span>' : p.slut_for_min >= 0 ? '<span class="dash-maerke nu">uden fremmøde</span>' : p.mine ? '<span class="dash-maerke">dit pas</span>' : '';
+    var m = p.registreret ? '<span class="dash-maerke ok">registreret ✓</span>' : p.lige_slut ? '<span class="dash-maerke nu">lige slut</span>' : p.slut_for_min >= 0 ? '<span class="dash-maerke nu">ikke registreret</span>' : p.mine ? '<span class="dash-maerke">dit pas</span>' : '';
     var n = (p.deltagere || []).length;
     /* hver del sin egen tekstnode — så oversættes de hver for sig (ordbogen tager hele tekstnoder) */
     var ua = +p.uden_app || 0;   /* ⭐ v6.20.2 · dem uden app tæller med (Nicolai 16/10: 25 pas, alle «0 spillere» — målt: 142 uden app) */
@@ -4085,13 +4122,10 @@ function renderTraener(){
     //   pas, `nu` peger på — motoren skjuler intet, skærmen vælger (princip 64).
     (function(){
       if (lager.hent("klubkode", "") && !S.nuHentet && !S.nuHenter) setTimeout(function(){ nuHent(false); }, 0);
-      var b = nuBedste();
       /* ⭐ v6.20.1 · helten er lige så høj som StreakTennis' START KAMP (Nicolai 15/10: «alt for stor» · «Selve indholdet der står der skal nok ind under overblik»).
          Én kort linje. Dagens pas — tid, bane, trænere, spillere og hvor mange uden fremmøde — står under 📊 Overblik. Knappen peger stadig på nuBedste(). */
-      /* ⭐⭐⭐ v6.22.0 · HELTEN ER DYNAMISK («Dynamisk og under»): den øverste handling i Gør nu — ellers VURDÉR TRÆNINGEN som før */
-      var _top = goerNu()[0];
-      if (_top) h += goerNuKnap(_top, true);
-      else h += '<button class="dev-hero dev-kant dev-kant-grus" data-act="reg-start"' + (b ? ' data-v="' + esc(b.id) + '"' : '') + '><span style="font-size:30px">\u26a1</span><span><b>VURD\u00c9R TR\u00c6NINGEN</b><br><small>fremmøde og vurdering fra banen</small></span><span class="dev-pil">\u2192</span></button>';
+      /* ⭐⭐⭐ v6.26.1 · HELTEN ER ACTION CENTER — altid (Nicolai 9/11). v6.22.0's dynamiske helt og VURDÉR TRÆNINGEN-døren er væk: status står i underlinjen. */
+      h += actionCenterHelt();
     })();
     /* v6.22.0 · helten «NYE SPILLERE» er væk — nye spillere er en linje i Gør nu (HJEM har ÉN helt) */
     h += '<div class="dev-grid hjem-grid">' + liveFlise() +   /* ⭐⭐ v6.19.0 · LIVE NU — altid, forrest · hjem-grid = de lavere fliser */
@@ -4114,8 +4148,7 @@ function renderTraener(){
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="kvartal"><span class="dev-ikon">\ud83d\udccb</span><b>Evaluering</b><small>AI-udkast \u2014 du godkender alt</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="rum"><span class="dev-ikon">\ud83d\udcac</span><b>Tr\u00e6nerrummet</b><small>klubbens tr\u00e6nere \u2014 samtalen bliver</small></button>' +
       '<button class="dev-flise dev-kant dev-kant-staal" data-act="tab" data-v="indst" style="grid-column:auto"><span class="dev-ikon">\u2699\ufe0f</span><b>Indstillinger</b><small>konto, invitationer, sprog</small></button>' +
-      overblikFlise() +   /* v6.13.0 · dashboardet er en flise — HJEM skal kunne ses uden at rulle */
-      '</div>';
+      '</div>';   /* ⭐ v6.26.1 · Gør nu-flisen er væk — Action Center er helten øverst. Seks fliser. */
   } else {
     /* v6.2.0 · StreakTennis' titelrække, ordret (linje 10425 i v5.3.1): ← og fanens navn i én række */
     var _tilbage = (S.tab === "weekenden") ? 'data-act="tab" data-v="program"' :   /* ⭐ v6.17.0 · Weekenden bor i Program */   /* ⭐ v6.25.4 · døren (S.vejTilbage): ← går til det rum, der tegnede knappen — HJEM eller Gør nu (Nicolai 5/11: «Man skal ALTID komme samme vej tilbage») */
@@ -6530,6 +6563,7 @@ document.addEventListener("click", function(e){
   else if (act==="goer-nu"){   /* ⭐ v6.22.0 · Gør nu's egne døre: kladden → PROGRAM/Ugeskemaet · ugens fokus → Vælg ugens fokus */
     if (v === "kladde") { S.tab = "program"; S.prgVisning = "skema"; S.indstVisning = null; S.aabenSpiller = null; prgNulstilForm(); S.prgSlet = null; S.prgBesked = null; try { window.scrollTo(0,0); } catch(_e){} render(); if (!S.prgHenter) prgHent("kladde"); }   /* v6.22.1 · intet armeret slet, intet gammelt svar (Codes fund 4) · til toppen (6) */
     else if (v === "ugefokus") { S.tab = "vurder"; S.indstVisning = null; S.aabenSpiller = null; regNulstil(); S.vurderOmraade = "__fokus"; S.vurderGruppe = null; try { window.scrollTo(0,0); } catch(_e){} render(); }
+    else if (v === "notif") { S.tab = "indst"; S.indstVisning = "notif"; S.aabenSpiller = null; S.notif = S.notif || {}; S.notif.besked = null; try { window.scrollTo(0,0); } catch(_e){} render(); notifStatus(); }   /* ⭐ v6.26.1 · påmindelsen → 🔔 Notifikationer (indst-vis skifter ikke fane) */
   }
   else if (act==="spiller-detalje"){ S.aabenSpiller=v; render(); }
   else if (act==="luk-spiller"){ S.aabenSpiller=null; render(); }

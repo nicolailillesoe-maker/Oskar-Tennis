@@ -1310,7 +1310,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.27.0 \u00b7 9. november 2026";
+const VERSION = "v6.27.1 \u00b7 10. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -3843,6 +3843,22 @@ function regPasListe(){
   var ug = ugedagAf(dato);
   return ((S.prgGodkendt && S.prgGodkendt.pas) || []).filter(function(p){ return p.ugedag === ug; });
 }
+/* ⭐ v6.27.1 · «ALT ER GJORT» PÅ VURDÉR (Nicolai 10/11 om skærmen med tre «registered ✓»: «Den skal vel sige intet at rate - all done?»).
+   Når dagens pas alle er registreret, siger VURDÉR det øverst — med Action Centers egne ord. «alt er gjort» siges KUN, når Action Center
+   også er tomt og hentet (princip 70 + 84); venter der noget andet (et pas bagud, en ny spiller …), står antallet, og et tryk fører
+   derhen. Listen bliver under: den er døren til at rette et fremmøde (81). Hvert udfald sin egen sætning (75). */
+function altGjortKort(idag){
+  if (!idag || !lager.hent("klubkode", "") || S.nuFejl || !(S.nu && Array.isArray(S.nu.pas) && S.nu.pas.length)) return '';
+  if (S.nu.pas.some(function(p){ return !p.registreret; })) return '';
+  var n = S.nu.pas.length;
+  var reg = '<span>' + (n === 1 ? 'Dagens 1 pas er registreret \u2713' : 'Dagens ' + n + ' pas er registreret \u2713') + '</span>';
+  var hentet = goerNuHentet(), liste = hentet ? goerNu() : [];
+  if (hentet && !liste.length) return '<div class="kort" data-alt-gjort="1" style="border:1.5px solid var(--vundet);display:flex;align-items:center;gap:12px;padding:12px 14px">' +
+    '<span style="font-size:30px;line-height:1">\u2705</span><span><b style="color:var(--vundet);text-transform:uppercase;letter-spacing:1px">alt er gjort</b><br><small class="lille">' + reg + '</small></span></div>';
+  if (liste.length) return '<button class="dev-hero dev-kant dev-kant-grus" data-act="tab" data-v="overblik" data-alt-gjort="venter" style="margin-bottom:12px"><span style="font-size:30px">\u2705</span><span><b>ACTION CENTER</b><br><small>' +
+    reg + ' \u00b7 <span>' + (liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span></small></span><span class="dev-pil">\u2192</span></button>';
+  return '<div class="kort" data-alt-gjort="henter" style="padding:11px 14px"><small class="lille">' + reg + '</small></div>';
+}
 function traenerRegistrer(t){
   /* ⭐⭐⭐ v6.5.0 · ÉN VURDERING (Nicolai 20/9: «Når man vurderer en spiller til træningen, så har man jo også vurderet om de er
      mødt frem. Vi skal nok bare have en knap der hedder ikke fremmødt.»). Bjælkens VURDÉR og hero'en er den SAMME skærm:
@@ -3918,6 +3934,7 @@ function traenerRegistrer(t){
   var idag = (S.regDato || dkIdag()) === dkIdag();
   if (harKode && !idag && !S.prgGodkendt && !S.prgHenter && Date.now() - (S.prgGTid || 0) > 30000) setTimeout(function(){ prgHent("godkendt"); }, 0);   /* v6.22.3 · ingen kaldsløkke (Codes fund 9) */
   if (harKode && idag && !S.nuHentet && !S.nuHenter) setTimeout(function(){ nuHent(false); }, 0);   /* én gang — ikke i ring */
+  h += altGjortKort(idag);   /* ⭐ v6.27.1 · dagens pas er klaret — sig det øverst */
   h += '<div class="kort" style="padding:11px 14px"><div class="eyebrow">📅 FRA PROGRAMMET</div>';
   if (!harKode) h += '<p class="lille" style="margin:6px 0 0">Når telefonen er forbundet med din klub, kommer dagens pas frem her, og fremmødet skrives i spillernes træningslog.</p></div>';
   else {

@@ -283,6 +283,13 @@ body{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .agh-ikon{font-size:64px;line-height:1}
 .agh-titel{font-size:30px;font-weight:900;letter-spacing:2px;color:var(--vundet);text-transform:uppercase;margin-top:10px;line-height:1.1}
 .agh-under{margin-top:8px}
+.agh-pop{animation:agPop .7s cubic-bezier(.2,1.6,.4,1) both}   /* v6.27.4 */
+@keyframes agPop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+.ag-konfetti{position:fixed;inset:0;pointer-events:none;z-index:300;overflow:hidden}
+.ag-konfetti span{position:absolute;top:-16px;width:9px;height:15px;border-radius:2px;animation-name:agFald;animation-timing-function:ease-in;animation-fill-mode:forwards}
+@keyframes agFald{to{transform:translateY(112vh) rotate(620deg)}}
+.ac-gjort{color:#4FD18B;font-weight:800}
+button.dev-hero.dev-kant.ac-helt-gjort{background:linear-gradient(160deg,#0E2A22,#0C1526) padding-box,linear-gradient(135deg,#1C7A48,#4FD18B) border-box !important}
 .vurd-gruppe-titel{font-size:19px;font-weight:900;letter-spacing:1.5px;color:var(--kridt);margin:22px 4px 10px}
 .reg-dato-chip{width:auto;min-width:0;min-height:0;padding:6px 10px;font-size:14px;border-radius:12px;flex:0 0 auto}   /* v6.27.2 */
 .omr-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
@@ -1316,7 +1323,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.27.3 \u00b7 11. november 2026";
+const VERSION = "v6.27.4 \u00b7 11. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1829,7 +1836,7 @@ Object.assign(EN, {   /* ⭐ v6.26.1 · Action Center — samme navn på begge s
 });
 Object.assign(EN, {   /* v6.22.0 · Gør nu */
   "✅ Gør nu": "✅ Do now", "Gør nu": "Do now", "1 ting venter": "1 thing waiting", "{n} ting venter": "{n} things waiting", "alt er gjort": "all done",
-  "Alt er gjort — ingen hænder lige nu.": "All done — nothing needs a hand right now.",
+  "Alt er gjort — ingen hænder lige nu.": "All done — nothing needs a hand right now.", "Ingen hænder lige nu.": "Nothing needs a hand right now.",
   "Godkend programmet": "Approve the schedule", "GODKEND PROGRAMMET": "APPROVE THE SCHEDULE",
   "1 pas i kladden venter på dit ja": "1 session in the draft is waiting for your yes", "{n} pas i kladden venter på dit ja": "{n} sessions in the draft are waiting for your yes",
   "1 ændring siden sidste godkendelse": "1 change since the last approval", "{n} ændringer siden sidste godkendelse": "{n} changes since the last approval",
@@ -3853,6 +3860,30 @@ function regPasListe(){
    Når dagens pas alle er registreret, siger VURDÉR det øverst — med Action Centers egne ord. «alt er gjort» siges KUN, når Action Center
    også er tomt og hentet (princip 70 + 84); venter der noget andet (et pas bagud, en ny spiller …), står antallet, og et tryk fører
    derhen. Listen bliver under: den er døren til at rette et fremmøde (81). Hvert udfald sin egen sætning (75). */
+/* ⭐ v6.27.4 · FEJRINGEN (Nicolai 11/11: «Det er vel næsten en fejring alt er lavet. Tænker det skal være lidt festligere.» ·
+   «Der skal ikke laves streaks - men bare en indikation /fejring af alt er færdigt» · «Det er jo det vigtigste de kan gøre..»).
+   Den store flise står ét sted; første gang den står på en dag, springer fluebenet frem, og der falder konfetti — én gang pr. dag pr.
+   telefon, og aldrig når telefonen beder om mindre bevægelse. */
+function altGjortFlise(under, attr){
+  var nyDag = lager.hent("altGjortFejret", "") !== dkIdag();
+  if (nyDag) setTimeout(altGjortFejr, 80);
+  return '<div class="kort alt-gjort-helt" ' + attr + '><div class="agh-ikon' + (nyDag ? ' agh-pop' : '') + '">\u2705</div><div class="agh-titel">alt er gjort</div><div class="lille agh-under">' + under + '</div></div>';
+}
+function altGjortFejr(){
+  if (lager.hent("altGjortFejret", "") === dkIdag()) return;
+  lager.gem("altGjortFejret", dkIdag());
+  try { if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; } catch (_e) {}
+  var farver = ["#22995A", "#4FD18B", "#F0CF61", "#7B9BFF", "#9FD8E8", "#FF8A8F", "#EDF2FA"], box = document.createElement("div");
+  box.className = "ag-konfetti"; box.setAttribute("aria-hidden", "true");
+  for (var i = 0; i < 56; i++) {
+    var st = document.createElement("span");
+    st.style.left = (Math.random() * 100).toFixed(1) + "%"; st.style.background = farver[i % farver.length];
+    st.style.animationDelay = (Math.random() * 0.6).toFixed(2) + "s"; st.style.animationDuration = (1.5 + Math.random() * 1.2).toFixed(2) + "s";
+    box.appendChild(st);
+  }
+  document.body.appendChild(box);
+  setTimeout(function(){ try { box.remove(); } catch (_e) {} }, 3600);
+}
 function altGjortKort(idag){
   /* ⭐ v6.27.3 · stort og også uden pas i dag (Nicolai 11/11: «Med Flueben eller noget andet der All Done? … Store bogstaver, super visuelt.») */
   if (!idag || !lager.hent("klubkode", "") || S.nuFejl || !(S.nu && Array.isArray(S.nu.pas))) return '';
@@ -3860,7 +3891,7 @@ function altGjortKort(idag){
   var n = S.nu.pas.length;
   var reg = '<span>' + (n === 0 ? 'Ingen pas i dag i det godkendte program.' : n === 1 ? 'Dagens 1 pas er registreret \u2713' : 'Dagens ' + n + ' pas er registreret \u2713') + '</span>';
   var hentet = goerNuHentet(), liste = hentet ? goerNu() : [];
-  if (hentet && !liste.length) return '<div class="kort alt-gjort-helt" data-alt-gjort="1"><div class="agh-ikon">\u2705</div><div class="agh-titel">alt er gjort</div><div class="lille agh-under">' + reg + '</div></div>';
+  if (hentet && !liste.length) return altGjortFlise(reg, 'data-alt-gjort="1"');   /* ⭐ v6.27.4 · med fejringen */
   if (liste.length) return '<button class="dev-hero dev-kant dev-kant-grus" data-act="tab" data-v="overblik" data-alt-gjort="venter" style="margin-bottom:12px"><span style="font-size:30px">\u2705</span><span><b>ACTION CENTER</b><br><small>' +
     reg + ' \u00b7 <span>' + (liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span></small></span><span class="dev-pil">\u2192</span></button>';
   return '<div class="kort" data-alt-gjort="henter" style="padding:11px 14px"><small class="lille">' + reg + '</small></div>';
@@ -4074,7 +4105,10 @@ function goerNuKort(){   /* rummet «✅ Action Center»: handlingerne · (dashb
   if (!liste.length) {   /* v6.22.1 · hvert udfald sin egen sætning (75): fejl · henter · alt er gjort */
     if (lager.hent("klubkode", "") && (S.nuFejl || S.prgHentFejl)) h += '<p class="lille" style="margin:0 0 10px;color:var(--tabt)">' + esc(T(S.nuFejl || S.prgHentFejl)) + '</p>';   /* v6.22.3 · Codes fund 2 */
     else if (!goerNuHentet()) h += '<p class="lille" style="margin:0 0 10px">Henter dagens pas og kladden \u2026</p>';
-    else h += '<p class="lille" style="margin:0 0 10px">Alt er gjort \u2014 ingen h\u00e6nder lige nu.</p>';
+    else {   /* ⭐ v6.27.4 · «Her kan man ikke engang læse det - pænt kedeligt.» (Nicolai 11/11) */
+      var _np = S.nu && Array.isArray(S.nu.pas) ? S.nu.pas.length : 0, _ar = _np > 0 && S.nu.pas.every(function(p){ return p.registreret; });
+      h += altGjortFlise('<span>' + (_ar ? (_np === 1 ? 'Dagens 1 pas er registreret \u2713' : 'Dagens ' + _np + ' pas er registreret \u2713') : 'Ingen h\u00e6nder lige nu.') + '</span>', 'data-alt-gjort-ac="1"');
+    }
   }
   /* ⭐ v6.26.1 · den stående dør «⚡ Vurdér træningen» er væk (Nicolai 8/11: «man kommer lidt de samme steder hen») — rækkerne fører derhen, og VURDÉR står i bjælken */
   return h;
@@ -4083,7 +4117,7 @@ function goerNuKort(){   /* rummet «✅ Action Center»: handlingerne · (dashb
 //   øverst og kun have den? Og så vil jeg gerne kalde den for Action Center.»). Status i underlinjen er et løfte (70): tallet og den øverste
 //   handling; uden handlinger: dagen og «alt er gjort». Flisen i gitteret og VURDÉR TRÆNINGEN-helten er væk — én dør, ét navn på begge sprog.
 function actionCenterHelt(){
-  var liste = goerNu(), dele = [];
+  var liste = goerNu(), dele = [], _gjort = false;
   var m = S.autoTrupBesked ? /^(.*?) sagde ja/.exec(S.autoTrupBesked) : null;   /* v6.13.0 · nyheden står én gang og kort på flisen */
   if (m) { dele.push('<span>' + esc('\u2713 ' + m[1] + ' sagde ja') + '</span>'); if (liste.length) dele.push('<span>' + esc(liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span>'); }
   else if (liste.length) { dele.push('<span>' + esc(liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span>'); dele.push('<span>' + esc(liste[0].titel) + '</span>'); }
@@ -4091,9 +4125,9 @@ function actionCenterHelt(){
   else if (!goerNuHentet()) dele.push('<span>henter dagens pas \u2026</span>');   /* v6.22.3 · egen nøgle (Codes fund 6) */
   else {
     dele.push('<span>' + esc(S.nu && Array.isArray(S.nu.pas) && S.nu.pas.length ? S.nu.pas.length + ' pas i dag' : 'fri i dag') + '</span>');
-    dele.push('<span>alt er gjort</span>');
+    dele.push('<span class="ac-gjort">alt er gjort</span>'); _gjort = true;   /* ⭐ v6.27.4 · grøn og fed */
   }
-  return '<button class="dev-hero dev-kant dev-kant-grus" data-act="tab" data-v="overblik" data-action-center="1"><span style="font-size:30px">\u2705</span><span><b>ACTION CENTER</b><br><small>' +
+  return '<button class="dev-hero dev-kant ' + (_gjort ? 'dev-kant-gron ac-helt-gjort' : 'dev-kant-grus') + '" data-act="tab" data-v="overblik" data-action-center="1"><span style="font-size:30px">\u2705</span><span><b>ACTION CENTER</b><br><small>' +
     dele.join(' \u00b7 ') + '</small></span><span class="dev-pil">\u2192</span></button>';
 }
 function _ufTekst(uf){ return '<span class="dash-roed" style="color:#ff8a8f;font-weight:700">' + uf + ' pas ikke registreret</span>'; }   /* ⭐ v6.26.1 · «ikke registreret» (Nicolai 8/11) */   /* ⭐ v6.20.1 · én tekstnode — ordbogen tager den hel */

@@ -279,6 +279,11 @@ body{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .reg-rk.nej .reg-navn{text-decoration:line-through}
 .reg-rk.nej .reg-vaek{color:#fff;border-color:var(--tabt);background:rgba(255,90,99,.22)}
 .reg-rk .reg-dots{display:flex;gap:7px;justify-content:space-between;margin-top:9px}
+.alt-gjort-helt{border:2px solid var(--vundet);text-align:center;padding:22px 16px;background:linear-gradient(160deg,rgba(34,153,90,.20),rgba(34,153,90,.05))}   /* v6.27.3 */
+.agh-ikon{font-size:64px;line-height:1}
+.agh-titel{font-size:30px;font-weight:900;letter-spacing:2px;color:var(--vundet);text-transform:uppercase;margin-top:10px;line-height:1.1}
+.agh-under{margin-top:8px}
+.vurd-gruppe-titel{font-size:19px;font-weight:900;letter-spacing:1.5px;color:var(--kridt);margin:22px 4px 10px}
 .reg-dato-chip{width:auto;min-width:0;min-height:0;padding:6px 10px;font-size:14px;border-radius:12px;flex:0 0 auto}   /* v6.27.2 */
 .omr-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 .omr-chip{flex:1 1 auto;min-height:36px;padding:6px 8px;border-radius:12px;border:1.5px solid var(--kant);background:transparent;color:var(--kridt);font-size:12px;font-weight:700;cursor:pointer;text-align:center;font-family:inherit}
@@ -1311,7 +1316,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.27.2 \u00b7 11. november 2026";
+const VERSION = "v6.27.3 \u00b7 11. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1726,7 +1731,7 @@ Object.assign(EN, {
 "Vurderingen ({x}) står nu hos {x} ✓": "The rating ({x}) is now with {x} ✓", "Vurderingen står nu hos {x} ✓": "The rating is now with {x} ✓",
 "⏳ Sender {n} vurdering …": "⏳ Sending {n} rating …", "⏳ Sender {n} vurderinger …": "⏳ Sending {n} ratings …",
 "Vurderingen kom ikke frem hos {x}. Fremmødet er gemt.": "The rating didn't reach {x}. Attendance is saved.", "Send vurderingerne igen": "Send the ratings again",
-"📅 FRA PROGRAMMET": "📅 FROM THE SCHEDULE", "👥 EN GRUPPE": "👥 A GROUP", "VURDERING · {x}": "RATING · {x}", "{n} spillere i gruppen": "{n} players in the group", "{n} spiller i gruppen": "{n} player in the group",
+"📅 FRA PROGRAMMET": "📅 FROM THE SCHEDULE", "👥 EN GRUPPE": "👥 A GROUP", "👥 VURDÉR EN GRUPPE": "👥 RATE A GROUP", "VURDERING · {x}": "RATING · {x}", "{n} spillere i gruppen": "{n} players in the group", "{n} spiller i gruppen": "{n} player in the group",
 "Dagens pas — fremmødet skrives i spillernes træningslog og tæller i streaken. Glemte du et pas i går? Vælg datoen.": "Today's sessions — attendance is written to the players' training log and counts in the streak. Forgot one yesterday? Pick the date.",
 "Ingen pas i dag i det godkendte program — vælg en gruppe herunder.": "No sessions today in the approved schedule — pick a group below.", "Ingen pas den dag i det godkendte program — vælg en gruppe herunder.": "No sessions that day in the approved schedule — pick a group below.",
 "Uden et pas i programmet: samme skærm, scores gemmes hos spillerne. Læg passet i PROGRAM, så tæller fremmødet også i deres streak.": "Without a session in the schedule: same screen, scores are saved with the players. Put the session in SCHEDULE and attendance counts in their streak too.",
@@ -3849,13 +3854,13 @@ function regPasListe(){
    også er tomt og hentet (princip 70 + 84); venter der noget andet (et pas bagud, en ny spiller …), står antallet, og et tryk fører
    derhen. Listen bliver under: den er døren til at rette et fremmøde (81). Hvert udfald sin egen sætning (75). */
 function altGjortKort(idag){
-  if (!idag || !lager.hent("klubkode", "") || S.nuFejl || !(S.nu && Array.isArray(S.nu.pas) && S.nu.pas.length)) return '';
+  /* ⭐ v6.27.3 · stort og også uden pas i dag (Nicolai 11/11: «Med Flueben eller noget andet der All Done? … Store bogstaver, super visuelt.») */
+  if (!idag || !lager.hent("klubkode", "") || S.nuFejl || !(S.nu && Array.isArray(S.nu.pas))) return '';
   if (S.nu.pas.some(function(p){ return !p.registreret; })) return '';
   var n = S.nu.pas.length;
-  var reg = '<span>' + (n === 1 ? 'Dagens 1 pas er registreret \u2713' : 'Dagens ' + n + ' pas er registreret \u2713') + '</span>';
+  var reg = '<span>' + (n === 0 ? 'Ingen pas i dag i det godkendte program.' : n === 1 ? 'Dagens 1 pas er registreret \u2713' : 'Dagens ' + n + ' pas er registreret \u2713') + '</span>';
   var hentet = goerNuHentet(), liste = hentet ? goerNu() : [];
-  if (hentet && !liste.length) return '<div class="kort" data-alt-gjort="1" style="border:1.5px solid var(--vundet);display:flex;align-items:center;gap:12px;padding:12px 14px">' +
-    '<span style="font-size:30px;line-height:1">\u2705</span><span><b style="color:var(--vundet);text-transform:uppercase;letter-spacing:1px">alt er gjort</b><br><small class="lille">' + reg + '</small></span></div>';
+  if (hentet && !liste.length) return '<div class="kort alt-gjort-helt" data-alt-gjort="1"><div class="agh-ikon">\u2705</div><div class="agh-titel">alt er gjort</div><div class="lille agh-under">' + reg + '</div></div>';
   if (liste.length) return '<button class="dev-hero dev-kant dev-kant-grus" data-act="tab" data-v="overblik" data-alt-gjort="venter" style="margin-bottom:12px"><span style="font-size:30px">\u2705</span><span><b>ACTION CENTER</b><br><small>' +
     reg + ' \u00b7 <span>' + (liste.length === 1 ? '1 ting venter' : liste.length + ' ting venter') + '</span></small></span><span class="dev-pil">\u2192</span></button>';
   return '<div class="kort" data-alt-gjort="henter" style="padding:11px 14px"><small class="lille">' + reg + '</small></div>';
@@ -3936,7 +3941,7 @@ function traenerRegistrer(t){
   var idag = (S.regDato || dkIdag()) === dkIdag();
   if (harKode && !idag && !S.prgGodkendt && !S.prgHenter && Date.now() - (S.prgGTid || 0) > 30000) setTimeout(function(){ prgHent("godkendt"); }, 0);   /* v6.22.3 · ingen kaldsløkke (Codes fund 9) */
   if (harKode && idag && !S.nuHentet && !S.nuHenter) setTimeout(function(){ nuHent(false); }, 0);   /* én gang — ikke i ring */
-  h += altGjortKort(idag);   /* ⭐ v6.27.1 · dagens pas er klaret — sig det øverst */
+  var _ag = altGjortKort(idag); h += _ag;   /* ⭐ v6.27.1 · dagens pas er klaret — sig det øverst · v6.27.3: også uden pas */
   /* ⭐ v6.27.2 · VURDÉR PÅ ÉN SKÆRM (Nicolai 11/11: «Den er lidt uoverskuelig den her side»): ét kort for dagen — overskriften,
      datoen som en lille knap og én linje (ingen pas · henter · fejlen). Forklaringen om streaken står på vurderingsskærmen. */
   h += '<div class="kort" data-reg-dag="1" style="padding:11px 14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div class="eyebrow">📅 FRA PROGRAMMET</div>' +
@@ -3946,7 +3951,7 @@ function traenerRegistrer(t){
     var liste = regPasListe(), _dl = '';
     if (S.nuFejl && idag) _dl += '<p class="lille" style="color:var(--tabt);margin:6px 0 0">' + esc(S.nuFejl) + '</p>';
     if ((idag && S.nuHenter && !S.nu) || (!idag && S.prgHenter)) _dl += '<p class="lille" style="margin:6px 0 0">Henter …</p>';
-    else if (!(!idag && S.prgGFejl && !S.prgGodkendt) && !liste.length) _dl += '<p class="lille" style="margin:6px 0 0">' + (idag ? 'Ingen pas i dag i det godkendte program — vælg en gruppe herunder.' : 'Ingen pas den dag i det godkendte program — vælg en gruppe herunder.') + '</p>' +
+    else if (!(!idag && S.prgGFejl && !S.prgGodkendt) && !liste.length) _dl += (idag && _ag ? '' : '<p class="lille" style="margin:6px 0 0">' + (idag ? 'Ingen pas i dag i det godkendte program — vælg en gruppe herunder.' : 'Ingen pas den dag i det godkendte program — vælg en gruppe herunder.') + '</p>') +
       (S.prg && S.prg.pas && S.prg.pas.length && !(S.prg.sidst_godkendt) ? '<p class="lille" style="margin:4px 0 0">Kladden er ikke godkendt endnu — admin trykker «Godkend og send ud» under PROGRAM.</p>' : '');
     h += _dl + '</div>';
     if ((idag && S.nuHenter && !S.nu) || (!idag && S.prgHenter)) { /* henter — linjen står i kortet */ }
@@ -3960,7 +3965,7 @@ function traenerRegistrer(t){
     });
   }
   var gr = (t && t.grupper) ? t.grupper : ((DATA.traenere && DATA.traenere[0]) ? DATA.traenere[0].grupper || [] : []);
-  h += '<div class="eyebrow" style="margin:18px 4px 8px">👥 EN GRUPPE</div>';   /* ⭐ v6.27.2 · forklaringen står på vurderingsskærmen */
+  h += '<div class="vurd-gruppe-titel">👥 VURDÉR EN GRUPPE</div>';   /* ⭐ v6.27.3 · store bogstaver; bliver «➕ REGISTRÉR EKSTRA TRÆNING», når ekstra træning tæller i loggen (traening v10) */
   if (!gr.length) h += '<div class="kort"><p class="lille" style="margin:0">Ingen grupper endnu — læg spillere i grupper under GRUPPER.</p></div>';
   else h += '<div class="dev-grid">' + gr.map(function(g){ var ns = ((DATA.grupper[g] || {}).spillere || []).length; return '<button class="dev-flise dev-kant dev-kant-staal" data-act="reg-gruppe" data-v="' + esc(g) + '"><span class="dev-ikon">👥</span><b>' + esc(g) + '</b><small>' + ns + (ns === 1 ? ' spiller' : ' spillere') + '</small></button>'; }).join('') + '</div>';
   return h;   /* ⭐ v6.27.2 · farveskalaen står på vurderingsskærmen, hvor farverne er */

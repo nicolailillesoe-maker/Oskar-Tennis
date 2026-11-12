@@ -291,6 +291,19 @@ body{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .ac-gjort{color:#4FD18B;font-weight:800}
 button.dev-hero.dev-kant.ac-helt-gjort{background:linear-gradient(160deg,#0E2A22,#0C1526) padding-box,linear-gradient(135deg,#1C7A48,#4FD18B) border-box !important}
 .vurd-gruppe-titel{font-size:19px;font-weight:900;letter-spacing:1.5px;color:var(--kridt);margin:22px 4px 10px}
+.spj-uger{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin:12px 0 4px}   /* v6.29.0 · spejlet: vurderinger pr. uge */
+.spj-uge{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.spj-uge b{font-size:11px;font-weight:800}
+.spj-uge span{font-size:9.5px;color:var(--daempet);white-space:nowrap}
+.spj-uge em{font-style:normal;font-size:11px;height:14px;line-height:14px}
+.spj-soejle{height:54px;width:100%;display:flex;align-items:flex-end;justify-content:center}
+.spj-soejle i{display:block;width:100%;max-width:26px;min-height:3px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#9FD8E8,#2E56D6)}
+.spj-soejle i.spj-nul{background:rgba(255,255,255,.12)}
+.spj-raekke{display:flex;align-items:center;gap:8px;margin:3px 0 0;font-size:12.5px;flex-wrap:wrap}
+.spj-raekke svg{flex:none}
+.spj-op{color:var(--vundet);font-weight:800}
+.spj-ned{color:var(--tabt);font-weight:800}
+.spj-ens{color:var(--daempet);font-weight:800}
 .vikar-valg{display:flex;flex-wrap:wrap;gap:6px}   /* v6.28.0 */
 .vikar-valg .knap{flex:1 1 40%;min-height:40px;padding:8px 10px;font-size:13px}
 .reg-dato-chip{width:auto;min-width:0;min-height:0;padding:6px 10px;font-size:14px;border-radius:12px;flex:0 0 auto}   /* v6.27.2 */
@@ -1325,7 +1338,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.28.0 \u00b7 12. november 2026";
+const VERSION = "v6.29.0 \u00b7 12. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1882,6 +1895,14 @@ Object.assign(EN, {   /* v6.10.0 · kortet */
   "Åbn": "Open", "spillerens navn": "the player's name",
   "{x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 SPILLERE.": "{x} calls their own group «{x}» — put {x} in a group under 👥 PLAYERS.",
   "{x} er lagt i truppen ✓ · {x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 SPILLERE.": "{x} has been added to the squad ✓ · {x} calls their own group «{x}» — put {x} in a group under 👥 PLAYERS."
+});
+Object.assign(EN, {   /* v6.29.0 · Spejlet 2.0, første del */
+  "🧑‍🏫 TRÆNERENS AKTIVITET": "🧑‍🏫 COACH ACTIVITY", "vurderinger": "ratings", "træninger": "sessions", "spillere": "players", "7 dage": "7 days", "30 dage": "30 days",
+  "De sidste 30 dage:": "The last 30 days:", "{n} vurderinger": "{n} ratings", "{n} vurdering": "{n} rating", "{n} træninger": "{n} sessions", "{n} træning": "{n} session",
+  "uge {n}": "wk {n}", "Vurderinger pr. uge — ikonet er ugens fokus.": "Ratings per week — the icon is the focus of the week.", "Sat i {n} af de sidste 8 uger.": "Set in {n} of the last 8 weeks.",
+  "Evalueringer: {n} · senest {x}": "Evaluations: {n} · latest {x}", "Evalueringer: {n}": "Evaluations: {n}", "Fokuspunkter: {n} af {n} i truppen": "Focus points: {n} of {n} in the squad",
+  "Ikke vurderet de sidste 30 dage:": "Not rated in the last 30 days:", "Alle i truppen er vurderet de sidste 30 dage ✓": "Everyone in the squad has been rated in the last 30 days ✓",
+  "📈 UDVIKLINGEN · {n} vurderinger": "📈 DEVELOPMENT · {n} ratings", "📈 UDVIKLINGEN · {n} vurdering": "📈 DEVELOPMENT · {n} rating", "{n} vurderinger · {x}–{x}": "{n} ratings · {x}–{x}"
 });
 Object.assign(EN, {   /* v6.14.0 · Spejlet */
   "Spørg guiden": "Ask the guide", "❓ Spørg guiden": "❓ Ask the guide", "SPØRG GUIDEN": "ASK THE GUIDE", "svarer kun det, guiden kan": "answers only what the guide can", "svaret står i rummet": "the answer is in the room",
@@ -5815,7 +5836,7 @@ function indstSpejl(){
   else h += '<div style="display:flex;gap:6px"><input class="felt" style="flex:1;min-width:0" data-felt="spejlTil" value="' + esc(S.spejlTil || "") + '" placeholder="brugernavn" autocapitalize="off" spellcheck="false" autocomplete="off">' +
     '<button class="knap" style="flex:none;padding:8px 12px;background:var(--grus)"' + (S.spejl.henter ? ' disabled' : '') + ' data-act="spejl-del">' + (S.spejl.henter ? '⏳' : 'Del') + '</button></div>';
   if (S.spejl.besked) h += '<p class="lille" style="margin:6px 0 0;color:var(--vundet)">' + esc(S.spejl.besked) + '</p>';
-  if (S.spejl.fejl) h += '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">⚠️ ' + esc(S.spejl.fejl) + '</p>';
+  if (S.spejl.fejl) h += '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">⚠️ <span>' + esc(S.spejl.fejl) + '</span></p>';   /* v6.29.0 · sætningen for sig — ordbogen tager den hel */
   h += '</div>';
   h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">👁 DELER MED DIG</div>';
   if (!_k || !_bn) h += '<p class="lille" style="margin:6px 0 0;color:var(--guld)">Log ind og tænd skyen — spejlet bor i den.</p>';
@@ -5830,6 +5851,57 @@ function indstSpejl(){
   h += '</div>';
   return h;
 }
+/* ⭐⭐ v6.29.0 · SPEJLET 2.0, FØRSTE DEL (Nicolai 11/11: «Og gad godt se lidt mere i det spejl..»). Alt herunder regnes af det,
+   konvolutten allerede bærer: boksens vurderinger er hændelser med dato. Intet nyt hentes, og intet nyt forlader giverens telefon. */
+function spejlDag(d){ return String(d || "").slice(0, 10); }
+function spejlDagTekst(d){ var x = spejlDag(d); return x.length === 10 ? parseInt(x.slice(8, 10), 10) + "/" + parseInt(x.slice(5, 7), 10) : x; }
+function spejlDageSiden(n){ var d = new Date(); d.setDate(d.getDate() - n); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function spjTal(x){ return String(Math.round(x * 10) / 10).replace(".", ","); }
+function spjAntal(n, en, fl){ return n + " " + (n === 1 ? en : fl); }
+function spejlSerie(vurd, navn, o){   /* én række pr. område: kurven · første → seneste · forskellen · antal og datoer */
+  var r = []; (vurd || []).forEach(function(v, i){ if (v && v.spiller === navn && v.omraade === o.id && typeof v.score === "number" && v.dato) r.push({ d: spejlDag(v.dato), s: v.score, i: i }); });
+  if (!r.length) return '';
+  r.sort(function(x, y){ return x.d < y.d ? -1 : x.d > y.d ? 1 : x.i - y.i; });
+  var f = r[0], l = r[r.length - 1];
+  if (r.length === 1) return '<div class="spj-raekke" data-spj-serie="1"><span>' + o.emoji + '</span><b>' + spjTal(l.s) + '</b><span class="lille" style="margin:0">' + esc(spejlDagTekst(l.d)) + '</span></div>';
+  var p = r.slice(-12), W = 64, H = 24;
+  var pts = p.map(function(x, i){ return (Math.round(i * (W - 4) / (p.length - 1)) + 2) + "," + (Math.round((10 - Math.max(1, Math.min(10, x.s))) * (H - 4) / 9) + 2); }).join(" ");
+  var dif = Math.round((l.s - f.s) * 10) / 10, kl = dif > 0 ? "spj-op" : dif < 0 ? "spj-ned" : "spj-ens";
+  return '<div class="spj-raekke" data-spj-serie="' + r.length + '"><span>' + o.emoji + '</span>' +
+    '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="#9FD8E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+    '<b>' + spjTal(f.s) + ' → ' + spjTal(l.s) + '</b><span class="' + kl + '" data-spj-dif="1">' + (dif > 0 ? "+" + spjTal(dif) : dif < 0 ? "−" + spjTal(Math.abs(dif)) : "±0") + '</span>' +
+    '<span class="lille" style="margin:0">' + r.length + ' vurderinger · ' + esc(spejlDagTekst(f.d)) + '–' + esc(spejlDagTekst(l.d)) + '</span></div>';
+}
+function spejlAktivitet(a){   /* hvad træneren har lavet — talt i boksens egne hændelser */
+  var t = a.t || {}, trup = t.truppen || [], ev = t.evalueringer || {}, fp = t.fokuspunkter || {}, uf = t.ugefokus || {};
+  var vurd = (t.vurderinger || []).filter(function(v){ return v && v.spiller && typeof v.score === "number" && v.dato; });
+  var iTrup = {}; trup.forEach(function(p){ iTrup[p.navn] = 1; });
+  function tael(fra){ var n = 0, tr = {}, sp = {}; vurd.forEach(function(v){ var d = spejlDag(v.dato); if (d < fra) return; n++; tr[d + "|" + (v.pas || "")] = 1; if (iTrup[v.spiller]) sp[v.spiller] = 1; }); return { n: n, tr: Object.keys(tr).length, sp: sp }; }
+  var u7 = tael(spejlDageSiden(6)), u30 = tael(spejlDageSiden(29));
+  var uge = {}; UGEOMRAADER.forEach(function(u){ uge[u.id] = u; });
+  var prUge = {}; vurd.forEach(function(v){ var k = ugeNoegle(spejlDag(v.dato) + "T12:00:00"); prUge[k] = (prUge[k] || 0) + 1; });
+  var uger = [], maks = 0;
+  for (var i = 7; i >= 0; i--) { var d = new Date(); d.setDate(d.getDate() - 7 * i); var k = ugeNoegle(d), n = prUge[k] || 0; if (n > maks) maks = n; uger.push({ k: k, n: n, f: uf[k] ? uge[uf[k]] : null }); }
+  var medFokus = uger.filter(function(u){ return u.f; }).length;
+  var h = '<div class="kort" data-spj-aktivitet="1"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🧑‍🏫 TRÆNERENS AKTIVITET</div>' +
+    '<div class="dash-tal" style="margin:10px 0 2px"><div><b>' + u7.n + '</b><span>vurderinger<br>7 dage</span></div><div><b>' + u7.tr + '</b><span>træninger<br>7 dage</span></div>' +
+    '<div><b>' + Object.keys(u30.sp).length + '/' + trup.length + '</b><span>spillere<br>30 dage</span></div></div>' +
+    '<p class="lille" style="margin:8px 0 0"><span>De sidste 30 dage:</span> <span>' + spjAntal(u30.n, "vurdering", "vurderinger") + '</span> · <span>' + spjAntal(u30.tr, "træning", "træninger") + '</span></p>' +
+    '<div class="spj-uger" data-spj-uger="1">' + uger.map(function(u){
+      return '<div class="spj-uge" data-spj-uge="' + u.n + '"><b>' + u.n + '</b><div class="spj-soejle"><i' + (u.n ? '' : ' class="spj-nul"') + ' style="height:' + (maks && u.n ? Math.max(6, Math.round(u.n * 100 / maks)) : 6) + '%"></i></div><span>uge ' + parseInt(u.k.slice(5), 10) + '</span><em>' + (u.f ? u.f.ikon : '·') + '</em></div>';
+    }).join('') + '</div>' +
+    '<p class="lille" style="margin:2px 0 0"><span>Vurderinger pr. uge — ikonet er ugens fokus.</span> <span>Sat i ' + medFokus + ' af de sidste 8 uger.</span></p>';
+  var evN = Object.keys(ev).filter(function(k2){ return ev[k2] && ev[k2].tekst; }), evSenest = "";
+  evN.forEach(function(k2){ var d2 = spejlDag(ev[k2].dato); if (d2 > evSenest) evSenest = d2; });
+  var fpN = Object.keys(fp).filter(function(k2){ return iTrup[k2] && (fp[k2] || []).length; }).length;
+  h += '<p class="lille" style="margin:8px 0 0"><span>Evalueringer: ' + evN.length + (evSenest ? ' · senest ' + esc(spejlDagTekst(evSenest)) : '') + '</span></p>' +
+    '<p class="lille" style="margin:2px 0 0"><span>Fokuspunkter: ' + fpN + ' af ' + trup.length + ' i truppen</span></p>';
+  var uden = trup.filter(function(p){ return !u30.sp[p.navn]; }).map(function(p){ return p.navn; });
+  if (trup.length) h += uden.length
+    ? '<p class="lille" style="margin:8px 0 0" data-spj-uden="' + uden.length + '"><span>Ikke vurderet de sidste 30 dage:</span> ' + uden.map(esc).join(' · ') + '</p>'
+    : '<p class="lille" style="margin:8px 0 0;color:var(--vundet)" data-spj-uden="0"><span>Alle i truppen er vurderet de sidste 30 dage ✓</span></p>';
+  return h + '</div>';
+}
 function spejlVisning(a){
   var t = a.t || {}, trup = t.truppen || [], grupper = t.grupper || [], vurd = t.vurderinger || [], fp = t.fokuspunkter || {}, ev = t.evalueringer || {}, uf = t.ugefokus || {}, stige = t.stigehold || [];
   var punkt = {}; Object.keys(KATEGORIER).forEach(function(k){ (KATEGORIER[k] || []).forEach(function(p){ punkt[p.id] = p.navn; }); });
@@ -5843,26 +5915,27 @@ function spejlVisning(a){
     '<span style="flex:1;min-width:0"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🪞 SPEJL AF ' + esc(String(a.navn || a.fra).toUpperCase()) + '</div>' +
     '<span class="lille">' + esc(a.klub || "") + (a.stempel ? ' · gemt ' + esc(boksTid(a.stempel)) : '') + ' · læs-kun</span></span>' +
     '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="spejl-luk">Luk spejlet</button></div></div>';
+  h += spejlAktivitet(a);   /* ⭐ v6.29.0 */
   h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">👥 TRUPPEN · ' + trup.length + '</div>';
   if (!trup.length) h += '<p class="lille" style="margin:6px 0 0">Truppen er tom.</p>';
   raekke.forEach(function(g){ var x = gr[g]; h += '<p style="margin:8px 0 2px;font-weight:800">' + esc(g) + (x.aargang ? ' <span class="lille">· ' + esc(x.aargang) + '</span>' : '') + (stige.indexOf(g) >= 0 ? ' <span class="lille">· 🔥 stigen til</span>' : '') + '</p>' +
     '<p class="lille" style="margin:0">' + (x.spillere.length ? x.spillere.map(esc).join(' · ') : '—') + '</p>'; });
   h += '</div>';
   var uk = ugeNoegle(), ufNu = uf[uk] ? uge[uf[uk]] : null;
-  h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">⚡ VURDERINGER · ' + vurd.length + '</div>' +
+  h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">📈 UDVIKLINGEN · ' + spjAntal(vurd.length, "vurdering", "vurderinger") + '</div>' +
     '<p class="lille" style="margin:6px 0 0">Ugens fokus: ' + (ufNu ? esc(ufNu.ikon + ' ' + ufNu.navn) : '—') + '</p>';
   trup.forEach(function(p){
-    var dele = []; DATA.omraader.forEach(function(o){ var v = senest[p.navn + "|" + o.id]; if (v) dele.push(o.emoji + ' ' + v.score + ' <span class="lille">(' + esc(boksTid(v.dato).split(' ')[0] || String(v.dato).slice(0, 10)) + ')</span>'); });
+    var dele = []; DATA.omraader.forEach(function(o){ var x = spejlSerie(vurd, p.navn, o); if (x) dele.push(x); });   /* ⭐ v6.29.0 · udviklingen over tid */
     var mine = (fp[p.navn] || []).map(function(id){ return punkt[id] || id; });
     if (!dele.length && !mine.length) return;
-    h += '<p style="margin:8px 0 0;font-weight:800">' + esc(p.navn) + '</p>' + (dele.length ? '<p class="lille" style="margin:0">' + dele.join(' · ') + '</p>' : '') +
+    h += '<p style="margin:8px 0 0;font-weight:800">' + esc(p.navn) + '</p>' + dele.join('') +
       (mine.length ? '<p class="lille" style="margin:0">🎯 ' + mine.map(esc).join(' · ') + '</p>' : '');
   });
   h += '</div>';
   var evNavne = Object.keys(ev).filter(function(k){ return ev[k] && ev[k].tekst; });
   h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">📋 EVALUERINGER · ' + evNavne.length + '</div>';
   if (!evNavne.length) h += '<p class="lille" style="margin:6px 0 0">Ingen evalueringer endnu.</p>';
-  evNavne.forEach(function(k){ h += '<p style="margin:8px 0 0;font-weight:800">' + esc(k) + ' <span class="lille">· ' + esc(String(ev[k].dato || "")) + '</span></p><p class="lille" style="margin:0;white-space:pre-wrap">' + esc(String(ev[k].tekst)) + '</p>'; });
+  evNavne.forEach(function(k){ h += '<p style="margin:8px 0 0;font-weight:800">' + esc(k) + ' <span class="lille">· ' + esc(spejlDagTekst(ev[k].dato)) + '</span></p><p class="lille" style="margin:0;white-space:pre-wrap">' + esc(String(ev[k].tekst)) + '</p>'; });
   h += '</div>';
   return h;
 }

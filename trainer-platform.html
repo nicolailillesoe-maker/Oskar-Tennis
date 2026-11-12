@@ -291,6 +291,10 @@ body{padding-bottom:calc(112px + env(safe-area-inset-bottom))}
 .ac-gjort{color:#4FD18B;font-weight:800}
 button.dev-hero.dev-kant.ac-helt-gjort{background:linear-gradient(160deg,#0E2A22,#0C1526) padding-box,linear-gradient(135deg,#1C7A48,#4FD18B) border-box !important}
 .vurd-gruppe-titel{font-size:19px;font-weight:900;letter-spacing:1.5px;color:var(--kridt);margin:22px 4px 10px}
+.spj-chips{display:flex;flex-wrap:wrap;gap:6px}   /* v6.30.0 · spejlet: skærmene */
+.spj-chips .knap{flex:1 1 30%;min-width:0;padding:8px 6px;font-size:11.5px;line-height:1.3}
+.spj-chips .knap small{font-weight:400;color:var(--daempet);font-size:10px}
+.spj-ramme{display:block;width:100%;height:640px;margin:10px 0 0;border:1px solid var(--kant);border-radius:18px;background:var(--dyb)}
 .spj-uger{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin:12px 0 4px}   /* v6.29.0 · spejlet: vurderinger pr. uge */
 .spj-uge{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
 .spj-uge b{font-size:11px;font-weight:800}
@@ -355,7 +359,7 @@ const LOGO = '<div class="topbar"><span class="brand"><img class="brandlogo" src
 // Alt gemmes lokalt under tp-*. Der findes ingen backend endnu; når Spor 2
 // kommer, skiftes disse fire kald ud — resten af appen skal ikke røres.
 // ⭐⭐ v5.1.0 · BOKS_TING er det, der følger træneren til skyen — låst.
-var BOKS_TING = ["truppen","grupper","vurderinger","fokuspunkter","evalueringer","ugefokus","stigehold","noegler","srvnavne","traenernavn","spejlpriv"];   /* v6.14.0 · spejlets private nøgle bor i boksen */
+var BOKS_TING = ["truppen","grupper","vurderinger","fokuspunkter","evalueringer","ugefokus","stigehold","noegler","srvnavne","traenernavn","spejlpriv","spejlskaerme"];   /* v6.30.0 · billederne af skærmene */   /* v6.14.0 · spejlets private nøgle bor i boksen */
 const lager = {
   hent: (n, standard) => { try { const v = localStorage.getItem("tp-" + n);
     return v === null ? standard : JSON.parse(v); } catch (e) { return standard; } },
@@ -493,6 +497,7 @@ async function spejlStop(){
   S.spejl.henter = false;
   if (!r || r.fejl) { S.spejl.fejl = "Delingen kunne ikke stoppes — prøv igen."; render(); return; }
   lager.gem("spejl-til", ""); lager.gem("spejl-givet-med", "");
+  _spjSk = null; _spjBeskidt = false; clearTimeout(_spjGemUr); if (lager.hent("spejlskaerme", null)) lager.gem("spejlskaerme", null);   /* ⭐ v6.30.0 */
   S.spejl.besked = "Delingen er stoppet."; S.spejl.liste = null; render(); spejlHentListe();
 }
 // modtageren: hent, pak ud, vis — kun i hukommelsen
@@ -1338,7 +1343,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.29.0 \u00b7 12. november 2026";
+const VERSION = "v6.30.0 \u00b7 12. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -1895,6 +1900,20 @@ Object.assign(EN, {   /* v6.10.0 · kortet */
   "Åbn": "Open", "spillerens navn": "the player's name",
   "{x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 SPILLERE.": "{x} calls their own group «{x}» — put {x} in a group under 👥 PLAYERS.",
   "{x} er lagt i truppen ✓ · {x} kalder selv sit hold «{x}» — læg {x} i en gruppe under 👥 SPILLERE.": "{x} has been added to the squad ✓ · {x} calls their own group «{x}» — put {x} in a group under 👥 PLAYERS."
+});
+Object.assign(EN, {   /* v6.30.0 · Spejlet 2.0 — skærmene */
+  "🖥 MINE SKÆRME": "🖥 MY SCREENS", "🖥 SKÆRMENE": "🖥 THE SCREENS", "WEEKENDEN": "THE WEEKEND", "ACTION CENTER": "ACTION CENTER",
+  "✓ {x} kan også se dine skærme, som de stod, sidst du var på dem.": "✓ {x} can also see your screens as they stood the last time you were on them.",
+  "Det er HJEM, Action Center, Program, Vurdér og Spillere — et billede, der ikke kan trykkes på.": "That is HOME, Action Center, Schedule, Rate and Players — a picture that cannot be tapped.",
+  "Indstillinger, trænerrummet, evalueringen, Live nu og en spillers kort deles aldrig.": "Settings, the coaches' room, the evaluation, Live now and a player's card are never shared.",
+  "⏹ Stop med at dele skærmene": "⏹ Stop sharing the screens", "Del også mine skærme": "Share my screens too",
+  "Vil du have hjælp til noget på skærmen? Så kan {x} se dine skærme, som de står: HJEM, Action Center, Program, Vurdér og Spillere — et billede, der ikke kan trykkes på.": "Want help with something on the screen? Then {x} can see your screens as they stand: HOME, Action Center, Schedule, Rate and Players — a picture that cannot be tapped.",
+  "Billederne låses som resten — vi kan ikke læse dem.": "The pictures are locked like the rest — we cannot read them.",
+  "Skærmene viser klubbens program og spillere. Derfor er det klubbens administrator, der kan dele dem.": "The screens show the club's schedule and players. That is why the club's administrator is the one who can share them.",
+  "{x} deler ikke sine skærme.": "{x} does not share their screens.", "Det slås til under 🪞 Spejlet → 🖥 MINE SKÆRME — af klubbens administrator.": "It is turned on under 🪞 The mirror → 🖥 MY SCREENS — by the club's administrator.",
+  "Skærmene er slået til, men ingen er gemt endnu.": "The screens are turned on, but none has been saved yet.", "De kommer, næste gang {x} bruger appen.": "They arrive the next time {x} uses the app.",
+  "Som de stod, sidst {x} var på dem.": "As they stood the last time {x} was on them.", "Et billede — der kan ikke trykkes.": "A picture — it cannot be tapped.",
+  "Den skærm var for stor til at dele.": "That screen was too large to share."
 });
 Object.assign(EN, {   /* v6.29.0 · Spejlet 2.0, første del */
   "🧑‍🏫 TRÆNERENS AKTIVITET": "🧑‍🏫 COACH ACTIVITY", "vurderinger": "ratings", "træninger": "sessions", "spillere": "players", "7 dage": "7 days", "30 dage": "30 days",
@@ -2622,6 +2641,7 @@ function _renderIndre(){
   el("app").innerHTML = (paaRejse ? renderRejse() : renderTraener()) +
     '<p class="fod">StreakCoach \u00b7 SportsAInalytics \u00b7 ' + VERSION + '</p>';   /* v6.1.0 · foden som StreakTennis' */
   oversaetAlt();   // v5.0.0 · sproglaget kører efter HVER tegning
+  try { spejlFangSnart(); spejlRammeFyld(); } catch (_e) {}   /* ⭐ v6.30.0 · spejlets skærme */
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -3312,6 +3332,8 @@ function coachRuteFraAdresse(){   /* ⭐ v6.24.2 · en kendt rute ryddes altid a
   try { history.replaceState(null, "", location.pathname + location.search); } catch (_e) {}
 }
 setInterval(function(){ try { fpSendIgen(); } catch (_e) {} }, 65000);   /* ⭐ v6.24.3 · Codes N4: køen prøves igen af sig selv */
+document.addEventListener("visibilitychange", function(){ if (document.visibilityState === "hidden") { try { spejlSkaermeForlad(); } catch (_e) {} } });   /* ⭐ v6.30.0 */
+window.addEventListener("pagehide", function(){ try { spejlSkaermeForlad(); } catch (_e) {} });   /* ⭐ v6.30.0 */
 document.addEventListener("visibilitychange", function(){   /* ⭐ v6.24.2 · R2: appen, der kommer frem igen timer senere, spørger igen (højst hvert minut) */
   if (document.visibilityState !== "visible" || !lager.hent("klubkode", "")) return;
   try { nuHent(false); } catch (_e) {}
@@ -5838,6 +5860,7 @@ function indstSpejl(){
   if (S.spejl.besked) h += '<p class="lille" style="margin:6px 0 0;color:var(--vundet)">' + esc(S.spejl.besked) + '</p>';
   if (S.spejl.fejl) h += '<p class="lille" style="margin:6px 0 0;color:var(--tabt)">⚠️ <span>' + esc(S.spejl.fejl) + '</span></p>';   /* v6.29.0 · sætningen for sig — ordbogen tager den hel */
   h += '</div>';
+  h += spejlSkaermeValg();   /* ⭐ v6.30.0 */
   h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">👁 DELER MED DIG</div>';
   if (!_k || !_bn) h += '<p class="lille" style="margin:6px 0 0;color:var(--guld)">Log ind og tænd skyen — spejlet bor i den.</p>';
   else if (S.spejl.henter && !l) h += '<p class="lille" style="margin:6px 0 0">⏳ Henter…</p>';
@@ -5902,6 +5925,138 @@ function spejlAktivitet(a){   /* hvad træneren har lavet — talt i boksens egn
     : '<p class="lille" style="margin:8px 0 0;color:var(--vundet)" data-spj-uden="0"><span>Alle i truppen er vurderet de sidste 30 dage ✓</span></p>';
   return h + '</div>';
 }
+/* ⭐⭐⭐ v6.30.0 · SPEJLET 2.0, ANDEN DEL — «HANS SKÆRME» (Nicolai 7/9: «Jeg vil se hvordan han ser det.» · 12/11: «se præcist det
+   som Carsten ser - så jeg kan supportere ham»). Et BILLEDE af skærmen, som den stod — renset, låst i giverens egen boks, og kun
+   når klubbens administrator selv har sagt ja. Billedet læses aldrig tilbage i nogen tilstand: det kan kun ses. */
+var SPJ_FANER = { hjem: "HJEM", overblik: "ACTION CENTER", program: "PROGRAM", weekenden: "WEEKENDEN", vurder: "VURDÉR", grupper: "SPILLERE" };
+var SPJ_RAEKKE = ["hjem", "overblik", "program", "weekenden", "vurder", "grupper"];
+var SPJ_MAKS = 60000, SPJ_RAA_MAKS = 300000, SPJ_BOKS_MAKS = 270000, SPJ_PAUSE = 60000;
+var _spjSk = null, _spjRaa = {}, _spjFangUr = null, _spjGemUr = null, _spjGemtTid = 0, _spjBeskidt = false;
+async function spjPak(tekst){   /* gzip → base64: et billede fylder en tiendedel. Kan telefonen ikke, gemmes det råt (null) */
+  if (typeof CompressionStream === "undefined") return null;
+  var b = new Uint8Array(await new Response(new Blob([tekst]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer());
+  return tilB64(b);
+}
+async function spjUd(z){ return await new Response(new Blob([fraB64(z)]).stream().pipeThrough(new DecompressionStream("gzip"))).text(); }
+function spejlSkaermeTil(){ var x = lager.hent("spejlskaerme", null); return !!(x && x.ja && lager.hent("spejl-til", "")); }
+function spejlSkaermNoegle(){   /* hvilket rum står der — og må det deles? null = nej */
+  if (S.adgangLukket) return null;
+  var t = S.tab === "registrer" ? "vurder" : S.tab;
+  if (!SPJ_FANER[t]) return null;   /* indstillinger, nøglerne, trænerrummet, evalueringen og Live nu deles aldrig */
+  if (t === "grupper" && S.aabenSpiller) return null;   /* en spillers kort bærer kampe og analyser — ikke trænerens at sende videre (19) */
+  return t;
+}
+function spejlRens(rod){   /* et billede, ikke en kopi: ingen felter med indhold, ingen links, ingen data-attributter, ingen nøgler i teksten */
+  var k = rod.cloneNode(true);
+  k.querySelectorAll("script,style,canvas,iframe,object,embed,video,audio,textarea,link,meta,base").forEach(function(e){ e.remove(); });
+  k.querySelectorAll("*").forEach(function(e){
+    var fj = [];
+    for (var i = 0; i < e.attributes.length; i++) {
+      var n = e.attributes[i].name;
+      if (n === "value" || n === "href" || n === "action" || n === "srcdoc" || n === "name" || n.indexOf("data-") === 0 || n.indexOf("on") === 0) fj.push(n);
+      else if (n === "src" && !(e.tagName === "IMG" && e.attributes[i].value.indexOf("data:image/") === 0)) fj.push(n);
+      else if (/https?:|[#?]k=/.test(e.attributes[i].value)) fj.push(n);
+    }
+    fj.forEach(function(n){ e.removeAttribute(n); });
+    if (e.tagName === "IMG") {   /* et stort indlejret billede (klubbens mærke) rejser ikke med hvert billede — modtagerens app har det selv */
+      var sv = e.getAttribute("src") || "";
+      if (sv.length > 2000) { e.removeAttribute("src"); if (LOGO.indexOf(sv) >= 0) e.setAttribute("spj-logo", "1"); }
+    }
+  });
+  var w = document.createTreeWalker(k, NodeFilter.SHOW_TEXT), nd, l = [];
+  while ((nd = w.nextNode())) l.push(nd);
+  l.forEach(function(nd){
+    var v = nd.nodeValue; if (!v) return;
+    var u = v.replace(/https?:\/\/\S+/g, "🔗 …").replace(/\b[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}\b/g, "••••");
+    if (u !== v) nd.nodeValue = u;
+  });
+  return k.innerHTML;
+}
+function spejlFangSnart(){   /* efter hver tegning — billedet tages først, når skærmen har stået stille et øjeblik */
+  if (!spejlSkaermeTil()) return;
+  clearTimeout(_spjFangUr); _spjFangUr = setTimeout(function(){ try { spejlFang(); } catch (_e) {} }, 700);
+}
+function spejlFang(){
+  if (!spejlSkaermeTil()) return;
+  var rod = el("app"); if (!rod || !rod.querySelector("nav.bundnav")) return;   /* døren, lukningen og venteskærmen deles aldrig */
+  var n = spejlSkaermNoegle(); if (!n) return;
+  var h = spejlRens(rod);
+  if (_spjRaa[n] === h) return;   /* samme billede — intet at gøre */
+  _spjRaa[n] = h;
+  if (!_spjSk) { var gl = lager.hent("spejlskaerme", null); _spjSk = (gl && gl.skaerme) ? JSON.parse(JSON.stringify(gl.skaerme)) : {}; }
+  var nu = new Date().toISOString();
+  var saet = function(x){
+    if (_spjRaa[n] !== h || !spejlSkaermeTil() || !_spjSk) return;   /* et nyere billede er på vej — eller der er sagt nej imens */
+    if (_spjSk[n] && ((x.z && _spjSk[n].z === x.z) || (x.h && _spjSk[n].h === x.h) || (x.stor && _spjSk[n].stor))) return;   /* det, boksen allerede har */
+    _spjSk[n] = x; _spjBeskidt = true;
+    var siden = Date.now() - _spjGemtTid;   /* højst én sending i minuttet — boksen sendes hel hver gang */
+    clearTimeout(_spjGemUr); _spjGemUr = setTimeout(function(){ try { spejlSkaermeGem(); } catch (_e) {} }, siden > SPJ_PAUSE ? 4000 : SPJ_PAUSE - siden);
+  };
+  if (h.length > SPJ_RAA_MAKS) { saet({ stor: true, t: nu }); return; }
+  spjPak(h).then(function(z){ var x = z ? { z: z, t: nu } : { h: h, t: nu }; saet((z || h).length > SPJ_MAKS ? { stor: true, t: nu } : x); })
+    .catch(function(){ saet(h.length > SPJ_MAKS ? { stor: true, t: nu } : { h: h, t: nu }); });
+}
+function spejlSkaermeGem(){   /* billederne lægges i boksen — den sendes låst som resten (boksRoert) */
+  if (!_spjBeskidt || !_spjSk || !spejlSkaermeTil()) return;
+  var ud = { ja: true, v: VERSION, sprog: SPROG, skaerme: {} };
+  SPJ_RAEKKE.forEach(function(n){ if (_spjSk[n]) ud.skaerme[n] = _spjSk[n]; });
+  /* ⛔ boksen har et loft hos serveren (400.000 låste tegn). Billederne må aldrig koste backuppen: de største ryger først. */
+  var t = boksTilstand();
+  for (var i = 0; i < 12; i++) {
+    t.spejlskaerme = ud;
+    if (new TextEncoder().encode(JSON.stringify(t)).length <= SPJ_BOKS_MAKS) break;
+    var st = null, lg = function(x){ return (x.z || x.h || "").length; }; Object.keys(ud.skaerme).forEach(function(n){ if (lg(ud.skaerme[n]) && (!st || lg(ud.skaerme[n]) > lg(ud.skaerme[st]))) st = n; });
+    if (!st) break;
+    ud.skaerme[st] = { stor: true, t: ud.skaerme[st].t };
+  }
+  _spjBeskidt = false; _spjGemtTid = Date.now();
+  lager.gem("spejlskaerme", ud);
+}
+function spejlSkaermeForlad(){   /* appen forlades: det, der ikke er gemt endnu, gemmes og sendes nu */
+  if (!_spjBeskidt) return;
+  clearTimeout(_spjGemUr); try { spejlSkaermeGem(); } catch (_e) {}
+  try { boksSend(); } catch (_e2) {}
+}
+function spejlSkaermeValg(){   /* giverens kort i 🪞 Spejlet: ja og nej til skærmene */
+  var til = lager.hent("spejl-til", ""); if (!til) return '';
+  var x = lager.hent("spejlskaerme", null), paa = !!(x && x.ja), adm = (S.minRolle || lager.hent("minrolle", "")) === "admin";
+  var h = '<div class="kort" data-spj-valg="' + (paa ? "til" : adm ? "fra" : "kun-admin") + '" style="--tone:' + (paa ? 'var(--is)' : 'var(--grus)') + '">' +
+    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🖥 MINE SKÆRME</div>';
+  if (paa) h += '<p class="lille" style="margin:6px 0 6px;color:var(--vundet)"><span>✓ ' + esc(til) + ' kan også se dine skærme, som de stod, sidst du var på dem.</span></p>' +
+    '<p class="lille" style="margin:0 0 8px"><span>Det er HJEM, Action Center, Program, Vurdér og Spillere — et billede, der ikke kan trykkes på.</span> <span>Indstillinger, trænerrummet, evalueringen, Live nu og en spillers kort deles aldrig.</span></p>' +
+    '<div class="raekke"><button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="spejl-skaerme-fra">⏹ Stop med at dele skærmene</button></div>';
+  else if (adm) h += '<p class="lille" style="margin:6px 0 8px"><span>Vil du have hjælp til noget på skærmen? Så kan ' + esc(til) + ' se dine skærme, som de står: HJEM, Action Center, Program, Vurdér og Spillere — et billede, der ikke kan trykkes på.</span> ' +
+    '<span>Indstillinger, trænerrummet, evalueringen, Live nu og en spillers kort deles aldrig.</span> <span>Billederne låses som resten — vi kan ikke læse dem.</span></p>' +
+    '<div class="raekke"><button class="knap" style="flex:none;padding:8px 12px;background:var(--grus)" data-act="spejl-skaerme-til">Del også mine skærme</button></div>';
+  else h += '<p class="lille" style="margin:6px 0 0"><span>Skærmene viser klubbens program og spillere. Derfor er det klubbens administrator, der kan dele dem.</span></p>';
+  return h + '</div>';
+}
+function spejlSkaermeKort(a){   /* modtagerens kort øverst i spejlet */
+  var x = (a.t || {}).spejlskaerme, sk = (x && x.ja && x.skaerme) ? x.skaerme : null, hvem = esc(a.navn || a.fra);
+  var h = '<div class="kort" data-spj-skaerme="' + (sk ? SPJ_RAEKKE.filter(function(n){ return sk[n]; }).length : "nej") + '">' +
+    '<div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🖥 SKÆRMENE</div>';
+  if (!sk) return h + '<p class="lille" style="margin:6px 0 0"><span>' + hvem + ' deler ikke sine skærme.</span> <span>Det slås til under 🪞 Spejlet → 🖥 MINE SKÆRME — af klubbens administrator.</span></p></div>';
+  var navne = SPJ_RAEKKE.filter(function(n){ return sk[n]; });
+  if (!navne.length) return h + '<p class="lille" style="margin:6px 0 0"><span>Skærmene er slået til, men ingen er gemt endnu.</span> <span>De kommer, næste gang ' + hvem + ' bruger appen.</span></p></div>';
+  var valgt = (S.spejl.skaerm && sk[S.spejl.skaerm]) ? S.spejl.skaerm : null;
+  h += '<p class="lille" style="margin:6px 0 8px"><span>Som de stod, sidst ' + hvem + ' var på dem.</span> <span>Et billede — der kan ikke trykkes.</span></p><div class="spj-chips">' +
+    navne.map(function(n){ return '<button class="knap valg' + (valgt === n ? ' til' : '') + '" data-act="spejl-skaerm-vis" data-v="' + n + '"><b>' + SPJ_FANER[n] + '</b><br><small>' + esc(boksTid(sk[n].t)) + '</small></button>'; }).join('') + '</div>';
+  if (valgt && sk[valgt].stor) h += '<p class="lille" style="margin:8px 0 0;color:var(--guld)" data-spj-stor="1"><span>Den skærm var for stor til at dele.</span></p>';
+  else if (valgt) h += '<iframe class="spj-ramme" data-spj-ramme="' + valgt + '" sandbox=""></iframe>';
+  return h + '</div>';
+}
+function spejlRammeFyld(){   /* billedet sættes ind EFTER tegningen — i en ramme uden scripts og uden adgang til siden omkring */
+  var r = document.querySelector("iframe[data-spj-ramme]"); if (!r || !S.spejl.aaben) return;
+  var x = (S.spejl.aaben.t || {}).spejlskaerme, b = x && x.skaerme && x.skaerme[r.getAttribute("data-spj-ramme")]; if (!b || !(b.z || b.h)) return;
+  (b.z ? spjUd(b.z) : Promise.resolve(b.h)).then(function(raa){
+    if (!document.contains(r)) return;
+    var css = ""; try { css = document.querySelector("style").textContent; } catch (_e) {}
+    var ren = String(raa).replace(/<\/?(script|meta|link|base|iframe|object|embed|form)\b[^>]*>/gi, "");   /* modtageren stoler ikke på giverens rensning */
+    var lg = (/src="(data:image\/[^"]+)"/.exec(LOGO) || [])[1];   /* mærket sættes ind fra modtagerens egen app */
+    ren = ren.split(' spj-logo="1"').join(lg ? ' src="' + lg + '"' : '');
+    r.srcdoc = '<!doctype html><html lang="' + (x.sprog === "en" ? "en" : "da") + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>' + css + '</style></head><body><div id="app">' + ren + '</div></body></html>';
+  }).catch(function(){});
+}
 function spejlVisning(a){
   var t = a.t || {}, trup = t.truppen || [], grupper = t.grupper || [], vurd = t.vurderinger || [], fp = t.fokuspunkter || {}, ev = t.evalueringer || {}, uf = t.ugefokus || {}, stige = t.stigehold || [];
   var punkt = {}; Object.keys(KATEGORIER).forEach(function(k){ (KATEGORIER[k] || []).forEach(function(p){ punkt[p.id] = p.navn; }); });
@@ -5915,6 +6070,7 @@ function spejlVisning(a){
     '<span style="flex:1;min-width:0"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">🪞 SPEJL AF ' + esc(String(a.navn || a.fra).toUpperCase()) + '</div>' +
     '<span class="lille">' + esc(a.klub || "") + (a.stempel ? ' · gemt ' + esc(boksTid(a.stempel)) : '') + ' · læs-kun</span></span>' +
     '<button class="knap valg" style="flex:none;padding:8px 12px;font-size:12.5px" data-act="spejl-luk">Luk spejlet</button></div></div>';
+  h += spejlSkaermeKort(a);   /* ⭐ v6.30.0 */
   h += spejlAktivitet(a);   /* ⭐ v6.29.0 */
   h += '<div class="kort"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus)">👥 TRUPPEN · ' + trup.length + '</div>';
   if (!trup.length) h += '<p class="lille" style="margin:6px 0 0">Truppen er tom.</p>';
@@ -6621,7 +6777,12 @@ document.addEventListener("click", function(e){
   if (act==="spejl-stop"){ spejlStop().catch(function(){ S.spejl.henter = false; render(); }); return; }
   if (act==="spejl-liste"){ spejlHentListe(); return; }
   if (act==="spejl-aabn"){ spejlAabn(String(v || "")).catch(function(){ S.spejl.aabner = null; S.spejl.fejl = "Ingen forbindelse \u2014 pr\u00f8v igen."; render(); }); return; }
-  if (act==="spejl-luk"){ S.spejl.aaben = null; render(); return; }
+  if (act==="spejl-luk"){ S.spejl.aaben = null; S.spejl.skaerm = null; render(); return; }
+  /* ⭐ v6.30.0 · skærmene: ja er administratorens eget tryk · nej fjerner billederne fra boksen · modtageren vælger et billede */
+  if (act==="spejl-skaerme-til"){ if ((S.minRolle || lager.hent("minrolle", "")) !== "admin" || !lager.hent("spejl-til", "")) return;
+    _spjSk = {}; _spjBeskidt = false; lager.gem("spejlskaerme", { ja: true, v: VERSION, sprog: SPROG, skaerme: {} }); render(); return; }
+  if (act==="spejl-skaerme-fra"){ _spjSk = null; _spjBeskidt = false; clearTimeout(_spjGemUr); lager.gem("spejlskaerme", null); render(); return; }
+  if (act==="spejl-skaerm-vis"){ S.spejl.skaerm = (S.spejl.skaerm === v ? null : v); render(); return; }
   if (act==="indst-vis"){   /* v6.8.0 · tom v = tilbage til fliserne */
     S.indstVisning = v || null;
     if (S.indstVisning === "notif") { S.notif = S.notif || {}; S.notif.besked = null; render(); notifStatus(); return; }   /* ⭐ v6.24.0 · målt hver gang rummet åbnes */

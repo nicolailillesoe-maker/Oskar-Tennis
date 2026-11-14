@@ -295,6 +295,14 @@ button.dev-hero.dev-kant.ac-helt-gjort{background:linear-gradient(160deg,#0E2A22
 .spj-chips .knap{flex:1 1 30%;min-width:0;padding:8px 6px;font-size:11.5px;line-height:1.3}
 .spj-chips .knap small{font-weight:400;color:var(--daempet);font-size:10px}
 .spj-ramme{display:block;width:100%;height:640px;margin:10px 0 0;border:1px solid var(--kant);border-radius:18px;background:var(--dyb)}
+.blst-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0 2px;font-size:11.5px;color:var(--tekst2)}   /* v6.31.0 · træning og kampe over tid */
+.blst-legend>span{display:inline-flex;align-items:center;gap:5px}
+.blst-svg{display:block;width:100%;height:auto;margin:2px 0 0}
+.blst-fliser{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 0}
+.blst-flise{background:var(--nat);border-radius:10px;padding:10px 12px;min-width:0}
+.blst-titel{margin:0 0 4px;font-weight:700;color:var(--tekst2);min-height:2.9em;line-height:1.45}
+.blst-rk{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tekst2);padding:2px 0}
+.blst-rk b{margin-left:auto;font-size:15px;color:var(--kridt)}
 .spj-uger{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin:12px 0 4px}   /* v6.29.0 · spejlet: vurderinger pr. uge */
 .spj-uge{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
 .spj-uge b{font-size:11px;font-weight:800}
@@ -1343,7 +1351,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.30.0 \u00b7 12. november 2026";
+const VERSION = "v6.31.0 \u00b7 14. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2542,6 +2550,26 @@ Object.assign(EN, {   /* ⭐ v6.27.0 · klubbens live-skærm */
   "Åbn skærmen ↗": "Open the screen ↗",
   "Kun klubbens administrator kan tænde skærmen.": "Only the club's administrator can switch on the screen.",
   "Live-skærmen er ikke åbnet for klubben endnu.": "The live screen isn't open for the club yet.",
+});
+Object.assign(EN, {   /* ⭐ v6.31.0 · træning og kampe over tid */
+  "📊 TRÆNING OG KAMPE OVER TID": "📊 TRAINING AND MATCHES OVER TIME",
+  "De seneste {n} træninger med din vurdering.": "The last {n} sessions with your rating.",
+  "Den seneste træning med din vurdering.": "The latest session with your rating.",
+  "Kampene er dem, spilleren selv har registreret.": "The matches are the ones the player has registered.",
+  "Spiller selv": "Player's own",
+  "Kamp": "Match",
+  "Første træning efter kamp": "First session after a match",
+  "Alle andre træninger": "All other sessions",
+  "Efter kamp er den første træning, du har vurderet, højst to dage efter en kampdag.": "After a match means the first session you rated, at most two days after a match day.",
+  "Tallene kommer, når der er mindst tre træninger lige efter en kamp.": "The numbers arrive when there are at least three sessions right after a match.",
+  "Lige nu er der {n}.": "Right now there are {n}.",
+  "Lige nu er der 1.": "Right now there is 1.",
+  "Ingen vurderinger endnu. Søjlerne kommer, når du har vurderet en træning.": "No ratings yet. The bars arrive when you have rated a session.",
+  "Spilleren har ingen registrerede kampe i perioden.": "The player has no registered matches in the period.",
+  "Søjlediagram: din vurdering og spillerens egen for hver træning, med kampdage under søjlerne.": "Bar chart: your rating and the player's own for each session, with match days below the bars.",
+  "{x} · træner {n} · spiller selv {n}": "{x} · coach {n} · player's own {n}",
+  "{x} · træner {n}": "{x} · coach {n}",
+  "{x} · kamp": "{x} · match"
 });
 var _ENr = {}, _ENx = [];
 (function(){
@@ -6287,6 +6315,102 @@ function spillereRet(){
 function fuldtNavnFor(navn){
   try { var hn = (S.noegler || {})[navn]; return (hn && (S.fuldeNavne || {})[hn]) || ""; } catch (_e) { return ""; }
 }
+/* ⭐⭐ v6.31.0 · TRÆNING OG KAMPE OVER TID — «belastningen». Aftalen 11/8: «hvordan performer de til træning mandag efter en holdkamp
+   søndag» · Nicolai 14/11: «et søjlediagram over tid der både viser træners og egen rating». Kun pr. spiller — aldrig mellem spillere.
+   Intet nyt kald og intet nyt gemt: trænerens egne vurderinger (boksen), spillerens egne domme og kampresuméet (hent-hold).
+   REGLEN (evalueringens motor regner efter den samme): en kampdag er en dato med mindst én kamp, spilleren selv har registreret.
+   «Efter kamp» er den FØRSTE vurderede træning en eller to dage efter kampdagen — samme dag tæller ikke. Tallene vises først, når
+   der er tre FORSKELLIGE træninger efter kamp: en træning tæller én gang, også når to kampdage deler den (lørdag og søndag
+   før mandagens træning). Perioden er de viste træninger, fra to dage før den første. */
+var BLST_MAKS = 20, BLST_DAGE = 2, BLST_MIN = 3;
+function blstDagnr(iso){ var m = /^(\d{4})-(\d\d)-(\d\d)/.exec(String(iso || "")); return m ? Math.round(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000) : null; }
+function blstDM(iso){ var m = /^(\d{4})-(\d\d)-(\d\d)/.exec(String(iso || "")); return m ? (+m[3]) + "/" + (+m[2]) : ""; }
+function blstTal(x){ if (x === null || x === undefined) return "–"; var t = (Math.round(x * 10) / 10).toFixed(1); return SPROG === "en" ? t : t.replace(".", ","); }
+function blstSnit(l){ return l.length ? l.reduce(function(a, x){ return a + x; }, 0) / l.length : null; }
+function blstData(navn, s){
+  var selv = (s && Array.isArray(s.selvvurderinger)) ? s.selvvurderinger : [], alle = [];
+  (S.vurderinger || []).forEach(function(v, i){
+    if (!v || v.spiller !== navn) return;
+    var dn = blstDagnr(v.dato), t = Number(v.score);
+    if (dn === null || !(t >= 1 && t <= 10)) return;
+    var o = omrTilSync(v.omraade);   /* samme parring som «VURDERINGER · SENESTE»: samme dag og samme område */
+    var sm = selv.filter(function(x){ return x && x.d === v.dato && x.o === o; }).slice(-1)[0], e = sm ? Number(sm.s) : NaN;
+    alle.push({ dato: String(v.dato).slice(0, 10), dn: dn, i: i, t: t, s: (e >= 1 && e <= 10) ? e : null, efter: false });
+  });
+  alle.sort(function(a, b){ return a.dn - b.dn || a.i - b.i; });   /* ældste først; samme dag: som de blev vurderet */
+  var vist = alle.slice(-BLST_MAKS), foer = alle.length > vist.length ? alle[alle.length - vist.length - 1] : null;
+  var set = {}, kampdage = [];
+  if (vist.length) {
+    var fra = vist[0].dn - BLST_DAGE; if (foer && foer.dn > fra) fra = foer.dn;
+    ((s && Array.isArray(s.kampResume)) ? s.kampResume : []).forEach(function(k){
+      var d = String((k && k.d) || "").slice(0, 10), dn = blstDagnr(d);
+      if (dn === null || dn < fra || set[d]) return;   /* flere kampe samme dag er én kampdag */
+      set[d] = 1; kampdage.push({ dato: d, dn: dn, plads: 0, traening: null });
+    });
+  }
+  kampdage.sort(function(a, b){ return a.dn - b.dn; });
+  kampdage.forEach(function(k){
+    for (var j = 0; j < vist.length; j++) {
+      if (vist[j].dn <= k.dn) { k.plads = j + 1; continue; }   /* mærket står efter de træninger, der lå før eller på kampdagen */
+      if (vist[j].dn <= k.dn + BLST_DAGE) { vist[j].efter = true; k.traening = j; }
+      break;   /* kun den FØRSTE træning efter kampdagen */
+    }
+  });
+  var gruppe = function(efter){
+    var l = vist.filter(function(x){ return x.efter === efter; }), ls = l.filter(function(x){ return x.s !== null; });
+    return { n: l.length, t: blstSnit(l.map(function(x){ return x.t; })), s: blstSnit(ls.map(function(x){ return x.s; })) };
+  };
+  return { vist: vist, kampdage: kampdage, efter: gruppe(true), andre: gruppe(false) };
+}
+function blstKort(navn, s){
+  var d = blstData(navn, s), n = d.vist.length;
+  var f2 = function(v){ return Math.round(v * 100) / 100; };
+  var udfald = !n ? "ingen-vurderinger" : !d.kampdage.length ? "ingen-kampe" : d.efter.n < BLST_MIN ? "for-faa" : "tal";   /* grænsen tæller TRÆNINGER efter kamp, ikke kampdage */
+  var h = '<div class="kort" data-blst="' + udfald + '"><div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus);margin-bottom:2px">📊 TRÆNING OG KAMPE OVER TID</div>';
+  if (!n) return h + '<p class="lille" data-blst-saetning="1" style="margin:0">Ingen vurderinger endnu. Søjlerne kommer, når du har vurderet en træning.</p></div>';
+  h += '<p class="lille" style="margin:0 0 4px"><span>' + (n === 1 ? 'Den seneste træning med din vurdering.' : 'De seneste ' + n + ' træninger med din vurdering.') + '</span> <span>Kampene er dem, spilleren selv har registreret.</span></p>';
+  var boks = '<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">';
+  var mT = boks + '<rect x="1" y="1" width="8" height="8" rx="1.5" fill="var(--is)"/></svg>';
+  var mS = boks + '<rect x="1.6" y="1.6" width="6.8" height="6.8" rx="1.5" fill="none" stroke="var(--is)" stroke-width="1.2"/></svg>';
+  var mK = boks + '<path d="M5 0.5L9.5 5L5 9.5L0.5 5Z" fill="var(--guld)"/></svg>';
+  h += '<div class="blst-legend"><span>' + mT + '<span>Træner</span></span><span>' + mS + '<span>Spiller selv</span></span><span>' + mK + '<span>Kamp</span></span></div>';
+  /* diagrammet: én y-akse 0-10 · søjlerne står på grundlinjen · kampdagene i deres egen række under den */
+  var W = 320, X0 = 30, XR = 12, Y0 = 8, PH = 88, YB = Y0 + PH, YM = YB + 13, YD = YM + 19;
+  var slot = Math.min((W - X0 - XR) / n, 30), bw = Math.min(7, slot * 0.3);   /* luften mellem to par er større end luften i et par */
+  var g = '<svg class="blst-svg" viewBox="0 0 ' + W + ' ' + (YD + 4) + '" role="img" aria-label="Søjlediagram: din vurdering og spillerens egen for hver træning, med kampdage under søjlerne.">';
+  [0, 5, 10].forEach(function(v){ var y = YB - v / 10 * PH;
+    g += '<line x1="' + (X0 - 10) + '" x2="' + (W - 2) + '" y1="' + y + '" y2="' + y + '" stroke="var(--kant)" stroke-width="1"/>' +
+      '<text x="' + (X0 - 13) + '" y="' + (y + 3) + '" text-anchor="end" font-size="8" fill="var(--daempet)">' + v + '</text>'; });
+  d.vist.forEach(function(x, i){
+    var cx = X0 + (i + 0.5) * slot, ht = x.t / 10 * PH, hs = x.s === null ? 0 : x.s / 10 * PH;
+    g += '<g data-blst-par="' + i + '" data-blst-dato="' + x.dato + '" data-blst-t="' + x.t + '"' + (x.s !== null ? ' data-blst-s="' + x.s + '"' : '') + (x.efter ? ' data-blst-efter-kamp="1"' : '') + '>' +
+      '<title>' + blstDM(x.dato) + ' · træner ' + x.t + (x.s !== null ? ' · spiller selv ' + x.s : '') + '</title>' +
+      '<rect data-blst-soejle="t" x="' + f2(cx - bw - 0.5) + '" y="' + f2(YB - ht) + '" width="' + f2(bw) + '" height="' + f2(ht) + '" rx="1.5" fill="var(--is)"/>' +
+      (x.s !== null ? '<rect data-blst-soejle="s" x="' + f2(cx + 0.5 + 0.6) + '" y="' + f2(YB - hs + 0.6) + '" width="' + f2(bw - 1.2) + '" height="' + f2(hs - 1.2) + '" rx="1.5" fill="none" stroke="var(--is)" stroke-width="1.2"/>' : '') + '</g>';
+  });
+  var paa = {}; d.kampdage.forEach(function(k){ (paa[k.plads] = paa[k.plads] || []).push(k); });
+  Object.keys(paa).map(Number).sort(function(a, b){ return a - b; }).forEach(function(p){
+    var l = paa[p], m = l.length, trin = Math.min(9, (slot - 1) / m), r = m === 1 ? 4.5 : Math.max(3, Math.min(4.5, trin / 2 + 1));   /* flere kampdage i træk står tæt — og bliver på deres plads mellem de to træninger */
+    l.forEach(function(k, j){ var x = f2(X0 + p * slot + (j - (m - 1) / 2) * trin);
+      g += '<path data-blst-kamp="' + k.dato + '"' + (k.traening !== null ? ' data-blst-kamp-traening="' + k.traening + '"' : '') + ' d="M' + x + ' ' + (YM - r) + 'L' + f2(x + r) + ' ' + YM + 'L' + x + ' ' + (YM + r) + 'L' + f2(x - r) + ' ' + YM + 'Z" fill="var(--guld)" stroke="var(--nat)" stroke-width="0.8"><title>' + blstDM(k.dato) + ' · kamp</title></path>'; });
+  });
+  var dato = function(i){ return '<text x="' + f2(X0 + (i + 0.5) * slot) + '" y="' + YD + '" text-anchor="middle" font-size="8" fill="var(--daempet)">' + blstDM(d.vist[i].dato) + '</text>'; };
+  g += dato(0) + (n > 1 ? dato(n - 1) : '') + '</svg>';
+  h += g;
+  if (udfald === "ingen-kampe") h += '<p class="lille" data-blst-saetning="1" style="margin:8px 0 0">Spilleren har ingen registrerede kampe i perioden.</p>';
+  else if (udfald === "for-faa") h += '<p class="lille" data-blst-saetning="1" style="margin:8px 0 0"><span>Tallene kommer, når der er mindst tre træninger lige efter en kamp.</span> <span>Lige nu er der ' + d.efter.n + '.</span></p>';
+  else {
+    var flise = function(navn2, titel, x){
+      return '<div class="blst-flise" data-blst-flise="' + navn2 + '" data-blst-n="' + x.n + '"><div class="lille blst-titel">' + titel + '</div>' +
+        '<div class="blst-rk">' + mT + '<span>Træner</span><b data-blst-snit="t">' + blstTal(x.t) + '</b></div>' +
+        '<div class="blst-rk">' + mS + '<span>Spiller selv</span><b data-blst-snit="s">' + blstTal(x.s) + '</b></div>' +
+        '<div class="lille" style="margin:4px 0 0">' + (x.n === 1 ? '1 træning' : x.n + ' træninger') + '</div></div>';
+    };
+    h += '<div class="blst-fliser">' + flise("efter", "Første træning efter kamp", d.efter) + flise("andre", "Alle andre træninger", d.andre) + '</div>' +
+      '<p class="lille" style="margin:8px 0 0">Efter kamp er den første træning, du har vurderet, højst to dage efter en kampdag.</p>';
+  }
+  return h + '</div>';
+}
 function spillerDetalje(navn){
   const s = DATA.spillere[navn];
   let h = '<button class="knap valg" style="margin-bottom:12px;flex:none;padding:8px 14px" data-act="luk-spiller">‹ Tilbage</button>';
@@ -6345,6 +6469,8 @@ function spillerDetalje(navn){
     });
     h += '</div>';
   }
+
+  h += blstKort(navn, s);   /* ⭐ v6.31.0 · træning og kampe over tid */
 
   // ⭐⭐ v6.20.0 · ANALYSER FRA SPILLEREN — kun det, spilleren selv har sendt til klubben (klub-live v2 `analyser`)
   (function(){

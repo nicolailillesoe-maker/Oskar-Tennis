@@ -194,6 +194,11 @@ textarea{width:100%;background:var(--dyb);border:1px solid var(--kant);border-ra
 .dev-kant-staal{box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
 .dev-kant-roed{box-shadow:inset 0 0 0 1px rgba(210,72,78,.4),inset 0 22px 44px -30px rgba(210,72,78,.5)}
 button.dev-hero.dev-kant{background:linear-gradient(160deg,#101E3A,#0C1526) padding-box,linear-gradient(135deg,#083EA7,#4B17B6 40%,#EF3E4A 75%,#FB9B2A) border-box !important;border:1.5px solid transparent !important;box-shadow:none;backdrop-filter:none}
+/* ⭐ v6.31.2 · UDSTIL i husets form: helten som link er grøn (programmet er på nettet), og knappen i helten er en pille */
+a.dev-hero.dev-kant{text-decoration:none;line-height:normal;background:linear-gradient(160deg,#0E2A22,#0C1526) padding-box,linear-gradient(135deg,#1C7A48,#4FD18B) border-box !important;border:1.5px solid transparent !important;box-shadow:none;backdrop-filter:none}
+.udst-helt{flex-wrap:wrap;row-gap:8px}.udst-helt>b{flex:1;min-width:0}.udst-helt>small{flex:0 0 100%}
+.udst-pille{margin-left:auto;flex:none;padding:9px 12px;border-radius:12px;border:1px solid rgba(159,216,232,.35);background:rgba(159,216,232,.08);color:var(--is);font-size:12.5px;font-weight:800;letter-spacing:0;white-space:nowrap}
+.udst-pille.udst-gron{border-color:transparent;background:linear-gradient(135deg,#3AD68A 0%,#22995A 55%,#157A45 100%);color:#fff}
 .avat{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-weight:700;color:var(--dyb);flex:none;vertical-align:middle;letter-spacing:.02em}
 .fod{font-size:10.5px;color:var(--fod);margin-top:22px;border-top:1px dashed var(--kant);padding-top:9px}
 .pil-tilbage{width:44px;height:38px;display:flex;align-items:center;justify-content:center;background:var(--kort);border:1px solid var(--kant);border-radius:12px;color:var(--is);font-size:15px;cursor:pointer;padding:0;flex:none;backdrop-filter:blur(8px)}   /* v6.2.0 · StreakTennis' ← ordret; StreakCoachs egen pil-knap udgik */
@@ -1359,7 +1364,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.31.1 \u00b7 15. november 2026";
+const VERSION = "v6.31.2 \u00b7 15. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2698,6 +2703,30 @@ var EN_FORREST = {
   "+ Nyt pas fredag": "+ New session Friday",
   "+ Nyt pas lørdag": "+ New session Saturday",
   "+ Nyt pas søndag": "+ New session Sunday",
+  /* ⭐ v6.31.2 · Udstil i husets form — præcise sætninger, ingen {n}/{x} */
+  "PROGRAMMET ER PÅ NETTET": "THE SCHEDULE IS ONLINE",
+  "PROGRAMMET ER IKKE PÅ NETTET": "THE SCHEDULE IS NOT ONLINE",
+  "kun det godkendte program": "only the approved schedule",
+  "linket viser ingenting endnu": "the link shows nothing yet",
+  "Åbn siden ↗": "Open the page ↗",
+  "Tænd": "Turn on",
+  "KUNNE IKKE HENTE UDSTILLINGEN": "COULDN'T FETCH THE SETTINGS",
+  "intet er ændret": "nothing has been changed",
+  "Siden": "The page",
+  "Navne": "Names",
+  "Navne vises": "Names shown",
+  "Kun antal": "Count only",
+  "Kopiér link": "Copy link",
+  "✓ Linket er kopieret": "✓ The link is copied",
+  "Vis på jeres hjemmeside": "Show on your website",
+  "✓ Kopieret. Sæt koden ind på jeres hjemmeside.": "✓ Copied. Paste the code into your website.",
+  "Nyt link": "New link",
+  "✓ Nyt link lavet · det gamle er dødt": "✓ New link made · the old one is dead",
+  "det gamle link dør nu": "the old link dies now",
+  "behold linket": "keep the link",
+  "Kun klubbens administrator kan udstille programmet.": "Only the club's administrator can publish the schedule.",
+  "kopiér selv": "copy it yourself",
+  "på klubbens hjemmeside": "on the club's website",
   "dagens loft er nået": "today's limit is reached",
   "adgangen blev afvist": "access was refused",
   "kræver klubbens administrator": "needs the club's administrator",
@@ -3843,40 +3872,59 @@ function prgFlise(a, v, ik, titel, tekst, farve, slukket){
 //   også et sted. På en hjemmeside.» · om navnene: «Vi skal ikke være så bekymret for de navne. Det kan læses tilgængeligt for alle
 //   alligevel.» Klubben (admin) tænder, vælger «vis navne» og kopierer linket eller iframe-stumpen. Motoren `traening` (udstil) holder
 //   tokenet; selve siden læser gennem `program-vis` — en egen dør, der kun kender tokenet.
+/* ⭐⭐ v6.31.2 · UDSTIL I HUSETS FORM (ejeren 15/11: «denne side i StreakCoach er noget rodet. Den følger ikke vores design.» · «Med
+   simpelhed og fliser.» · «Nærmest ikke tekst.»). Øverst én helt: status i klar tekst og det, der kræver en hånd. Derunder fliser —
+   hver handling fra v6.6.0 er sin egen flise, med de samme handlingsnavne og det samme kald. En flise har sit navn; kun «Siden» og
+   «Navne» har en tilstand og dermed en status, og den er det, serveren sidst svarede (S.udstil.data) — en fejl flytter den ikke.
+   Ingen hjælpelinjer: en flise får kun en linje mere, når noget ER sket (kvitteringen). Linket og koden står ikke på skærmen: de
+   kopieres. Kan telefonen ikke kopiere, står teksten i ét felt (S.udstil.kopiSelv), til den er kopieret i hånden. «iframe» står
+   ikke i nogen tekst her (ejeren: «Hvad er iframe?»); værdien "iframe" er et internt navn. */
+function udstilFejl(r){   /* afvist har sin egen sætning — traeningFejl siger «godkende programmet» om den samme kode */
+  if (r && r.fejl === "kraever-admin") return "Kun klubbens administrator kan udstille programmet.";
+  return traeningFejl(r);
+}
 function udstilHent(krop){
-  S.udstil = S.udstil || {}; S.udstil.henter = true; S.udstil.fejl = null; render();
+  S.udstil = S.udstil || {}; S.udstil.henter = true; S.udstil.fejl = null; S.udstil.kopiSelv = null; render();
   traeningKald("udstil", krop || {}).then(function(r){
+    if (!S.udstil) return;   /* rummet er forladt (log ud), mens kaldet var ude */
     S.udstil.henter = false;
-    if (!r || r.fejl) { S.udstil.fejl = traeningFejl(r); render(); return; }
+    if (r && !r.fejl && !(typeof r.link === "string" && r.link.indexOf("https://") === 0)) r = { fejl: "ukendt" };   /* et svar uden link er ikke et svar */
+    if (!r || r.fejl) { S.udstil.fejl = udstilFejl(r); render(); return; }
+    var _gl = S.udstil.data ? S.udstil.data.link : null;
+    S.udstil.nytLavet = !!(krop && krop.nyt_token === true && _gl && r.link !== _gl);   /* kvitteringen er målt på svaret: linket ER et andet */
     S.udstil.data = r; S.udstil.kopieret = null; render(); });
 }
+function udstilStatus(ord, farve){ return '<span style="color:' + farve + ';font-weight:800">' + ord + '</span>'; }   /* flisens tilstand — det eneste, der står under navnet */
+function udstilKvit(t){ return '<span style="color:var(--vundet);font-weight:800">' + t + '</span>'; }
 function prgUdstil(){
-  var u = S.udstil || {}, d = u.data, h = '';
-  if (u.fejl) h += '<p class="lille" style="margin:0 0 10px;color:var(--tabt)">' + esc(u.fejl) + '</p>';
-  if (!d) return h + '<div class="kort"><p class="lille" style="margin:0">' + (u.henter ? 'Henter …' : 'Kunne ikke hente udstillingen.') + '</p></div>';
-  var iframe = '<iframe src="' + d.link + '" style="width:100%;height:900px;border:0" title="' + T("Træningsprogram") + '"></iframe>';
-  h += '<div class="kort" style="padding:11px 14px"><div class="eyebrow">🌐 KLUBBENS PROGRAM PÅ HJEMMESIDEN</div>' +
-    '<h3 style="margin:4px 0 0">' + (d.taendt ? '<span style="color:var(--vundet)">Tændt</span> — siden viser det godkendte program' : '<span style="color:var(--daempet)">Slukket</span> — linket viser ingenting endnu') + '</h3>' +
-    '<p class="lille" style="margin:6px 0 0">Kun det godkendte program vises — tid, bane, træner, titel og antal. Kladden er aldrig offentlig.</p>' +
-    '<div class="raekke" style="margin-top:10px;gap:8px">' +
-      '<button class="knap ' + (d.taendt ? 'valg' : 'gron') + '" style="flex:1"' + (u.henter ? ' disabled' : '') + ' data-act="prg-udstil-saet" data-v="' + (d.taendt ? 'sluk' : 'taend') + '">' + (d.taendt ? '⏻ Sluk' : '⏻ Tænd') + '</button>' +
-    '</div></div>';
-  h += '<div class="kort" style="padding:11px 14px"><div class="eyebrow">NAVNE</div>' +
-    '<p class="lille" style="margin:6px 0 8px">' + (d.vis_navne ? 'Spillernes navne står på siden — som på klubbens opslagstavle.' : 'Siden viser kun antallet af spillere pr. pas.') + ' Klubben vælger.</p>' +
-    '<button class="knap valg" style="width:100%"' + (u.henter ? ' disabled' : '') + ' data-act="prg-udstil-saet" data-v="' + (d.vis_navne ? 'navne-fra' : 'navne-til') + '">' + (d.vis_navne ? 'Vis kun antal' : 'Vis navnene') + '</button></div>';
-  h += '<div class="kort" style="padding:11px 14px"><div class="eyebrow">LINKET</div>' +
-    '<input class="felt" style="margin-top:6px;font-family:ui-monospace,Menlo,monospace;font-size:12px" readonly value="' + esc(d.link) + '" data-felt="udstilLink" aria-label="link">' +
-    '<div class="raekke" style="margin-top:8px;gap:8px">' +
-      '<button class="knap valg" style="flex:1" data-act="prg-udstil-kopier" data-v="link">' + (u.kopieret === "link" ? '✓ Kopieret' : 'Kopiér linket') + '</button>' +
-      '<button class="knap valg" style="flex:1" data-act="prg-udstil-kopier" data-v="iframe">' + (u.kopieret === "iframe" ? '✓ Kopieret' : 'Kopiér iframe') + '</button>' +
-    '</div>' +
-    '<p class="lille" style="margin:8px 0 0">Læg linket på klubbens hjemmeside — eller sæt iframe-stumpen ind, så programmet står direkte på siden. Siden kan også udskrives til væggen.</p>' +
-    '<textarea class="felt" style="margin-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:11px;height:64px" readonly data-felt="udstilIframe">' + esc(iframe) + '</textarea></div>';
-  h += '<div class="kort" style="padding:11px 14px"><div class="eyebrow">NYT LINK</div>' +
-    '<p class="lille" style="margin:6px 0 8px">Et nyt link gør det gamle dødt i samme sekund — brug det, hvis linket er havnet et sted, det ikke skulle.</p>' +
+  var u = S.udstil || {}, d = u.data, h = '', ik = '<span style="font-size:30px">🌐</span>';
+  if (u.fejl) h += '<p class="lille" data-udst-besked="fejl" style="margin:0 0 10px;color:var(--tabt)">' + esc(u.fejl) + '</p>';
+  if (u.kopiSelv) h += '<textarea class="felt" readonly data-felt="udstilSelv" aria-label="kopiér selv" style="margin:0 0 12px;font-family:ui-monospace,Menlo,monospace;font-size:11px;height:' + (u.kopiSelv.v === "iframe" ? 112 : 68) + 'px">' + esc(u.kopiSelv.t) + '</textarea>';
+  if (!d) {
+    if (u.henter) return h + '<div class="kort"><p class="lille" style="margin:0">Henter …</p></div>';
+    return h + '<button class="dev-hero dev-hero-lang dev-kant dev-kant-guld udst-helt" data-udst-helt="ukendt" data-act="prg-visning" data-v="udstil">' + ik +
+      '<b>KUNNE IKKE HENTE UDSTILLINGEN</b><span class="udst-pille">Prøv igen</span><small>intet er ændret</small></button>';
+  }
+  /* HELTEN: tændt er et link til klubbens side (det link, serveren gav) — slukket er knappen, der tænder */
+  if (d.taendt) h += '<a class="dev-hero dev-hero-lang dev-kant dev-kant-gron udst-helt" data-udst-helt="taendt" href="' + esc(d.link) + '" target="_blank" rel="noopener">' + ik +
+      '<b>PROGRAMMET ER PÅ NETTET</b><span class="udst-pille">Åbn siden ↗</span>' +
+      '<small>kun det godkendte program</small></a>';   /* om navnene vises, siger flisen «Navne» */
+  else h += '<button class="dev-hero dev-hero-lang dev-kant dev-kant-guld udst-helt" data-udst-helt="slukket"' + (u.henter ? ' disabled' : '') + ' data-act="prg-udstil-saet" data-v="taend">' + ik +
+      '<b>PROGRAMMET ER IKKE PÅ NETTET</b><span class="udst-pille udst-gron">Tænd</span><small>linket viser ingenting endnu</small></button>';
+  /* FLISERNE: hver handling sin flise. Navnet — og for «Siden» og «Navne» tilstanden, som er serverens sidste svar. De tre andre
+     har kun navnet, til der er noget at kvittere for (prgFlise skriver da et tomt small-element, som ikke fylder). */
+  h += '<div class="dev-grid" data-udst-fliser="1">' +
+    prgFlise("prg-udstil-saet", d.taendt ? "sluk" : "taend", "⏻", "Siden",
+      d.taendt ? udstilStatus('Tændt', 'var(--vundet)') : udstilStatus('Slukket', 'var(--kridt)'), d.taendt ? "dev-kant-gron" : "dev-kant-staal", u.henter) +
+    prgFlise("prg-udstil-saet", d.vis_navne ? "navne-fra" : "navne-til", "👥", "Navne",
+      d.vis_navne ? udstilStatus('Navne vises', 'var(--kridt)') : udstilStatus('Kun antal', 'var(--kridt)'), "dev-kant-staal", u.henter) +
+    prgFlise("prg-udstil-kopier", "link", "🔗", "Kopiér link", u.kopieret === "link" ? udstilKvit('✓ Linket er kopieret') : '', u.kopieret === "link" ? "dev-kant-gron" : "dev-kant-is") +
+    prgFlise("prg-udstil-kopier", "iframe", "🧩", "Vis på jeres hjemmeside", u.kopieret === "iframe" ? udstilKvit('✓ Kopieret. Sæt koden ind på jeres hjemmeside.') : '', u.kopieret === "iframe" ? "dev-kant-gron" : "dev-kant-is") +
     (u.bekraeftNyt
-      ? '<div class="raekke" style="gap:8px"><button class="knap gron" style="flex:1" data-act="prg-udstil-saet" data-v="nyt">Ja, lav et nyt link</button><button class="knap valg" style="flex:1" data-act="prg-udstil-saet" data-v="nyt-fortryd">Fortryd</button></div>'
-      : '<button class="knap valg" style="width:100%" data-act="prg-udstil-saet" data-v="nyt-spoerg">Lav et nyt link …</button>') + '</div>';
+      ? prgFlise("prg-udstil-saet", "nyt", "♻️", "Ja, lav et nyt link", "det gamle link dør nu", "dev-kant-roed", u.henter) +
+        prgFlise("prg-udstil-saet", "nyt-fortryd", "↩", "Fortryd", "behold linket", "dev-kant-staal")
+      : prgFlise("prg-udstil-saet", "nyt-spoerg", "♻️", "Nyt link", u.nytLavet ? udstilKvit('✓ Nyt link lavet · det gamle er dødt') : '', u.nytLavet ? "dev-kant-gron" : "dev-kant-staal", u.henter)) +
+    '</div>';
   return h;
 }
 function prgOversigt(prg, sgT){
@@ -3901,7 +3949,7 @@ function prgOversigt(prg, sgT){
         !n ? 'kladden er tom' : (prg.aendret_siden ? prg.aendret_siden + (prg.aendret_siden === 1 ? ' ændring venter' : ' ændringer venter') : (sgT ? 'ingen ændringer siden ' + sgT : n + ' pas venter på godkendelse')),
         (prg.aendret_siden || (!sgT && n)) ? "dev-kant-gron" : "dev-kant-staal", S.prgGodkender || !n)) +
     prgFlise("prg-visning", "timer", "⏱", "Timer om ugen", timer.length ? timer.length + ' med mål · ' + (under ? '<span style="color:#ff8a8f;font-weight:800">' + under + ' under mål</span>' : 'alle på mål') : 'ingen mål sat endnu', "dev-kant-staal") +
-    (S.minRolle === "traener" ? '' : prgFlise("prg-visning", "udstil", "\ud83c\udf10", "Udstil", "p\u00e5 klubbens hjemmeside \u2014 link eller iframe", "dev-kant-staal")) +   /* v6.6.0 · trin 2c */
+    (S.minRolle === "traener" ? '' : prgFlise("prg-visning", "udstil", "\ud83c\udf10", "Udstil", "p\u00e5 klubbens hjemmeside", "dev-kant-staal")) +   /* v6.6.0 · trin 2c */
     '</div>';
   return h;
 }
@@ -7109,8 +7157,9 @@ document.addEventListener("click", function(e){
   else if (act==="prg-udstil-kopier"){
     var _ud = (S.udstil && S.udstil.data) || null; if (!_ud) return;
     var _tx = v === "iframe" ? '<iframe src="' + _ud.link + '" style="width:100%;height:900px;border:0" title="' + T("Træningsprogram") + '"></iframe>' : _ud.link;
-    var _ok = function(){ S.udstil.kopieret = v; render(); };
-    var _nej = function(){ try { var _f = document.querySelector(v === "iframe" ? '[data-felt="udstilIframe"]' : '[data-felt="udstilLink"]'); if (_f) { _f.focus(); _f.select(); } } catch (_e) {} S.udstil.kopieret = null; S.udstil.fejl = "Kunne ikke kopiere — markér teksten og kopiér selv."; render(); };
+    var _ok = function(){ if (!S.udstil) return; S.udstil.kopieret = v; if (S.udstil.kopiSelv) { S.udstil.kopiSelv = null; S.udstil.fejl = null; } render(); };   /* ⭐ v6.31.2 */
+    var _nej = function(){ if (!S.udstil) return; S.udstil.kopieret = null; S.udstil.kopiSelv = { v: v, t: _tx }; S.udstil.fejl = "Kunne ikke kopiere — markér teksten og kopiér selv."; render();
+      try { var _f = document.querySelector('[data-felt="udstilSelv"]'); if (_f) { _f.focus(); _f.select(); } } catch (_e) {} };   /* ⭐ v6.31.2 · koden står kun på skærmen, når den ikke kunne kopieres */
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(_tx).then(_ok, _nej); else _nej(); }
   else if (act==="trup-fra-prg"){   /* ⭐ v6.23.0 · navnene lægges i truppen; grupperne efter passets titel · ⭐ v6.24.1 · Codes fund A3: der SENDES intet herfra */
     if (v === "hent") { S.trupFraPrgBesked = "Henter programmet …"; S.trupFraPrgLigner = null; render(); try { prgHent("godkendt"); prgHent("kladde"); } catch (_e) {} setTimeout(function(){ S.trupFraPrgBesked = null; render(); }, 2500); return; }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Oskar · turneringer</title>
+<title>Oskar · turneringer og holdkampe</title>
 <style>
 :root{--bg:#121922;--flade:#19222d;--linje:#2a3543;--tekst:#eef1f5;--daemp:#8f9cad;--guld:#c9a34a;--bold:#d6e85a;--rod:#ec8a72}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -73,6 +73,15 @@ section{scroll-margin-top:56px}
 .fakta{display:grid;grid-template-columns:108px 1fr;gap:6px 12px;font-size:14.5px}
 .fakta dt{color:var(--daemp)}
 .tur .link{display:inline-block;margin-top:12px;color:var(--guld);font-size:14px}
+.prik{position:absolute;top:-1px;width:12px;height:12px;border-radius:50%;background:var(--tekst);transform:translateX(-50%)}
+.hk{display:grid;grid-template-columns:96px 1fr;gap:2px 12px;padding:10px 0;border-top:1px solid var(--linje)}
+.hk .d{font-weight:700;font-variant-numeric:tabular-nums}
+.hk .d small{display:block;color:var(--daemp);font-weight:500;font-size:13px}
+.hk .m{font-weight:600}
+.hk .s{color:var(--daemp);font-size:14px}
+.hk .adv{grid-column:2}
+.hold h3{font-size:18px;margin-top:22px}
+.hold .sub{color:var(--daemp);font-size:14px;margin-bottom:6px}
 .tur .adv2{color:var(--rod);font-size:14px;margin-top:10px}
 footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--linje);color:var(--daemp);font-size:12.5px}
 @media (max-width:420px){.tal{font-size:54px}.trappe{gap:4px;height:136px}.blk{font-size:12px}.dt{font-size:10.5px}}
@@ -81,7 +90,7 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--linje);color:
 <body>
 <div class="wrap">
 <div class="mark">SPORTS<b>AI</b>NALYTICS</div>
-<nav class="menu" id="menu"><a href="#oversigt">Oversigt</a><a href="#sm">SM inde</a><a href="#slagelse">Slagelse</a><a href="#hvt">HVT Cup</a><a href="#kb">K.B. Jule Cup</a></nav>
+<nav class="menu" id="menu"><a href="#oversigt">Oversigt</a><a href="#sm">SM inde</a><a href="#slagelse">Slagelse</a><a href="#hvt">HVT Cup</a><a href="#kb">K.B. Jule Cup</a><a href="#hold">Holdkampe</a></nav>
 
 <section id="oversigt">
 <div class="helt" id="helt">
@@ -89,10 +98,10 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--linje);color:
 <div class="tal" id="tal">5<small>dage</small></div>
 <div class="hvad" id="hvad">Senior Mesterrække · kvalifikation</div>
 <div class="hvor" id="hvor">lørdag 21/11 kl. 18.15 · Hørsholm/Rungsted</div>
-<h1>Oskar · turneringerne frem til nytår</h1>
+<h1>Oskar · turneringer og holdkampe frem til marts</h1>
 </div>
 
-<h2>Sæsonen · 16. november til nytår</h2>
+<h2>Sæsonen · frem til marts</h2>
 <div id="saeson"></div>
 
 </section>
@@ -130,7 +139,13 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--linje);color:
 <a class="link" href="https://dtf.tournamentsoftware.com/sport/tournament?id=7163D072-D8AE-4607-8D5E-4F77D523BBCA" rel="noopener" target="_blank">Turneringen hos DTF ↗</a></div>
 </section>
 
-<footer>Kilde: Dansk Tennis Forbunds turneringsside og Oskars tilmeldinger, læst 16. november 2026. Tider kan ændre sig; turneringssiden har altid ret. Modstandere står med initialer. Mesterrækkens hovedturnering er ikke trukket endnu; at Oskars kvalifikationsplads er Q5, er udledt af lodtrækningen.</footer>
+<section id="hold">
+<h2>Holdkampe</h2>
+<div class="hold" id="holdliste"></div>
+<div class="note" style="color:var(--daemp);font-size:13.5px;margin-top:14px">Holdopstillingen kommer på mail ugen før. Kilden er klubbens holdark og DTF's holdturnering, som de stod i oktober; de er ikke læst igen i dag.</div>
+</section>
+
+<footer>Kilde: Dansk Tennis Forbunds turneringsside og Oskars tilmeldinger, læst 16. november 2026. Tider kan ændre sig; turneringssiden har altid ret. Modstandere i turneringerne står med initialer; holdkampe står med klubbernes hold. Mesterrækkens hovedturnering er ikke trukket endnu; at Oskars kvalifikationsplads er Q5, er udledt af lodtrækningen.</footer>
 </div>
 
 <script>
@@ -164,23 +179,42 @@ var TRAPPER=[
  {n:"Senior Mesterrække",s:"Kvalifikation · otte går videre til hovedturneringen",trin:[["K1","fast","lø 21/11","18.15"],["K2","mulig","sø 22/11","18.15"],["1/16","mulig","lø 28/11","17.30"],["1/8","mulig","sø 29/11","10/11.30"],["KF","mulig","on 2/12","17.00"],["SF","mulig","fr 4/12","17.00"],["F","mulig","lø 5/12","13.30"]],
   m:"<b>K1:</b> Eik S. B. [12] · <b>K2:</b> Mathias V. [5] eller Max A. J."}
 ];
+var HOLD=[
+ {n:"U18 gul bold · B 93 1",s:"Tennis Øst-holdturneringen · fem holdkampe, de sidste fire tilbage",k:[
+  ["2026-12-11T18:00","B 93 1 – Lyngby 1","hjemme · spilles i HRT","Samme fredag som Head Cup i Slagelse begynder."],
+  ["2027-01-15T18:00","B 93 1 – HRT 1","hjemme · spilles i HRT",""],
+  ["2027-01-23T14:30","Dragør 1 – B 93 1","ude · Dragør Tennis",""],
+  ["2027-02-07","Farum 1 – B 93 1","ude · Farum Tennis · tiden er ikke sat",""]]},
+ {n:"Senior · Liga 4 Øst · B.93 III",s:"DTF's holdturnering · pulje 3",k:[
+  ["2027-01-31T18:30","B.93 III – Vedbæk II","hjemme · B.93",""],
+  ["2027-03-06T16:45","Helsingør II – B.93 III","ude · Helsingør",""]]}
+];
 var DAGE=["søndag","mandag","tirsdag","onsdag","torsdag","fredag","lørdag"];
 var MDR=["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
 function hhmm(d){return String(d.getHours()).padStart(2,"0")+"."+String(d.getMinutes()).padStart(2,"0");}
 var nu=new Date();
 /* helten */
-var naeste=null;for(var i=0;i<KAMPE.length;i++){var d=new Date(KAMPE[i][0]);if(KAMPE[i][1]==="fast"&&d>nu){naeste=KAMPE[i];break;}}
+var ALLE=KAMPE.filter(function(k){return k[1]==="fast";}).map(function(k){return [k[0],k[2],k[3]];});
+HOLD.forEach(function(h){h.k.forEach(function(k){if(k[0].length>10)ALLE.push([k[0],"Holdkamp · "+k[1],k[2].replace(/^.*· /,"")]);});});
+ALLE.sort(function(a,b){return new Date(a[0])-new Date(b[0]);});
+var naeste=null;for(var i=0;i<ALLE.length;i++){if(new Date(ALLE[i][0])>nu){naeste=ALLE[i];break;}}
 if(naeste){var d=new Date(naeste[0]);var dage=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-new Date(nu.getFullYear(),nu.getMonth(),nu.getDate()))/864e5);
  document.getElementById("tal").innerHTML=dage===0?"I dag":(dage===1?"1<small>dag</small>":dage+"<small>dage</small>");
- document.getElementById("hvad").textContent=naeste[2];
- document.getElementById("hvor").textContent=DAGE[d.getDay()]+" "+d.getDate()+"/"+(d.getMonth()+1)+" kl. "+hhmm(d)+" · "+naeste[3];}
+ document.getElementById("hvad").textContent=naeste[1];
+ document.getElementById("hvor").textContent=DAGE[d.getDay()]+" "+d.getDate()+"/"+(d.getMonth()+1)+" kl. "+hhmm(d)+" · "+naeste[2];}
 /* saesonbaand */
-var A=new Date("2026-11-16"),B=new Date("2027-01-01"),span=B-A;function pct(x){return Math.max(0,Math.min(100,(new Date(x)-A)/span*100));}
+var A=new Date("2026-11-16"),B=new Date("2027-03-15"),span=B-A;function pct(x){return Math.max(0,Math.min(100,(new Date(x)-A)/span*100));}
 var h="";var idag=pct(nu.toISOString().slice(0,10));
 TURN.forEach(function(t){var l=pct(t[0]),r=pct(new Date(new Date(t[1]).getTime()+864e5));
  var a=new Date(t[0]),b=new Date(t[1]);var per=a.getDate()+(a.getMonth()!==b.getMonth()?"/"+(a.getMonth()+1):"")+"–"+b.getDate()+"/"+(b.getMonth()+1);
  h+='<div class="turn"><a href="#'+t[5]+'"><div class="spor"><div class="blok'+(t[4]?' lys':'')+'" style="left:'+l+'%;width:'+(r-l)+'%"></div>'+(nu>=A&&nu<B?'<div class="idag" style="left:'+idag+'%"></div>':'')+'</div><div class="navn">'+t[2]+' · '+per+'</div><div class="info">'+t[3]+'</div></a></div>';});
+var pr="";HOLD.forEach(function(g){g.k.forEach(function(k){pr+='<div class="prik" style="left:'+pct(k[0].slice(0,10))+'%"></div>';});});
+h+='<div class="turn"><a href="#hold"><div class="spor">'+pr+(nu>=A&&nu<B?'<div class="idag" style="left:'+idag+'%"></div>':'')+'</div><div class="navn">Holdkampe · 6 kampe 11/12–6/3</div><div class="info">U18 gul bold og Liga 4 · hver prik er en kamp</div></a></div>';
 document.getElementById("saeson").innerHTML=h;
+/* holdkampe */
+var hh="";HOLD.forEach(function(g){hh+='<h3>'+g.n+'</h3><div class="sub">'+g.s+'</div>';g.k.forEach(function(k){var d=new Date(k[0]);var tid=k[0].length>10?hhmm(d):"tid ?";
+ hh+='<div class="hk"><div class="d">'+DAGE[d.getDay()].slice(0,3)+' '+d.getDate()+'/'+(d.getMonth()+1)+'<small>'+tid+'</small></div><div><div class="m">'+k[1]+'</div><div class="s">'+k[2]+'</div></div>'+(k[3]?'<div class="adv">'+k[3]+'</div>':'')+'</div>';});});
+document.getElementById("holdliste").innerHTML=hh;
 /* trapper */
 h="";TRAPPER.forEach(function(r){var n=r.trin.length;h+='<div class="raekke"><h3>'+r.n+'</h3><div class="sub">'+r.s+'</div><div class="trappe">';
  r.trin.forEach(function(t,i){var hp=34+Math.round(i*(100-34)/Math.max(1,n-1));var top=(i===n-1);

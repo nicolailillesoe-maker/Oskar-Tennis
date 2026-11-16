@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Oskar · turneringer og holdkampe</title>
 <style>
-:root{--bg:#121922;--flade:#19222d;--linje:#2a3543;--tekst:#eef1f5;--daemp:#8f9cad;--guld:#c9a34a;--bold:#d6e85a;--rod:#ec8a72}
+:root{--s:#d7b04f;--d:#c9e05a;--m:#79b8e8;--t:#b79cf0;--h:#5fc9b0;--bg:#121922;--flade:#19222d;--linje:#2a3543;--tekst:#eef1f5;--daemp:#8f9cad;--guld:#c9a34a;--bold:#d6e85a;--rod:#ec8a72}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--tekst);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:0 16px 56px}
 .wrap{max-width:760px;margin:0 auto}
@@ -83,6 +83,47 @@ section{scroll-margin-top:56px}
 .hold h3{font-size:18px;margin-top:22px}
 .hold .sub{color:var(--daemp);font-size:14px;margin-bottom:6px}
 .tur .adv2{color:var(--rod);font-size:14px;margin-top:10px}
+/* tal */
+.sk-tal{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sk-tal div{background:var(--flade);border-radius:12px;padding:12px 10px 10px}
+.sk-tal b{display:block;font-size:30px;line-height:1;font-weight:800;font-variant-numeric:tabular-nums}
+.sk-tal span{display:block;font-size:12px;color:var(--daemp);margin-top:6px;line-height:1.25}
+.sk-tal .sk-r b{color:var(--rod)}
+/* varmekort */
+.sk-varme{display:grid;grid-template-columns:repeat(17,1fr);gap:3px}
+.sk-varme .sk-c{aspect-ratio:1/1.5;border-radius:4px;background:var(--flade);position:relative}
+.sk-varme .sk-c i{position:absolute;inset:0;border-radius:4px;background:var(--s)}
+.sk-varme .sk-c.sk-nu{outline:2px solid var(--rod);outline-offset:1px}
+.sk-uger{display:grid;grid-template-columns:repeat(17,1fr);gap:3px;margin-top:5px;font-size:9.5px;color:var(--daemp);text-align:center}
+.sk-mdr{display:flex;justify-content:space-between;font-size:11px;color:var(--daemp);margin-top:6px}
+/* metrokort */
+.sk-legende{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12.5px;color:var(--daemp);margin-bottom:10px}
+.sk-legende span::before{content:"";display:inline-block;width:14px;height:4px;border-radius:2px;margin-right:6px;vertical-align:3px;background:var(--c)}
+.sk-kort{position:relative}
+.sk-hoved,.sk-rk{display:grid;grid-template-columns:64px repeat(5,1fr)}
+.sk-hoved{position:sticky;top:46px;z-index:3;background:var(--bg);padding:8px 0 6px;border-bottom:1px solid var(--linje)}
+.sk-hoved div{font-size:11px;font-weight:700;text-align:center;color:var(--c,var(--daemp));line-height:1.2}
+.sk-rk{min-height:66px;position:relative}
+.sk-rk.sk-kol{background:linear-gradient(90deg,rgba(239,139,116,.13),rgba(239,139,116,.04))}
+.sk-rk.sk-mnd{border-top:1px solid var(--linje)}
+.sk-dt{padding:12px 6px 0 0;font-size:12.5px;line-height:1.2}
+.sk-dt b{display:block;font-size:17px;font-weight:800}
+.sk-dt small{color:var(--daemp)}
+.sk-ln{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 0}
+.sk-ln::before{content:"";position:absolute;left:50%;width:4px;margin-left:-2px;background:var(--c);top:var(--top,50%);bottom:var(--bund,50%);opacity:.85;border-radius:2px}
+.sk-ln.sk-ingen::before{display:none}
+.sk-st{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center}
+.sk-pkt{width:16px;height:16px;border-radius:50%;background:var(--c);border:3px solid var(--bg)}
+.sk-st.sk-mulig .sk-pkt{background:var(--bg);border:3px solid var(--c)}
+.sk-st.sk-blok .sk-pkt{width:26px;height:14px;border-radius:7px}
+.sk-lbl{font-size:10.5px;font-weight:700;line-height:1.15;text-align:center;margin-top:2px;background:var(--bg);padding:0 3px;border-radius:3px}
+.sk-lbl small{display:block;font-weight:500;color:var(--daemp)}
+.sk-st.sk-mulig .sk-lbl{color:var(--daemp)}
+.sk-dt .sk-mn{display:block;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--daemp);margin-bottom:4px}
+.sk-dt em{display:block;font-style:normal;font-size:10px;font-weight:700;color:var(--rod);margin-top:3px;line-height:1.15}
+.sk-mndnavn{grid-column:1/-1;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--daemp);padding:10px 0 2px}
+.sk-kolnote{position:absolute;right:0;bottom:2px;font-size:10px;color:var(--rod);font-weight:700}
+@media (max-width:420px){.sk-hoved,.sk-rk{grid-template-columns:52px repeat(5,1fr)}.sk-dt b{font-size:15px}.sk-lbl{font-size:9.5px}.sk-tal b{font-size:26px}}
 footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--linje);color:var(--daemp);font-size:12.5px}
 @media (max-width:420px){.tal{font-size:54px}.trappe{gap:4px;height:136px}.blk{font-size:12px}.dt{font-size:10.5px}}
 </style>
@@ -101,8 +142,16 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--linje);color:
 <h1>Oskar · turneringer og holdkampe frem til marts</h1>
 </div>
 
-<h2>Sæsonen · frem til marts</h2>
-<div id="saeson"></div>
+<div class="sk-tal" id="sktal" style="margin-top:12px"></div>
+
+<h2>Travlhed uge for uge</h2>
+<div class="sk-varme" id="skvarme"></div>
+<div class="sk-uger" id="skuger"></div>
+<div class="sk-mdr"><span>nov</span><span>dec</span><span>jan</span><span>feb</span><span>mar</span></div>
+
+<h2>Sæsonkortet · hver række sin linje</h2>
+<div class="sk-legende"><span style="--c:var(--s)">U14 single</span><span style="--c:var(--d)">U14 double</span><span style="--c:var(--m)">Mesterrække</span><span style="--c:var(--t)">Turneringer</span><span style="--c:var(--h)">Holdkampe</span><span style="--c:var(--daemp)">● står fast · ○ hvis videre</span></div>
+<div class="sk-kort" id="skkort"></div>
 
 </section>
 <section id="sm">
@@ -145,7 +194,7 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--linje);color:
 <div class="note" style="color:var(--daemp);font-size:13.5px;margin-top:14px">Holdopstillingen kommer på mail ugen før. Kilden er klubbens holdark og DTF's holdturnering, som de stod i oktober; de er ikke læst igen i dag.</div>
 </section>
 
-<footer>Kilde: Dansk Tennis Forbunds turneringsside og Oskars tilmeldinger, læst 16. november 2026. Tider kan ændre sig; turneringssiden har altid ret. Modstandere i turneringerne står med initialer; holdkampe står med klubbernes hold. Mesterrækkens hovedturnering er ikke trukket endnu; at Oskars kvalifikationsplads er Q5, er udledt af lodtrækningen.</footer>
+<footer>Kilde: Dansk Tennis Forbunds turneringsside og Oskars tilmeldinger, læst 16. november 2026. Tider kan ændre sig; turneringssiden har altid ret. Modstandere i turneringerne står med initialer; holdkampe står med klubbernes hold. Røde rækker i sæsonkortet er dage, hvor to kampe ikke kan spilles begge. Mesterrækkens hovedturnering er ikke trukket endnu; at Oskars kvalifikationsplads er Q5, er udledt af lodtrækningen.</footer>
 </div>
 
 <script>
@@ -210,7 +259,7 @@ TURN.forEach(function(t){var l=pct(t[0]),r=pct(new Date(new Date(t[1]).getTime()
  h+='<div class="turn"><a href="#'+t[5]+'"><div class="spor"><div class="blok'+(t[4]?' lys':'')+'" style="left:'+l+'%;width:'+(r-l)+'%"></div>'+(nu>=A&&nu<B?'<div class="idag" style="left:'+idag+'%"></div>':'')+'</div><div class="navn">'+t[2]+' · '+per+'</div><div class="info">'+t[3]+'</div></a></div>';});
 var pr="";HOLD.forEach(function(g){g.k.forEach(function(k){pr+='<div class="prik" style="left:'+pct(k[0].slice(0,10))+'%"></div>';});});
 h+='<div class="turn"><a href="#hold"><div class="spor">'+pr+(nu>=A&&nu<B?'<div class="idag" style="left:'+idag+'%"></div>':'')+'</div><div class="navn">Holdkampe · 6 kampe 11/12–6/3</div><div class="info">U18 gul bold og Liga 4 · hver prik er en kamp</div></a></div>';
-document.getElementById("saeson").innerHTML=h;
+
 /* holdkampe */
 var hh="";HOLD.forEach(function(g){hh+='<h3>'+g.n+'</h3><div class="sub">'+g.s+'</div>';g.k.forEach(function(k){var d=new Date(k[0]);var tid=k[0].length>10?hhmm(d):"tid ?";
  hh+='<div class="hk"><div class="d">'+DAGE[d.getDay()].slice(0,3)+' '+d.getDate()+'/'+(d.getMonth()+1)+'<small>'+tid+'</small></div><div><div class="m">'+k[1]+'</div><div class="s">'+k[2]+'</div></div>'+(k[3]?'<div class="adv">'+k[3]+'</div>':'')+'</div>';});});
@@ -229,6 +278,52 @@ h="";var sidst="";KAMPE.forEach(function(k){var d=new Date(k[0]);var dag=DAGE[d.
  var forbi=(new Date(d.getTime()+3*36e5)<nu)?' forbi':'';
  h+='<div class="kamp '+k[1]+forbi+'"><div class="t">'+hhmm(d)+'</div><div><div class="k">'+k[2]+(k[1]==="mulig"?' <span class="s">· hvis videre</span>':'')+'</div><div class="s">'+k[3]+(k[4]?' · '+k[4]:'')+'</div></div>'+(k[5]?'<div class="adv">'+k[5]+'</div>':'')+'</div>';});
 h+='</div>';document.getElementById("dage").innerHTML=h;
+(function(){
+
+/* [dato, linje, runde, tid, fast(1)/mulig(0), blok-tekst] · linjer: s d m t h */
+var P=[
+["2026-11-21","m","K1","18.15",1],["2026-11-22","m","K2","18.15",0],
+["2026-11-28","s","1/8","10.30",1],["2026-11-28","m","1/16","17.30",0],
+["2026-11-29","m","1/8","10/11.30",0],["2026-11-29","s","KF","12.00",0],["2026-11-29","d","KF","15.30",1],["2026-11-29","d","SF","16.30",0],
+["2026-12-02","m","KF","17.00",0],
+["2026-12-04","m","SF","17.00",0],["2026-12-04","s","SF","18.00",0],
+["2026-12-05","s","F","12.00",0],["2026-12-05","m","F","13.30",0],["2026-12-05","d","F","18.00",0],
+["2026-12-11","t","Slagelse","11–13/12",1,1],["2026-12-11","h","Lyngby","18.00",1],
+["2026-12-19","t","HVT Cup","19–20/12",1,1],
+["2026-12-27","t","K.B. Jule","27–30/12",1,1],
+["2027-01-15","h","HRT","18.00",1],["2027-01-23","h","Dragør","14.30",1],["2027-01-31","h","Vedbæk","18.30",1],["2027-02-07","h","Farum","tid ?",1],["2027-03-06","h","Helsingør","16.45",1]
+];
+var KOL={"2026-11-29":"kan ikke begge","2026-12-04":"overlapper","2026-12-11":"samme aften"};
+var L=["s","d","m","t","h"],LN={s:"Single",d:"Double",m:"Mester-række",t:"Turne-ringer",h:"Hold-kampe"},CV={s:"--s",d:"--d",m:"--m",t:"--t",h:"--h"};
+var DG=["søn","man","tir","ons","tor","fre","lør"],MN=["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
+var nu=new Date();
+/* tal */
+var fast=P.filter(function(p){return p[4];}).length,alle=P.length;
+document.getElementById("sktal").innerHTML='<div><b>'+fast+'</b><span>kampe og turneringer står fast</span></div><div><b>'+alle+'</b><span>i alt, hvis det hele går godt</span></div><div class="sk-r"><b>'+Object.keys(KOL).length+'</b><span>dage med sammenstød</span></div>';
+/* varmekort: 17 uger fra mandag 16/11 */
+var start=new Date("2026-11-16"),vh="",uh="",cnt=[];for(var w=0;w<17;w++)cnt.push(0);
+P.forEach(function(p){var w=Math.floor((new Date(p[0])-start)/(7*864e5));if(w>=0&&w<17)cnt[w]+=p[5]?2:1;});
+var mx=Math.max.apply(null,cnt),nw=Math.floor((nu-start)/(7*864e5));
+for(var w=0;w<17;w++){var d=new Date(start.getTime()+w*7*864e5);var uge=((d.getTime()-new Date(d.getFullYear(),0,4).getTime())/864e5+((new Date(d.getFullYear(),0,4).getDay()+6)%7))/7;uge=Math.floor(uge)+1;
+ vh+='<div class="sk-c'+(w===nw?' sk-nu':'')+'" title="uge '+uge+'"><i style="opacity:'+(cnt[w]?(0.25+0.75*cnt[w]/mx).toFixed(2):0)+'"></i></div>';uh+='<div>'+uge+'</div>';}
+document.getElementById("skvarme").innerHTML=vh;document.getElementById("skuger").innerHTML=uh;
+/* metrokort */
+var dage2=[];P.forEach(function(p){if(dage2.indexOf(p[0])<0)dage2.push(p[0]);});
+var forst={},sidst={};L.forEach(function(l){P.forEach(function(p){if(p[1]===l){var i=dage2.indexOf(p[0]);if(forst[l]===undefined)forst[l]=i;sidst[l]=i;}});});
+var h='<div class="sk-hoved"><div></div>'+L.map(function(l){return '<div style="--c:var('+CV[l]+')">'+LN[l].replace("-","-<br>")+'</div>';}).join("")+'</div>';
+var mnd=-1;
+dage2.forEach(function(ds,i){var d=new Date(ds);
+ var ny=d.getMonth()!==mnd;mnd=d.getMonth();
+ h+='<div class="sk-rk'+(KOL[ds]?' sk-kol':'')+(ny?' sk-mnd':'')+'"><div class="sk-dt">'+(ny?'<span class="sk-mn">'+MN[d.getMonth()].slice(0,3)+'</span>':'')+'<small>'+DG[d.getDay()]+'</small><b>'+d.getDate()+'/'+(d.getMonth()+1)+'</b>'+(KOL[ds]?'<em>'+KOL[ds]+'</em>':'')+'</div>';
+ L.forEach(function(l){var st=P.filter(function(p){return p[0]===ds&&p[1]===l;});
+  var inde=forst[l]!==undefined&&i>=forst[l]&&i<=sidst[l];var top=(i===forst[l])?"50%":"0",bund=(i===sidst[l])?"50%":"0";
+  h+='<div class="sk-ln'+(inde?'':' sk-ingen')+'" style="--c:var('+CV[l]+');--top:'+top+';--bund:'+bund+'">';
+  st.forEach(function(p){h+='<div class="sk-st '+(p[4]?'sk-fast':'sk-mulig')+(p[5]?' sk-blok':'')+'"><div class="sk-pkt"></div><div class="sk-lbl">'+p[2]+'<small>'+p[3]+'</small></div></div>';});
+  h+='</div>';});
+ h+='</div>';});
+document.getElementById("skkort").innerHTML=h;
+
+})();
 /* menu: marker det afsnit, man er i */
 var links=[].slice.call(document.querySelectorAll("#menu a"));
 var laast=0;links.forEach(function(a){a.addEventListener("click",function(){laast=Date.now();links.forEach(function(x){x.classList.toggle("aktiv",x===a);});});});

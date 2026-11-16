@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Oskar · turneringer vinter 2026</title>
+<style>
+:root{--bg:#121922;--flade:#19222d;--linje:#2a3543;--tekst:#eef1f5;--daemp:#8f9cad;--guld:#c9a34a;--bold:#d6e85a;--rod:#ec8a72}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tekst);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:0 16px 56px}
+.wrap{max-width:760px;margin:0 auto}
+.mark{font-size:11px;letter-spacing:3px;color:var(--daemp);padding-top:26px}
+.mark b{color:var(--guld)}
+.helt{position:relative;margin:18px 0 8px;padding:26px 20px 24px;background:var(--flade);border-radius:14px;overflow:hidden}
+.helt::before{content:"";position:absolute;inset:14px;border:2px solid rgba(255,255,255,.07);border-radius:4px;pointer-events:none}
+.helt::after{content:"";position:absolute;left:50%;top:14px;bottom:14px;border-left:2px solid rgba(255,255,255,.07)}
+.helt>*{position:relative;z-index:1}
+.kicker{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--bold);font-weight:700}
+.tal{font-size:64px;line-height:1;font-weight:800;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+.tal small{font-size:20px;font-weight:600;color:var(--daemp);margin-left:6px}
+.hvad{font-size:18px;font-weight:700}
+.hvor{color:var(--daemp)}
+h1{font-size:15px;font-weight:600;color:var(--daemp);margin:4px 0 0}
+h2{font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--guld);margin:40px 0 14px;font-weight:700}
+/* saesonbaand */
+.baand{position:relative;height:30px;border-bottom:1px solid var(--linje);margin-bottom:8px}
+.uge{position:absolute;bottom:-18px;font-size:11px;color:var(--daemp);transform:translateX(-50%)}
+.turn{position:relative;margin:26px 0 6px}
+.spor{position:relative;height:10px;background:var(--flade);border-radius:5px}
+.blok{position:absolute;top:0;height:10px;border-radius:5px;background:var(--guld)}
+.blok.lys{background:var(--bold)}
+.turn .navn{font-weight:700;margin-top:6px}
+.turn .info{color:var(--daemp);font-size:14px}
+.idag{position:absolute;top:-6px;bottom:-6px;border-left:2px dashed var(--rod)}
+/* trapper */
+.raekke{margin:18px 0 30px}
+.raekke h3{font-size:17px}
+.raekke .sub{color:var(--daemp);font-size:14px;margin-bottom:12px}
+.trappe{display:flex;align-items:flex-end;gap:6px;height:150px}
+.trin{flex:1;display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
+.blk{border-radius:6px 6px 0 0;background:var(--flade);border:1px solid var(--linje);border-bottom:none;display:flex;align-items:flex-start;justify-content:center;padding-top:6px;font-weight:800;font-size:14px;color:var(--daemp)}
+.trin.fast .blk{background:var(--guld);border-color:var(--guld);color:#1a1405}
+.trin.fri .blk{background:transparent;border-style:dashed;color:var(--daemp)}
+.trin.top .blk{color:var(--bold)}
+.dt{font-size:11.5px;color:var(--daemp);text-align:center;margin-top:6px;line-height:1.3}
+.dt b{color:var(--tekst);font-weight:600;display:block}
+.fod-trappe{border-top:1px solid var(--linje)}
+.modst{font-size:14px;color:var(--daemp);margin-top:12px}
+.modst b{color:var(--tekst);font-weight:600}
+/* dagliste */
+.dag{border-top:1px solid var(--linje);padding:12px 0}
+.dato{font-weight:700;margin-bottom:4px}
+.kamp{display:grid;grid-template-columns:52px 1fr;gap:0 12px;padding:4px 0}
+.kamp .t{font-weight:700;font-variant-numeric:tabular-nums}
+.kamp .s{color:var(--daemp);font-size:14px}
+.kamp.mulig .t,.kamp.mulig .k{color:var(--daemp);font-weight:500}
+.kamp.fast .k{font-weight:700}
+.kamp.fast .k::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bold);margin-right:7px;vertical-align:1px}
+.kamp.forbi{opacity:.4}
+.adv{grid-column:2;color:var(--rod);font-size:14px}
+.valg{border-left:3px solid var(--rod);padding:8px 0 8px 14px;margin:10px 0;font-size:14.5px}
+.valg b{color:var(--rod)}
+footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--linje);color:var(--daemp);font-size:12.5px}
+@media (max-width:420px){.tal{font-size:54px}.trappe{gap:4px;height:136px}.blk{font-size:12px}.dt{font-size:10.5px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="mark">SPORTS<b>AI</b>NALYTICS</div>
+
+<div class="helt" id="helt">
+<div class="kicker">Næste kamp</div>
+<div class="tal" id="tal">5<small>dage</small></div>
+<div class="hvad" id="hvad">Senior Mesterrække · kvalifikation</div>
+<div class="hvor" id="hvor">lørdag 21/11 kl. 18.15 · Hørsholm/Rungsted</div>
+<h1>Oskar · turneringerne frem til nytår</h1>
+</div>
+
+<h2>Sæsonen · 16. november til nytår</h2>
+<div id="saeson"></div>
+
+<h2>Sjællandsmesterskaberne · vejen til titlen</h2>
+<div id="trapper"></div>
+
+<h2>Dag for dag · SM inde</h2>
+<div id="dage"></div>
+
+<h2>Hvis det hele går godt, skal der vælges</h2>
+<div class="valg"><b>Søndag 29/11:</b> Mesterrækkens 1/8 i Hillerød (10.00 eller 11.30) og U14-kvartfinalen kl. 12.00 i Slagelse kan ikke spilles begge.</div>
+<div class="valg"><b>Fredag 4/12:</b> Mesterrækkens semifinale kl. 17.00 i Hillerød og U14-semifinalen kl. 18.00 i Hørsholm/Rungsted overlapper.</div>
+<div class="valg"><b>Lørdag 5/12:</b> tre finaler i Hillerød, kl. 12.00, 13.30 og 18.00.</div>
+
+<footer>Kilde: Dansk Tennis Forbunds turneringsside og Oskars tilmeldinger, læst 16. november 2026. Tider kan ændre sig; turneringssiden har altid ret. Modstandere står med initialer. Mesterrækkens hovedturnering er ikke trukket endnu; at Oskars kvalifikationsplads er Q5, er udledt af lodtrækningen.</footer>
+</div>
+
+<script>
+var KAMPE=[
+ ["2026-11-21T18:15","fast","Senior Mesterrække · kval. 1/16","Hørsholm/Rungsted","mod Eik S. B. [12]"],
+ ["2026-11-22T18:15","mulig","Senior Mesterrække · kval. 1/8","Hørsholm/Rungsted","mod Mathias V. [5] eller Max A. J."],
+ ["2026-11-28T10:30","fast","U14 single · 1/8","Vallensbæk","mod Daniel A. P. eller Matteo A."],
+ ["2026-11-28T17:30","mulig","Senior Mesterrække · 1/16","Hillerød","mod Rasmus K. S. (plads Q5, antaget)"],
+ ["2026-11-29T10:00","mulig","Senior Mesterrække · 1/8","Hillerød · 10.00 eller 11.30","","Kan ikke nås sammen med U14-kvartfinalen kl. 12.00 i Slagelse."],
+ ["2026-11-29T12:00","mulig","U14 single · kvartfinale","Slagelse","mod Frederik R. D. eller Carl A.-J. [8]"],
+ ["2026-11-29T15:30","fast","U14 double · kvartfinale","Slagelse","med Philip, mod Matti E. og Oscar L. C."],
+ ["2026-11-29T16:30","mulig","U14 double · semifinale","Slagelse",""],
+ ["2026-12-02T17:00","mulig","Senior Mesterrække · kvartfinale","Hillerød",""],
+ ["2026-12-04T17:00","mulig","Senior Mesterrække · semifinale","Hillerød","","Overlapper U14-semifinalen kl. 18.00 i Hørsholm/Rungsted."],
+ ["2026-12-04T18:00","mulig","U14 single · semifinale","Hørsholm/Rungsted",""],
+ ["2026-12-05T12:00","mulig","U14 single · finale","Hillerød",""],
+ ["2026-12-05T13:30","mulig","Senior Mesterrække · finale","Hillerød","","Lige efter U14-finalen samme sted."],
+ ["2026-12-05T18:00","mulig","U14 double · finale","Hillerød",""]
+];
+var TURN=[
+ ["2026-11-20","2026-12-05","Sjællandsmesterskaberne inde","Sjælland · U14 single, U14 double, Senior Mesterrække",1],
+ ["2026-12-11","2026-12-13","Tennis Øst Head Cup Slagelse","Slagelse · U14 HS kat. G · lodtrækning ikke ude",0],
+ ["2026-12-19","2026-12-20","HVT Cup","Værløse · U14 HS kat. 1 · lodtrækning ikke ude",0],
+ ["2026-12-27","2026-12-30","K.B. Jule Cup 150 år","Frederiksberg · U14 HS kat. G · lodtrækning ikke ude",0]
+];
+var TRAPPER=[
+ {n:"U14 single",s:"Seedet 3 · 32 spillere",trin:[["1/16","fri","fri",""],["1/8","fast","lø 28/11","10.30"],["KF","mulig","sø 29/11","12.00"],["SF","mulig","fr 4/12","18.00"],["F","mulig","lø 5/12","12.00"]],
+  m:"<b>1/8:</b> Daniel A. P. eller Matteo A. · <b>KF:</b> Frederik R. D. eller Carl A.-J. [8] · <b>SF:</b> bl.a. Emil H. T. [1] eller Philip [5] · <b>F:</b> bl.a. Tristan A. M. [2] eller Jens Otto R. [4]"},
+ {n:"U14 double · med Philip",s:"Seedet 2 · 8 par",trin:[["KF","fast","sø 29/11","15.30"],["SF","mulig","sø 29/11","16.30"],["F","mulig","lø 5/12","18.00"]],
+  m:"<b>KF:</b> Matti E. og Oscar L. C. · semifinalen afgøres samme eftermiddag"},
+ {n:"Senior Mesterrække",s:"Kvalifikation · otte går videre til hovedturneringen",trin:[["K1","fast","lø 21/11","18.15"],["K2","mulig","sø 22/11","18.15"],["1/16","mulig","lø 28/11","17.30"],["1/8","mulig","sø 29/11","10/11.30"],["KF","mulig","on 2/12","17.00"],["SF","mulig","fr 4/12","17.00"],["F","mulig","lø 5/12","13.30"]],
+  m:"<b>K1:</b> Eik S. B. [12] · <b>K2:</b> Mathias V. [5] eller Max A. J."}
+];
+var DAGE=["søndag","mandag","tirsdag","onsdag","torsdag","fredag","lørdag"];
+var MDR=["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
+function hhmm(d){return String(d.getHours()).padStart(2,"0")+"."+String(d.getMinutes()).padStart(2,"0");}
+var nu=new Date();
+/* helten */
+var naeste=null;for(var i=0;i<KAMPE.length;i++){var d=new Date(KAMPE[i][0]);if(KAMPE[i][1]==="fast"&&d>nu){naeste=KAMPE[i];break;}}
+if(naeste){var d=new Date(naeste[0]);var dage=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-new Date(nu.getFullYear(),nu.getMonth(),nu.getDate()))/864e5);
+ document.getElementById("tal").innerHTML=dage===0?"I dag":(dage===1?"1<small>dag</small>":dage+"<small>dage</small>");
+ document.getElementById("hvad").textContent=naeste[2];
+ document.getElementById("hvor").textContent=DAGE[d.getDay()]+" "+d.getDate()+"/"+(d.getMonth()+1)+" kl. "+hhmm(d)+" · "+naeste[3];}
+/* saesonbaand */
+var A=new Date("2026-11-16"),B=new Date("2027-01-01"),span=B-A;function pct(x){return Math.max(0,Math.min(100,(new Date(x)-A)/span*100));}
+var h="";var idag=pct(nu.toISOString().slice(0,10));
+TURN.forEach(function(t){var l=pct(t[0]),r=pct(new Date(new Date(t[1]).getTime()+864e5));
+ var a=new Date(t[0]),b=new Date(t[1]);var per=a.getDate()+(a.getMonth()!==b.getMonth()?"/"+(a.getMonth()+1):"")+"–"+b.getDate()+"/"+(b.getMonth()+1);
+ h+='<div class="turn"><div class="spor"><div class="blok'+(t[4]?' lys':'')+'" style="left:'+l+'%;width:'+(r-l)+'%"></div>'+(nu>=A&&nu<B?'<div class="idag" style="left:'+idag+'%"></div>':'')+'</div><div class="navn">'+t[2]+' · '+per+'</div><div class="info">'+t[3]+'</div></div>';});
+document.getElementById("saeson").innerHTML=h;
+/* trapper */
+h="";TRAPPER.forEach(function(r){var n=r.trin.length;h+='<div class="raekke"><h3>'+r.n+'</h3><div class="sub">'+r.s+'</div><div class="trappe">';
+ r.trin.forEach(function(t,i){var hp=34+Math.round(i*(100-34)/Math.max(1,n-1));var top=(i===n-1);
+  h+='<div class="trin '+t[1]+(top?' top':'')+'"><div class="blk" style="height:'+hp+'px">'+(top?'🏆':t[0])+'</div></div>';});
+ h+='</div><div class="trappe fod-trappe" style="height:auto;align-items:flex-start">';
+ r.trin.forEach(function(t){h+='<div class="trin"><div class="dt"><b>'+t[0]+'</b>'+t[2]+(t[3]?'<br>'+t[3]:'')+'</div></div>';});
+ h+='</div><div class="modst">'+r.m+'</div></div>';});
+document.getElementById("trapper").innerHTML=h;
+/* dage */
+h="";var sidst="";KAMPE.forEach(function(k){var d=new Date(k[0]);var dag=DAGE[d.getDay()]+" "+d.getDate()+". "+MDR[d.getMonth()];
+ if(dag!==sidst){if(sidst)h+='</div>';h+='<div class="dag"><div class="dato">'+dag.charAt(0).toUpperCase()+dag.slice(1)+'</div>';sidst=dag;}
+ var forbi=(new Date(d.getTime()+3*36e5)<nu)?' forbi':'';
+ h+='<div class="kamp '+k[1]+forbi+'"><div class="t">'+hhmm(d)+'</div><div><div class="k">'+k[2]+(k[1]==="mulig"?' <span class="s">· hvis videre</span>':'')+'</div><div class="s">'+k[3]+(k[4]?' · '+k[4]:'')+'</div></div>'+(k[5]?'<div class="adv">'+k[5]+'</div>':'')+'</div>';});
+h+='</div>';document.getElementById("dage").innerHTML=h;
+</script>
+</body>
+</html>

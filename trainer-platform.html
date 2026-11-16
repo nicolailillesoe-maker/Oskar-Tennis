@@ -1364,7 +1364,7 @@ function snitVurd(s){ const v=Object.values(s.vurdering||{}).map(x=>x.score); re
 // man kunne ikke se paa skaermen, hvad der koerte. Princip 26 siger, at
 // versionsnummeret er en TILSTAND, ikke en taeller: ét blik skal kunne
 // svare "er alt oppe?". Den foelger nu spiller-apperne.
-const VERSION = "v6.31.2 \u00b7 15. november 2026";
+const VERSION = "v6.32.0 \u00b7 16. november 2026";
 
 // ═══════════════════════════════════════════════════════════════════════
 // ⭐⭐⭐ v5.0.0 · SPROGLAGET — ENGELSK TIL GANI, DANSK TIL CARSTEN
@@ -2582,7 +2582,11 @@ Object.assign(EN, {   /* ⭐ v6.31.0 · træning og kampe over tid */
   "Søjlediagram: din vurdering og spillerens egen for hver træning, med kampdage under søjlerne.": "Bar chart: your rating and the player's own for each session, with match days below the bars.",
   "{x} · træner {n} · spiller selv {n}": "{x} · coach {n} · player's own {n}",
   "{x} · træner {n}": "{x} · coach {n}",
-  "{x} · kamp": "{x} · match"
+  "{x} · kamp": "{x} · match",
+  /* ⭐ v6.32.0 · Klub+ på skærmen — præcise sætninger, ingen {n}/{x} */
+  "alle kampe live · skærm til klubhuset": "every match live · a screen for the clubhouse",
+  "Klub+ · med": "Klub+ · included",
+  "Klub+ · ikke med": "Klub+ · not included"
 });
 /* ⭐⭐ v6.31.1 · «Engelsk hele vejen» — posterne herunder står FORREST i ordbogen. Opslaget tager det FØRSTE mønster, der passer:
    lagt sidst er en snæver post død bag en bredere (sådan døde 12 nøgler i 6.30.0). Rækkefølgen her er de snævre før de brede. */
@@ -3509,6 +3513,13 @@ function aftalePris(n){   /* ⭐ v6.24.2 · på engelsk med komma (3,999 kr/mont
 function aftaleRk(label, vaerdi, farve){
   return '<div class="lille" style="display:flex;justify-content:space-between;gap:10px;margin-top:8px"><span>' + T(label) + '</span><b style="text-align:right' + (farve ? ';color:' + farve : '') + '">' + vaerdi + '</b></div>';
 }
+function aftalePlusRk(d){   /* ⭐ v6.32.0 · KLUB+ i klubbens aftale: til/fra og trinnets tillæg, som motoren giver det (plus_kr) — appen regner ingen pris ud.
+     Uden feltet klub_plus (en motor før Klub+) tegnes intet. */
+  if (!d || typeof d.klub_plus !== "boolean") return '';
+  var pris = (typeof d.plus_kr === "number") ? '<span>' + aftalePris(d.plus_kr) + '</span>' : '';
+  return '<div class="lille" data-aftale-plus="' + (d.klub_plus ? 'med' : 'ikke-med') + '" style="display:flex;justify-content:space-between;gap:10px;margin-top:8px"><span>' + T(d.klub_plus ? "Klub+ · med" : "Klub+ · ikke med") + '</span>' +
+    '<b style="text-align:right">' + pris + '</b></div>';
+}
 function indstAftale(){   /* ⭐ v6.24.0 · 🏷️ KLUBBENS AFTALE — det, klubben betaler for, og hvad der sker, når den vokser */
   var a = S.aftale || {}, d = a.d;
   var h = '<div class="kort" data-aftale-rum="1" style="--tone:var(--guld)">' +
@@ -3517,6 +3528,7 @@ function indstAftale(){   /* ⭐ v6.24.0 · 🏷️ KLUBBENS AFTALE — det, klu
   if (a.fejl) h += '<p class="lille" data-aftale-fejl="1" style="margin:8px 0 0;color:var(--tabt)">' + esc(a.fejl) + '</p>';
   if (d && !d.aftale) h += '<p class="lille" style="margin:8px 0 0">' + T("Klubbens aftale er ikke registreret endnu. Skriv til os, så sætter vi den op.") + '</p>';
   if (d && d.aftale && d.trin == null) h += '<p class="lille" data-aftale-ingen-trappe="1" style="margin:8px 0 0">' + T("Spillertrappen er ikke sat for klubben endnu. Skriv til os, så sætter vi den op.") + '</p>';   /* ⭐ v6.24.2 */
+  if (d && (!d.aftale || d.trin == null)) h += aftalePlusRk(d);   /* ⭐ v6.32.0 · også uden trin: til/fra, uden pris */
   if (d && d.aftale && d.trin != null) {
     var pilot = d.aftale === "pilot";
     var aft = pilot ? (d.pilot_til ? '<span>' + T("Pilot") + '</span> · <span>' + T("til " + parseInt(d.pilot_til.slice(8, 10), 10) + "/" + parseInt(d.pilot_til.slice(5, 7), 10)) + '</span>' : '<span>' + T("Pilot") + '</span>')
@@ -3524,6 +3536,7 @@ function indstAftale(){   /* ⭐ v6.24.0 · 🏷️ KLUBBENS AFTALE — det, klu
     h += aftaleRk("Aftale", aft) +
       aftaleRk("Trin", '<span>' + d.trin + '</span> · <span>' + T(d.trin_navn || "") + '</span>' + (d.graense ? ' · <span>' + T("op til " + d.graense + " aktive") + '</span>' : '')) +
       aftaleRk("Pris", '<span>' + aftalePris(d.pris_kr) + '</span>' + (pilot ? ' · <span>' + T("gratis i pilotperioden") + '</span>' : '')) +
+      aftalePlusRk(d) +   /* ⭐ v6.32.0 */
       aftaleRk("Aktive spillere denne måned", '<span>' + d.aktive + '</span>', d.over ? "var(--guld)" : "") +
       (d.naeste ? aftaleRk(d.over ? "Rykker op til" : "Næste trin", '<span>' + d.naeste.trin + '</span> · <span>' + T(d.naeste.navn) + '</span> · <span>' + aftalePris(d.naeste.pris_kr) + '</span>') : '');
     if (d.over) h += '<p class="lille" data-aftale-over="1" style="margin:10px 0 0;color:var(--guld)">' + T("I er over trinnet — klubben rykker automatisk op til trin " + (d.naeste ? d.naeste.trin : d.trin + 1) + ". Intet bliver spærret.") + '</p>';
@@ -4602,6 +4615,7 @@ function renderTraener(){
     /* v6.2.0 · StreakTennis' titelrække, ordret (linje 10425 i v5.3.1): ← og fanens navn i én række */
     var _tilbage = (S.tab === "weekenden") ? 'data-act="tab" data-v="program"' :   /* ⭐ v6.17.0 · Weekenden bor i Program */   /* ⭐ v6.25.4 · døren (S.vejTilbage): ← går til det rum, der tegnede knappen — HJEM eller Gør nu (Nicolai 5/11: «Man skal ALTID komme samme vej tilbage») */
       (S.tab === "indst" && S.indstVisning && S.indstVisning.indexOf("adgang-") === 0) ? 'data-act="indst-vis" data-v="adgang"' :   /* v6.16.2 · fra et underrum til fliserne */
+      (S.tab === "indst" && S.indstVisning === "aftale" && S.livePlusDoer) ? 'data-act="tab" data-v="live"' :   /* ⭐ v6.32.0 · kom man fra «Live nu», går ← dertil igen */
       (S.tab === "indst" && S.indstVisning) ? 'data-act="indst-vis" data-v=""' :   /* v6.8.0 */
       (S.tab === "program" && S.prgVisning) ? 'data-act="prg-visning" data-v=""' : (((S.tab === "vurder" || S.tab === "registrer") && S.reg && S.reg.trin > 1 && !S.vurderOmraade && !S.vejTilbage) ? 'data-act="reg-igen"' : 'data-act="tab" data-v="' + (S.vejTilbage || "hjem") + '"');   /* v6.5.0 · fra trin 2/3 går ← til trin 1 — ⭐ v6.25.4: medmindre man kom gennem en dør, så går ← til døren */   /* v6.3.0 · fra en undervisning går ← til fliserne */
     h += '<div style="display:flex;align-items:center;gap:10px;margin:12px 0 10px"><button class="pil-tilbage" ' + _tilbage + '>\u2190</button><b style="font-size:16px">' + faneTitel(S.tab) + '</b></div>';
@@ -5131,7 +5145,8 @@ function liveSkaermHent(krop){
   if (S.tab === "live") { try { render(); } catch (_e) {} }
   traeningKald("live-link", krop || {}).then(function(r){
     S.liveSkaerm.henter = false;
-    if (!r || r.fejl) S.liveSkaerm.fejl = liveSkaermFejl(r);   /* den sidste stand bliver stående — fejlen siges i kortet (75) */
+    if (r && r.fejl === "kraever-klub-plus") { S.liveSkaerm.data = { aaben: false, taendt: false, link: null, klub_plus: false }; S.liveSkaerm.bekraeftNyt = false; }   /* ⭐ v6.32.0 · Klub+ blev slukket, mens kortet stod åbent: flisen, ikke en rød fejl */
+    else if (!r || r.fejl) S.liveSkaerm.fejl = liveSkaermFejl(r);   /* den sidste stand bliver stående — fejlen siges i kortet (75) */
     else { S.liveSkaerm.data = r; S.liveSkaerm.kopieret = false; }
     if (S.tab === "live") render();
   });
@@ -5142,13 +5157,26 @@ function liveSkaermFejl(r){
   return traeningFejl(r);
 }
 function liveSkaermLink(d){ return d && d.link ? d.link + (SPROG === "en" ? "&l=en" : "") : ""; }
+/* ⭐⭐ v6.32.0 · KLUB+ PÅ SKÆRMEN (ejeren 15/11: «alle klubber skal have live nu. Så kan de jo se dem som er live og en del af klubben… så
+   kan de jo blive inspireret til at kunne se alle.. og betale for det.» · «Med simpelhed og fliser.» · «Nærmest ikke tekst.»).
+   «Live nu» er med for alle: flisen, rummet og listen er urørt. Klub+ er klubbens tilkøb — live-deling uden loft for alle klubbens
+   spillere og klubbens live-skærm. Siger motoren klub_plus falsk, står der én rolig flise, dér hvor kortet om live-skærmen ellers
+   står: navnet og fire ord. Admin trykker sig til «Klubbens aftale», hvor prisen står; en træner kan ikke trykke. Ingen fejl,
+   ingen salgstale. Uden feltet klub_plus i svaret (en motor før Klub+) tegnes intet nyt. */
+function liveKlubPlusFlise(){
+  var adm = (S.minRolle || lager.hent("minrolle", "")) === "admin";
+  var ind = '<span class="dev-ikon">📺</span><b>Klub+</b><small>alle kampe live · skærm til klubhuset</small>';
+  return '<div class="dev-grid" data-klub-plus-flise="' + (adm ? 'admin' : 'traener') + '" style="margin-top:14px">' +
+    (adm ? '<button class="dev-flise dev-kant dev-kant-staal" data-act="live-plus-aftale">' + ind + '</button>'
+      : '<div class="dev-flise dev-kant dev-kant-staal" style="cursor:default;line-height:normal">' + ind + '</div>') + '</div>';   /* samme højde som knappen */
+}
 function liveSkaermKort(){
   var u = S.liveSkaerm;
   if (!u) { setTimeout(function(){ if (!S.liveSkaerm) liveSkaermHent({}); }, 0); return ""; }
   var d = u.data, fejlLinje = u.fejl ? '<p class="lille" data-live-skaerm-fejl="1" style="margin:6px 0 0;color:var(--tabt)">' + esc(u.fejl) + '</p>' : '';
   if (!d) return u.fejl ? '<div class="kort" data-live-skaerm="fejl" style="padding:11px 14px;margin-top:14px"><div class="eyebrow">📺 KLUBBENS LIVE-SKÆRM</div>' + fejlLinje +
     '<button class="knap valg" style="margin-top:8px;min-height:36px;padding:0 14px" data-act="live-skaerm" data-v="hent">Prøv igen</button></div>' : '';
-  if (!d.aaben) return '';
+  if (!d.aaben) return d.klub_plus === false ? liveKlubPlusFlise() : '';   /* ⭐ v6.32.0 · uden Klub+: flisen · uden feltet (en motor før Klub+): intet, som før */
   var link = liveSkaermLink(d);
   var h = '<div class="kort" data-live-skaerm="' + (d.taendt ? 'taendt' : 'slukket') + '" style="padding:11px 14px;margin-top:14px"><div class="eyebrow">📺 KLUBBENS LIVE-SKÆRM</div>';
   if (d.kan_aendre) {
@@ -7054,6 +7082,7 @@ document.addEventListener("click", function(e){
   const act = t.dataset.act, v = t.dataset.v;
   if (t.dataset.goerNu !== undefined) S.vejTilbage = S.tab;   /* ⭐ v6.25.4 · døren: en knap fra HJEM eller Gør nu husker, hvor den stod — ← går dertil */
   else if (act === "tab") S.vejTilbage = null;   /* bundbaren, fliserne og ← selv starter forfra — ← går til HJEM som før */
+  S.livePlusDoer = (act === "live-plus-aftale");   /* ⭐ v6.32.0 · døren fra «Live nu» til «Klubbens aftale» gælder kun, til det næste tryk */
   if (act==="hj-spoerg"){ hjaelpSpoerg(); }   /* v6.22.2 */
   if (act==="sprog-saet"){ SPROG = (v === "en" ? "en" : "da"); lager.gem("sprog", SPROG); try { document.documentElement.lang = SPROG; document.title = sideTitel(); } catch (_e) {} render(); }
   else if (act==="evalsprog-saet"){ EVALSPROG = (v === "en" ? "en" : "da"); lager.gem("evalsprog", EVALSPROG); render(); }
@@ -7621,6 +7650,7 @@ document.addEventListener("click", function(e){
   /* ⭐ v6.17.0 · WEEKENDEN */
   else if (act==="wk-hent"){ S.wkFejl = null; wkHent(); }
   else if (act==="live-hent"){ liveHent(true); }   /* ⭐ v6.18.0 */
+  else if (act==="live-plus-aftale"){ window.__coachRute("#aftale"); }   /* ⭐ v6.32.0 · samme rute som notifikationen: kun admin, og rummet henter sin egen status */
   else if (act==="live-skaerm"){   /* ⭐ v6.27.0 · klubbens live-skærm */
     S.liveSkaerm = S.liveSkaerm || {};
     if (v === "hent") liveSkaermHent({});

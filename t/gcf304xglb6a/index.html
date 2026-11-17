@@ -85,6 +85,13 @@ section{scroll-margin-top:56px}
 .hk .m{font-weight:600}
 .hk .s{color:var(--daemp);font-size:14px}
 .hk .adv{grid-column:2}
+.plannote{color:var(--daemp);font-size:14px;margin:-4px 0 6px}
+.pl{display:grid;grid-template-columns:96px 1fr;gap:2px 12px;padding:10px 0;border-top:1px solid var(--linje)}
+.pl .p{font-weight:700;font-size:13px;letter-spacing:.3px}
+.pl .p small{display:block;color:var(--daemp);font-weight:500;font-size:13px;letter-spacing:0;font-variant-numeric:tabular-nums}
+.pl .m{font-weight:600}.pl .s{color:var(--daemp);font-size:14px}
+.pl.p0 .p,.pl.p1 .p{color:var(--guld)}.pl.p2 .p{color:var(--m)}.pl.p3 .p{color:var(--daemp)}
+.pl.p2 .m,.pl.p3 .m{font-weight:500}
 .hold h3{font-size:18px;margin-top:22px}
 .hold .sub{color:var(--daemp);font-size:14px;margin-bottom:6px}
 .tur .adv2{color:var(--rod);font-size:14px;margin-top:10px}
@@ -176,14 +183,19 @@ footer{margin-top:44px;padding-top:16px;border-top:1px solid var(--linje);color:
 <div id="valg"></div>
 </section>
 
-<section id="slagelse"><h2 data-t="dec"></h2><div id="t-slagelse"></div></section>
-<section id="hvt"><div id="t-hvt"></div></section>
+<section id="hvt"><h2 data-t="dec"></h2><div id="t-hvt"></div></section>
 <section id="kb"><div id="t-kb"></div></section>
 
 <section id="hold">
 <h2 data-t="hold"></h2>
 <div class="hold" id="holdliste"></div>
 <div style="color:var(--daemp);font-size:13.5px;margin-top:14px" data-t="holdnote"></div>
+</section>
+
+<section id="plan">
+<h2 data-t="plan"></h2>
+<div class="plannote" data-t="plannote"></div>
+<div class="hold" id="planliste"></div>
 </section>
 
 <footer data-t="fod"></footer>
@@ -205,6 +217,9 @@ var TX={
  holdnote:{da:"Holdopstillingen kommer på mail ugen før. Kilden er klubbens holdark og DTF's holdturnering, som de stod i oktober; de er ikke læst igen i dag.",en:"The line-up is sent by email the week before. Source: the club's team sheet and the Danish Tennis Federation's team competition as of October; not re-read today."},
  fod:{da:"Kilde: Dansk Tennis Forbunds turneringsside og Oskars tilmeldinger, læst 16. november 2026. Tider kan ændre sig; turneringssiden har altid ret. Modstandere i turneringerne står med initialer; holdkampe står med klubbernes hold. Røde rækker i sæsonkortet er dage, hvor to kampe ikke kan spilles begge. Mesterrækkens hovedturnering er ikke trukket endnu; at Oskars kvalifikationsplads er Q5, er udledt af lodtrækningen.",
      en:"Source: the Danish Tennis Federation's tournament site and Oskar's entries, read 16 November 2026. Times may change; the tournament site always has the final word. Opponents in tournaments are shown by initials; team matches by club team. Red rows in the season map are days when two matches cannot both be played. The senior main draw is not made yet; Oskar's qualifying spot (Q5) is inferred from the draw."},
+ plan:{da:"Sæsonplanen · 1., 2. og 3. prioritet",en:"Season plan · 1st, 2nd and 3rd priority"},
+ plannote:{da:"Han spiller én turnering pr. uge. 1. prioritet giver flest point i hans aldersgruppe efter DTF's regler; 2. og 3. er backup, hvis 1. er fuld. Fra nytår spiller han U16. Kilde: DTF's terminsliste for vintersæsonen, læst 17. november 2026.",en:"He plays one tournament per week. 1st priority gives the most points in his age group under the DTF rules; 2nd and 3rd are the back-up if the 1st is full. From New Year he plays U16. Source: the DTF winter tour calendar, read 17 November 2026."},
+ uge:{da:"Uge",en:"Week"},pr0:{da:"Tilmeldt",en:"Entered"},pr1:{da:"1. prioritet",en:"1st priority"},pr2:{da:"2. prioritet",en:"2nd priority"},pr3:{da:"3. prioritet",en:"3rd priority"},
  dage:{da:"dage",en:"days"},dag1:{da:"dag",en:"day"},idag:{da:"I dag",en:"Today"},
  hv:{da:"hvis videre",en:"if he advances"},
  fast:{da:"kampe og turneringer står fast",en:"matches and tournaments confirmed"},
@@ -213,7 +228,7 @@ var TX={
  leg:{da:"● står fast · ○ hvis videre",en:"● confirmed · ○ if he advances"},
  trin:{da:"Række",en:"Event"},sted:{da:"Sted",en:"Venue"},lod:{da:"Lodtrækning",en:"Draw"},ikkeude:{da:"ikke ude endnu",en:"not out yet"},dtf:{da:"Turneringen hos DTF ↗",en:"Tournament on DTF ↗"}
 };
-var MENU=[["oversigt",{da:"Oversigt",en:"Overview"}],["sm",{da:"SM inde",en:"Zealand Ch."}],["slagelse",{da:"Slagelse",en:"Slagelse"}],["hvt",{da:"HVT Cup",en:"HVT Cup"}],["kb",{da:"K.B. Jule Cup",en:"K.B. Christmas Cup"}],["hold",{da:"Holdkampe",en:"Team matches"}]];
+var MENU=[["oversigt",{da:"Oversigt",en:"Overview"}],["sm",{da:"SM inde",en:"Zealand Ch."}],["hvt",{da:"HVT Cup",en:"HVT Cup"}],["kb",{da:"K.B. Jule Cup",en:"K.B. Christmas Cup"}],["hold",{da:"Holdkampe",en:"Team matches"}],["plan",{da:"Plan",en:"Plan"}]];
 var DAGE={da:["søndag","mandag","tirsdag","onsdag","torsdag","fredag","lørdag"],en:["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]};
 var DG={da:["søn","man","tir","ons","tor","fre","lør"],en:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]};
 var MDR={da:["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"],en:["January","February","March","April","May","June","July","August","September","October","November","December"]};
@@ -248,13 +263,12 @@ var VALG=[r("<b>Søndag 29/11:</b> Mesterrækkens 1/8 i Hillerød (10.00 eller 1
  r("<b>Fredag 4/12:</b> Mesterrækkens semifinale kl. 17.00 i Hillerød og U14-semifinalen kl. 18.00 i Hørsholm/Rungsted overlapper.","<b>Friday 4/12:</b> the senior semi-final at 17:00 in Hillerød and the U14 semi-final at 18:00 in Hørsholm/Rungsted overlap."),
  r("<b>Lørdag 5/12:</b> tre finaler i Hillerød, kl. 12.00, 13.30 og 18.00.","<b>Saturday 5/12:</b> three finals in Hillerød, at 12:00, 13:30 and 18:00.")];
 var TURN=[
- ["slagelse","Tennis Øst Head Cup Slagelse",r("fredag 11. – søndag 13. december","Friday 11 – Sunday 13 December"),r("U14 herresingle kat. G","U14 boys' singles, cat. G"),"Slagelse","D2FD16B1-575B-40A7-BFE5-47594245AE63",r("Fredag 11/12 kl. 18.00 er der også U18-holdkamp.","Friday 11/12 at 18:00 there is also a U18 team match.")],
  ["hvt","HVT Cup",r("lørdag 19. – søndag 20. december","Saturday 19 – Sunday 20 December"),r("U14 herresingle kat. 1","U14 boys' singles, cat. 1"),"Hareskov-Værløse Tennisklub, Værløse","D270E664-213D-482F-B171-5C7B3A72EB89",""],
  ["kb",r("K.B. Jule Cup 150 år","K.B. Christmas Cup, 150 years"),r("søndag 27. – onsdag 30. december","Sunday 27 – Wednesday 30 December"),r("U14 herresingle kat. G","U14 boys' singles, cat. G"),"Kjøbenhavns Boldklub, Frederiksberg","7163D072-D8AE-4607-8D5E-4F77D523BBCA",""]
 ];
 var HOLD=[
  {n:r("U18 gul bold · B 93 1","U18 yellow ball · B 93 1"),s:r("Tennis Øst-holdturneringen · fem holdkampe, de sidste fire tilbage","Tennis Øst team competition · five matches, the last four to go"),k:[
-  ["2026-12-11T18:00","B 93 1 – Lyngby 1",r("hjemme · spilles i HRT","home · played at HRT"),r("Samme fredag som Head Cup i Slagelse begynder.","Same Friday the Head Cup in Slagelse begins.")],
+  ["2026-12-11T18:00","B 93 1 – Lyngby 1",r("hjemme · spilles i HRT","home · played at HRT"),""],
   ["2027-01-15T18:00","B 93 1 – HRT 1",r("hjemme · spilles i HRT","home · played at HRT"),""],
   ["2027-01-23T14:30","Dragør 1 – B 93 1",r("ude · Dragør Tennis","away · Dragør Tennis"),""],
   ["2027-02-07","Farum 1 – B 93 1",r("ude · Farum Tennis · tiden er ikke sat","away · Farum Tennis · time not set"),""]]},
@@ -266,17 +280,20 @@ var HOLD=[
 var P=[["2026-11-21","m",r("K1","Q1"),"18.15",1],["2026-11-22","m",r("K2","Q2"),"18.15",0],["2026-11-28","s","1/8",r("10.30","10:30"),1],["2026-11-28","m","1/16","17.30",0],
 ["2026-11-29","m","1/8","10/11.30",0],["2026-11-29","s",r("KF","QF"),"12.00",0],["2026-11-29","d",r("KF","QF"),"15.30",1],["2026-11-29","d","SF","16.30",0],["2026-12-02","m",r("KF","QF"),"17.00",0],
 ["2026-12-04","m","SF","17.00",0],["2026-12-04","s","SF","18.00",0],["2026-12-05","s","F","12.00",0],["2026-12-05","m","F","13.30",0],["2026-12-05","d","F","18.00",0],
-["2026-12-11","t","Slagelse","11–13/12",1,1],["2026-12-11","h","Lyngby","18.00",1],["2026-12-19","t","HVT Cup","19–20/12",1,1],["2026-12-27","t",r("K.B. Jule","K.B. Xmas"),"27–30/12",1,1],
+["2026-12-11","h","Lyngby","18.00",1],["2026-12-19","t","HVT Cup","19–20/12",1,1],["2026-12-27","t",r("K.B. Jule","K.B. Xmas"),"27–30/12",1,1],
 ["2027-01-15","h","HRT","18.00",1],["2027-01-23","h","Dragør","14.30",1],["2027-01-31","h","Vedbæk","18.30",1],["2027-02-07","h","Farum",r("tid ?","time ?"),1],["2027-03-06","h","Helsingør","16.45",1]];
-var KOL={"2026-11-29":r("kan ikke begge","can't do both"),"2026-12-04":r("overlapper","overlap"),"2026-12-11":r("samme aften","same evening")};
+var KOL={"2026-11-29":r("kan ikke begge","can't do both"),"2026-12-04":r("overlapper","overlap")};
 var LN={s:r("Single","Singles"),d:r("Double","Doubles"),m:r("Mester-række","Senior Elite"),t:r("Turne-ringer","Tourna-ments"),h:r("Hold-kampe","Team matches")};
 var LG={s:US,d:UD,m:r("Mesterrække","Senior Elite"),t:r("Turneringer","Tournaments"),h:r("Holdkampe","Team matches")};
 var CV={s:"--s",d:"--d",m:"--m",t:"--t",h:"--h"},LS=["s","d","m","t","h"];
-var TM={"2026-12-11":"slagelse","2026-12-19":"hvt","2026-12-27":"kb"};
-function maal(p){return p[1]==="h"?"hold":p[1]==="t"?(TM[p[0]]||"slagelse"):"tr-"+p[1];}
+var TM={"2026-12-19":"hvt","2026-12-27":"kb"};
+function maal(p){return p[1]==="h"?"hold":p[1]==="t"?(TM[p[0]]||"hvt"):"tr-"+p[1];}
 function tid(d){var h=String(d.getHours()).padStart(2,"0"),m=String(d.getMinutes()).padStart(2,"0");return L==="en"?h+":"+m:h+"."+m;}
 function tt(x){var v=t(x);return L==="en"&&typeof v==="string"?v.replace(/\b(\d{1,2})\.(\d{2})\b/g,"$1:$2"):v;}
 var nu=new Date();
+var PLAN=[[51, [[0, "2026-12-19", "2026-12-20", {"da": "HVT Cup", "en": "HVT Cup"}, {"da": "U14 HS kat. 1", "en": "U14 boys' singles, cat. 1"}], [2, "2026-12-18", "2026-12-20", {"da": "HRT Cup 51", "en": "HRT Cup 51"}, {"da": "U16 HS kat. 1", "en": "U16 boys' singles, cat. 1"}], [3, "2026-12-18", "2026-12-20", {"da": "Tennis Øst Head Cup Rødovre", "en": "Tennis Øst Head Cup Rødovre"}, {"da": "Senior HS kat. 1", "en": "Men's singles, cat. 1"}]]], [52, [[2, "2026-12-21", "2026-12-27", {"da": "HRT Cup 52", "en": "HRT Cup 52"}, {"da": "U14 HS kat. 1", "en": "U14 boys' singles, cat. 1"}]]], [53, [[0, "2026-12-27", "2026-12-30", {"da": "K.B. Jule Cup", "en": "K.B. Christmas Cup"}, {"da": "U14 HS kat. G", "en": "U14 boys' singles, cat. G"}], [2, "2027-01-02", "2027-01-03", {"da": "B 93 Nytårs Cup", "en": "B 93 New Year Cup"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}]]], [1, [[1, "2027-01-09", "", {"da": "HRT Cup 1", "en": "HRT Cup 1"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}], [2, "2027-01-09", "", {"da": "Hillerød Cup 1", "en": "Hillerød Cup 1"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}], [3, "2027-01-10", "", {"da": "HRT Cup 1", "en": "HRT Cup 1"}, {"da": "Senior HS kat. 2", "en": "Men's singles, cat. 2"}]]], [2, [[1, "2027-01-15", "2027-01-17", {"da": "HRT Cup 2", "en": "HRT Cup 2"}, {"da": "U16 HS kat. 1", "en": "U16 boys' singles, cat. 1"}], [2, "2027-01-16", "2027-01-17", {"da": "Hillerød Cup 2", "en": "Hillerød Cup 2"}, {"da": "Senior HS kat. 1", "en": "Men's singles, cat. 1"}], [3, "2027-01-16", "", {"da": "Helsingør Open", "en": "Helsingør Open"}, {"da": "Senior HS kat. 2", "en": "Men's singles, cat. 2"}]]], [3, [[1, "2027-01-24", "", {"da": "Hillerød Cup 3", "en": "Hillerød Cup 3"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}]]], [4, [[1, "2027-01-30", "", {"da": "Hillerød Cup 4", "en": "Hillerød Cup 4"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}]]], [5, [[1, "2027-02-05", "2027-02-07", {"da": "HRT Cup 5", "en": "HRT Cup 5"}, {"da": "U16 HS kat. 1", "en": "U16 boys' singles, cat. 1"}], [2, "2027-02-06", "", {"da": "Helsingør Open", "en": "Helsingør Open"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}], [3, "2027-02-06", "", {"da": "RTK Cup 5, Roskilde", "en": "RTK Cup 5, Roskilde"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}]]], [6, [[1, "2027-02-13", "2027-02-14", {"da": "HVT Cup", "en": "HVT Cup"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}], [2, "2027-02-14", "", {"da": "Hillerød Cup 6", "en": "Hillerød Cup 6"}, {"da": "Senior HS kat. 2", "en": "Men's singles, cat. 2"}], [3, "2027-02-14", "", {"da": "Tennis Øst Head Cup Slagelse", "en": "Tennis Øst Head Cup Slagelse"}, {"da": "Senior HS kat. 2", "en": "Men's singles, cat. 2"}]]], [7, [[1, "2027-02-18", "2027-02-21", {"da": "HRT Cup 7", "en": "HRT Cup 7"}, {"da": "U16 HS kat. G", "en": "U16 boys' singles, cat. G"}], [2, "2027-02-16", "", {"da": "Hillerød Cup 7", "en": "Hillerød Cup 7"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}], [3, "2027-02-20", "", {"da": "LTK Cup 7", "en": "LTK Cup 7"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}]]], [9, [[1, "2027-03-07", "", {"da": "HRT Cup 9", "en": "HRT Cup 9"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}], [2, "2027-03-07", "", {"da": "Hillerød Cup 9", "en": "Hillerød Cup 9"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}]]], [10, [[1, "2027-03-13", "2027-03-14", {"da": "Tennis Øst Head Cup Slagelse", "en": "Tennis Øst Head Cup Slagelse"}, {"da": "Senior HS kat. 1", "en": "Men's singles, cat. 1"}], [2, "2027-03-13", "", {"da": "HRT Cup 10", "en": "HRT Cup 10"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}], [3, "2027-03-13", "", {"da": "Tennis Øst Head Cup Farum", "en": "Tennis Øst Head Cup Farum"}, {"da": "U16 HS kat. 2", "en": "U16 boys' singles, cat. 2"}]]], [11, [[1, "2027-03-20", "2027-03-28", {"da": "Ungdomsmesterskaberne inde (UM)", "en": "Danish Youth Indoor Championships (UM)"}, {"da": "U16 HS kat. A", "en": "U16 boys' singles, cat. A"}], [2, "2027-03-19", "2027-03-21", {"da": "Birkerød Open", "en": "Birkerød Open"}, {"da": "Senior HS kat. 1", "en": "Men's singles, cat. 1"}], [3, "2027-03-19", "2027-03-21", {"da": "HVT Cup", "en": "HVT Cup"}, {"da": "Senior HS kat. 2", "en": "Men's singles, cat. 2"}]]], [12, [[2, "2027-03-25", "", {"da": "Hillerød Cup 12", "en": "Hillerød Cup 12"}, {"da": "Senior HS kat. 2", "en": "Men's singles, cat. 2"}]]]];
+function dm(s){var d=new Date(s);return d.getDate()+"/"+(d.getMonth()+1);}
+function per(a,b){if(!b||b===a){var d=new Date(a);return DG[L][d.getDay()]+" "+dm(a);}var x=new Date(a),y=new Date(b);return x.getMonth()===y.getMonth()?x.getDate()+"–"+dm(b):dm(a)+"–"+dm(b);}
 function tegn(){
  document.documentElement.lang=L;
  [].forEach.call(document.querySelectorAll("[data-t]"),function(e){e.innerHTML=t(TX[e.getAttribute("data-t")]);});
@@ -335,6 +352,9 @@ function tegn(){
  h="";HOLD.forEach(function(g){h+='<h3>'+t(g.n)+'</h3><div class="sub">'+t(g.s)+'</div>';g.k.forEach(function(k){var d=new Date(k[0]);var tm=k[0].length>10?tid(d):(L==="en"?"time ?":"tid ?");
   h+='<div class="hk"><div class="d">'+DG[L][d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)+'<small>'+tm+'</small></div><div><div class="m">'+k[1]+'</div><div class="s">'+t(k[2])+'</div></div>'+(k[3]?'<div class="adv">'+t(k[3])+'</div>':'')+'</div>';});});
  document.getElementById("holdliste").innerHTML=h;
+ /* saesonplanen */
+ h="";PLAN.forEach(function(u){h+='<h3>'+t(TX.uge)+' '+u[0]+'</h3>';u[1].forEach(function(r){h+='<div class="pl p'+r[0]+'"><div class="p">'+t(TX["pr"+r[0]])+'<small>'+per(r[1],r[2])+'</small></div><div><div class="m">'+t(r[3])+'</div><div class="s">'+t(r[4])+'</div></div></div>';});});
+ document.getElementById("planliste").innerHTML=h;
  marker();
 }
 var laast=0;

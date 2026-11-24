@@ -519,7 +519,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.18.0 · 22. november 2026";
+const VERSION = "v5.18.1 · 24. november 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -4857,6 +4857,21 @@ function _gammelKampLuk() {
     render();
   }
 }
+/* ⭐ 5.18.1 · AFSLUT UDEN AT GEMME (ejeren 24/11). Live-delingen lukkes med samme kald som «Stop deling» (live-slut), en ventende
+   live-sending ryddes, og kampens skærmtilstand nulstilles. Intet gemmes, synkroniseres eller sendes til arkivet eller analysen. */
+function _kampUdenGemLuk() {
+  if (typeof _liveVenter !== "undefined" && _liveVenter) { clearTimeout(_liveVenter); _liveVenter = null; }
+  const kode = S.foelgekode;
+  if (S.liveAktiv || kode) {
+    S.liveAktiv = false; try { lager.gem("sai-liveaktiv", "0"); } catch (_e) {}
+    S.foelgekode = ""; try { lager.gem("sai-foelgekode", ""); } catch (_e) {}
+    if (kode) { try { sync("live-slut", { foelgekode: kode }).catch(function(){}); } catch (_e) {} }
+  }
+  S.liveBesked = null; S.liveOvertag = null; S.liveKoeb = null;
+  S.aarsagValgt = null; S.efterTryk = null; S.zoneValgt = null; S.serv = 1; S.vedNet = false; S.netSlag = null; S._tvRetur = false; S._angreb = false; S._kvit = "";
+  S.justAaben = false; S.j = null; S.livAaben = false;
+  S.noteAaben = false; S.noteUdkast = ""; S.noteBesked = null; S.noteSletter = null;
+}
 
 // ---------- Handlinger ----------
 const A = {
@@ -5535,7 +5550,7 @@ const A = {
     S.wiz = 1; S._doneVist = false;
     S.aktiv = { modstander: (S.nyMod || "").trim() || "Ukendt modstander", turnering: (S.nyTur || "").trim(),
       dato: new Date().toISOString().slice(0,10), oskarFirst: true, serverValgt: false, mtb: S.nyMtb, saetTil: S.nyFormat === 4 ? 4 : 6, noAd: S.nyFormat === 4 && S.nyNoAd, point: [], justeringer: [] };   /* ⭐ v5.9.0 · serveren vælges på banen */
-    S.noteAaben = false; S.noteUdkast = ""; S.noteBesked = null; S.noteSletter = null;   /* ⭐ v5.17.0 */
+    S.noteAaben = false; S.noteUdkast = ""; S.noteBesked = null; S.noteSletter = null; S.udenGemSpoerg = false;   /* ⭐ v5.17.0 · ⭐ 5.18.1 */
     S.afventer = null; S.serv = 1; S.vedNet = false; S.netSlag = null; S._tvRetur = false; S.liveKoeb = null; S.nyBesked = null; S.koebKlar = null; gemAktiv(); render();
     if (S.nyLive) { S.delAaben = true; A.liveStart(); }   /* ⭐ v5.8.0 */
   },
@@ -6170,6 +6185,15 @@ const A = {
   kampAnnuller: () => {
     if (!S.aktiv || (S.aktiv.point && S.aktiv.point.length)) return;
     S.aktiv = null; S.afventer = null; S.resInput = ""; S.wiz = 1; gemAktiv(); render();
+  },
+  /* ⭐ 5.18.1 · AFSLUT UDEN AT GEMME — midt i en kamp med bolde, i to trin (princip 82, samme mønster som den gamle kamp) */
+  kampSlutUdenGem: () => { if (!S.aktiv || _aktivGammel()) return; S.udenGemSpoerg = !S.udenGemSpoerg; render(); },
+  kampSlutUdenGemJa: () => {
+    if (!S.aktiv || !S.udenGemSpoerg) return;
+    _kampUdenGemLuk();
+    S.aktiv = null; S.afventer = null; S.resInput = ""; S.wiz = 1; S.udenGemSpoerg = false; gemAktiv(); render();
+    try { window.scrollTo(0, 0); } catch (_e) {}
+    try { A.skySik(); } catch (_e) {}   /* kun hvis boksen bar kampen i gang (aftrykket) — den nye kopi har den ikke */
   },
   // ═══ v4.113.0 · ARKIVET — «TENNIS ÅBENT, MENNESKER LÅST» ═════════════
   //   Nicolai 8/9: «Man skal kunne miste sin telefon, få en ny og få alt
@@ -15165,7 +15189,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
 
       h += '<div class="kridtstreg"><div class="linje"></div><div class="prikker">' +
         (S.aktiv.point.length ? S.aktiv.point.slice(-14).map(p => '<span class="prik" style="background:'+(p.r==="V"?"var(--vundet)":"var(--tabt)")+';margin-top:'+(p.r==="V"?0:10)+'px"></span>').join("")
-        : '<span style="font-size:11px;color:var(--kridt);opacity:.85">'+(EN?'The match footprints — won above the line, lost below':'Kampens fodspor — vundne over stregen, tabte under')+'</span>') + '</div></div>';
+        : '<span data-fodspor="tom" style="font-size:11px;line-height:11px;align-self:flex-end;margin-bottom:-3px;color:var(--kridt);opacity:.85">'+(EN?'The match footprints — won above the line, lost below':'Kampens fodspor — vundne over stregen, tabte under')+'</span>') + '</div></div>';
 
       // ⭐ v4.105.0 · en kamp uden bolde kan annulleres — uden at blive gemt.
       //   Står HER, lige under fodsporet, så den ses uden at rulle (princip 62).
@@ -15340,6 +15364,12 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       if (S.aktiv.point.length < KLN_MIN || klnAabenFor !== S.aktiv) h += '<div class="kort statlinje">'+(EN?'Serve points won: ':'Serve vundet: ')+'<b>'+s.serve[0]+'/'+s.serve[1]+'</b> · '+(EN?'1st serve in: ':'1. serv i spil: ')+'<b>'+s.s1pct+' %</b> · '+(EN?'Return: ':'Retur: ')+'<b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>'+(EN?'Winners: ':'Vindere: ')+'<b style="color:var(--vundet)">'+s.vindere+'</b>'+(s.modTv?' · '+(EN?'forced: ':'presset: ')+'<b style="color:var(--vundet)">'+s.modTv+'</b>':'')+' · '+(EN?'Unforced errors: ':'Gratis fejl: ')+'<b style="color:'+(s.uf>s.skabt?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b>'+(s.tvRetur?' · '+(EN?'forced by the serve: ':'tvunget af serven: ')+'<b>'+s.tvRetur+'</b>':'')+' · '+(EN?'Break points: ':'Breakbolde: ')+'<b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b>'+(EN?' converted, ':' udnyttet, ')+'<b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b>'+(EN?' saved':' afværget')+'<br>'+(s.haand.medSide?((EN?'<br>Free errors — forehand: ':'<br>Gratis fejl — forhånd: ')+'<b>'+s.haand.ufFH+'</b>'+(EN?' · backhand: ':' · baghånd: ')+'<b>'+s.haand.ufBH+'</b>'+' <span style="opacity:.65">('+s.haand.medSide+'/'+s.haand.muligIalt+')</span>'):'')+(((s.haand.modTvFH||0)+(s.haand.modTvBH||0))?((EN?'<br>Forced their error — forehand: ':'<br>Presset dem i fejl — forhånd: ')+'<b style="color:var(--vundet)">'+(s.haand.modTvFH||0)+'</b>'+(EN?' · backhand: ':' · baghånd: ')+'<b style="color:var(--vundet)">'+(s.haand.modTvBH||0)+'</b>'):'')/* ⭐ v4.119.0 */+netspilLinje(s, EN)/* ⭐ 5.18.0 net */+(function(){ const sn = s.st.setsO + s.st.setsM + 1; const ps = s.perSaet[sn-1] || { v: 0, t: 0, uf: 0, vin: 0 }; return '<br>'+(EN?'This set: ':'Dette sæt: ')+'<b>'+ps.v+'-'+ps.t+'</b> · '+(EN?'UE ':'gratis fejl ')+'<b>'+ps.uf+'</b> · '+(EN?'winners ':'vindere ')+'<b>'+ps.vin+'</b>'; })()+((s.haand.ufFH+s.haand.ufBH>=4 && Math.abs(s.haand.ufBH-s.haand.ufFH)>=2)?' <span style="color:var(--tabt)">'+(EN?'· mostly on the ':'· mest på ')+(s.haand.ufBH>s.haand.ufFH?(EN?'backhand':'baghånden'):(EN?'forehand':'forhånden'))+'</span>':'')+'</div>';
       h += '<input placeholder="'+(EN?'Result (auto-filled if empty)':'Resultat (udfyldes automatisk hvis tomt)')+'" value="'+esc(S.resInput)+'" data-felt="resInput">';
       h += '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="afslut">'+(EN?"✔ Finish &amp; save the match":"✔ Afslut &amp; gem kampen")+'</button></div>';
+      /* ⭐ 5.18.1 · AFSLUT UDEN AT GEMME — stille og med afstand under «Afslut & gem». Kun med bolde (uden står «Annullér kampen» under
+   fodsporet) og ikke på en gammel kamp (den har sin egen vej i banneret). Trin 2: teksten først, så «Ja» ikke ligger, hvor trin 1 lå. */
+      if (S.aktiv.point.length && !_aktivGammel()) h += S.udenGemSpoerg
+        ? '<div class="kort" data-udengem="spoerg" style="margin-top:18px;border:1.5px solid var(--tabt)"><p class="lille" style="margin:0 0 10px;font-weight:700">' + (EN ? "The match is deleted and nothing is saved. Are you sure?" : "Kampen slettes, og intet gemmes. Er du sikker?") + '</p>' +
+        '<div class="raekke" style="margin:0"><button class="knap" style="min-height:44px;background:var(--tabt);color:#fff" data-a="kampSlutUdenGemJa">' + (EN ? "Yes, delete the match" : "Ja, slet kampen") + '</button><button class="knap valg" style="min-height:44px" data-a="kampSlutUdenGem">' + (EN ? "Keep it" : "Behold den") + '</button></div></div>'
+        : '<div class="raekke" style="margin:18px 0 0"><button class="knap valg" style="width:100%;padding:9px;color:var(--daempet);font-size:12px" data-a="kampSlutUdenGem" data-udengem="knap">✖ ' + (EN ? "End without saving" : "Afslut uden at gemme") + '</button></div>';
 
     }
   }

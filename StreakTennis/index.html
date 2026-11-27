@@ -157,6 +157,27 @@ input::placeholder{color:var(--daempet)}
 .bn-zoom text,.bn-hel text{font-weight:800;font-size:12px;letter-spacing:1.5px;fill:#fff;opacity:.6;pointer-events:none}
 .kort p.bn-tegn{font-size:11.5px;color:var(--daempet);margin:2px 0 0;line-height:1.7;text-align:center}
 .bn-tegn b{font-weight:800;color:var(--kridt)}
+/* ⭐ 5.20.0 · Niveauerne — kun klasser med forstavelsen nv- (og én variant af bn-zoom); intet eksisterende element får en ny regel */
+.bn-zoom.nv-lav{width:min(100%,max(200px,calc((100vh - 400px)*358/330)));width:min(100%,max(200px,calc((100dvh - 400px)*358/330)))}
+#nv-rapport{position:fixed;inset:0;z-index:80;overflow:auto;-webkit-overflow-scrolling:touch;background:#F4F1EA;color:#16202F;padding:max(12px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom));font-family:inherit}
+.nv-ark{max-width:720px;margin:0 auto}
+.nv-rbar{display:flex;gap:8px;margin:0 0 14px}
+.nv-rbar button{flex:1;min-height:46px;border-radius:12px;border:1.5px solid #16202F;background:#fff;color:#16202F;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}
+.nv-rbar button.nv-prim{background:#16202F;color:#fff}
+.nv-ark h1{font-size:19px;margin:0 0 2px;line-height:1.25;color:#16202F}
+.nv-ark h2{font-size:11.5px;letter-spacing:1.2px;text-transform:uppercase;margin:18px 0 6px;color:#3A4A66}
+.nv-ark p{font-size:12.5px;line-height:1.5;margin:0 0 4px;color:#3A4A66}
+.nv-ark p.nv-maerke{font-size:10.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin:0 0 4px}
+.nv-rul{overflow-x:auto}
+.nv-tab{width:100%;border-collapse:collapse;font-size:12px}
+.nv-tab th,.nv-tab td{padding:5px 4px;border-bottom:1px solid #D9D3C6;text-align:center;font-variant-numeric:tabular-nums;color:#16202F}
+.nv-tab th:first-child,.nv-tab td:first-child{text-align:left;font-weight:600}
+.nv-tab th{font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:#3A4A66}
+.nv-tab td small{display:block;font-size:10px;color:#3A4A66}
+.nv-tab tr.nv-del td{font-weight:800;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:#3A4A66;background:#E9E4D8;text-align:left}
+.nv-rbane{position:relative;width:min(100%,220px);aspect-ratio:358/560;margin:8px auto 4px;border-radius:12px;overflow:hidden}
+.nv-rbane svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+@media print{body.nv-udskriv>*:not(#nv-rapport){display:none!important}body.nv-udskriv{background:#fff!important}#nv-rapport{position:static;overflow:visible;background:#fff;padding:0}.nv-rbar{display:none}.nv-tab tr,.nv-rbane{break-inside:avoid}}
 .knap[style*="background:transparent"]::before,.knap[style*="background:none"]::before{content:none}
 .knap:active{transform:translateY(1px) scale(.99);filter:brightness(1.06)}
 @media (prefers-reduced-motion: reduce){.knap{transition:none}}
@@ -536,7 +557,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.19.0 · 26. november 2026";
+const VERSION = "v5.20.0 · 27. november 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -882,7 +903,7 @@ function pulsKort(k, EN) {
                   : { vinder: "vinderslag", es: "serve-es", uf: "gratis fejl", tvunget: "presset til fejl", dobbelt: "dobbeltfejl", returfejl: "returfejl", mod_vinder: "modstander-vinder", mod_es: "modstander-es", mod_returfejl: "modstanderens returfejl", mod_uf: "modstanderens gratis fejl", mod_tvunget: "modstander presset til fejl", mod_dobbelt: "modstander-dobbeltfejl" };
       var zt = (p.r === "T" && p.z ? (EN ? [", net", ", long", ", wide"] : [", i nettet", ", ud lang", ", ud bred"])[p.z - 1] || "" : "");
       var sd = stc.hist.map(function(h){ return h[0] + "-" + h[1]; }).join(" · ");
-      cap = '<p class="lille" style="margin:3px 0 0;color:var(--kridt)"><b>' + (EN ? "Ball " : "Bold ") + (bi + 1) + '</b> · ' + (sd ? sd + " · " : "") + (EN ? "games " : "partier ") + stc.gO + "-" + stc.gM + ' · <b style="color:' + (p.r === "V" ? "var(--vundet)" : "var(--tabt)") + '">' + (p.r === "V" ? (EN ? "won" : "vundet") : (EN ? "lost" : "tabt")) + '</b> · ' + (AA[p.å] || p.å) + (p.tf === 1 ? (EN ? " · forced by the serve" : " · tvunget af serven") : "") + (p.vn === 1 ? (EN ? " · at the net" : " · ved nettet") : "") + zt + '</p>';
+      cap = '<p class="lille" style="margin:3px 0 0;color:var(--kridt)"><b>' + (EN ? "Ball " : "Bold ") + (bi + 1) + '</b> · ' + (sd ? sd + " · " : "") + (EN ? "games " : "partier ") + stc.gO + "-" + stc.gM + ' · <b style="color:' + (p.r === "V" ? "var(--vundet)" : "var(--tabt)") + '">' + (p.r === "V" ? (EN ? "won" : "vundet") : (EN ? "lost" : "tabt")) + '</b> · ' + (AA[p.å] || nvAarsagNavn(p.å, EN)) + (p.tf === 1 ? (EN ? " · forced by the serve" : " · tvunget af serven") : "") + (p.vn === 1 ? (EN ? " · at the net" : " · ved nettet") : "") + zt + '</p>';
     }
   }
   return '<div style="margin:8px 0 2px">' + emne(EN ? "THE MATCH PULSE — tap the curve" : "KAMPENS PULS — tryk på kurven") + svg +
@@ -901,10 +922,10 @@ function netspilLinje(s, EN) {
 function statTabel(s, EN) {
   const diff = s.vindere - s.uf, nD = diff >= 0 ? 2 : diff >= -4 ? 1 : 0;
   const s1i = s.serve[1] ? s.s1pct : null, s1w = pctAf(s.s1), s2w = pctAf(s.s2), bpF = pctAf(s.bpFor), bpM = pctAf(s.bpMod), rt = pctAf(s.retur);
-  let r = statRk(EN ? "Winners / gifts" : "Vindere / gaver", s.vindere + " / " + s.uf, null, null, nD, "🧊");
+  let r = nvStatRk(s, EN) + (nvIngen(s) ? "" : statRk(EN ? "Winners / gifts" : "Vindere / gaver", s.vindere + " / " + s.uf, null, null, nD, "🧊"));   /* ⭐ 5.20.0 · nævneren først; ingen «0 / 0» om en kamp uden årsager */
   // ⭐ v4.131.0 · angrebsfejlen: den gratis fejl, der blev lavet, mens han gik efter det
   if (s.angreb > 0) r += statRk(EN ? "Attacking errors · of free errors" : "Angrebsfejl · af gratis fejl", s.angreb + " / " + s.uf, null, null, s.angreb >= s.uf / 2 ? 2 : 1, "⚔️");
-  r += statRk(EN ? "Created vs given away" : "Skabt vs. foræret", (s.balance > 0 ? "+" : "") + s.balance + " (" + s.skabt + " / " + s.uf + ")", null, null, s.balance >= 0 ? 2 : s.balance >= -8 ? 1 : 0, "⚖️");
+  if (!nvIngen(s)) r += statRk(EN ? "Created vs given away" : "Skabt vs. foræret", (s.balance > 0 ? "+" : "") + s.balance + " (" + s.skabt + " / " + s.uf + ")", null, null, s.balance >= 0 ? 2 : s.balance >= -8 ? 1 : 0, "⚖️");
   if (s.tvRetur > 0) r += statRk(EN ? "Return errors forced by the serve · not given away" : "Returfejl tvunget af serven · ikke foræret", String(s.tvRetur), null, null, 1, "🎾");   /* ⭐ 5.18.0 net */
   const B = (typeof BENCHMARKS !== "undefined" && S && BENCHMARKS[S.benchmark]) ? BENCHMARKS[S.benchmark] : SINNER;
   r += statRk(EN ? "1st serve in" : "1. serv i spil", s1i === null ? "–" : s1i + " %", s1i, B.s1in, niv(s1i, 60, 45));
@@ -954,8 +975,8 @@ function saetTabel(s, EN) {
   s.perSaet.forEach(function(ps, si){
     hoved += '<td style="text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;color:var(--is);padding:6px 10px">' + (EN ? "SET " : "SÆT ") + (si + 1) + '</td>';
     pr += '<td ' + vc + '><b style="font-size:12.5px">' + ps.v + '-' + ps.t + '</b></td>';
-    fr += '<td ' + vc + '>' + ps.uf + '</td>';
-    vr += '<td ' + vc + '>' + ps.vin + '</td>';
+    fr += '<td ' + vc + '>' + (ps.ux && ps.ux >= ps.v + ps.t ? '\u2013' : ps.uf) + '</td>';   /* ⭐ 5.20.0 · et sæt uden årsager har en streg, ikke et nul */
+    vr += '<td ' + vc + '>' + (ps.ux && ps.ux >= ps.v + ps.t ? '\u2013' : ps.vin) + '</td>';
     sr += '<td ' + vc + '>' + (ps.sp ? Math.round(ps.s1 / ps.sp * 100) + ' %' : '–') + '</td>';
   });
   return '<div style="background:var(--dyb);border-radius:8px;margin:4px 0 8px;overflow:hidden"><table style="width:100%;border-collapse:collapse">' + hoved + '</tr>' + pr + '</tr>' + fr + '</tr>' + vr + '</tr>' + sr + '</tr></table></div>';
@@ -1867,7 +1888,7 @@ function livAnalyse(EN) {
   //   `skabt` = vinderslag + es + presset til fejl — nøjagtig det tal,
   //   kampstatistikkens «Skabt vs. foræret» har brugt hele tiden. Live
   //   viste kun vinderslagene og gjorde en hel kategori usynlig.
-  chip(s.uf <= s.skabt + 1, (EN?"Created/errors ":"Skabt/fejl ")+s.skabt+"/"+s.uf);
+  if (!nvIngen(s)) chip(s.uf <= s.skabt + 1, (EN?"Created/errors ":"Skabt/fejl ")+s.skabt+"/"+s.uf);
   if (s.serve[1] >= 6 && s.s1pct !== null) chip(s.s1pct >= 55, (EN?"1st serve ":"1. serv ")+s.s1pct+" %");
   if (s.retur[1] >= 6 && rp !== null) chip(rp >= 30, (EN?"Return ":"Retur ")+rp+" %");
   if (s.bpFor[1] >= 1) chip(s.bpFor[0] > 0, (EN?"BP converted ":"BP udnyttet ")+s.bpFor[0]+"/"+s.bpFor[1]);
@@ -1891,13 +1912,14 @@ function livAnalyse(EN) {
   const top = raad.slice(0, 3);
   let rh;
   if (top.length) rh = '<p class="lille" style="margin:6px 0 4px;font-weight:800;letter-spacing:.5px">'+(EN?"ADVICE NOW":"RÅD NU")+'</p>' + top.map((r,i)=>'<p style="margin:0 0 7px;font-size:13px;line-height:1.5"><b style="color:var(--guld)">'+(i+1)+'.</b> '+r+'</p>').join("");
+  else if (nvIngen(s)) rh = nvLivIngen(EN);   /* ⭐ 5.20.0 · ingen «fejlene er under kontrol» om en kamp uden årsager */
   else rh = '<p style="margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--vundet)"><b>✓ '+(EN?"The strategy is holding.":"Strategien holder.")+'</b> '+(EN?"Errors under control, rallies on own terms. Keep going: depth, cross as standard, same face at 40-0 and 0-40 (rule V).":"Fejlene er under kontrol, og duellerne spilles på egne præmisser. Fortsæt: dybde, cross som standard, samme ansigt ved 40-0 og 0-40 (bud V).")+'</p>';
   const sn = st.setsO + st.setsM + 1;
   const ps = s.perSaet[sn-1] || { v:0, t:0, uf:0, vin:0 };
   return '<div class="kort" style="border:1.5px solid var(--guld)">' +
     '<h3 style="margin-top:0"><span class="badge-ai">AI</span> '+(EN?"Quick analysis — live":"Hurtig analyse — live")+'</h3>' +
     '<p class="lille" style="margin:0 0 8px">'+(EN?"Sets ":"Sæt ")+st.setsO+'-'+st.setsM+' · '+(EN?"games ":"partier ")+st.gO+'-'+st.gM+' · '+(EN?"this set ":"dette sæt ")+ps.v+'-'+ps.t+(EN?" pts":" point")+'</p>' +
-    '<div>'+chips.join("")+'</div>' + rh +
+    '<div>'+chips.join("")+'</div>' + nvLivLinje(s, EN) + rh +
     turneringsKontekst(EN) + '</div>';
 }
 function anbefalinger(EN) {
@@ -2219,7 +2241,7 @@ try { if (lager.hent("sai-laas") === "op") S.laast = false; } catch(e) {}
 try { if (lager.hent("sai-zoner") === "1") S.zoner = true; } catch(e) {}
 try { if (lager.hent("sai-side") === "0") S.side = false; } catch(e) {}   // ⭐ v4.99.0 · siden har sin egen kontakt (standard TIL)
 try { if (lager.hent("sai-netspil") === "1") S.netspil = true; } catch(e) {}   /* ⭐ 5.18.0 net · net-kontakten har sin egen nøgle (standard FRA) */
-try { if (lager.hent("sai-banen") === "1") S.banen = true; } catch(e) {}   /* ⭐ 5.19.0 · Banen har sin egen nøgle (standard FRA) */
+try { const _n0 = lager.hent("sai-niveau"); S.niveau = (_n0 === "s" || _n0 === "d" || _n0 === "b") ? _n0 : (lager.hent("sai-banen") === "1" ? "b" : "d"); } catch(e) { S.niveau = "d"; }   /* ⭐ 5.20.0 · niveauet: "s" kun stillingen · "d" som i dag (standard) · "b" Banen. Den, der havde Banen TIL i 5.19.0 (sai-banen = "1"), står på Banen */
 try { if (window.localStorage.getItem("sai-banen-lov") === "1") S.banenLov = true; } catch(e) {}   /* ⭐ 5.19.0 · låsen: serverens seneste ja huskes på telefonen, så Banen virker uden net */
 // ⭐⭐ v4.41.0 · SKADEN BOR PAA TELEFONEN OG INTET ANDET STED.
 // `gdpr-notat-v01.md` afsnit 2 lover skriftligt, at SKADESREGISTRERING
@@ -4202,6 +4224,7 @@ function statistik(k) {
     if (p.r === "V" && (p.å === "vinder" || p.å === "es")) ps.vin += 1;
     if (p.å === "dobbelt") ps.df += 1;
     if (p.å === "mod_tvunget") ps.mtv = (ps.mtv || 0) + 1;
+    if (nvVis() && nvUden(p)) ps.ux = (ps.ux || 0) + 1;   /* ⭐ 5.20.0 · point uden årsag pr. sæt — kun når der er nogen */
     if (F[i] && F[i].server === true) {
       ps.sp += 1;
       if (servNr(p) === 1) { ps.s1 += 1; if (p.r === "V") ps.s1v += 1; }   /* v5.17.0 · samme regel pr. sæt */
@@ -4240,7 +4263,7 @@ function statistik(k) {
   const _netB = k.point.filter(p => p.vn === 1), _netN = (x) => _netB.filter(p => p.nt === x).length;
   const netspil = { ialt: _netB.length, vundet: _netB.filter(p => p.r === "V").length, flugt: _netN(1), smash: _netN(2), andet: _netB.filter(p => p.r === "V" && p.nt !== 1 && p.nt !== 2).length,
     passeret: _netN(3), lobbet: _netN(4), egenFejl: _netN(5) };
-  return { st, v, t, uf, vindere, perSaet, tvRetur, netspil, skabt: vindere + modTv, modTv, balance: vindere + modTv - uf, modEs, zN, zL, zB, haand,
+  return { st, v, t, uf, vindere, perSaet, ux: nvX(k.point), tvRetur, netspil, skabt: vindere + modTv, modTv, balance: vindere + modTv - uf, modEs, zN, zL, zB, haand,
     angreb: k.point.filter(p => p.r === "T" && p.å === "uf" && p.g === 1).length,   /* ⭐ v4.131.0 · gratis fejl begået i et angreb */
     serve: [oServe.filter(p=>p.r==="V").length, oServe.length],
     retur: [retur.filter(p=>p.r==="V").length, retur.length],
@@ -4277,9 +4300,9 @@ function klnTal(k, s) {
     const bolde = ps.v + ps.t;
     if (!bolde && i + 1 !== nu) continue;   /* et sæt uden bolde vises kun, når det er det, der spilles nu */
     const skabt = ps.vin + (ps.mtv || 0);
-    saet.push({ nr: i + 1, igang: i + 1 === nu, bolde: bolde, v: ps.v, t: ps.t, vin: ps.vin, skabt: skabt, foraeret: ps.uf, balance: skabt - ps.uf, nok: bolde >= KLN_MIN });
+    saet.push({ nr: i + 1, igang: i + 1 === nu, bolde: bolde, v: ps.v, t: ps.t, vin: ps.vin, skabt: skabt, foraeret: ps.uf, balance: skabt - ps.uf, nok: bolde >= KLN_MIN, ux: ps.ux || 0 });
   }
-  return { n: pt.length, v: s.v, t: s.t,
+  return { n: pt.length, v: s.v, t: s.t, ux: s.ux || 0, uxV: s.ux ? pt.filter(function (p) { return p.r === "V" && nvUden(p); }).length : 0,   /* ⭐ 5.20.0 · point uden årsag (i alt · vundne) */
     uf: c("T", "uf"), dobbelt: c("T", "dobbelt"), returfejl: c("T", "returfejl") - s.tvRetur, tvRetur: s.tvRetur, tvunget: c("T", "tvunget"), netspil: s.netspil, vinder: c("V", "vinder"), es: c("V", "es"), modUf: c("V", "mod_uf"),
     vindere: s.vindere, modTv: s.modTv, skabt: s.skabt, foraeret: s.uf, balance: s.balance,
     seneste: pt.slice(-10).map(function (p) { return p.r === "V" ? "V" : "T"; }).join(""), saet: saet,
@@ -4316,7 +4339,9 @@ function klnKortHtml(k, s, EN, aaben) {
   let h = '<div class="kort" data-kln="kort" data-kln-udfald="' + (d.n >= KLN_MIN ? 'tal' : 'faa') + '" data-kln-bolde="' + d.n + '"' + (d.n >= KLN_MIN ? ' data-kln-fold="' + (aaben ? 0 : 1) + '"' : '') + '><div class="kln-titel">📊 ' + (EN ? 'THE MATCH RIGHT NOW' : 'KAMPEN LIGE NU') + '</div>';
   if (d.n < KLN_MIN) return h + '<p class="lille" data-kln="faa" style="margin:0">' + (EN ? 'Too few balls for numbers yet: ' + d.n + ' of the ' + KLN_MIN + ' needed.' : 'For få bolde til tal endnu: ' + d.n + ' af de ' + KLN_MIN + ', der skal til.') + '</p></div>';
   h += '<p class="lille" data-kln="grundlag" style="margin:0">' + d.n + (EN ? ' balls' : ' bolde') + '</p>';
+  h += nvKlnLinje(d, EN);   /* ⭐ 5.20.0 · «Årsag på N af M point» — tomt, når alle point har en årsag */
   h += gruppe(EN ? 'POINTS' : 'POINT') + klnLinje("vundet", EN ? 'Won' : 'Vundet', d.v, d.n, "vundet", af) + klnLinje("tabt", EN ? 'Lost' : 'Tabt', d.t, d.n, "tabt", af);
+  if (d.ux >= d.n) h += nvKlnIngen(EN); else   /* ⭐ 5.20.0 · ingen balance om en kamp uden årsager */
   h += gruppe(EN ? 'CREATED VS GIVEN AWAY' : 'SKABT-BALANCEN') + '<div class="kln-bal" data-kln="balance" data-kln-t="' + d.balance + '" data-kln-skabt="' + d.skabt + '" data-kln-foraeret="' + d.foraeret + '">' +
     '<b style="color:' + (d.balance > 0 ? 'var(--vundet)' : d.balance < 0 ? 'var(--tabt)' : 'var(--kridt)') + '">' + (d.balance > 0 ? '+' : '') + d.balance + '</b><span>' + d.skabt + (EN ? ' created · ' : ' skabt · ') + d.foraeret + (EN ? ' given away' : ' foræret') + '</span></div>' +
     '<p class="kln-note">' + (EN ? 'Created is winners, aces and balls where the opponent was forced into an error. Given away is unforced errors, double faults and return errors.'
@@ -4329,22 +4354,22 @@ function klnKortHtml(k, s, EN, aaben) {
     const sum = x.skabt + x.foraeret, pct = x.nok && sum > 0 ? Math.round(x.skabt / sum * 100) : 0;
     return '<div class="kln-linje" data-kln="saet-' + x.nr + '" data-kln-t="' + x.balance + '" data-kln-skabt="' + x.skabt + '" data-kln-foraeret="' + x.foraeret + '" data-kln-v="' + x.v + '" data-kln-tabt="' + x.t + '" data-kln-vin="' + x.vin + '" data-kln-nok="' + (x.nok ? 1 : 0) + '"' + (x.igang ? ' data-kln-igang="1"' : '') + '>' +
       '<span>' + (EN ? 'Set ' + x.nr : x.nr + '. sæt') + (x.igang ? (EN ? ' · in progress' : ' · i gang') : '') + '</span>' +
-      '<b>' + (x.nok ? (x.balance > 0 ? '+' : '') + x.balance : '<em>' + (EN ? 'too few balls yet' : 'for få bolde endnu') + '</em>') + '</b>' +
-      '<small>' + x.skabt + (EN ? ' created · ' : ' skabt · ') + x.foraeret + (EN ? ' given away · points ' : ' foræret · point ') + x.v + '-' + x.t + (EN ? ' · winners ' : ' · vindere ') + x.vin + '</small>' +
+      '<b>' + (x.ux && x.ux >= x.bolde ? '<em>' + nvUdenNavn(EN) + '</em>' : x.nok ? (x.balance > 0 ? '+' : '') + x.balance : '<em>' + (EN ? 'too few balls yet' : 'for få bolde endnu') + '</em>') + '</b>' +
+      '<small>' + x.skabt + (EN ? ' created · ' : ' skabt · ') + x.foraeret + (EN ? ' given away · points ' : ' foræret · point ') + x.v + '-' + x.t + (EN ? ' · winners ' : ' · vindere ') + x.vin + (x.ux ? ' · ' + x.ux + (EN ? ' no cause' : ' uden årsag') : '') + '</small>' +
       '<i aria-hidden="true" style="--b:' + pct + '%;--f:var(--vundet)' + (x.nok && sum > 0 ? ';--g:var(--tabt)' : '') + '"></i></div>';
   }).join("");
   /* ── folden: de fire grupper ovenfor står altid. Knappen står samme sted foldet og foldet ud, så den ikke flytter sig under fingeren ── */
   h += '<button class="knap valg kln-knap" data-a="klnFold" data-kln="fold" aria-expanded="' + (aaben ? 'true' : 'false') + '">' + (aaben ? (EN ? 'Hide' : 'Skjul') : (EN ? 'Show all numbers' : 'Vis alle tal')) + '</button>';
   if (!aaben) return h + '</div>';
   /* ── foldet ud: resten — de tre grupper fra trænerens kort, og så det, kun telefonen har ── */
-  h += gruppe(EN ? 'OWN ERRORS' : 'EGNE FEJL', '<span data-kln="foraeret-ialt" data-kln-t="' + d.foraeret + '" data-kln-n="' + d.t + '">' + (EN ? d.foraeret + ' of the ' + d.t + ' balls lost' : d.foraeret + ' af de ' + d.t + ' tabte bolde') + '</span>') +
-    klnLinje("uf", EN ? 'Unforced errors' : 'Gratis fejl', d.uf, d.t, "tabt", af) + klnLinje("dobbelt", EN ? 'Double faults' : 'Dobbeltfejl', d.dobbelt, d.t, "tabt", af) + klnLinje("returfejl", EN ? 'Return errors' : 'Returfejl', d.returfejl, d.t, "tabt", af);
+  if (d.ux < d.n) h += gruppe(EN ? 'OWN ERRORS' : 'EGNE FEJL', '<span data-kln="foraeret-ialt" data-kln-t="' + d.foraeret + '" data-kln-n="' + d.t + '">' + (EN ? d.foraeret + ' of the ' + d.t + ' balls lost' : d.foraeret + ' af de ' + d.t + ' tabte bolde') + '</span>') +
+    klnLinje("uf", EN ? 'Unforced errors' : 'Gratis fejl', d.uf, d.t, "tabt", af) + klnLinje("dobbelt", EN ? 'Double faults' : 'Dobbeltfejl', d.dobbelt, d.t, "tabt", af) + klnLinje("returfejl", EN ? 'Return errors' : 'Returfejl', d.returfejl, d.t, "tabt", af) + (d.ux - d.uxV > 0 ? klnLinje("ux-tabt", EN ? 'Lost, no cause' : 'Tabt uden årsag', d.ux - d.uxV, d.t, "daempet", af) : '');
   /* ⭐ 5.18.0 net · tvunget af modstanderen — presset til fejl i duellen og returfejl tvunget af serven. Tæller hos modstanderen, ikke som foræret. Kun når kampen har en tvungen returfejl (tf) — ellers er kortet, som det var. */
   if (d.tvRetur > 0) h += gruppe(EN ? 'FORCED BY THE OPPONENT' : 'TVUNGET AF MODSTANDEREN', '<span data-kln="tvunget-ialt" data-kln-t="' + (d.tvunget + d.tvRetur) + '" data-kln-n="' + d.t + '">' + (EN ? (d.tvunget + d.tvRetur) + ' of the ' + d.t + ' balls lost · count for the opponent' : (d.tvunget + d.tvRetur) + ' af de ' + d.t + ' tabte bolde · tæller hos modstanderen') + '</span>') +
     (d.tvunget ? klnLinje("tvunget", EN ? 'Pressed into error' : 'Presset til fejl', d.tvunget, d.t, "is", af) : '') + (d.tvRetur ? klnLinje("tf-retur", EN ? 'Return error · big serve' : 'Returfejl · hård serv', d.tvRetur, d.t, "is", af) : '');
-  h += gruppe(EN ? 'WINNING SHOTS' : 'VINDERE', '<span data-kln="vindere-ialt" data-kln-t="' + d.vindere + '" data-kln-n="' + d.v + '">' + (EN ? d.vindere + ' of the ' + d.v + ' balls won' : d.vindere + ' af de ' + d.v + ' vundne bolde') + '</span>') +
-    klnLinje("vinder", EN ? 'Winners' : 'Vinderslag', d.vinder, d.v, "vundet", af) + klnLinje("es", EN ? 'Aces' : 'Esser', d.es, d.v, "vundet", af);
-  h += gruppe(EN ? 'OPPONENT' : 'MODSTANDER', EN ? 'of the balls won' : 'af de vundne bolde') +
+  if (d.ux < d.n) h += gruppe(EN ? 'WINNING SHOTS' : 'VINDERE', '<span data-kln="vindere-ialt" data-kln-t="' + d.vindere + '" data-kln-n="' + d.v + '">' + (EN ? d.vindere + ' of the ' + d.v + ' balls won' : d.vindere + ' af de ' + d.v + ' vundne bolde') + '</span>') +
+    klnLinje("vinder", EN ? 'Winners' : 'Vinderslag', d.vinder, d.v, "vundet", af) + klnLinje("es", EN ? 'Aces' : 'Esser', d.es, d.v, "vundet", af) + (d.uxV > 0 ? klnLinje("ux-vundet", EN ? 'Won, no cause' : 'Vundet uden årsag', d.uxV, d.v, "daempet", af) : '');
+  if (d.ux < d.n) h += gruppe(EN ? 'OPPONENT' : 'MODSTANDER', EN ? 'of the balls won' : 'af de vundne bolde') +
     klnLinje("mod-uf", EN ? 'Unforced errors' : 'Gratis fejl', d.modUf, d.v, "is", af) + klnLinje("mod-tv", EN ? 'Forced into error' : 'Presset til fejl', d.modTv, d.v, "is", af);
   /* ⭐ 5.18.0 net · VED NETTET — kun de bolde, der er mærket. Nævneren står ved. */
   const NN = d.netspil;
@@ -4494,12 +4519,15 @@ function _gemBold(aarsag, h, z) {
    er i brug — uden lov er der intet spor af den: ingen kontakt, ingen flise, ingen linje, intet kort.
    Loven hører til TELEFONENS egen spiller (rå nøgle, ikke visningens): team-visningen spørger porten med en
    team-nøgle, som porten ikke kender, så dens svar tæller ikke — dér gælder telefonens egen lov. */
-function banenTil() { return S.banenLov === true && S.banen === true; }
+function banenTil() { return nvNiveau() === "b"; }   /* ⭐ 5.20.0 · tilladelse OG niveauet Banen */
 /* et igangværende trin nulstilles pænt — som de andre kontakter gør */
-function _bnSluk() { S.aarsagValgt = null; S.efterTryk = null; S.zoneValgt = null; S.vedNet = false; S.netSlag = null; _bnNulstil(); }
-function _bnSaet(til) {
-  if (!S.banenLov || (S.banen === true) === !!til) return;
-  S.banen = !!til; _bnSluk(); lager.gem("sai-banen", S.banen ? "1" : "0"); render();
+function _bnSluk() { S.aarsagValgt = null; S.efterTryk = null; S.zoneValgt = null; S.vedNet = false; S.netSlag = null; _bnNulstil(); _nvRyd(); }
+/* ⭐ 5.20.0 · niveauet skiftes ét sted. Et igangværende point nulstilles pænt, og niveauet gælder fra næste point.
+   Den gamle nøgle sai-banen skrives med, så en ældre version af appen står rigtigt. */
+function _nvSaet(n) {
+  if (!S.banenLov || (n !== "s" && n !== "d" && n !== "b") || nvNiveau() === n) return;
+  S.niveau = n; _bnSluk(); if (n === "s") S.afventer = null;
+  lager.gem("sai-niveau", n); lager.gem("sai-banen", n === "b" ? "1" : "0"); render();
 }
 function _bnLovSaet(ja) {
   const iBrug = banenTil();
@@ -4511,7 +4539,7 @@ const _BN_SERV = { es: 1, dobbelt: 1, mod_es: 1, mod_dobbelt: 1 };   /* serv: «
 const _BN_MOD = { mod_uf: 1, mod_tvunget: 1, mod_returfejl: 1, mod_dobbelt: 1, mod_vinder: 1, mod_es: 1 };   /* modstanderen slog sidst → bolden lander i spillerens halvdel */
 const _BN_VINDER = { vinder: 1, es: 1, mod_vinder: 1, mod_es: 1 };   /* skal lande inde; alt andet er en fejl og kan ikke lande inde */
 let _bnVent = null, _bnFinger = null, _bnSlap = null;
-function _bnNulstil() { S.bnH = undefined; S.bnStod = undefined; S.bnBold = undefined; _bnFinger = null; }
+function _bnNulstil() { S.bnH = undefined; S.bnStod = undefined; S.bnBold = undefined; _bnFinger = null; S.nvSt = false; S.nvDl = 0; }
 /* et sted på banen: to hele tal i kassen (+ evt. 1 for hurtigknap). Bruges også af rensKamp ved opstart — kun tal, ingen konstanter herfra */
 function _bnPar(v) {
   if (!Array.isArray(v) || (v.length !== 2 && v.length !== 3)) return null;
@@ -4519,9 +4547,13 @@ function _bnPar(v) {
   return v[2] === 1 ? [v[0], v[1], 1] : [v[0], v[1]];
 }
 function _bnFelter(q) {
-  const lb = _bnPar(q.lb), sp = _bnPar(q.sp);
-  if (!lb && !sp) return {};
-  const ud = {}; if (lb) ud.lb = lb; if (sp) ud.sp = sp; return ud;
+  const lb = _bnPar(q.lb), sp = _bnPar(q.sp), fb = _bnPar(q.fb);
+  const ud = {}; if (lb) ud.lb = lb; if (sp) ud.sp = sp;
+  /* ⭐ 5.20.0 · Niveauerne: 1. serv-fejlens zone (fz 1-3) og sted (fb), stopbold (st), duellens længde (dl 1-3) — kun når de er sat, kun tal */
+  if (q.fz === 1 || q.fz === 2 || q.fz === 3) { ud.fz = q.fz; if (fb) ud.fb = fb; }
+  if (q.st === 1) ud.st = 1;
+  if (q.dl === 1 || q.dl === 2 || q.dl === 3) ud.dl = q.dl;
+  return ud;
 }
 function bnZone(x, y, serv) {
   const d = Math.abs(y - 280);
@@ -4594,10 +4626,12 @@ function bnStodTekst(p, EN) {
 /* krogen i _gemBold: uden en ventende Banen-bold sker der ingenting */
 function _bnPaaBold(b, aarsag) {
   const e = _bnVent; _bnVent = null;
+  const fj = S.serv === 2 ? S.nvFejl : null; S.nvFejl = null; S.nvTrin = null;   /* ⭐ 5.20.0 · 1. serv-fejlen holdes kun, til pointet er gemt */
   if (!e) return;
   if (e.sp) { b.sp = e.sp; if (!_NET_IKKE[aarsag] && bnSted(e.sp[1]) === "net") b.vn = 1; }
   if (e.lb) b.lb = e.lb;
   if (S.aktiv) { S.aktiv.haand = bnHaand(); S.aktiv.modHaand = bnModHaand(); }
+  _nvPaaBold(b, aarsag, fj);   /* ⭐ 5.20.0 · fz/fb · st · dl — kun på telefonen */
   _bnNulstil();
 }
 function _bnGem() {
@@ -4677,48 +4711,445 @@ function bnTrinHtml(EN) {
     '<div class="bn-titel">' + titel + '<small>' + esc(under) + '</small></div>' +
     '<button class="knap valg bn-rund" data-a="bnAnnuller" aria-label="' + (EN ? "Cancel the whole point" : "Fortryd hele pointet") + '">\u2715</button></div>' +
     '<div class="bn-laes' + (f && !f.ok ? " nej" : "") + '" id="bn-laes" aria-live="polite">' + esc(f ? f.tekst : laes) + '</div>' +
-    '<div class="bn-zoom" id="bn-zoom">' + bnBaneSvg(ekstra, halv, "bn-svg") + '</div>' +
+    nvDlHtml(EN, stod, id) + '<div class="bn-zoom' + (nvDlVises(stod, id) ? " nv-lav" : "") + '" id="bn-zoom">' + bnBaneSvg(ekstra, halv, "bn-svg") + '</div>' +   /* ⭐ 5.20.0 · duellens længde over banen, så den ses før fingeren sættes */
     (hurtig ? '<div class="raekke">' + hurtig + '</div>' : "") + midt +
     '<div class="raekke">' + bund + '</div></div></div>';
 }
 /* hånd-trinet med Banen tændt: «Spring over» går videre til banen, «Gem pointet nu» gemmer med det, der er sat */
 function bnHaandBund(EN) {
   const stil = 'style="min-height:44px;padding:9px 6px;background:transparent;border:1.5px dashed var(--kant);color:var(--daempet);font-size:12px"';
-  return '<div class="raekke"><button class="knap" ' + stil + ' data-a="haand" data-v="0">' + (EN ? "Skip" : "Spring over") + '</button>' +
+  return nvStopHtml(EN) + '<div class="raekke"><button class="knap" ' + stil + ' data-a="haand" data-v="0">' + (EN ? "Skip" : "Spring over") + '</button>' +
     '<button class="knap" ' + stil + ' data-a="bnGem">' + (EN ? "Save the point now" : "Gem pointet nu") + '</button></div>';
 }
-/* kontakten — i «AVANCERET — VALGFRIT», hvor FH/BH og fejl-zoner vælges før kampen. Hånden er appens egen indstilling (vaelgHaand) */
-function bnOpsaetHtml(EN) {
+/* ⭐ 5.20.0 · NIVEAUERNE (ejeren 27/11: «så nemt som muligt og så detaljeret som muligt»). Tre niveauer pr. kamp, valgt de tre
+   steder, hvor Banens kontakt stod i 5.19.0 (AVANCERET på kampstart · flisen i ⚙ Indstillinger · «⚙ Ret kampen»):
+   "s" Kun stillingen · "d" Som i dag (standard) · "b" Banen. Niveauet bor i sai-niveau (pr. visning, som zonerne).
+   🔒 Uden tilladelsen (S.banenLov) er niveauet altid "d", og der er intet spor: ingen vælger, ingen nye trin, ingen eksport,
+   ingen nye linjer. nvNiveau() er DET ENE STED, der afgør niveauet; banenTil() og kunStilling() spørger den.
+   KUN STILLINGEN: ét tryk på VANDT eller TABT gemmer pointet med årsagen "x" (= point uden årsag). «2. serv» virker som i dag.
+   Alt, der tæller årsager, siger nævneren ærligt: «Årsag på N af M point».
+   BANEN har fire nye felter på bolden — alle valgfrie, alle kun på telefonen:
+   fz 1. serv-fejlens zone (1 net · 2 lang · 3 bred) og fb = [x, y(, 1)] hvor 1. serven landede (samme kasse som lb) ·
+   st = 1 stopbold · dl duellens længde (1 kort 1-4 slag · 2 mellem 5-8 · 3 lang 9+).
+   ⛔ Ingen af dem står på en hvidliste: analysen, udviklingsbrevet, arkivet, live, kampresuméet og rival-analysen bygger deres
+   egne kopier felt for felt. Felterne overlever en genstart gennem _bnFelter i rensKamp — som lb og sp.
+   EKSPORTEN (CSV og rapport) laves på telefonen: intet kald, intet bibliotek, og en note kommer aldrig med. */
+function nvKendt(a) {
+  return a === "vinder" || a === "es" || a === "uf" || a === "tvunget" || a === "dobbelt" || a === "returfejl" ||
+    a === "mod_vinder" || a === "mod_es" || a === "mod_uf" || a === "mod_tvunget" || a === "mod_dobbelt" || a === "mod_returfejl";
+}
+/* et point uden årsag: "x" — og alt andet, der ikke er en af de tolv kendte årsager, så summen altid går op med boldtallet */
+function nvUden(p) { return !p || !nvKendt(p["\u00e5"]); }
+/* nævnerne vises kun med tilladelsen: uden den er hver skærm som 5.19.0 (følge-visningen er undtagelsen — den er for tilskueren) */
+function nvVis() { return S.banenLov === true; }
+function nvX(pt) { if (!nvVis() || !Array.isArray(pt)) return 0; let x = 0; for (let i = 0; i < pt.length; i++) if (nvUden(pt[i])) x++; return x; }
+function nvIngen(s) { return !!s && s.ux > 0 && s.ux >= s.v + s.t; }
+function nvNiveau() { return (S.banenLov === true && (S.niveau === "s" || S.niveau === "b")) ? S.niveau : "d"; }
+function kunStilling() { return nvNiveau() === "s"; }
+let _nvFinger = null;
+function _nvRyd() { S.nvTrin = null; S.nvFejl = null; _nvFinger = null; }
+function nvNiveauNavn(n, EN) { return n === "s" ? (EN ? "Score only" : "Kun stillingen") : n === "b" ? (EN ? "The court" : "Banen") : (EN ? "As today" : "Som i dag"); }
+function nvAarsagPaa(n, m, EN) { return EN ? "Cause on " + n + " of " + m + " points" : "Årsag på " + n + " af " + m + " point"; }
+function nvUdenNavn(EN) { return EN ? "point, no cause" : "point uden årsag"; }
+/* etiketten for en årsag, tabellen ikke kender: med tilladelsen «point uden årsag», uden den som før (årsagens egen kode) */
+function nvAarsagNavn(id, EN) { return nvVis() ? nvUdenNavn(EN) : id; }
+/* ── vælgeren: de samme tre knapper alle tre steder ── */
+function nvVaelgerHtml(EN, hvor) {
+  const nu = nvNiveau();
+  return '<div class="raekke" data-nv="vaelger" data-nv-hvor="' + hvor + '" data-nv-niveau="' + nu + '" style="margin:0">' + ["s", "d", "b"].map(function (n) {
+    return '<button class="knap valg' + (nu === n ? " til" : "") + '" style="min-height:46px;font-size:12px;padding:6px 4px" data-a="niveau" data-v="' + n + '" data-nv="niveau-' + n + '" aria-pressed="' + (nu === n ? "true" : "false") + '">' + nvNiveauNavn(n, EN) + '</button>';
+  }).join("") + '</div>';
+}
+function nvForklaring(n, EN) {
+  if (n === "s") return EN ? "One tap per point: who won it. The score, the serve and the big points are counted. The cause is not asked."
+    : "Ét tryk pr. point: hvem vandt det. Stillingen, serven og de store point tælles. Årsagen spørges ikke.";
+  if (n === "b") return EN ? "Everything: after the cause, two taps on a drawn court \u2014 where the player stood and where the ball landed. Also drop shot, rally length and where a missed 1st serve went. Skip is always there."
+    : "Det hele: efter årsagen to tryk på en tegnet bane \u2014 hvor spilleren stod, og hvor bolden landede. Også stopbold, duellens længde, og hvor en fejlet 1. serv røg hen. Spring over står der altid.";
+  return EN ? "The match screen exactly as you know it: won or lost, and how the ball ended." : "Kampskærmen, præcis som du kender den: vandt eller tabt, og hvordan bolden endte.";
+}
+/* i «AVANCERET — VALGFRIT» på kampstart (med overskrift) og i rummet i ⚙ Indstillinger (uden). Hånden er appens egen indstilling (vaelgHaand) */
+function nvOpsaetHtml(EN, hvor) {
   if (!S.banenLov) return "";   /* låst: intet spor */
-  const til = banenTil();
-  let h = '<div class="raekke" style="margin:8px 0 0"><button class="knap valg ' + (til ? "til" : "") + '" data-a="banenToggle" data-bn="kontakt" data-bn-til="' + (til ? 1 : 0) + '">🎾 ' + (EN ? "Court" : "Banen") + " \u00b7 " + (til ? (EN ? "ON" : "TIL") : (EN ? "OFF" : "FRA")) +
-    '<br><span style="font-size:10.5px;opacity:.8">' + (EN ? "place the ball and the player on the court with your finger" : "sæt bolden og spilleren på banen med fingeren") + '</span></button></div>';
-  if (!til) return h;
+  const nu = nvNiveau();
+  let h = (hvor === "start" ? '<p class="lille" style="margin:10px 0 5px">🎾 ' + (EN ? "Level \u00b7 how much do you register per point?" : "Niveau \u00b7 hvor meget taster du pr. point?") + '</p>' : "") +
+    nvVaelgerHtml(EN, hvor) + '<p class="lille" data-nv="forklaring" style="margin:8px 0 0;opacity:.8">' + nvForklaring(nu, EN) + " " +
+    (EN ? "Can be changed mid-match under «\u2699 Fix the match»." : "Kan skiftes midt i kampen under «\u2699 Ret kampen».") + '</p>';
+  if (nu !== "b") return h;
   h += '<p class="lille" style="margin:9px 0 5px">' + esc(bnSpiller(EN)) + (EN ? " plays with" : " spiller med") + '</p><div class="raekke" style="margin-bottom:0">' +
     '<button class="knap valg ' + (S.haand !== "venstre" ? "til" : "") + '" style="min-height:44px" data-a="vaelgHaand" data-v="hoejre" data-bn="haand-h">🫱 ' + (EN ? "Right hand" : "Højre hånd") + '</button>' +
-    '<button class="knap valg ' + (S.haand === "venstre" ? "til" : "") + '" style="min-height:44px" data-a="vaelgHaand" data-v="venstre" data-bn="haand-v">🫲 ' + (EN ? "Left hand" : "Venstre hånd") + '</button></div>' +
-    '<p class="lille" style="margin:8px 0 0;opacity:.8">' + (EN
-      ? "With Court on, two taps on the court replace the zone buttons and «At the net»: where the player stood and where the ball landed. Skip is always there. Can also be turned on and off mid-match under «\u2699 Fix the match»."
-      : "Med Banen til erstatter to tryk på banen zone-knapperne og «Ved nettet»: hvor spilleren stod, og hvor bolden landede. Spring over står der altid. Kan også slås til og fra midt i kampen under «\u2699 Ret kampen».") + '</p>';
+    '<button class="knap valg ' + (S.haand === "venstre" ? "til" : "") + '" style="min-height:44px" data-a="vaelgHaand" data-v="venstre" data-bn="haand-v">🫲 ' + (EN ? "Left hand" : "Venstre hånd") + '</button></div>';
   return h;
 }
-/* flisen i ⚙ Indstillinger — samme kontakt og samme tilstand som i AVANCERET. Kun med lov; ellers er gitteret som før */
-function bnFliseHtml(opsKort, EN) {
+/* flisen i ⚙ Indstillinger — samme vælger og samme tilstand som i AVANCERET. Kun med tilladelsen; ellers er gitteret som før */
+function nvFliseHtml(opsKort, EN) {
   if (!S.banenLov) return "";
-  const til = banenTil();
-  return opsKort("banen", "🎾", (EN ? "THE COURT" : "BANEN"),
-    (til ? (EN ? "ON" : "TIL") : (EN ? "OFF" : "FRA")) + " \u00b7 " + (S.haand === "venstre" ? (EN ? "left hand" : "venstre hånd") : (EN ? "right hand" : "højre hånd")), til ? "var(--is)" : "var(--daempet)",
-    '<p class="lille" style="margin:0 0 2px">' + (EN
-      ? "A second way to register a point: with your finger on a drawn court. Off = the match screen exactly as you know it."
-      : "En anden måde at taste et point på: med fingeren på en tegnet bane. Fra = kampskærmen, præcis som du kender den.") + '</p>' + bnOpsaetHtml(EN));
+  const nu = nvNiveau();
+  return opsKort("banen", "🎾", (EN ? "LEVEL" : "NIVEAU"),
+    nvNiveauNavn(nu, EN) + (nu === "b" ? " \u00b7 " + (S.haand === "venstre" ? (EN ? "left hand" : "venstre hånd") : (EN ? "right hand" : "højre hånd")) : ""), nu === "d" ? "var(--daempet)" : "var(--is)",
+    '<p class="lille" style="margin:0 0 10px">' + (EN
+      ? "Three ways to register a match \u2014 from one tap per point to the finger on a drawn court."
+      : "Tre måder at taste en kamp på \u2014 fra ét tryk pr. point til fingeren på en tegnet bane.") + '</p>' + nvOpsaetHtml(EN, "indst"));
 }
-/* linjen under «⚙ Ret kampen» — Banen kan slås fra og til midt i en kamp. Kun med lov */
-function bnRetHtml(EN) {
+/* linjen under «⚙ Ret kampen» — niveauet kan skiftes midt i en kamp og gælder fra næste point. Kun med tilladelsen */
+function nvRetHtml(EN) {
   if (!S.banenLov) return "";
-  const til = banenTil();
-  const kn = function (v, t, valgt) { return '<button class="knap valg' + (valgt ? " til" : "") + '" style="flex:1;min-height:44px;font-size:12px;padding:6px 4px" data-a="banenSaet" data-v="' + v + '" data-bn="ret-' + v + '">' + t + '</button>'; };
-  return '<div data-bn="ret" data-bn-til="' + (til ? 1 : 0) + '" style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="flex:0 0 84px;font-size:11.5px;color:var(--daempet)">🎾 ' + (EN ? "Court" : "Banen") + '</span>' +
-    kn("1", EN ? "ON" : "TIL", til) + kn("0", EN ? "OFF" : "FRA", !til) + '</div>';
+  return '<div data-nv="ret" style="margin-bottom:6px"><span style="display:block;font-size:11.5px;color:var(--daempet);margin:4px 0 5px">🎾 ' +
+    (EN ? "Level \u00b7 applies from the next point" : "Niveau \u00b7 gælder fra næste point") + '</span>' + nvVaelgerHtml(EN, "ret") + '</div>';
+}
+/* ── KUN STILLINGEN ── */
+function _nvKunGem(v) {
+  if (!S.aktiv || (v !== "vundet" && v !== "tabt")) return;
+  S.afventer = v; S.aarsagValgt = null; S.efterTryk = null; S.zoneValgt = null; S.vedNet = false; S.netSlag = null; S._angreb = false; S._tvRetur = false;
+  _gemBold("x", 0, 0);
+}
+/* rækken, hvor de tre kontakter (FH/BH · Zoner · Net) ellers står: de spørger om noget, dette niveau ikke taster */
+function nvKunRaekkeHtml(EN) {
+  return '<div class="raekke" style="margin-bottom:6px" data-nv="kun"><div style="flex:3 1 0;min-width:0;display:flex;align-items:center;justify-content:center;border:1.5px dashed var(--kant);border-radius:14px;padding:6px 10px;font-size:11.5px;font-weight:700;color:var(--daempet);text-align:center">🎾 ' +
+    (EN ? "Score only \u00b7 one tap per point" : "Kun stillingen \u00b7 ét tryk pr. point") + '</div>' + noteKnapHtml(EN) + '</div>' + noteFeltHtml(EN);
+}
+/* ── BANEN · «Hvor røg 1. serven hen?» ── */
+function _nvServerNu() { const k = S.aktiv; return !!(k && beregnStilling(k.point, k.oskarFirst, k.mtb, k.justeringer, k.saetTil, k.noAd).server); }
+function _nvFejlAaben() { return banenTil() && S.nvTrin === "fejl1" && S.serv === 2 && !!S.aktiv && !S.aarsagValgt; }
+function _nvServ() {
+  S.nvFejl = null; _nvFinger = null;
+  S.nvTrin = (S.serv === 2 && banenTil() && !!S.aktiv && S.aktiv.serverValgt !== false && !S.aarsagValgt) ? "fejl1" : null;
+}
+function nvFzNavn(z, EN) { return z === 1 ? (EN ? "in the net" : "i nettet") : z === 2 ? (EN ? "long" : "lang") : z === 3 ? (EN ? "wide" : "bred") : ""; }
+/* en fejlet 1. serv lander i nettet eller ude — sat i servefeltet afvises den (som en fejl sat «inde» på Banens bold-trin) */
+function nvFejlDom(p, EN) {
+  const z = bnZone(p.x, p.y, true), ok = z.zone !== "ind";
+  return { ok: ok, zone: z.zone, tekst: bnBoldTekst(z, true, EN) + (ok ? "" : (EN ? " \u2014 a missed serve lands in the net or out" : " \u2014 en fejlet serv lander i nettet eller ude")) };
+}
+function nvFejlTrinHtml(EN) {
+  if (!_nvFejlAaben()) return "";
+  const k = S.aktiv, oppe = _nvServerNu(), halv = oppe ? "top" : "bund";
+  const NAVN = bnSpiller(EN), MOD = String((k && k.modstander) || (EN ? "Opponent" : "Modstander"));
+  const f = (_nvFinger && _nvFinger.p) ? _nvFinger : null;
+  const tx = function (x, y, t, rot) { return '<text ' + (rot ? 'transform="translate(' + x + ',' + y + ') rotate(' + rot + ')"' : 'x="' + x + '" y="' + y + '"') + ' text-anchor="middle" style="font-size:10.5px">' + t + '</text>'; };
+  const my = oppe ? 215 : 345;
+  const ekstra = '<rect data-nv="servefelt" x="78" y="' + (oppe ? 150 : 280) + '" width="202" height="130" fill="#fff" opacity=".12"/>' +
+    tx(179, oppe ? 98 : 468, EN ? "LONG" : "LANG") + tx(24, my, EN ? "WIDE" : "BRED", -90) + tx(334, my, EN ? "WIDE" : "BRED", 90) + bnSigte("bold", f);
+  const knap = function (v, tekst, klasse) { return '<button class="knap' + (klasse || "") + '" style="min-height:46px' + (klasse ? "" : ";background:var(--flade)") + '" data-a="nvFejl" data-v="' + v + '">' + tekst + '</button>'; };
+  const under = oppe ? (EN ? bnEjer(NAVN, true) + " 1st serve \u00b7 " + bnEjer(MOD, true) + " half" : bnEjer(NAVN, false) + " 1. serv \u00b7 " + bnEjer(MOD, false) + " halvdel")
+    : (EN ? bnEjer(MOD, true) + " 1st serve \u00b7 " + bnEjer(NAVN, true) + " half" : bnEjer(MOD, false) + " 1. serv \u00b7 " + bnEjer(NAVN, false) + " halvdel");
+  return '<div id="nv-skaerm" data-nv-trin="fejl1" data-bn-halv="' + halv + '" style="position:fixed;inset:0;z-index:60;background:var(--dyb);overflow:auto;padding:max(12px,env(safe-area-inset-top)) 16px max(14px,env(safe-area-inset-bottom))"><div class="bn-ind">' +
+    '<div class="bn-top"><button class="knap valg bn-rund" data-a="nvFejl" data-v="tilbage" aria-label="' + (EN ? "Back to 1st serve" : "Tilbage til 1. serv") + '">\u2039</button>' +
+    '<div class="bn-titel">' + (EN ? "Where did the 1st serve go?" : "Hvor røg 1. serven hen?") + '<small>' + esc(under) + '</small></div>' +
+    '<span style="flex:none;width:46px"></span></div>' +
+    '<div class="bn-laes' + (f && !f.ok ? " nej" : "") + '" id="bn-laes" aria-live="polite">' + esc(f ? f.tekst : (EN ? "Put your finger where the 1st serve landed" : "Sæt fingeren, hvor 1. serven landede")) + '</div>' +
+    '<div class="bn-zoom" id="bn-zoom">' + bnBaneSvg(ekstra, halv, "bn-svg") + '</div>' +
+    '<div class="raekke">' + knap("net", EN ? "Net" : "Net") + knap("lang", EN ? "Long" : "Lang") + knap("bred", EN ? "Wide" : "Bred") + '</div>' +
+    '<div class="raekke">' + knap("0", EN ? "Skip" : "Spring over", " valg") + '</div></div></div>';
+}
+/* den lille kvittering under serv-rækken, mens 2. serv er tændt: hvad der holdes, til pointet gemmes */
+function nvFejlHoldtHtml(EN) {
+  if (!banenTil() || S.serv !== 2 || S.nvTrin === "fejl1" || S.aarsagValgt) return "";
+  const fj = S.nvFejl;
+  return '<p class="lille" data-nv="fejl-holdt" data-nv-fz="' + (fj ? fj.fz : 0) + '" style="margin:-2px 0 8px;text-align:right">' + (EN ? "1st serve: " : "1. serven: ") +
+    (fj ? '<b style="color:var(--guld)">' + nvFzNavn(fj.fz, EN) + '</b>' : (EN ? "not placed" : "ikke sat")) + '</p>';
+}
+function _nvVis(p) {
+  const d = nvFejlDom(p, S.sprog === "en");
+  const s = function (id, a, v) { const el = document.getElementById(id); if (el) el.setAttribute(a, v); };
+  s("bn-kx", "x1", p.x); s("bn-kx", "x2", p.x); s("bn-ky", "y1", p.y); s("bn-ky", "y2", p.y); s("bn-mk", "cx", p.x); s("bn-mk", "cy", p.y);
+  s("bn-kx", "opacity", ".7"); s("bn-ky", "opacity", ".7"); s("bn-mk", "opacity", "1");
+  const l = document.getElementById("bn-laes"); if (l) { l.textContent = d.tekst; l.classList.toggle("nej", !d.ok); }
+  if (_nvFinger) { _nvFinger.p = p; _nvFinger.tekst = d.tekst; _nvFinger.ok = d.ok; }
+  return d;
+}
+/* fingeren på 1. serv-trinet: egne lyttere, så Banens to trin fra 5.19.0 står urørte. Slippet deler vagten mod spøgelsesklik (_bnSlap) */
+function _nvLyt(rod) {
+  rod.addEventListener("pointerdown", function (e) {
+    if (!_nvFejlAaben()) return;
+    if (!e.target || !e.target.closest || !e.target.closest("#bn-zoom")) return;
+    const p = _bnPos(e); if (!p) return;
+    _nvFinger = { id: e.pointerId, nede: true };
+    try { rod.setPointerCapture(e.pointerId); } catch (_e) {}
+    _nvVis(p); if (e.cancelable) e.preventDefault();
+  });
+  rod.addEventListener("pointermove", function (e) {
+    if (!_nvFinger || !_nvFinger.nede || e.pointerId !== _nvFinger.id) return;
+    const p = _bnPos(e); if (p) _nvVis(p);
+  });
+  rod.addEventListener("pointerup", function (e) {
+    if (!_nvFinger || !_nvFinger.nede || e.pointerId !== _nvFinger.id) return;
+    _nvFinger.nede = false; _bnSlap = { t: Date.now(), x: e.clientX, y: e.clientY };
+    try { rod.releasePointerCapture(e.pointerId); } catch (_e) {}
+    const p = _bnPos(e) || _nvFinger.p;
+    if (!p || !_nvFejlAaben()) { _nvFinger = null; return; }
+    const d = _nvVis(p);
+    if (!d.ok) return;   /* afvist: teksten står rød, intet er sat — sæt fingeren igen */
+    S.nvFejl = { fz: d.zone === "net" ? 1 : d.zone === "lang" ? 2 : 3, fb: [Math.round(p.x), Math.round(p.y)] };
+    _nvFinger = null; S.nvTrin = null; render();
+  });
+  rod.addEventListener("pointercancel", function () { if (_nvFinger) _nvFinger.nede = false; });
+}
+/* ── BANEN · stopbold (på forhånd/baghånd-trinet) og duellens længde (på bold-trinet) ── */
+function nvStopHtml(EN) {
+  return '<div class="raekke"><button class="knap valg' + (S.nvSt ? " gul" : "") + '" style="min-height:44px;font-size:12px" data-a="nvStop" data-nv="stop" data-nv-til="' + (S.nvSt ? 1 : 0) + '" aria-pressed="' + (S.nvSt ? "true" : "false") + '">' +
+    (EN ? "Drop shot" : "Stopbold") + " \u00b7 " + (S.nvSt ? (EN ? "ON" : "TIL") : (EN ? "OFF" : "FRA")) + '</button></div>';
+}
+/* vises ikke, når pointet endte på serven eller returen (es, dobbeltfejl, returfejl — og modstanderens tilsvarende) */
+function nvDlVises(stod, id) { return !stod && !_NET_IKKE[id]; }
+function nvDlNavn(v, EN) { return v === 1 ? (EN ? "short (1-4 shots)" : "kort (1-4 slag)") : v === 2 ? (EN ? "medium (5-8 shots)" : "mellem (5-8 slag)") : v === 3 ? (EN ? "long (9+ shots)" : "lang (9+ slag)") : ""; }
+function nvDlHtml(EN, stod, id) {
+  if (!nvDlVises(stod, id)) return "";
+  const kn = function (v, a, b) { return '<button class="knap valg' + (S.nvDl === v ? " til" : "") + '" style="min-height:46px;font-size:12px;padding:4px;line-height:1.25" data-a="nvDl" data-v="' + v + '" data-nv="dl-' + v + '" aria-pressed="' + (S.nvDl === v ? "true" : "false") + '">' + a + '<br><span style="font-size:10.5px;opacity:.8">' + b + '</span></button>'; };
+  return '<div class="raekke" data-nv="dl" data-nv-valgt="' + (S.nvDl || 0) + '">' + kn(1, EN ? "Short rally" : "Kort duel", EN ? "1-4 shots" : "1-4 slag") + kn(2, EN ? "Medium rally" : "Mellem duel", EN ? "5-8 shots" : "5-8 slag") + kn(3, EN ? "Long rally" : "Lang duel", EN ? "9+ shots" : "9+ slag") + '</div>';
+}
+/* krogen i _bnPaaBold: felterne sættes kun, når de er valgt — og kun på en bold, der kommer fra Banen */
+function _nvPaaBold(b, aarsag, fj) {
+  if (fj && b.f === 2 && (fj.fz === 1 || fj.fz === 2 || fj.fz === 3)) { b.fz = fj.fz; const fb = _bnPar(fj.fb); if (fb) b.fb = fb; }
+  if (S.nvSt === true && _HAAND_AARSAG[aarsag]) b.st = 1;
+  if ((S.nvDl === 1 || S.nvDl === 2 || S.nvDl === 3) && !_NET_IKKE[aarsag]) b.dl = S.nvDl;
+}
+/* ── NÆVNERNE: «Årsag på N af M point» de steder, tallene læser årsagen ── */
+function nvKlnLinje(d, EN) {
+  if (!d.ux) return "";
+  const n = d.n - d.ux;
+  return '<p class="kln-note" data-nv="kln" data-nv-n="' + n + '" data-nv-m="' + d.n + '" style="margin:4px 0 0">' + nvAarsagPaa(n, d.n, EN) + ". " +
+    (n ? (EN ? "Winners, errors and the balance are built on those points." : "Vindere, fejl og balancen bygger på de point.")
+      : (EN ? "Only the score is registered: winners, errors and the balance are not measured." : "Kun stillingen er tastet: vindere, fejl og balancen måles ikke.")) + '</p>';
+}
+function nvKlnIngen(EN) {
+  return '<div class="kln-gruppe"><span>' + (EN ? "CREATED VS GIVEN AWAY" : "SKABT-BALANCEN") + '</span></div><p class="kln-note" data-nv="kln-ingen">' +
+    (EN ? "Not measured \u2014 the points have no cause." : "Måles ikke \u2014 pointene har ingen årsag.") + '</p>';
+}
+function nvStatNote(s, EN) {
+  if (!s.ux) return "";
+  const m = s.v + s.t, n = m - s.ux;
+  return '<br><span data-nv="statnote" data-nv-n="' + n + '" data-nv-m="' + m + '" style="color:var(--guld)">' + nvAarsagPaa(n, m, EN) +
+    (n ? "" : (EN ? " \u2014 winners and errors are not registered" : " \u2014 vindere og fejl er ikke tastet")) + '</span>';
+}
+function nvStatRk(s, EN) {
+  if (!s.ux) return "";
+  const m = s.v + s.t, n = m - s.ux;
+  return statRk(EN ? "Cause registered \u00b7 of points" : "Årsag tastet \u00b7 af point", '<span data-nv="stat" data-nv-n="' + n + '" data-nv-m="' + m + '">' + n + " / " + m + '</span>', null, null, n >= m * 0.8 ? 2 : 1, "\u25d0") +
+    (n ? "" : '<tr><td colspan="4" data-nv="stat-ingen" style="font-size:11px;color:var(--daempet);padding:0 0 4px">' + (EN ? "Only the score is registered: winners and errors are not measured." : "Kun stillingen er tastet: vindere og fejl måles ikke.") + '</td></tr>');
+}
+function nvStatsLinje(EN, sp) {
+  if (!nvVis() || (sp !== "seneste" && sp !== "udvikling" && sp !== "punkter")) return "";
+  const l = S.gemte || []; let m = 0, x = 0, kx = 0;
+  l.forEach(function (k) { const pt = (k && Array.isArray(k.point)) ? k.point : [], u = nvX(pt); m += pt.length; x += u; if (u) kx++; });
+  if (!x) return "";
+  return '<p class="lille" data-nv="stats" data-nv-n="' + (m - x) + '" data-nv-m="' + m + '" style="margin:0 0 10px;padding:8px 10px;border:1px dashed var(--kant);border-radius:10px;line-height:1.5">' +
+    (EN ? kx + " of your " + l.length + (l.length === 1 ? " match" : " matches") + (kx === 1 ? " has" : " have") + " points with no cause. " : kx + " af dine " + l.length + (l.length === 1 ? " kamp" : " kampe") + " har point uden årsag. ") +
+    nvAarsagPaa(m - x, m, EN) + (EN ? " \u2014 winners, errors and the balance are built on those." : " \u2014 vindere, fejl og balancen bygger på dem.") + '</p>';
+}
+function nvAnalyseLinje(k, s, i, EN) {
+  if (!s.ux || (k.analyse && S.henter !== i)) return "";
+  const m = s.v + s.t, n = m - s.ux;
+  return '<p class="lille" data-nv="analyse" data-nv-n="' + n + '" data-nv-m="' + m + '" style="margin:8px 0 6px;color:var(--guld)">' + nvAarsagPaa(n, m, EN) + ". " +
+    (n ? (EN ? "The analysis is built on those points \u2014 and on the score, the serve and the big points." : "Analysen bygger på de point \u2014 og på stillingen, serven og de store point.")
+      : (EN ? "The analysis will be about the score, the serve and the big points." : "Analysen bliver om stillingen, serven og de store point.")) + '</p>';
+}
+function nvLivLinje(s, EN) {
+  if (!s.ux) return "";
+  const m = s.v + s.t;
+  return '<p class="lille" data-nv="liv" style="margin:2px 0 6px;color:var(--guld)">' + nvAarsagPaa(m - s.ux, m, EN) + '.</p>';
+}
+function nvLivIngen(EN) {
+  return '<p data-nv="liv-ingen" style="margin:6px 0 0;font-size:13px;line-height:1.5">' + (EN
+    ? "Only the score is registered. The advice here is built on the serve, the return and the big points \u2014 once there are enough of them."
+    : "Kun stillingen er tastet. Rådene her bygger på serven, returen og de store point \u2014 når der er nok af dem.") + '</p>';
+}
+/* kampkortets midterste tal: vinderne — men aldrig et «0 vindere» om en kamp, hvor årsagen ikke er tastet */
+function nvKortMidt(k, s, EN) {
+  const m = s.v + s.t;
+  if (!s.ux) return [String(s.vindere), EN ? "winners" : "vindere"];
+  if (s.ux >= m) {
+    let stime = 0, bedst = 0;
+    (k.point || []).forEach(function (p) { if (p.r === "V") { stime++; if (stime > bedst) bedst = stime; } else stime = 0; });
+    return [String(bedst), EN ? "best run" : "længste stime"];
+  }
+  return [String(s.vindere), (EN ? "winners \u00b7 cause on " : "vindere \u00b7 årsag på ") + (m - s.ux) + "/" + m];
+}
+/* ── EKSPORTEN · kun med tilladelsen · laves på telefonen · ingen noter ── */
+function nvAarsagTekst(p, EN) {
+  if (nvUden(p)) return nvUdenNavn(EN);
+  const M = { vinder: ["vinderslag", "winner"], es: ["serve-es", "ace"], uf: ["gratis fejl", "unforced error"], tvunget: ["presset til fejl", "forced error"], dobbelt: ["dobbeltfejl", "double fault"], returfejl: ["returfejl", "return error"],
+    mod_vinder: ["modstanderens vinderslag", "opponent winner"], mod_es: ["modstanderens es", "opponent ace"], mod_uf: ["modstanderens gratis fejl", "opponent unforced error"],
+    mod_tvunget: ["modstanderen presset til fejl", "opponent forced error"], mod_dobbelt: ["modstanderens dobbeltfejl", "opponent double fault"], mod_returfejl: ["modstanderens returfejl", "opponent return error"] };
+  const a = p["\u00e5"];
+  return M[a][EN ? 1 : 0] + (a === "uf" && p.g === 1 ? (EN ? " (attacking error)" : " (angrebsfejl)") : "") + (a === "returfejl" && p.tf === 1 ? (EN ? " (forced by the serve)" : " (tvunget af serven)") : "");
+}
+function nvPointTekst(a, b, tb) {
+  if (tb) return a + "\u2013" + b;
+  if (a >= 3 && b >= 3) return a === b ? "40\u201340" : a > b ? "AD\u201340" : "40\u2013AD";
+  return PVIS[Math.min(a, 3)] + "\u2013" + PVIS[Math.min(b, 3)];
+}
+function nvFilnavn(k) {
+  const ren = function (t) {
+    return String(t || "").replace(/æ/g, "ae").replace(/ø/g, "oe").replace(/å/g, "aa").replace(/Æ/g, "Ae").replace(/Ø/g, "Oe").replace(/Å/g, "Aa")
+      .normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  };
+  return "StreakTennis-" + (ren(k && k.dato) || "kamp") + "-" + (ren(k && k.modstander) || "modstander");
+}
+/* én række pr. point. Semikolon og UTF-8 med BOM (Excel på dansk); stillingen skrives med tankestreg, så Excel ikke læser «3-2» som en dato.
+   Et sted sat med en hurtigknap har kun sin zone — x og y står tomme, fordi de ikke er målt. Noter er ikke med. */
+function nvCsvTekst(k, EN) {
+  const pt = Array.isArray(k && k.point) ? k.point : [];
+  const NAVN = bnSpiller(EN), MOD = String((k && k.modstander) || (EN ? "Opponent" : "Modstander"));
+  const celle = function (v) {
+    if (typeof v === "number") return String(v);
+    let t = String(v === undefined || v === null ? "" : v);
+    if (/^[=+\-@\t\r]/.test(t)) t = "'" + t;   /* en celle må aldrig kunne læses som en formel */
+    return /[";\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  };
+  const ja = function (b) { return b ? (EN ? "yes" : "ja") : ""; };
+  const xy = function (v, i) { return (v && v[2] !== 1) ? v[i] : ""; };
+  const zone = function (z) { return z === "ind" ? (EN ? "in" : "inde") : z === "net" ? (EN ? "in the net" : "i nettet") : z === "lang" ? (EN ? "long" : "lang") : z === "bred" ? (EN ? "wide" : "bred") : ""; };
+  const NT = EN ? ["", "volley", "smash", "passed", "lob", "own error"] : ["", "flugtning", "smash", "passeret", "lob", "egen fejl"];
+  const hoved = EN
+    ? ["No", "Set", "Games before", "Points before", "Server", "Serve", "Won by", "Cause", "Wing", "Zone", "At the net", "Drop shot", "Rally", "Stood", "Stood x", "Stood y", "Landed", "Landed x", "Landed y", "1st serve fault", "1st serve fault x", "1st serve fault y"]
+    : ["Nr", "Sæt", "Partier før", "Point før", "Server", "Serv", "Vandt", "Årsag", "Hånd", "Zone", "Ved nettet", "Stopbold", "Duel", "Stod", "Stod x", "Stod y", "Landede", "Landede x", "Landede y", "1. serv-fejl", "1. serv-fejl x", "1. serv-fejl y"];
+  const linjer = [hoved.map(celle).join(";")];
+  pt.forEach(function (p, i) {
+    const st = beregnStilling(pt.slice(0, i), k.oskarFirst, k.mtb, k.justeringer, k.saetTil, k.noAd);
+    const a = p["\u00e5"], lb = _bnPar(p.lb), sp = _bnPar(p.sp), fb = _bnPar(p.fb), fz = (p.fz === 1 || p.fz === 2 || p.fz === 3) ? p.fz : 0;
+    linjer.push([i + 1, st.setsO + st.setsM + 1, st.gO + "\u2013" + st.gM, nvPointTekst(st.pO, st.pM, st.tb), st.server ? NAVN : MOD, servNr(p), p.r === "V" ? NAVN : MOD, nvAarsagTekst(p, EN),
+      p.h === 1 ? (EN ? "forehand" : "forhånd") : p.h === 2 ? (EN ? "backhand" : "baghånd") : "", p.z === 1 ? zone("net") : p.z === 2 ? zone("lang") : p.z === 3 ? zone("bred") : "",
+      p.vn === 1 ? (NT[p.nt] || ja(true)) : "", ja(p.st === 1), nvDlNavn(p.dl, EN),
+      sp ? bnStedNavn(bnSted(sp[1]), EN) : "", xy(sp, 0), xy(sp, 1), lb ? zone(bnZone(lb[0], lb[1], !!_BN_SERV[a]).zone) : "", xy(lb, 0), xy(lb, 1),
+      fz ? nvFzNavn(fz, EN) : "", fz ? xy(fb, 0) : "", fz ? xy(fb, 1) : ""].map(celle).join(";"));
+  });
+  return "\ufeff" + linjer.join("\r\n") + "\r\n";
+}
+async function nvCsvDel(i) {
+  const k = (S.gemte || [])[i]; if (!S.banenLov || !k || !Array.isArray(k.point)) return;
+  const EN = S.sprog === "en";
+  try {
+    const navn = nvFilnavn(k) + ".csv", klump = new Blob([nvCsvTekst(k, EN)], { type: "text/csv;charset=utf-8" });
+    let fil = null; try { fil = new File([klump], navn, { type: "text/csv" }); } catch (_e) {}
+    if (fil && navigator.canShare && navigator.canShare({ files: [fil] }) && navigator.share) { await navigator.share({ files: [fil] }); return; }
+    const url = URL.createObjectURL(klump), a2 = document.createElement("a");
+    a2.href = url; a2.download = navn; document.body.appendChild(a2); a2.click(); a2.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    S.nvEksBesked = { i: i, t: EN ? "The CSV file is saved \u2705" : "CSV-filen er gemt \u2705" };
+  } catch (e) {
+    const afbrudt = e && (e.name === "AbortError" || /abort/i.test(String(e.message || "")));   /* Annuller i del-arket er ikke en fejl */
+    S.nvEksBesked = afbrudt ? null : { i: i, fejl: true, t: EN ? "Could not make the file." : "Kunne ikke lave filen." };
+  }
+  render();
+}
+/* det stille link nederst på en afsluttet kamp — og de to valg, når det er åbnet */
+function nvEksportHtml(k, i, EN) {
+  if (!S.banenLov || !k || !Array.isArray(k.point) || !k.point.length) return "";
+  const stil = 'style="flex:1;min-height:44px;font-size:12px;padding:6px 8px"';
+  return '<div data-nv="eksport" style="margin-top:14px;text-align:center"><button data-a="nvEksport" data-v="' + i + '" data-nv="eksport-link" aria-expanded="' + (S.nvEks === i ? "true" : "false") + '" style="background:none;border:0;color:var(--daempet);font-family:inherit;font-size:12px;min-height:44px;padding:8px 16px;cursor:pointer;text-decoration:underline">\u2b07 ' + (EN ? "Export" : "Eksport") + '</button>' +
+    (S.nvEks === i ? '<div class="raekke" style="margin:4px 0 6px"><button class="knap valg" ' + stil + ' data-a="nvCsv" data-v="' + i + '" data-nv="csv">' + (EN ? "CSV \u00b7 point by point" : "CSV \u00b7 point for point") + '</button>' +
+      '<button class="knap valg" ' + stil + ' data-a="nvRapport" data-v="' + i + '" data-nv="rapport-knap">' + (EN ? "Report" : "Rapport") + '</button></div>' +
+      '<p class="lille" style="margin:0;opacity:.75">' + (EN ? "Made on the phone. Your notes are not included." : "Laves på telefonen. Dine noter kommer ikke med.") + '</p>' : "") +
+    (S.nvEksBesked && S.nvEksBesked.i === i ? '<p class="lille" data-nv="eksport-besked" style="margin:6px 0 0;color:' + (S.nvEksBesked.fejl ? "var(--tabt)" : "var(--vundet)") + '">' + esc(S.nvEksBesked.t) + '</p>' : "") + '</div>';
+}
+/* tallene pr. sæt og samlet — regnet af boldrækken og motorens flag, som statistik gør det */
+function nvSaetTal(k) {
+  const pt = Array.isArray(k && k.point) ? k.point : [];
+  const st = beregnStilling(pt, k.oskarFirst, k.mtb, k.justeringer, k.saetTil, k.noAd), F = st.flags;
+  const ny = function () { return { n: 0, v: 0, sp: 0, s1: 0, s1v: 0, s2: 0, s2v: 0, bpF: 0, bpFv: 0, bpM: 0, bpMv: 0, x: 0, aa: {} }; };
+  const alle = ny(), saet = [];
+  pt.forEach(function (p, i) {
+    const fl = F[i] || {}, sn = fl.saet || 1, V = p.r === "V";
+    while (saet.length < sn) saet.push(ny());
+    [alle, saet[sn - 1]].forEach(function (o) {
+      o.n++; if (V) o.v++;
+      if (fl.server === true) { o.sp++; if (servNr(p) === 1) { o.s1++; if (V) o.s1v++; } else { o.s2++; if (V) o.s2v++; } }
+      if (fl.stor && fl.stor.indexOf("BREAKBOLD " + SPILLER) === 0) { o.bpF++; if (V) o.bpFv++; }
+      if (fl.stor && fl.stor.indexOf("BREAKBOLD mod") === 0) { o.bpM++; if (V) o.bpMv++; }
+      if (nvUden(p)) o.x++; else o.aa[p["\u00e5"]] = (o.aa[p["\u00e5"]] || 0) + 1;
+    });
+  });
+  return { st: st, alle: alle, saet: saet };
+}
+function nvKanUdskrive() { return typeof window.print === "function" && !PLATFORM.app; }
+function nvRapportHtml(k, EN) {
+  const d = nvSaetTal(k), s = statistik(k), kol = d.saet.concat([d.alle]), pt = k.point || [];
+  const NAVN = bnSpiller(EN), MOD = String(k.modstander || (EN ? "Opponent" : "Modstander"));
+  const broek = function (a, b) { return b > 0 ? a + "/" + b : "\u2013"; };
+  const pct = function (a, b) { return b > 0 ? Math.round(a / b * 100) + " %<small>" + a + "/" + b + "</small>" : "\u2013"; };
+  const rk = function (noegle, navn, f) { return '<tr data-nv-rk="' + noegle + '"><td>' + navn + '</td>' + kol.map(function (o) { return '<td>' + f(o) + '</td>'; }).join("") + '</tr>'; };
+  const del = function (t) { return '<tr class="nv-del"><td colspan="' + (kol.length + 1) + '">' + esc(t) + '</td></tr>'; };
+  const aa = function (id) { return function (o) { return o.aa[id] || 0; }; };
+  const seks = function (pre) {
+    return rk(pre + "vinder", EN ? "Winners" : "Vinderslag", aa(pre + "vinder")) + rk(pre + "es", EN ? "Aces" : "Esser", aa(pre + "es")) + rk(pre + "uf", EN ? "Unforced errors" : "Gratis fejl", aa(pre + "uf")) +
+      rk(pre + "tvunget", EN ? "Forced errors" : "Presset til fejl", aa(pre + "tvunget")) + rk(pre + "dobbelt", EN ? "Double faults" : "Dobbeltfejl", aa(pre + "dobbelt")) + rk(pre + "returfejl", EN ? "Return errors" : "Returfejl", aa(pre + "returfejl"));
+  };
+  let h = '<div class="nv-ark" data-nv="rapport"><div class="nv-rbar"><button type="button" data-nv-a="luk">\u2039 ' + (EN ? "Close" : "Luk") + '</button>' +
+    (nvKanUdskrive() ? '<button type="button" class="nv-prim" data-nv-a="udskriv">' + (EN ? "Print / save as PDF" : "Udskriv / gem som PDF") + '</button>' : "") + '</div>' +
+    '<p class="nv-maerke">StreakTennis \u00b7 ' + (EN ? "match report" : "kamprapport") + '</p><h1>' + esc(NAVN) + " \u2013 " + esc(MOD) + '</h1>' +
+    '<p>' + [k.dato, k.turnering, k.resultat].filter(Boolean).map(function (x) { return esc(String(x)); }).join(" \u00b7 ") + '</p>';
+  h += '<h2>' + (EN ? "Numbers per set and in total" : "Tal pr. sæt og samlet") + '</h2><div class="nv-rul"><table class="nv-tab" data-nv="rtab" data-nv-saet="' + d.saet.length + '"><tr><th></th>' +
+    d.saet.map(function (_o, i) { return '<th>' + (EN ? "Set " + (i + 1) : (i + 1) + ". sæt") + '</th>'; }).join("") + '<th>' + (EN ? "Total" : "Samlet") + '</th></tr>' +
+    rk("point", EN ? "Points won" : "Point vundet", function (o) { return o.v + "/" + o.n; }) +
+    rk("s1-inde", EN ? "1st serve in" : "1. serv inde", function (o) { return pct(o.s1, o.sp); }) +
+    rk("s1-vundet", EN ? "Won on 1st serve" : "Vundet på 1. serv", function (o) { return broek(o.s1v, o.s1); }) +
+    rk("s2-vundet", EN ? "Won on 2nd serve" : "Vundet på 2. serv", function (o) { return broek(o.s2v, o.s2); }) +
+    rk("bp-udnyttet", EN ? "Break points converted" : "Breakbolde udnyttet", function (o) { return broek(o.bpFv, o.bpF); }) +
+    rk("bp-afvaerget", EN ? "Break points saved" : "Breakbolde afværget", function (o) { return broek(o.bpMv, o.bpM); }) +
+    del((EN ? "How the points ended \u00b7 " : "Sådan endte pointene \u00b7 ") + NAVN) + seks("") + del((EN ? "How the points ended \u00b7 " : "Sådan endte pointene \u00b7 ") + MOD) + seks("mod_") +
+    (d.alle.x ? rk("uden", EN ? "Points, no cause" : "Point uden årsag", function (o) { return o.x; }) : "") + '</table></div>' +
+    (d.alle.x ? '<p data-nv="r-naevner" style="margin-top:6px">' + nvAarsagPaa(d.alle.n - d.alle.x, d.alle.n, EN) + '.</p>' : "");
+  const H = s.haand;
+  h += '<h2>' + (EN ? "Forehand / backhand" : "Forhånd / baghånd") + '</h2>';
+  if (H.medSide > 0) {
+    const hr = function (navn, a, b) { return '<tr><td>' + navn + '</td><td>' + (a || 0) + '</td><td>' + (b || 0) + '</td></tr>'; };
+    h += '<table class="nv-tab" data-nv="r-haand"><tr><th></th><th>' + (EN ? "Forehand" : "Forhånd") + '</th><th>' + (EN ? "Backhand" : "Baghånd") + '</th></tr>' +
+      hr(EN ? "Winners" : "Vinderslag", H.vinderFH, H.vinderBH) + hr(EN ? "Forced their error" : "Presset dem i fejl", H.modTvFH, H.modTvBH) + hr(EN ? "Unforced errors" : "Gratis fejl", H.ufFH, H.ufBH) +
+      hr(EN ? "Forced into error" : "Presset til fejl", H.tvFH, H.tvBH) + hr(EN ? "Return errors" : "Returfejl", H.returFH, H.returBH) + '</table>' +
+      '<p style="margin-top:6px">' + (EN ? H.medSide + " of " + H.muligIalt + " possible balls are registered with a side." : H.medSide + " af " + H.muligIalt + " mulige bolde er tastet med side.") + '</p>';
+  } else h += '<p>' + (EN ? "No balls are registered with a side." : "Ingen bolde er tastet med side.") + '</p>';
+  const zMed = s.zN + s.zL + s.zB, zMulig = pt.filter(function (p) { const a = p["\u00e5"]; return p.r === "T" && (a === "uf" || a === "tvunget" || a === "returfejl"); }).length;
+  h += '<h2>' + (EN ? "Zones \u00b7 own errors" : "Zoner \u00b7 egne fejl") + '</h2><p data-nv="r-zoner">' + (zMed > 0
+    ? (EN ? "In the net " : "I nettet ") + '<b>' + s.zN + '</b> \u00b7 ' + (EN ? "out long " : "ud lang ") + '<b>' + s.zL + '</b> \u00b7 ' + (EN ? "out wide " : "ud bred ") + '<b>' + s.zB + '</b>. ' +
+      (EN ? zMed + " of " + zMulig + " own errors are registered with a zone." : zMed + " af " + zMulig + " egne fejl er tastet med zone.")
+    : (EN ? "No errors are registered with a zone." : "Ingen fejl er tastet med zone.")) + '</p>';
+  if (s.netspil.ialt > 0) h += '<h2>' + (EN ? "At the net" : "Ved nettet") + '</h2><p>' + (EN ? s.netspil.vundet + " of " + s.netspil.ialt + " balls won." : s.netspil.vundet + " af " + s.netspil.ialt + " bolde vundet.") + '</p>';
+  /* Banens egne tal: 1. serv-fejl, stopbolde, duellens længde og stederne — kun når kampen har dem */
+  const tael = function (f) { return pt.filter(f).length; };
+  const nFz = tael(function (p) { return p.fz === 1 || p.fz === 2 || p.fz === 3; }), nSt = tael(function (p) { return p.st === 1; }), nDl = tael(function (p) { return p.dl === 1 || p.dl === 2 || p.dl === 3; });
+  const M = nvBaneMaerker(pt);
+  if (nFz || nSt || nDl || M.n) {
+    h += '<h2>' + (EN ? "The court" : "Banen") + '</h2>';
+    if (nFz) h += '<p data-nv="r-fz">' + (EN ? "Missed 1st serves: in the net " : "Fejlede 1. server: i nettet ") + '<b>' + tael(function (p) { return p.fz === 1; }) + '</b> \u00b7 ' + (EN ? "long " : "lang ") + '<b>' + tael(function (p) { return p.fz === 2; }) + '</b> \u00b7 ' + (EN ? "wide " : "bred ") + '<b>' + tael(function (p) { return p.fz === 3; }) + '</b>. ' +
+      (EN ? "Placed on " + nFz + " of " + tael(function (p) { return servNr(p) === 2; }) + " points with a 2nd serve." : "Sat på " + nFz + " af " + tael(function (p) { return servNr(p) === 2; }) + " point med 2. serv.") + '</p>';
+    if (nDl) h += '<p data-nv="r-dl">' + (EN ? "Rally length: short " : "Duellens længde: kort ") + '<b>' + tael(function (p) { return p.dl === 1; }) + '</b> \u00b7 ' + (EN ? "medium " : "mellem ") + '<b>' + tael(function (p) { return p.dl === 2; }) + '</b> \u00b7 ' + (EN ? "long " : "lang ") + '<b>' + tael(function (p) { return p.dl === 3; }) + '</b>. ' +
+      (EN ? "Set on " + nDl + " of " + pt.length + " points." : "Sat på " + nDl + " af " + pt.length + " point.") + '</p>';
+    if (nSt) h += '<p data-nv="r-st">' + (EN ? "Drop shots: " : "Stopbolde: ") + '<b>' + nSt + '</b></p>';
+    if (M.n) h += '<p style="text-align:center;font-weight:800;margin-top:10px">' + esc(MOD.slice(0, 24)) + '</p><div class="nv-rbane" data-nv="r-bane" role="img" aria-label="' + (EN ? "The court seen from above with the player at the bottom" : "Banen set oppefra med spilleren nederst") + '">' + bnBaneSvg(M.g, "hel", "") + '</div>' +
+      '<p style="text-align:center;font-weight:800">' + esc(NAVN.slice(0, 24)) + '</p><p style="text-align:center"><b style="color:#1E8A52">\u25cf</b> ' + (EN ? "winners " : "vindere ") + '<b>' + M.nV + '</b> \u00b7 <b style="color:#C23B41">\u2715</b> ' + (EN ? "own errors " : "egne fejl ") + '<b>' + M.nF + '</b> \u00b7 <b style="color:#2E56D6">\u25cb</b> ' +
+      (EN ? "where " + esc(NAVN) + " stood " : "hvor " + esc(NAVN) + " stod ") + '<b>' + M.nS + '</b>. ' + (EN ? "Only places set with the finger are drawn." : "Kun steder sat med fingeren er tegnet.") + '</p>';
+  }
+  return h + '<p style="margin-top:18px;font-size:10.5px">' + (EN ? "Made on the phone from the points of the match. Notes are not included." : "Lavet på telefonen af kampens point. Noter er ikke med.") + '</p></div>';
+}
+/* mærkerne på rapportens bane — samme regel som kortet «Banen»: kun steder sat med fingeren */
+function nvBaneMaerker(pt) {
+  let g = "", n = 0, nV = 0, nF = 0, nS = 0;
+  pt.forEach(function (p) {
+    const lb = _bnPar(p.lb), sp = _bnPar(p.sp), a = p["\u00e5"]; let tegnet = false;
+    if (sp && sp[2] !== 1) { g += '<circle cx="' + sp[0] + '" cy="' + sp[1] + '" r="8" fill="#EDF2FA" stroke="#2E56D6" stroke-width="4.5"/>'; nS++; tegnet = true; }
+    if (lb && lb[2] !== 1 && p.r === "V" && (a === "vinder" || a === "es")) { g += '<circle cx="' + lb[0] + '" cy="' + lb[1] + '" r="9" fill="#3AD68A" stroke="#070D19" stroke-width="2.5"/>'; nV++; tegnet = true; }
+    else if (lb && lb[2] !== 1 && p.r === "T" && (a === "uf" || a === "tvunget" || a === "returfejl" || a === "dobbelt")) {
+      const d = "M" + (lb[0] - 8) + " " + (lb[1] - 8) + "L" + (lb[0] + 8) + " " + (lb[1] + 8) + "M" + (lb[0] - 8) + " " + (lb[1] + 8) + "L" + (lb[0] + 8) + " " + (lb[1] - 8);
+      g += '<path d="' + d + '" stroke="#fff" stroke-width="8" stroke-linecap="round" fill="none"/><path d="' + d + '" stroke="#D2484E" stroke-width="4.5" stroke-linecap="round" fill="none"/>'; nF++; tegnet = true;
+    }
+    if (tegnet) n++;
+  });
+  return { g: g, n: n, nV: nV, nF: nF, nS: nS };
+}
+/* rapporten er sin egen side oven på appen (lagt på body, så print-reglen kan skjule alt andet). Lukkes med «Luk» */
+function nvRapportLuk() { try { const el = document.getElementById("nv-rapport"); if (el) el.remove(); document.body.classList.remove("nv-udskriv"); } catch (_e) {} }
+function nvRapportAabn(i) {
+  const k = (S.gemte || [])[i]; if (!S.banenLov || !k || !Array.isArray(k.point) || !k.point.length) return;
+  nvRapportLuk();
+  const el = document.createElement("div");
+  el.id = "nv-rapport"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", S.sprog === "en" ? "Match report" : "Kamprapport");
+  el.innerHTML = nvRapportHtml(k, S.sprog === "en");
+  el.addEventListener("click", function (e) {
+    const kn = (e.target && e.target.closest) ? e.target.closest("[data-nv-a]") : null; if (!kn) return;
+    if (kn.getAttribute("data-nv-a") === "luk") nvRapportLuk();
+    else if (nvKanUdskrive()) { try { window.print(); } catch (_e) {} }
+  });
+  document.body.appendChild(el); document.body.classList.add("nv-udskriv");
 }
 /* kortet under «Kampen lige nu» — kun når mindst én bold har et sted. Regnet på telefonen af boldrækken, intet kald.
    Tegner kun steder sat med fingeren: spillerens vindere (prik), spillerens fejl (kryds), hvor spilleren stod (ring) */
@@ -5845,8 +6276,26 @@ const A = {
   netspilToggle: () => { S.netspil = !S.netspil; S.vedNet = false; S.netSlag = null; S.aarsagValgt = null; S.efterTryk = null; S.zoneValgt = null; lager.gem("sai-netspil", S.netspil ? "1" : "0"); render(); },
   vedNetToggle: () => { if (!S.aktiv || !S.netspil || S.aarsagValgt) return; S.vedNet = !S.vedNet; render(); },
   /* ⭐ 5.19.0 · BANEN — kontakten (standard FRA) og de to nye trin. Hurtigknapperne gemmer stedet med et 1-tal: kun zonen/dybden er målt */
-  banenToggle: () => { _bnSaet(!banenTil()); },
-  banenSaet: (v) => { _bnSaet(v === "1"); },   /* linjen under «Ret kampen»: fra og til midt i kampen */
+  /* ⭐ 5.20.0 · NIVEAUERNE — vælgeren (de tre steder), 1. serv-fejlen, stopbold, duellens længde og eksporten */
+  niveau: (v) => { _nvSaet(v); },
+  nvFejl: (v) => {
+    if (!_nvFejlAaben()) return;
+    const oppe = _nvServerNu();
+    if (v === "tilbage") { S.serv = 1; S.nvFejl = null; }
+    else if (v === "net") S.nvFejl = { fz: 1, fb: [179, 280, 1] };
+    else if (v === "lang") S.nvFejl = { fz: 2, fb: [179, oppe ? 95 : 465, 1] };
+    else if (v === "bred") S.nvFejl = { fz: 3, fb: [26, oppe ? 150 : 410, 1] };
+    else S.nvFejl = null;
+    _nvFinger = null; S.nvTrin = null; render();
+  },
+  nvStop: () => { if (!banenTil() || !S.afventer || !S.aarsagValgt || S.efterTryk !== "haand") return; S.nvSt = !S.nvSt; render(); },
+  nvDl: (v) => {
+    if (!banenTil() || !S.afventer || !S.aarsagValgt || S.efterTryk !== "bn-bold" || _NET_IKKE[S.aarsagValgt]) return;
+    const n = [1, 2, 3].indexOf(+v) >= 0 ? +v : 0; S.nvDl = S.nvDl === n ? 0 : n; render();
+  },
+  nvEksport: (v) => { const i = +v; if (!S.banenLov || !(S.gemte || [])[i]) return; S.nvEks = S.nvEks === i ? null : i; S.nvEksBesked = null; render(); },
+  nvCsv: (v) => { nvCsvDel(+v); },
+  nvRapport: (v) => { nvRapportAabn(+v); },
   bnStod: (v) => {
     if (!banenTil() || !S.aktiv || !S.afventer || !S.aarsagValgt || S.efterTryk !== "bn-stod") return;
     const y = v === "net" ? 325 : v === "midt" ? 405 : v === "bag" ? 515 : 0;
@@ -5915,13 +6364,13 @@ const A = {
     S.aktiv = { modstander: (S.nyMod || "").trim() || "Ukendt modstander", turnering: (S.nyTur || "").trim(),
       dato: new Date().toISOString().slice(0,10), oskarFirst: true, serverValgt: false, mtb: S.nyMtb, saetTil: S.nyFormat === 4 ? 4 : 6, noAd: S.nyFormat === 4 && S.nyNoAd, point: [], justeringer: [] };   /* ⭐ v5.9.0 · serveren vælges på banen */
     S.noteAaben = false; S.noteUdkast = ""; S.noteBesked = null; S.noteSletter = null; S.udenGemSpoerg = false;   /* ⭐ v5.17.0 · ⭐ 5.18.1 */
-    S.afventer = null; S.serv = 1; S.vedNet = false; S.netSlag = null; S._tvRetur = false; S.liveKoeb = null; S.nyBesked = null; S.koebKlar = null; gemAktiv(); render();
+    S.afventer = null; S.serv = 1; _nvRyd(); S.vedNet = false; S.netSlag = null; S._tvRetur = false; S.liveKoeb = null; S.nyBesked = null; S.koebKlar = null; gemAktiv(); render();
     if (S.nyLive) { S.delAaben = true; A.liveStart(); }   /* ⭐ v5.8.0 */
   },
   nyLiveToggle: () => { S.nyLive = !S.nyLive; render(); },   /* ⭐ v5.8.0 */
-  serv: (v) => { S.serv = +v; render(); },
+  serv: (v) => { S.serv = +v; _nvServ(); render(); },   /* ⭐ 5.20.0 · Banen: «2. serv» åbner «Hvor røg 1. serven hen?»; «1. serv» rydder den */
   klnFold: () => { klnAabenFor = (S.aktiv && klnAabenFor !== S.aktiv) ? S.aktiv : null; render(); },   /* ⭐⭐⭐ v5.17.0 · «Vis alle tal» / «Skjul» — kun i hukommelsen, intet gemmes, intet kald */
-  udfald: (v) => { if (S.aktiv && S.aktiv.serverValgt === false) return; S.afventer = v; render(); },   /* ⭐ v5.9.0 · ingen bold, før serveren er valgt */
+  udfald: (v) => { if (S.aktiv && S.aktiv.serverValgt === false) return; if (kunStilling()) { _nvKunGem(v); return; } S.afventer = v; render(); },   /* ⭐ v5.9.0 · ingen bold, før serveren er valgt */
   /* ⭐ v5.9.0 · HVEM SERVER FØRST — første tryk på banen (Nicolai: «man ved først meget meget sent hvem der server») */
   serverFoerst: (v) => { if (!S.aktiv) return; S.aktiv.oskarFirst = v === "1"; S.aktiv.serverValgt = true; gemAktiv(); render(); },
   aarsag: (id) => {
@@ -11416,7 +11865,7 @@ function kampTavle(k, EN) {
       '<div style="margin-top:12px;border-top:1px solid var(--kant);padding-top:9px;display:flex;justify-content:space-between;font-size:9.5px;letter-spacing:1.5px;color:var(--daempet);text-transform:uppercase;font-weight:700">' +
         '<span>' + (st.spillerServer === false ? esc(modst) : esc(k.spiller)) + ' ' + (EN?"serving":"server") + '</span>' +
         '<span><b style="color:var(--guld)">' + (st.bolde || (k.forloeb||[]).length) + ' ' + ((st.bolde || (k.forloeb||[]).length) === 1 ? (EN?"ball":"bold") : (EN?"balls":"bolde")) + '</b>' +
-        (st.balance !== undefined ? ' · balance ' + (st.balance >= 0 ? "+" : "") + st.balance : '') + '</span></div>' +
+        (st.balance !== undefined && !(k.forloeb || []).some(function (q) { return !q || !nvKendt(q.a); }) ? ' · balance ' + (st.balance >= 0 ? "+" : "") + st.balance : '') + '</span></div>' +
       '</div>';
 
     D.tavle = h; h = "";
@@ -11460,7 +11909,7 @@ function kampTavle(k, EN) {
       h += '<div class="kort"><div style="font-size:10px;font-weight:800;letter-spacing:2px;color:var(--daempet);text-transform:uppercase;margin-bottom:6px">' +
         (EN?"Last balls":"Seneste bolde") + '</div>';
       f.forEach(function(p){
-        const n = NAVN[p.a] || [p.a, p.r === "V" ? 1 : 0];
+        const n = NAVN[p.a] || [p.r === "V" ? (EN ? "Point won" : "Vundet point") : (EN ? "Point lost" : "Tabt point"), p.r === "V" ? 1 : 0];   /* ⭐ 5.20.0 · et point uden årsag (a: "x") er et almindeligt point uden etiket — aldrig årsagens kode */
         h += '<div style="display:flex;gap:10px;align-items:center;padding:5px 0;border-top:1px solid var(--kant)">' +
           (p.r === "V"
             ? '<span style="width:9px;height:9px;border-radius:50%;background:var(--vundet);flex:none"></span>'
@@ -11756,7 +12205,7 @@ function _kortTegn(k, s, navn, EN) {
   // ── TRE TAL, INGEN SAETNINGER (princip 24) ─────────────────────────
   const tal = [
     [String(s.v) + "/" + String(s.v + s.t), EN ? "points won" : "point vundet"],
-    [String(s.vindere), EN ? "winners" : "vindere"],
+    nvKortMidt(k, s, EN),   /* ⭐ 5.20.0 · vinderne — med nævneren, når nogle point mangler årsag */
     [String(s.serve[0]) + "/" + String(s.serve[1]), EN ? "on serve" : "paa serv"],
   ];
   const kolB = B / 3;
@@ -15383,7 +15832,7 @@ function _tegn() {
         /* v4.160.0 · betingelserne (v4.151: kunne før kun åbnes fra døren) — nu som den tredje knap i HJÆLP */
         '<p class="lille" style="margin:12px 0 8px">' + (EN ? "What we keep, what the club sees and what a friend sees \u2014 in one place." : "Hvad vi gemmer, hvad klubben ser, og hvad en ven ser \u2014 \u00e9t sted.") + '</p>' +
         '<button class="knap valg" data-a="betingelser" style="display:block;width:100%;min-height:44px">\ud83d\udcc4 ' + (EN ? "Terms & privacy" : "Betingelser & privatliv") + '</button>');
-      h += [_kort.spillerprofil, _kort.konto, _kort.klub, _kort.familie, _kort.beskeder, bnFliseHtml(_opsKort, EN), _kort.hjaelp].filter(Boolean).join("");   /* ⭐ 5.19.0 · Banen — flisen findes kun med lov */
+      h += [_kort.spillerprofil, _kort.konto, _kort.klub, _kort.familie, _kort.beskeder, nvFliseHtml(_opsKort, EN), _kort.hjaelp].filter(Boolean).join("");   /* ⭐ 5.19.0 · Banen — flisen findes kun med lov · ⭐ 5.20.0 · flisen bærer niveau-vælgeren */
       h += '</div>';   // ⭐ v4.83.0 · indstillings-gitteret lukkes
       /* v4.160.0 · «kun fliser» (Nicolai 13/9): betingelses-knappen bor nu i HJÆLP-kortet — intet under gitteret ud over synk-linjen */
       if (S.syncBesked) h += '<p class="lille" style="margin:6px 2px;color:' +
@@ -15510,7 +15959,7 @@ function _tegn() {
         '<div class="raekke" style="margin-bottom:0">' +
         '<button class="knap valg '+(S.side?"til":"")+'" data-a="sideToggle">🎾 '+(EN?"FH / BH":"FH / BH")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.side?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+'</span></button>' +
         '<button class="knap valg '+(S.zoner?"til":"")+'" data-a="zonerToggle">🗺 '+(EN?"Error zones":"Fejl-zoner")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.zoner?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+'</span></button>' +
-        '</div>' + bnOpsaetHtml(EN) + '</div>';   /* ⭐ 5.19.0 · Banen */
+        '</div>' + nvOpsaetHtml(EN, "start") + '</div>';   /* ⭐ 5.19.0 · Banen · ⭐ 5.20.0 · niveau-vælgeren */
       // ⭐ v4.99.0 · prisen for FRA siges her, hvor valget tages.
       h += '<p class="lille" style="margin:2px 0 10px;opacity:.8">'+(EN
         ? "Side (FH/BH) is asked on winners, free errors, forced errors and return errors; zones on errors. One tap, Skip is always there — with both on it is ONE grid. Off = fewer taps, and the analysis loses that split (e.g. «15 of 20 free errors on the forehand»)."
@@ -15567,6 +16016,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         h += '<div class="banner is">🧊 <b>'+(EN?'Three free errors in a row — reset:':'Tre gratis fejl i træk — nulstilling:')+'</b> '+(EN?'strings → breathing → keyword. Next rally 100 % percentage tennis.':'strenge → vejrtrækning → nøgleord. Næste duel 100 % procentuel.')+'</div>';
 
       if (!st.done) {
+        if (kunStilling()) h += nvKunRaekkeHtml(EN); else   /* ⭐ 5.20.0 · Kun stillingen: de tre kontakter spørger om noget, niveauet ikke taster */
         h += '<div class="raekke" style="margin-bottom:6px">' +
           '<button class="knap valg'+(S.side?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="sideToggle"title="'+(EN?"Asks which wing on winners, forced errors and your own errors":"Spørger om fløjen på vinderslag, pressede fejl og egne fejl")+'">🎾 '+(S.side?(EN?"FH/BH ON":"FH/BH TIL"):(EN?"FH/BH OFF":"FH/BH FRA"))+'</button>' +
           '<button class="knap valg'+(S.zoner?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="zonerToggle">🗺 '+(S.zoner?(EN?"Zones ON":"Zoner TIL"):(EN?"Zones OFF":"Zoner FRA"))+'</button>' + '<button class="knap valg'+(S.netspil?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="netspilToggle" data-netspil="kamp" title="'+(EN?"Adds the «At the net» button — and asks how the ball ended up there":"Giver knappen «Ved nettet» — og spørger, hvordan bolden sluttede deroppe")+'">🕸️ '+(S.netspil?(EN?"Net ON":"Net TIL"):(EN?"Net OFF":"Net FRA"))+'</button>' + noteKnapHtml(EN) + '</div>' + noteFeltHtml(EN);   /* ⭐ v5.17.0 · Note — tredje knap i rækken, ingen ny række */
@@ -15579,7 +16029,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         } else {
           h += '<div class="raekke"><button class="knap valg '+(S.serv===1?"til":"")+'" data-a="serv" data-v="1">'+(EN?"1st serve":"1. serv")+'</button><button class="knap valg '+(S.serv===2?"gul":"")+'" data-a="serv" data-v="2">'+(EN?"2nd serve (first serve missed)":"2. serv (førsteserv fejlet)")+'</button></div>';
         }
-        if (S.netspil && !banenTil() && _sv && !S.aarsagValgt) h += '<div class="raekke" data-vednet="raekke"><button class="knap valg'+(S.vedNet?" gul":"")+'" style="min-height:44px" data-a="vedNetToggle" data-vednet="'+(S.vedNet?"1":"0")+'">🕸️ '+(EN?"At the net · applies to the next ball":"Ved nettet · gælder næste bold")+'</button></div>';   /* ⭐ 5.18.0 net */
+        h += nvFejlTrinHtml(EN) + nvFejlHoldtHtml(EN);   /* ⭐ 5.20.0 · Banen: «Hvor røg 1. serven hen?» — tomt uden for niveauet Banen */
+        if (S.netspil && !banenTil() && !kunStilling() && _sv && !S.aarsagValgt) h += '<div class="raekke" data-vednet="raekke"><button class="knap valg'+(S.vedNet?" gul":"")+'" style="min-height:44px" data-a="vedNetToggle" data-vednet="'+(S.vedNet?"1":"0")+'">🕸️ '+(EN?"At the net · applies to the next ball":"Ved nettet · gælder næste bold")+'</button></div>';   /* ⭐ 5.18.0 net */
         if (!S.afventer) {
           h += '<div class="raekke"><button class="knap stor" style="background:var(--vundet)' + (_sv ? '' : ';opacity:.35;filter:grayscale(.6)') + '" data-a="udfald" data-v="vundet"' + (_sv ? '' : ' disabled') + '>'+(EN?(SPILLER+" won"):(SPILLER+" vandt"))+'</button><button class="knap stor" style="background:var(--tabt)' + (_sv ? '' : ';opacity:.35;filter:grayscale(.6)') + '" data-a="udfald" data-v="tabt"' + (_sv ? '' : ' disabled') + '>'+(EN?"Lost":"Tabt")+'</button></div>';
         } else {
@@ -15720,7 +16171,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         _opsRaekke((EN?"3rd set":"3. sæt"), [[(EN?"Full set":"Fuldt sæt"),"mtb|0",!S.aktiv.mtb],["Match tie-break","mtb|1",!!S.aktiv.mtb]], "aOpsaet") +
         _opsRaekke((EN?"Sets to":"Sæt til"), [[(EN?"6 games":"6 partier"),"saet|6",S.aktiv.saetTil!==4],[(EN?"4 games":"4 partier"),"saet|4",S.aktiv.saetTil===4]], "aOpsaet") +
         (S.aktiv.saetTil === 4 ? _opsRaekke("No-ad", [[(EN?"No":"Nej"),"noad|0",!S.aktiv.noAd],[(EN?"Yes":"Ja"),"noad|1",!!S.aktiv.noAd]], "aOpsaet") : '') +
-        _opsRaekke((EN?"Served first":"Servede først"), [[SPILLER,"first|1",S.aktiv.oskarFirst!==false],[(EN?"Opponent":"Modstander"),"first|0",S.aktiv.oskarFirst===false]], "aOpsaet") + bnRetHtml(EN) +
+        _opsRaekke((EN?"Served first":"Servede først"), [[SPILLER,"first|1",S.aktiv.oskarFirst!==false],[(EN?"Opponent":"Modstander"),"first|0",S.aktiv.oskarFirst===false]], "aOpsaet") + nvRetHtml(EN) +
         '<div style="height:1px;background:var(--kant);margin:11px 0 9px"></div>' +
         '<p class="lille" style="margin:0 0 5px;font-weight:800;letter-spacing:.5px;color:var(--is)">🎾 '+(EN?"THE SCORE":"STILLINGEN")+'</p>' +
         '<p class="lille" style="margin-top:0">'+(EN?"Came in mid-match or missed a game? Set the CURRENT score — tracking continues from here. Points in the game reset to 0-0.":"Kom du ind midt i kampen, eller røg et parti? Sæt den AKTUELLE stilling — registreringen fortsætter herfra. Pointene i partiet nulstilles til 0-0.")+'</p>' +
@@ -15730,7 +16181,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         '<div class="raekke"><button class="knap valg '+(S.j.server?"til":"")+('" data-a="jServer" data-v="1">'+SPILLER+'</button><button class="knap valg ')+(!S.j.server?"til":"")+'" data-a="jServer" data-v="0">'+(EN?"Opponent":"Modstander")+'</button></div>' +
         '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="jAnvend">✔ '+(EN?"Apply adjustment":"Anvend justeringen")+'</button></div></div>' : '');
       h += klnKortHtml(S.aktiv, s, EN, klnAabenFor === S.aktiv);   /* ⭐⭐⭐ v5.17.0 · kampen lige nu — foldet som forvalg; linjen står under kortet, til det er foldet ud (og altid under KLN_MIN bolde) */
-      if (S.aktiv.point.length < KLN_MIN || klnAabenFor !== S.aktiv) h += '<div class="kort statlinje">'+(EN?'Serve points won: ':'Serve vundet: ')+'<b>'+s.serve[0]+'/'+s.serve[1]+'</b> · '+(EN?'1st serve in: ':'1. serv i spil: ')+'<b>'+s.s1pct+' %</b> · '+(EN?'Return: ':'Retur: ')+'<b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>'+(EN?'Winners: ':'Vindere: ')+'<b style="color:var(--vundet)">'+s.vindere+'</b>'+(s.modTv?' · '+(EN?'forced: ':'presset: ')+'<b style="color:var(--vundet)">'+s.modTv+'</b>':'')+' · '+(EN?'Unforced errors: ':'Gratis fejl: ')+'<b style="color:'+(s.uf>s.skabt?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b>'+(s.tvRetur?' · '+(EN?'forced by the serve: ':'tvunget af serven: ')+'<b>'+s.tvRetur+'</b>':'')+' · '+(EN?'Break points: ':'Breakbolde: ')+'<b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b>'+(EN?' converted, ':' udnyttet, ')+'<b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b>'+(EN?' saved':' afværget')+'<br>'+(s.haand.medSide?((EN?'<br>Free errors — forehand: ':'<br>Gratis fejl — forhånd: ')+'<b>'+s.haand.ufFH+'</b>'+(EN?' · backhand: ':' · baghånd: ')+'<b>'+s.haand.ufBH+'</b>'+' <span style="opacity:.65">('+s.haand.medSide+'/'+s.haand.muligIalt+')</span>'):'')+(((s.haand.modTvFH||0)+(s.haand.modTvBH||0))?((EN?'<br>Forced their error — forehand: ':'<br>Presset dem i fejl — forhånd: ')+'<b style="color:var(--vundet)">'+(s.haand.modTvFH||0)+'</b>'+(EN?' · backhand: ':' · baghånd: ')+'<b style="color:var(--vundet)">'+(s.haand.modTvBH||0)+'</b>'):'')/* ⭐ v4.119.0 */+netspilLinje(s, EN)/* ⭐ 5.18.0 net */+(function(){ const sn = s.st.setsO + s.st.setsM + 1; const ps = s.perSaet[sn-1] || { v: 0, t: 0, uf: 0, vin: 0 }; return '<br>'+(EN?'This set: ':'Dette sæt: ')+'<b>'+ps.v+'-'+ps.t+'</b> · '+(EN?'UE ':'gratis fejl ')+'<b>'+ps.uf+'</b> · '+(EN?'winners ':'vindere ')+'<b>'+ps.vin+'</b>'; })()+((s.haand.ufFH+s.haand.ufBH>=4 && Math.abs(s.haand.ufBH-s.haand.ufFH)>=2)?' <span style="color:var(--tabt)">'+(EN?'· mostly on the ':'· mest på ')+(s.haand.ufBH>s.haand.ufFH?(EN?'backhand':'baghånden'):(EN?'forehand':'forhånden'))+'</span>':'')+'</div>';
+      if (S.aktiv.point.length < KLN_MIN || klnAabenFor !== S.aktiv) h += '<div class="kort statlinje">'+(EN?'Serve points won: ':'Serve vundet: ')+'<b>'+s.serve[0]+'/'+s.serve[1]+'</b> · '+(EN?'1st serve in: ':'1. serv i spil: ')+'<b>'+s.s1pct+' %</b> · '+(EN?'Return: ':'Retur: ')+'<b>'+s.retur[0]+'/'+s.retur[1]+'</b><br>'+(EN?'Winners: ':'Vindere: ')+'<b style="color:var(--vundet)">'+s.vindere+'</b>'+(s.modTv?' · '+(EN?'forced: ':'presset: ')+'<b style="color:var(--vundet)">'+s.modTv+'</b>':'')+' · '+(EN?'Unforced errors: ':'Gratis fejl: ')+'<b style="color:'+(s.uf>s.skabt?"var(--tabt)":"var(--kridt)")+'">'+s.uf+'</b>'+(s.tvRetur?' · '+(EN?'forced by the serve: ':'tvunget af serven: ')+'<b>'+s.tvRetur+'</b>':'')+' · '+(EN?'Break points: ':'Breakbolde: ')+'<b>'+s.bpFor[0]+'/'+s.bpFor[1]+'</b>'+(EN?' converted, ':' udnyttet, ')+'<b>'+s.bpMod[0]+'/'+s.bpMod[1]+'</b>'+(EN?' saved':' afværget')+'<br>'+(s.haand.medSide?((EN?'<br>Free errors — forehand: ':'<br>Gratis fejl — forhånd: ')+'<b>'+s.haand.ufFH+'</b>'+(EN?' · backhand: ':' · baghånd: ')+'<b>'+s.haand.ufBH+'</b>'+' <span style="opacity:.65">('+s.haand.medSide+'/'+s.haand.muligIalt+')</span>'):'')+(((s.haand.modTvFH||0)+(s.haand.modTvBH||0))?((EN?'<br>Forced their error — forehand: ':'<br>Presset dem i fejl — forhånd: ')+'<b style="color:var(--vundet)">'+(s.haand.modTvFH||0)+'</b>'+(EN?' · backhand: ':' · baghånd: ')+'<b style="color:var(--vundet)">'+(s.haand.modTvBH||0)+'</b>'):'')/* ⭐ v4.119.0 */+netspilLinje(s, EN)/* ⭐ 5.18.0 net */+(function(){ const sn = s.st.setsO + s.st.setsM + 1; const ps = s.perSaet[sn-1] || { v: 0, t: 0, uf: 0, vin: 0 }; return '<br>'+(EN?'This set: ':'Dette sæt: ')+'<b>'+ps.v+'-'+ps.t+'</b> · '+(EN?'UE ':'gratis fejl ')+'<b>'+ps.uf+'</b> · '+(EN?'winners ':'vindere ')+'<b>'+ps.vin+'</b>'; })()+((s.haand.ufFH+s.haand.ufBH>=4 && Math.abs(s.haand.ufBH-s.haand.ufFH)>=2)?' <span style="color:var(--tabt)">'+(EN?'· mostly on the ':'· mest på ')+(s.haand.ufBH>s.haand.ufFH?(EN?'backhand':'baghånden'):(EN?'forehand':'forhånden'))+'</span>':'')+nvStatNote(s, EN)+'</div>';
       h += bnKortHtml(S.aktiv, EN);   /* ⭐ 5.19.0 · Banen — kun når mindst én bold har et sted */
       h += '<input placeholder="'+(EN?'Result (auto-filled if empty)':'Resultat (udfyldes automatisk hvis tomt)')+'" value="'+esc(S.resInput)+'" data-felt="resInput">';
       h += '<div class="raekke"><button class="knap" style="background:var(--grus)" data-a="afslut">'+(EN?"✔ Finish &amp; save the match":"✔ Afslut &amp; gem kampen")+'</button></div>';
@@ -16310,6 +16761,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
       + '</div>';
 
       var _statRumStart = h.length;   /* ⭐ v5.12.1 · herfra og til blokkens slutning er rummets indhold */
+      h += nvStatsLinje(EN, _sp);   /* ⭐ 5.20.0 · nævneren over de tal, der går på tværs af kampene */
       if (_sp === "udvikling") {   /* v5.13.0 · formkurven bor i UDVIKLING */
     h += grafVT(EN);   /* v5.13.0 · ingen ramme om rammen — grafVT er sit eget kort */
     }
@@ -16349,8 +16801,8 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         const d = nu - foer, godt = (d > 0) === stigerGodt;
         (godt ? frem : skaerp).push(label + " " + (d > 0 ? "+" : "−") + Math.abs(d) + (enhed || ""));
       };
-      dom(EN?"Free errors":"Gratis fejl", sa.uf, sb.uf, false);
-      dom(EN?"Winners":"Vindere", sa.vindere, sb.vindere, true);
+      if (!sa.ux && !sb.ux) dom(EN?"Free errors":"Gratis fejl", sa.uf, sb.uf, false);   /* ⭐ 5.20.0 · to kampe sammenlignes kun på årsager, når begge har dem på alle point */
+      if (!sa.ux && !sb.ux) dom(EN?"Winners":"Vindere", sa.vindere, sb.vindere, true);
       dom("1. serv", sa.s1pct, sb.s1pct, true, " pp");
       dom(EN?"BP converted":"BP udnyttet", pctAf(sa.bpFor), pctAf(sb.bpFor), true, " pp");
       if (sa.haand.medSide && sb.haand.medSide) dom(EN?"Free errors backhand":"Gratis fejl på baghånden", sa.haand.ufBH, sb.haand.ufBH, false);
@@ -16545,6 +16997,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
             '</div>'
           : '') +
         kampNoterHtml(k, i, EN) +   /* ⭐ v5.17.0 · dine noter fra kampen — lokalt, ingen AI */
+        nvAnalyseLinje(k, s, i, EN) +   /* ⭐ 5.20.0 · hvad analysen bygger på — FØR den startes */
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
         (k.analyse && S.henter!==i ? '' :
           '<button class="knap" style="flex:none;padding:8px 14px;background:var(--grus);font-size:12px'+(S.henter!==null&&S.henter!==i?';opacity:.45':'')+'" data-a="hentAnalyse" data-v="'+i+'">'+(S.henter===i?(EN?"⏳ Analysing…":"⏳ Analyserer…"):(EN?"🧠 Get analysis":"🧠 Hent analyse"))+'</button>') +
@@ -16686,6 +17139,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         (_maaBillede() ? _bilStrimmel("kamp", _kampNoegle(k, i), EN) : '') +
         (S.hentBesked && S.hentBesked.i === i ? '<p class="lille" style="margin:8px 0 0;color:'+(S.hentBesked.fejl?'var(--tabt)':'var(--vundet)')+'">'+esc(S.hentBesked.t)+'</p>' +
           (S.hentBesked.koeb ? koebKnap("kamp", S.hentBesked.koeb.pris, "a:" + _kampNoegle(k, i), EN) : '') : '') +   /* ⭐ v5.8.0 */
+        nvEksportHtml(k, i, EN) +   /* ⭐ 5.20.0 · det stille link «Eksport» — kun med tilladelsen */
         '</div>';
     }).join("") + '</div>';
     /* v5.13.0 · udviklerdøren fra august (analysen rettet i hånden) er væk */
@@ -17024,6 +17478,7 @@ window.__oskarInit = function(){
   rod.addEventListener("toggle", function(e){ var d = e.target; if (d && d.matches && d.matches("details[data-sf]")) { S._sf = S._sf || {}; S._sf[d.dataset.sf] = d.open; } }, true);
   var _lpT = null, _lpFired = false;
   _bnLyt(rod);   /* ⭐ 5.19.0 · Banen — fingeren på banen (lytterne gør intet uden for de to nye trin) */
+  _nvLyt(rod);   /* ⭐ 5.20.0 · Banen — fingeren på «Hvor røg 1. serven hen?» */
   // v3.0.5i (16/8-2026): langt tryk styres nu af data-lp, som KUN sættes, hvor det
   // giver mening. Server spilleren selv, kan modstanderen ikke slå et es — så er
   // der intet langt tryk på knappen. Kvittering: haptik + guld-banner, fordi

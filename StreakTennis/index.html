@@ -175,8 +175,14 @@ input::placeholder{color:var(--daempet)}
 .nv-prikker i.nv-p{background:var(--guld)}
 .dev-flise.nv-flise.nv-lille{flex-direction:row;align-items:center;gap:8px;padding:10px 10px;min-height:48px}
 .nv-flise.nv-lille .nv-pikto{height:auto;margin:0;font-size:20px;line-height:1}
-.nv-flise.nv-lille small{margin-left:auto;font-weight:800;letter-spacing:.5px}
-.nv-flise.nv-lille.til small{color:var(--is)}
+/* ⭐ 5.20.2 · kontakterne ved niveauet: appens flise som niveau-fliserne ovenfor (tre i en række), lidt lavere — tegn, navn og TIL/FRA.
+   Står der kun én (Pro), fylder den rækken ud — som den sidste flise i appens gitter (.dev-grid) gør */
+.nv-fliser.nv-kt{margin-top:8px}
+.nv-fliser.nv-kt>.nv-kontakt:only-child{grid-column:1/-1}
+.dev-flise.nv-flise.nv-kontakt{padding:9px 10px 9px;gap:1px}
+.nv-flise.nv-kontakt .nv-pikto{height:24px;margin-bottom:1px;font-size:18px;line-height:24px}
+.nv-flise.nv-kontakt small{margin:0;font-weight:800;letter-spacing:.5px}
+.nv-flise.nv-kontakt.til small{color:var(--is)}
 .nv-sp{margin:2px 0 12px;font-size:19px;text-align:center}
 .nv-rbar{display:flex;gap:8px;margin:0 0 14px}
 .nv-rbar button{flex:1;min-height:46px;border-radius:12px;border:1.5px solid #16202F;background:#fff;color:#16202F;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}
@@ -574,7 +580,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.20.1 · 27. november 2026";
+const VERSION = "v5.20.2 · 28. november 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -4781,13 +4787,22 @@ function nvStartHtml(EN) {
   return '<h2 data-nv="start-titel" style="margin:4px 0 8px;font-size:19px;text-align:center">' + (EN ? "How much do you want to log?" : "Hvor meget vil du taste?") + '</h2>' +
     '<div style="margin:0 0 8px">' + nvFliserHtml(EN, "start") + '</div>';
 }
-/* de to kontakter, der stod på kampstart: nu to små fliser i rummet NIVEAU — kun på niveauet Basis (på kampskærmen står de, hvor de altid har stået) */
-function nvKontakterHtml(EN) {
+/* ⭐ 5.20.2 · KONTAKTERNE BOR VED NIVEAUET (ejeren 28/11: «Fh bh og zoner til og net til skal skjules mens man registrerer kampen det roder lidt»).
+   Med tilladelsen står de ikke på kampskærmen. De står som små fliser under de tre niveau-fliser — i rummet NIVEAU og under «⚙ Ret kampen»,
+   så de kan skiftes midt i en kamp uden at forlade den. En kontakt vises kun i det niveau, hvor den har en virkning (målt i koden):
+     Simpel · ingen (pointet gemmes ved ét tryk, årsagen spørges ikke)
+     Basis  · FH/BH (siden spørges efter årsagen) · Fejl-zoner (zonen spørges på egne fejl) · Net (knappen «Ved nettet» og slaget deroppe)
+     Pro    · FH/BH (hånd-trinet før banen). Zonen og nettet sættes dér med fingeren på banen, så de to kontakter gør intet i Pro.
+   Handlingerne (sideToggle · zonerToggle · netspilToggle) og de gemte værdier (sai-side · sai-zoner · sai-netspil) er urørte. */
+function nvKontakterHtml(EN, hvor) {
+  const nu = nvNiveau();
+  if (nu === "s") return "";
   const kn = function (a, id, ikon, navn, til) {
-    return '<button class="dev-flise dev-kant dev-kant-grus nv-flise nv-lille' + (til ? " til" : "") + '" data-a="' + a + '" data-nv="' + id + '" data-nv-til="' + (til ? 1 : 0) + '" aria-pressed="' + (til ? "true" : "false") + '">' +
+    return '<button class="dev-flise dev-kant dev-kant-grus nv-flise nv-kontakt' + (til ? " til" : "") + '" data-a="' + a + '" data-nv="' + id + '" data-nv-til="' + (til ? 1 : 0) + '" aria-pressed="' + (til ? "true" : "false") + '">' +
       '<span class="dev-ikon nv-pikto">' + ikon + '</span><b>' + navn + '</b><small>' + (til ? (EN ? "ON" : "TIL") : (EN ? "OFF" : "FRA")) + '</small></button>';
   };
-  return '<div class="nv-fliser nv-to" data-nv="kontakter">' + kn("sideToggle", "side", "🎾", "FH / BH", !!S.side) + kn("zonerToggle", "zoner", "🗺", EN ? "Error zones" : "Fejl-zoner", !!S.zoner) + '</div>';
+  return '<div class="nv-fliser nv-kt" data-nv="kontakter" data-nv-hvor="' + hvor + '">' + kn("sideToggle", "side", "🎾", "FH / BH", !!S.side) +
+    (nu === "d" ? kn("zonerToggle", "zoner", "🗺", EN ? "Error zones" : "Fejl-zoner", !!S.zoner) + kn("netspilToggle", "net", "🕸️", "Net", !!S.netspil) : "") + '</div>';
 }
 /* ⭐ 5.20.1 · HÅNDEN ER EN FAST INDSTILLING (ejeren 27/11: «vi ved jo altid hvad vores egen spiller spiller med… det er en fast indstilling» ·
    «Og er det ikke indstillet - så spørger vi lige.»). Den bor i ⚙ Indstillinger → DIN PROFIL som to fliser — ikke i rummet NIVEAU.
@@ -4813,19 +4828,19 @@ function nvHaandRumHtml(EN) {
     '<div class="kort" style="padding:14px"><h2 class="nv-sp" data-nv="haand-sp">' + (EN ? "Which hand does " + esc(bnSpiller(EN)) + " play with?" : "Hvilken hånd spiller " + esc(bnSpiller(EN)) + " med?") + '</h2>' +
     nvHaandFliser(EN, "kamp") + '</div></div></div>';
 }
-/* flisen «🎾 NIVEAU» i ⚙ Indstillinger — rummet har kun fliser: de tre niveauer og (på Basis) de to kontakter. Kun med tilladelsen */
+/* flisen «🎾 NIVEAU» i ⚙ Indstillinger — rummet har kun fliser: de tre niveauer og niveauets kontakter. Kun med tilladelsen */
 function nvFliseHtml(opsKort, EN) {
   if (!S.banenLov) return "";
   const nu = nvNiveau();
   return opsKort("banen", "🎾", (EN ? "LEVEL" : "NIVEAU"),
     nvNiveauNavn(nu, EN), nu === "d" ? "var(--daempet)" : "var(--is)",
-    nvFliserHtml(EN, "indst") + (nu === "d" ? nvKontakterHtml(EN) : ""));
+    nvFliserHtml(EN, "indst") + nvKontakterHtml(EN, "indst"));   /* ⭐ 5.20.2 · kontakterne efter niveauet (Basis tre · Pro én · Simpel ingen) */
 }
 /* under «⚙ Ret kampen» — de samme tre fliser; niveauet kan skiftes midt i en kamp og gælder fra næste point. Kun med tilladelsen */
 function nvRetHtml(EN) {
   if (!S.banenLov) return "";
   return '<div data-nv="ret"><div style="height:1px;background:var(--kant);margin:11px 0 9px"></div>' +
-    '<p class="lille" style="margin:0 0 7px;font-weight:800;letter-spacing:.5px;color:var(--is)">🎾 ' + (EN ? "LEVEL" : "NIVEAU") + '</p>' + nvFliserHtml(EN, "ret") + '</div>';
+    '<p class="lille" style="margin:0 0 7px;font-weight:800;letter-spacing:.5px;color:var(--is)">🎾 ' + (EN ? "LEVEL" : "NIVEAU") + '</p>' + nvFliserHtml(EN, "ret") + nvKontakterHtml(EN, "ret") + '</div>';   /* ⭐ 5.20.2 · kontakterne kan skiftes her midt i kampen */
 }
 /* toppen på de tre bane-trin — den samme som appens rum (_rumSkaerm): «‹ Tilbage», rummets titel, og (på Banens to trin) ✕ for hele pointet */
 function nvTopHtml(EN, a, v, laes, titel, luk) {
@@ -4842,9 +4857,11 @@ function _nvKunGem(v) {
 }
 /* rækken, hvor de tre kontakter (FH/BH · Zoner · Net) ellers står: de spørger om noget, dette niveau ikke taster */
 function nvKunRaekkeHtml(EN) {
-  /* ⭐ 5.20.1 · et lille mærke med niveauets navn alene — appens eget lille mærke (.badge-ai); Note-knappen står, hvor den står på de andre niveauer */
-  return '<div class="raekke" style="margin-bottom:6px" data-nv="kun"><div style="flex:3 1 0;min-width:0;display:flex;align-items:center;padding-left:2px"><span class="badge-ai" data-nv="maerke">' +
-    nvNiveauNavn("s", EN) + '</span></div>' + noteKnapHtml(EN) + '</div>' + noteFeltHtml(EN);
+  /* ⭐ 5.20.1 · et lille mærke med niveauets navn alene — appens eget lille mærke (.badge-ai) · ⭐ 5.20.2 · samme række i alle tre niveauer:
+     mærket til venstre og Note til højre i sin vante bredde. Kontakterne står her ikke længere */
+  const nu = nvNiveau();
+  return '<div class="raekke" style="margin-bottom:6px" data-nv="kun" data-nv-raekke="' + nu + '"><div style="flex:3 1 0;min-width:0;display:flex;align-items:center;padding-left:2px"><span class="badge-ai" data-nv="maerke">' +
+    nvNiveauNavn(nu, EN) + '</span></div>' + noteKnapHtml(EN) + '</div>' + noteFeltHtml(EN);
 }
 /* ── BANEN · «Hvor røg 1. serven hen?» ── */
 function _nvServerNu() { const k = S.aktiv; return !!(k && beregnStilling(k.point, k.oskarFirst, k.mtb, k.justeringer, k.saetTil, k.noAd).server); }
@@ -16053,7 +16070,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         h += '<div class="banner is">🧊 <b>'+(EN?'Three free errors in a row — reset:':'Tre gratis fejl i træk — nulstilling:')+'</b> '+(EN?'strings → breathing → keyword. Next rally 100 % percentage tennis.':'strenge → vejrtrækning → nøgleord. Næste duel 100 % procentuel.')+'</div>';
 
       if (!st.done) {
-        if (kunStilling()) h += nvKunRaekkeHtml(EN); else   /* ⭐ 5.20.0 · Kun stillingen: de tre kontakter spørger om noget, niveauet ikke taster */
+        if (nvVis()) h += nvKunRaekkeHtml(EN); else   /* ⭐ 5.20.2 · med tilladelsen står de tre kontakter ikke på kampskærmen i noget niveau (de bor ved niveauet); uden den er rækken som før */
         h += '<div class="raekke" style="margin-bottom:6px">' +
           '<button class="knap valg'+(S.side?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="sideToggle"title="'+(EN?"Asks which wing on winners, forced errors and your own errors":"Spørger om fløjen på vinderslag, pressede fejl og egne fejl")+'">🎾 '+(S.side?(EN?"FH/BH ON":"FH/BH TIL"):(EN?"FH/BH OFF":"FH/BH FRA"))+'</button>' +
           '<button class="knap valg'+(S.zoner?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="zonerToggle">🗺 '+(S.zoner?(EN?"Zones ON":"Zoner TIL"):(EN?"Zones OFF":"Zoner FRA"))+'</button>' + '<button class="knap valg'+(S.netspil?" til":"")+'" style="font-size:11.5px;padding:8px 6px" data-a="netspilToggle" data-netspil="kamp" title="'+(EN?"Adds the «At the net» button — and asks how the ball ended up there":"Giver knappen «Ved nettet» — og spørger, hvordan bolden sluttede deroppe")+'">🕸️ '+(S.netspil?(EN?"Net ON":"Net TIL"):(EN?"Net OFF":"Net FRA"))+'</button>' + noteKnapHtml(EN) + '</div>' + noteFeltHtml(EN);   /* ⭐ v5.17.0 · Note — tredje knap i rækken, ingen ny række */

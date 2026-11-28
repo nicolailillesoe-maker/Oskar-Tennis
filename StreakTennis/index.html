@@ -143,10 +143,9 @@ input::placeholder{color:var(--daempet)}
 /* ⭐ 5.19.0 · Banen — kun klasser med forstavelsen bn-; intet eksisterende element får en ny regel */
 .bn-ind{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
 .bn-ind .raekke{margin-bottom:0}
-.bn-top{display:flex;align-items:center;gap:10px}
-.bn-top .bn-rund{flex:none;width:46px;min-height:46px;padding:0;font-size:20px}
-.bn-titel{flex:1;min-width:0;text-align:center;font-weight:800;font-size:17px;line-height:1.2;color:var(--kridt)}
-.bn-titel small{display:block;font-size:12px;font-weight:600;color:var(--daempet);margin-top:2px}
+/* ⭐ 5.20.1 · bane-trinenes top er rummenes top (_rumSkaerm): «‹ tilbage» som .knap.valg 40 px, titlen 11 px/800/1,4 px i --grus, 12 px ned til indholdet */
+.nv-top{display:flex;align-items:center;gap:10px;margin:0 0 4px}
+.nv-rumtitel{min-width:0;font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--grus);text-transform:uppercase}
 .bn-laes{height:46px;box-sizing:border-box;border-radius:12px;background:var(--kort);border:1px solid var(--kant);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13.5px;line-height:1.2;text-align:center;padding:2px 10px;color:var(--kridt);overflow:hidden}
 .bn-laes.nej{border-color:var(--tabt);color:#FF9A9E}
 .bn-zoom{position:relative;width:min(100%,max(200px,calc((100vh - 344px)*358/330)));width:min(100%,max(200px,calc((100dvh - 344px)*358/330)));aspect-ratio:358/330;margin:0 auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;border-radius:22px;overflow:hidden;cursor:crosshair}
@@ -161,6 +160,24 @@ input::placeholder{color:var(--daempet)}
 .bn-zoom.nv-lav{width:min(100%,max(200px,calc((100vh - 400px)*358/330)));width:min(100%,max(200px,calc((100dvh - 400px)*358/330)))}
 #nv-rapport{position:fixed;inset:0;z-index:80;overflow:auto;-webkit-overflow-scrolling:touch;background:#F4F1EA;color:#16202F;padding:max(12px,env(safe-area-inset-top)) 16px max(18px,env(safe-area-inset-bottom));font-family:inherit}
 .nv-ark{max-width:720px;margin:0 auto}
+/* ⭐ 5.20.1 · NIVEAU-FLISERNE — appens egen flise (.dev-flise.dev-kant, som ⚙ Indstillinger, TRÆN, STATS og Din konto), tre i en række.
+   Valgt flise har appens valgt-udtryk (.knap.valg.til): is-kant, is-skær og is-tekst. Kun klasser med forstavelsen nv-. */
+.nv-fliser{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0}
+.nv-fliser.nv-to{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:8px}
+.dev-flise.nv-flise{min-height:0;padding:11px 10px 10px;gap:3px;color:#C9D3E3}
+.nv-flise .nv-pikto{display:block;height:34px;margin-bottom:2px;font-size:24px;line-height:34px;color:var(--daempet)}
+.nv-flise .nv-pikto svg{display:block;width:46px;height:34px}
+.nv-flise.til{border-color:var(--is)!important;background:linear-gradient(180deg,rgba(159,216,232,.26) 0%,rgba(159,216,232,.08) 100%)!important;box-shadow:0 0 16px -6px rgba(159,216,232,.55),inset 0 1px 0 rgba(255,255,255,.14);color:var(--is)}
+.nv-flise.til .nv-pikto{color:var(--is)}
+.raekke.nv-format>.knap{min-height:42px;padding:4px 8px;line-height:1.15}
+.nv-prikker{display:flex;gap:4px;margin-top:3px}
+.nv-prikker i{width:7px;height:7px;border-radius:50%;background:var(--kant2)}
+.nv-prikker i.nv-p{background:var(--guld)}
+.dev-flise.nv-flise.nv-lille{flex-direction:row;align-items:center;gap:8px;padding:10px 10px;min-height:48px}
+.nv-flise.nv-lille .nv-pikto{height:auto;margin:0;font-size:20px;line-height:1}
+.nv-flise.nv-lille small{margin-left:auto;font-weight:800;letter-spacing:.5px}
+.nv-flise.nv-lille.til small{color:var(--is)}
+.nv-sp{margin:2px 0 12px;font-size:19px;text-align:center}
 .nv-rbar{display:flex;gap:8px;margin:0 0 14px}
 .nv-rbar button{flex:1;min-height:46px;border-radius:12px;border:1.5px solid #16202F;background:#fff;color:#16202F;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}
 .nv-rbar button.nv-prim{background:#16202F;color:#fff}
@@ -557,7 +574,7 @@ const PROFIL_EN = { fordeling: "", bagved: "", foran: "" };
 // ---------- Adgangslås: Kamp + Guide er åbne, resten kræver kode ----------
 // v4-LINJEN: udviklingslinjen. Pilotlinjen (klub/index.html m.fl.)
 // er FROSSET paa v3.0.23 — princip 26 gaelder nu PR. LINJE.
-const VERSION = "v5.20.0 · 27. november 2026";
+const VERSION = "v5.20.1 · 27. november 2026";
 /* ⭐ v5.12.3 · bundlinjen på engelsk: måneden oversættes (kortet 11/10: «11. oktober 2026» stod på den engelske skærm) */
 const VERSION_EN = VERSION.replace(/(\d+)\. (januar|februar|marts|april|maj|juni|juli|august|september|oktober|november|december)/, function (_m, d, mo) {
   return d + " " + ({ januar: "January", februar: "February", marts: "March", april: "April", maj: "May", juni: "June", juli: "July", august: "August", september: "September", oktober: "October", november: "November", december: "December" })[mo];
@@ -2242,7 +2259,7 @@ try { if (lager.hent("sai-zoner") === "1") S.zoner = true; } catch(e) {}
 try { if (lager.hent("sai-side") === "0") S.side = false; } catch(e) {}   // ⭐ v4.99.0 · siden har sin egen kontakt (standard TIL)
 try { if (lager.hent("sai-netspil") === "1") S.netspil = true; } catch(e) {}   /* ⭐ 5.18.0 net · net-kontakten har sin egen nøgle (standard FRA) */
 try { const _n0 = lager.hent("sai-niveau"); S.niveau = (_n0 === "s" || _n0 === "d" || _n0 === "b") ? _n0 : (lager.hent("sai-banen") === "1" ? "b" : "d"); } catch(e) { S.niveau = "d"; }   /* ⭐ 5.20.0 · niveauet: "s" kun stillingen · "d" som i dag (standard) · "b" Banen. Den, der havde Banen TIL i 5.19.0 (sai-banen = "1"), står på Banen */
-try { if (window.localStorage.getItem("sai-banen-lov") === "1") S.banenLov = true; } catch(e) {}   /* ⭐ 5.19.0 · låsen: serverens seneste ja huskes på telefonen, så Banen virker uden net */
+try { if (window.localStorage.getItem("sai-banen-lov") === "1") S.banenLov = true; } catch(e) {} try { if (S.banenLov && nvHaandGemt()) S.haand = nvHaandGemt(); } catch(e) {}   /* ⭐ 5.20.1 · den gemte hånd gælder fra opstart (kun med tilladelsen) */   /* ⭐ 5.19.0 · låsen: serverens seneste ja huskes på telefonen, så Banen virker uden net */
 // ⭐⭐ v4.41.0 · SKADEN BOR PAA TELEFONEN OG INTET ANDET STED.
 // `gdpr-notat-v01.md` afsnit 2 lover skriftligt, at SKADESREGISTRERING
 // ikke behandles og er teknisk blokeret. Det loefte holder kun, hvis
@@ -4532,6 +4549,7 @@ function _nvSaet(n) {
 function _bnLovSaet(ja) {
   const iBrug = banenTil();
   S.banenLov = ja === true;
+  if (S.banenLov && nvHaandGemt()) S.haand = nvHaandGemt();   /* ⭐ 5.20.1 · låsen åbnet: den gemte hånd gælder */
   try { if (S.banenLov) window.localStorage.setItem("sai-banen-lov", "1"); else window.localStorage.removeItem("sai-banen-lov"); } catch (_e) {}
   if (iBrug && !S.banenLov) _bnSluk();   /* loven er trukket midt i et point: trinet nulstilles, kampen står */
 }
@@ -4574,29 +4592,13 @@ function bnSide(x, venstreHaandet, oppe) {
   const hoejre = dx > 0;
   return (oppe ? (venstreHaandet ? hoejre : !hoejre) : (venstreHaandet ? !hoejre : hoejre)) ? 1 : 2;
 }
-function bnHaand() { return S.haand === "venstre" ? "v" : "h"; }   /* appens egen indstilling «ketcherhånd» (sai-haand) */
+function bnHaand() { return (nvHaandGemt() || S.haand) === "venstre" ? "v" : "h"; }   /* ⭐ 5.20.1 · den gemte hånd gælder — også efter en genstart */   /* appens egen indstilling «ketcherhånd» (sai-haand) */
 function bnModHaand() { return (S.aktiv && S.aktiv.modHaand === "v") ? "v" : "h"; }
 function bnEjer(navn, EN) { navn = String(navn || ""); return EN ? navn + "\u2019s" : (/[sxz]$/i.test(navn) ? navn + "\u2019" : navn + "s"); }
 function bnSpiller(EN) { return String(SPILLER || (EN ? "The player" : "Spilleren")); }
 function bnStedNavn(sted, EN) {
   return sted === "net" ? (EN ? "at the net" : "ved nettet") : sted === "midt" ? (EN ? "in mid-court" : "på midtbanen")
     : sted === "bag" ? (EN ? "at the baseline" : "ved baglinjen") : (EN ? "behind the baseline" : "bag baglinjen");
-}
-function bnAarsagNavn(id, EN) {
-  const M = { vinder: ["vinderslag", "winner"], es: ["serve-es", "ace"], mod_uf: ["modst. gratis fejl", "opp. unforced error"],
-    mod_tvunget: ["modst. presset til fejl", "opp. forced error"], mod_returfejl: ["modst. returfejl", "opp. return error"],
-    mod_dobbelt: ["modst. dobbeltfejl", "opp. double fault"], uf: ["gratis fejl", "unforced error"], tvunget: ["presset til fejl", "forced error"],
-    mod_vinder: ["modst. vinderslag", "opp. winner"], mod_es: ["modst. es", "opp. ace"], dobbelt: ["dobbeltfejl", "double fault"],
-    returfejl: ["returfejl", "return error"] };
-  if (id === "uf" && S._angreb) return EN ? "attacking error" : "angrebsfejl";
-  if (id === "returfejl" && S._tvRetur) return EN ? "return error \u00b7 forced" : "returfejl \u00b7 tvunget";
-  return M[id] ? M[id][EN ? 1 : 0] : String(id || "");
-}
-function bnSaetning(EN, medStod) {
-  const d = [bnSpiller(EN) + (S.afventer === "vundet" ? (EN ? " won" : " vandt") : (EN ? " lost" : " tabte")), bnAarsagNavn(S.aarsagValgt, EN)];
-  if (S.bnH === 1) d.push(EN ? "forehand" : "forhånd"); else if (S.bnH === 2) d.push(EN ? "backhand" : "baghånd");
-  if (medStod && S.bnStod) d.push((EN ? "stood " : "stod ") + bnStedNavn(bnSted(S.bnStod[1]), EN));
-  return d.join(" \u00b7 ");
 }
 function bnBoldTekst(z, serv, EN) {
   if (z.zone === "net") return EN ? "In the net" : "I nettet";
@@ -4684,13 +4686,12 @@ function bnTrinHtml(EN) {
   const tx = function (x, y, t, rot) { return '<text ' + (rot ? 'transform="translate(' + x + ',' + y + ') rotate(' + rot + ')"' : 'x="' + x + '" y="' + y + '"') + ' text-anchor="middle" style="font-size:10.5px">' + t + '</text>'; };
   const FH = EN ? "FOREHAND" : "FORHÅND", BH = EN ? "BACKHAND" : "BAGHÅND";
   const haender = function (oppeSide) { const v = (oppeSide ? bnModHaand() : bnHaand()) === "v", y = oppeSide ? 31 : 549, venstreErFH = oppeSide ? !v : v; return tx(104, y, venstreErFH ? FH : BH) + tx(254, y, venstreErFH ? BH : FH); };
-  const knap = function (handling, v, tekst, klasse) { return '<button class="knap' + (klasse || "") + '" style="min-height:46px' + (klasse ? "" : ";background:var(--flade)") + '" data-a="' + handling + '"' + (v === null ? "" : ' data-v="' + v + '"') + '>' + tekst + '</button>'; };
-  let ekstra, titel, under, laes, hurtig = "", midt = "", bund;
+  const knap = function (handling, v, tekst, klasse) { return '<button class="knap' + (klasse || "") + '" style="min-height:44px' + (klasse ? "" : ";background:var(--flade)") + '" data-a="' + handling + '"' + (v === null ? "" : ' data-v="' + v + '"') + '>' + tekst + '</button>'; };
+  let ekstra, titel, laes, hurtig = "", midt = "", bund;
   if (stod) {
     const lin = function (d) { return '<line x1="44" y1="' + (280 + d) + '" x2="314" y2="' + (280 + d) + '" stroke="#fff" stroke-width="1.5" stroke-dasharray="5 6" opacity=".45"/>'; };
     ekstra = lin(80) + lin(170) + tx(24, 327, "NET", -90) + tx(24, 405, EN ? "MID" : "MIDT", -90) + tx(24, 490, EN ? "BASELINE" : "BAGLINJE", -90) + haender(false) + bnSigte("stod", f);
     titel = EN ? "Where was " + esc(NAVN) + " standing?" : "Hvor stod " + esc(NAVN) + "?";
-    under = bnSaetning(EN, false);
     laes = EN ? "Put your finger where " + NAVN + " was standing" : "Sæt fingeren, hvor " + NAVN + " stod";
     hurtig = knap("bnStod", "net", EN ? "At the net" : "Ved nettet") + knap("bnStod", "midt", EN ? "Mid-court" : "Midtbane") + knap("bnStod", "bag", EN ? "Baseline" : "Baglinjen");
     bund = knap("bnStod", "0", EN ? "Skip" : "Spring over", " valg") + knap("bnGem", null, EN ? "Save the point now" : "Gem pointet nu", " valg");
@@ -4699,17 +4700,15 @@ function bnTrinHtml(EN) {
     ekstra = tx(179, serv ? (oppe ? 98 : 468) : (oppe ? 12 : 572), EN ? "LONG" : "LANG") + tx(24, my, EN ? "WIDE" : "BRED", -90) + tx(334, my, EN ? "WIDE" : "BRED", 90) + haender(oppe) +
       ((!oppe && S.bnStod) ? '<circle data-bn="stod-ring" cx="' + S.bnStod[0] + '" cy="' + S.bnStod[1] + '" r="10" fill="#EDF2FA" stroke="#2E56D6" stroke-width="5" opacity=".9"/>' : "") + bnSigte("bold", f);
     titel = EN ? "Where did the ball land?" : "Hvor landede bolden?";
-    under = bnSaetning(EN, true) + " \u00b7 " + bnEjer(oppe ? MOD : NAVN, EN) + (EN ? " half" : " halvdel");
     laes = EN ? "Put your finger on the court and drag until it fits" : "Sæt fingeren på banen, og træk, til det passer";
     if (!_BN_VINDER[id]) hurtig = knap("bnBold", "net", EN ? "In the net" : "I nettet") + knap("bnBold", "lang", EN ? "Long" : "Lang") + knap("bnBold", "bred", EN ? "Wide" : "Bred");
     if (oppe) midt = '<div class="raekke"><button class="knap valg" style="min-height:44px;font-size:12px" data-a="bnModHaand" data-bn="modhaand" data-bn-haand="' + bnModHaand() + '">' + esc(MOD) + ": " +
       (bnModHaand() === "v" ? (EN ? "left-handed" : "venstrehåndet") : (EN ? "right-handed" : "højrehåndet")) + " \u00b7 " + (EN ? "switch" : "skift") + '</button></div>';
     bund = knap("bnBold", "0", EN ? "Skip \u2014 save the point" : "Spring over \u2014 gem pointet", " valg");
   }
-  return '<div id="bn-skaerm" data-bn-trin="' + (stod ? "stod" : "bold") + '" data-bn-halv="' + halv + '" style="position:fixed;inset:0;z-index:60;background:var(--dyb);overflow:auto;padding:max(12px,env(safe-area-inset-top)) 16px max(14px,env(safe-area-inset-bottom))"><div class="bn-ind">' +
-    '<div class="bn-top"><button class="knap valg bn-rund" data-a="fortryd" aria-label="' + (EN ? "One step back" : "Et trin tilbage") + '">\u2039</button>' +
-    '<div class="bn-titel">' + titel + '<small>' + esc(under) + '</small></div>' +
-    '<button class="knap valg bn-rund" data-a="bnAnnuller" aria-label="' + (EN ? "Cancel the whole point" : "Fortryd hele pointet") + '">\u2715</button></div>' +
+  /* ⭐ 5.20.1 · toppen er rummenes top (nvTopHtml), og bunden har rummenes 24 px */
+  return '<div id="bn-skaerm" data-bn-trin="' + (stod ? "stod" : "bold") + '" data-bn-halv="' + halv + '" style="position:fixed;inset:0;z-index:60;background:var(--dyb);overflow:auto;padding:max(12px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))"><div class="bn-ind">' +
+    nvTopHtml(EN, "fortryd", "", EN ? "One step back" : "Et trin tilbage", titel, true) +
     '<div class="bn-laes' + (f && !f.ok ? " nej" : "") + '" id="bn-laes" aria-live="polite">' + esc(f ? f.tekst : laes) + '</div>' +
     nvDlHtml(EN, stod, id) + '<div class="bn-zoom' + (nvDlVises(stod, id) ? " nv-lav" : "") + '" id="bn-zoom">' + bnBaneSvg(ekstra, halv, "bn-svg") + '</div>' +   /* ⭐ 5.20.0 · duellens længde over banen, så den ses før fingeren sættes */
     (hurtig ? '<div class="raekke">' + hurtig + '</div>' : "") + midt +
@@ -4748,53 +4747,92 @@ function nvNiveau() { return (S.banenLov === true && (S.niveau === "s" || S.nive
 function kunStilling() { return nvNiveau() === "s"; }
 let _nvFinger = null;
 function _nvRyd() { S.nvTrin = null; S.nvFejl = null; _nvFinger = null; }
-function nvNiveauNavn(n, EN) { return n === "s" ? (EN ? "Score only" : "Kun stillingen") : n === "b" ? (EN ? "The court" : "Banen") : (EN ? "As today" : "Som i dag"); }
+/* ⭐ 5.20.1 · niveauernes navne (ejeren 27/11): Simpel = hvem vandt pointet · Basis = hvordan det endte · Pro = hvor på banen. Niveauets navne har deres EGNE nøgler her (s · d · b) — de deler intet med planens navn (_planNavn, hvor gratis-planen også hedder Basis). Kun det, skærmen viser — lageret gemmer stadig "s" · "d" · "b" */
+function nvNiveauNavn(n, EN) { return n === "s" ? (EN ? "Simple" : "Simpel") : n === "b" ? "Pro" : (EN ? "Basic" : "Basis"); }
 function nvAarsagPaa(n, m, EN) { return EN ? "Cause on " + n + " of " + m + " points" : "Årsag på " + n + " af " + m + " point"; }
 function nvUdenNavn(EN) { return EN ? "point, no cause" : "point uden årsag"; }
 /* etiketten for en årsag, tabellen ikke kender: med tilladelsen «point uden årsag», uden den som før (årsagens egen kode) */
 function nvAarsagNavn(id, EN) { return nvVis() ? nvUdenNavn(EN) : id; }
-/* ── vælgeren: de samme tre knapper alle tre steder ── */
-function nvVaelgerHtml(EN, hvor) {
+/* ⭐ 5.20.1 · NIVEAU-FLISERNE (ejeren 27/11: «Jeg kan ikke lide tekst. Men tiles er godt.» · «Alt skal ligne hinanden»).
+   ÉN komponent, de samme tre fliser i samme rækkefølge alle tre steder: kampstart · rummet NIVEAU i ⚙ Indstillinger · «⚙ Ret kampen».
+   Flisen er appens egen (.dev-flise.dev-kant.dev-kant-grus — som NOTIFIKATIONER og HJÆLP): et lille piktogram, navnet, og tre prikker for mængden af tryk. Ingen sætninger. */
+function nvPikto(n) {
+  const a = '<svg viewBox="0 0 46 34" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
+  const guld = 'stroke="none" style="fill:var(--guld)"';
+  /* Simpel: en lille tavle med en stilling */
+  if (n === "s") return a + '<rect x="3" y="5" width="40" height="24" rx="4"/><text x="23" y="21.5" text-anchor="middle" ' + guld + ' font-size="12.5" font-weight="800" letter-spacing=".4">15-0</text></svg>';
+  /* Basis: en ketsjer, en slagbue og en bold */
+  if (n === "d") return a + '<ellipse cx="13" cy="13" rx="8" ry="10" transform="rotate(-30 13 13)"/><path d="M18 22l6 9"/><path d="M24 9c5-5 10-5 14 0" stroke-dasharray="1 4.5"/><circle cx="39" cy="14" r="4" ' + guld + '/></svg>';
+  /* Pro: en lille bane set oppefra med en prik */
+  return a + '<rect x="12" y="2" width="22" height="30" rx="1.5"/><path d="M8 17h30" stroke-width="2.6"/><path d="M12 9.5h22M12 24.5h22M23 9.5v15" stroke-width="1.5"/><circle cx="28.5" cy="5.8" r="3.6" ' + guld + '/></svg>';
+}
+function nvFliserHtml(EN, hvor) {
   const nu = nvNiveau();
-  return '<div class="raekke" data-nv="vaelger" data-nv-hvor="' + hvor + '" data-nv-niveau="' + nu + '" style="margin:0">' + ["s", "d", "b"].map(function (n) {
-    return '<button class="knap valg' + (nu === n ? " til" : "") + '" style="min-height:46px;font-size:12px;padding:6px 4px" data-a="niveau" data-v="' + n + '" data-nv="niveau-' + n + '" aria-pressed="' + (nu === n ? "true" : "false") + '">' + nvNiveauNavn(n, EN) + '</button>';
+  return '<div class="nv-fliser" data-nv="vaelger" data-nv-hvor="' + hvor + '" data-nv-niveau="' + nu + '">' + ["s", "d", "b"].map(function (n, i) {
+    return '<button class="dev-flise dev-kant dev-kant-grus nv-flise' + (nu === n ? " til" : "") + '" data-a="niveau" data-v="' + n + '" data-nv="niveau-' + n + '" aria-pressed="' + (nu === n ? "true" : "false") + '">' +
+      '<span class="dev-ikon nv-pikto">' + nvPikto(n) + '</span><b>' + nvNiveauNavn(n, EN) + '</b>' +
+      '<span class="nv-prikker" data-nv-prikker="' + (i + 1) + '" aria-hidden="true">' + [0, 1, 2].map(function (j) { return j <= i ? '<i class="nv-p"></i>' : '<i></i>'; }).join("") + '</span></button>';
   }).join("") + '</div>';
 }
-function nvForklaring(n, EN) {
-  if (n === "s") return EN ? "One tap per point: who won it. The score, the serve and the big points are counted. The cause is not asked."
-    : "Ét tryk pr. point: hvem vandt det. Stillingen, serven og de store point tælles. Årsagen spørges ikke.";
-  if (n === "b") return EN ? "Everything: after the cause, two taps on a drawn court \u2014 where the player stood and where the ball landed. Also drop shot, rally length and where a missed 1st serve went. Skip is always there."
-    : "Det hele: efter årsagen to tryk på en tegnet bane \u2014 hvor spilleren stod, og hvor bolden landede. Også stopbold, duellens længde, og hvor en fejlet 1. serv røg hen. Spring over står der altid.";
-  return EN ? "The match screen exactly as you know it: won or lost, and how the ball ended." : "Kampskærmen, præcis som du kender den: vandt eller tabt, og hvordan bolden endte.";
+/* format-rækkerne på kampstart får kun klassen med tilladelsen — uden den er rækken tegn for tegn som før */
+function nvFormatKl() { return nvVis() ? " nv-format" : ""; }
+/* kampstart med tilladelsen: overskriften i sidens eget udtryk (som «Format — forudfyldt») og de tre fliser. Uden tilladelsen tegnes den ikke */
+function nvStartHtml(EN) {
+  return '<h2 data-nv="start-titel" style="margin:4px 0 8px;font-size:19px;text-align:center">' + (EN ? "How much do you want to log?" : "Hvor meget vil du taste?") + '</h2>' +
+    '<div style="margin:0 0 8px">' + nvFliserHtml(EN, "start") + '</div>';
 }
-/* i «AVANCERET — VALGFRIT» på kampstart (med overskrift) og i rummet i ⚙ Indstillinger (uden). Hånden er appens egen indstilling (vaelgHaand) */
-function nvOpsaetHtml(EN, hvor) {
-  if (!S.banenLov) return "";   /* låst: intet spor */
-  const nu = nvNiveau();
-  let h = (hvor === "start" ? '<p class="lille" style="margin:10px 0 5px">🎾 ' + (EN ? "Level \u00b7 how much do you register per point?" : "Niveau \u00b7 hvor meget taster du pr. point?") + '</p>' : "") +
-    nvVaelgerHtml(EN, hvor) + '<p class="lille" data-nv="forklaring" style="margin:8px 0 0;opacity:.8">' + nvForklaring(nu, EN) + " " +
-    (EN ? "Can be changed mid-match under «\u2699 Fix the match»." : "Kan skiftes midt i kampen under «\u2699 Ret kampen».") + '</p>';
-  if (nu !== "b") return h;
-  h += '<p class="lille" style="margin:9px 0 5px">' + esc(bnSpiller(EN)) + (EN ? " plays with" : " spiller med") + '</p><div class="raekke" style="margin-bottom:0">' +
-    '<button class="knap valg ' + (S.haand !== "venstre" ? "til" : "") + '" style="min-height:44px" data-a="vaelgHaand" data-v="hoejre" data-bn="haand-h">🫱 ' + (EN ? "Right hand" : "Højre hånd") + '</button>' +
-    '<button class="knap valg ' + (S.haand === "venstre" ? "til" : "") + '" style="min-height:44px" data-a="vaelgHaand" data-v="venstre" data-bn="haand-v">🫲 ' + (EN ? "Left hand" : "Venstre hånd") + '</button></div>';
-  return h;
+/* de to kontakter, der stod på kampstart: nu to små fliser i rummet NIVEAU — kun på niveauet Basis (på kampskærmen står de, hvor de altid har stået) */
+function nvKontakterHtml(EN) {
+  const kn = function (a, id, ikon, navn, til) {
+    return '<button class="dev-flise dev-kant dev-kant-grus nv-flise nv-lille' + (til ? " til" : "") + '" data-a="' + a + '" data-nv="' + id + '" data-nv-til="' + (til ? 1 : 0) + '" aria-pressed="' + (til ? "true" : "false") + '">' +
+      '<span class="dev-ikon nv-pikto">' + ikon + '</span><b>' + navn + '</b><small>' + (til ? (EN ? "ON" : "TIL") : (EN ? "OFF" : "FRA")) + '</small></button>';
+  };
+  return '<div class="nv-fliser nv-to" data-nv="kontakter">' + kn("sideToggle", "side", "🎾", "FH / BH", !!S.side) + kn("zonerToggle", "zoner", "🗺", EN ? "Error zones" : "Fejl-zoner", !!S.zoner) + '</div>';
 }
-/* flisen i ⚙ Indstillinger — samme vælger og samme tilstand som i AVANCERET. Kun med tilladelsen; ellers er gitteret som før */
+/* ⭐ 5.20.1 · HÅNDEN ER EN FAST INDSTILLING (ejeren 27/11: «vi ved jo altid hvad vores egen spiller spiller med… det er en fast indstilling» ·
+   «Og er det ikke indstillet - så spørger vi lige.»). Den bor i ⚙ Indstillinger → DIN PROFIL som to fliser — ikke i rummet NIVEAU.
+   VALGT er hånden kun, når nøglen sai-haand står i lageret (vaelgHaand skriver den ved et tryk; uden et tryk er den tom, og appen
+   regner med højre). Banens trin læser nøglen selv, så en gemt hånd også gælder efter en genstart. Modstanderens hånd skiftes stadig på bane-trinet. */
+function nvHaandGemt() { try { const v = lager.hent("sai-haand"); return (v === "venstre" || v === "hoejre") ? v : null; } catch (_e) { return null; } }
+function nvHaandFliser(EN, hvor) {
+  const g = nvHaandGemt();
+  const kn = function (v, id, ikon, navn) {
+    return '<button class="dev-flise dev-kant dev-kant-grus nv-flise nv-lille' + (g === v ? " til" : "") + '" data-a="vaelgHaand" data-v="' + v + '" data-bn="' + id + '" aria-pressed="' + (g === v ? "true" : "false") + '">' +
+      '<span class="dev-ikon nv-pikto">' + ikon + '</span><b>' + navn + '</b></button>';
+  };
+  return '<div class="nv-fliser nv-to" data-nv="haand" data-nv-hvor="' + hvor + '" data-nv-valgt="' + (g || "") + '">' + kn("hoejre", "haand-h", "🫱", EN ? "Right hand" : "Højre hånd") + kn("venstre", "haand-v", "🫲", EN ? "Left hand" : "Venstre hånd") + '</div>';
+}
+/* i rummet DIN PROFIL, under navnene — kun med tilladelsen; uden den er rummet tegn for tegn som før */
+function nvProfilHaandHtml(EN) { return nvVis() ? nvHaandFliser(EN, "profil") : ""; }
+/* spørgsmålet: ét lille rum oven på kampen, når niveauet er Pro og hånden aldrig er valgt — ved kampstart, og når niveauet skiftes til Pro midt i
+   kampen. Et tryk gemmer valget (vaelgHaand), rummet er væk, og kampen står, hvor den stod. Med en gemt hånd tegnes det aldrig. */
+function nvHaandRumHtml(EN) {
+  if (!banenTil() || !S.aktiv || nvHaandGemt()) return "";
+  return '<div id="nv-haand" data-nv="haand-rum" style="position:fixed;inset:0;z-index:61;background:var(--dyb);overflow:auto;padding:max(12px,env(safe-area-inset-top)) 0 max(24px,env(safe-area-inset-bottom))">' +
+    '<div class="wrap" style="padding-top:0"><div style="display:flex;align-items:center;gap:10px;min-height:40px;margin:0 0 12px"><span class="nv-rumtitel">🎾 ' + nvNiveauNavn("b", EN) + '</span></div>' +
+    '<div class="kort" style="padding:14px"><h2 class="nv-sp" data-nv="haand-sp">' + (EN ? "Which hand does " + esc(bnSpiller(EN)) + " play with?" : "Hvilken hånd spiller " + esc(bnSpiller(EN)) + " med?") + '</h2>' +
+    nvHaandFliser(EN, "kamp") + '</div></div></div>';
+}
+/* flisen «🎾 NIVEAU» i ⚙ Indstillinger — rummet har kun fliser: de tre niveauer og (på Basis) de to kontakter. Kun med tilladelsen */
 function nvFliseHtml(opsKort, EN) {
   if (!S.banenLov) return "";
   const nu = nvNiveau();
   return opsKort("banen", "🎾", (EN ? "LEVEL" : "NIVEAU"),
-    nvNiveauNavn(nu, EN) + (nu === "b" ? " \u00b7 " + (S.haand === "venstre" ? (EN ? "left hand" : "venstre hånd") : (EN ? "right hand" : "højre hånd")) : ""), nu === "d" ? "var(--daempet)" : "var(--is)",
-    '<p class="lille" style="margin:0 0 10px">' + (EN
-      ? "Three ways to register a match \u2014 from one tap per point to the finger on a drawn court."
-      : "Tre måder at taste en kamp på \u2014 fra ét tryk pr. point til fingeren på en tegnet bane.") + '</p>' + nvOpsaetHtml(EN, "indst"));
+    nvNiveauNavn(nu, EN), nu === "d" ? "var(--daempet)" : "var(--is)",
+    nvFliserHtml(EN, "indst") + (nu === "d" ? nvKontakterHtml(EN) : ""));
 }
-/* linjen under «⚙ Ret kampen» — niveauet kan skiftes midt i en kamp og gælder fra næste point. Kun med tilladelsen */
+/* under «⚙ Ret kampen» — de samme tre fliser; niveauet kan skiftes midt i en kamp og gælder fra næste point. Kun med tilladelsen */
 function nvRetHtml(EN) {
   if (!S.banenLov) return "";
-  return '<div data-nv="ret" style="margin-bottom:6px"><span style="display:block;font-size:11.5px;color:var(--daempet);margin:4px 0 5px">🎾 ' +
-    (EN ? "Level \u00b7 applies from the next point" : "Niveau \u00b7 gælder fra næste point") + '</span>' + nvVaelgerHtml(EN, "ret") + '</div>';
+  return '<div data-nv="ret"><div style="height:1px;background:var(--kant);margin:11px 0 9px"></div>' +
+    '<p class="lille" style="margin:0 0 7px;font-weight:800;letter-spacing:.5px;color:var(--is)">🎾 ' + (EN ? "LEVEL" : "NIVEAU") + '</p>' + nvFliserHtml(EN, "ret") + '</div>';
+}
+/* toppen på de tre bane-trin — den samme som appens rum (_rumSkaerm): «‹ Tilbage», rummets titel, og (på Banens to trin) ✕ for hele pointet */
+function nvTopHtml(EN, a, v, laes, titel, luk) {
+  const stil = 'style="flex:none;min-height:40px;margin:0;padding:6px 14px"';
+  return '<div class="nv-top" data-nv="top"><button class="knap valg" ' + stil + ' data-nv="tilbage" data-a="' + a + '"' + (v ? ' data-v="' + v + '"' : "") + ' aria-label="' + laes + '">\u2039 ' + (EN ? "Back" : "Tilbage") + '</button>' +
+    '<span class="nv-rumtitel" data-nv="titel">' + titel + '</span>' +
+    (luk ? '<button class="knap valg nv-luk" style="flex:none;min-height:40px;margin:0 0 0 auto;padding:6px 14px" data-a="bnAnnuller" aria-label="' + (EN ? "Cancel the whole point" : "Fortryd hele pointet") + '">\u2715</button>' : "") + '</div>';
 }
 /* ── KUN STILLINGEN ── */
 function _nvKunGem(v) {
@@ -4804,8 +4842,9 @@ function _nvKunGem(v) {
 }
 /* rækken, hvor de tre kontakter (FH/BH · Zoner · Net) ellers står: de spørger om noget, dette niveau ikke taster */
 function nvKunRaekkeHtml(EN) {
-  return '<div class="raekke" style="margin-bottom:6px" data-nv="kun"><div style="flex:3 1 0;min-width:0;display:flex;align-items:center;justify-content:center;border:1.5px dashed var(--kant);border-radius:14px;padding:6px 10px;font-size:11.5px;font-weight:700;color:var(--daempet);text-align:center">🎾 ' +
-    (EN ? "Score only \u00b7 one tap per point" : "Kun stillingen \u00b7 ét tryk pr. point") + '</div>' + noteKnapHtml(EN) + '</div>' + noteFeltHtml(EN);
+  /* ⭐ 5.20.1 · et lille mærke med niveauets navn alene — appens eget lille mærke (.badge-ai); Note-knappen står, hvor den står på de andre niveauer */
+  return '<div class="raekke" style="margin-bottom:6px" data-nv="kun"><div style="flex:3 1 0;min-width:0;display:flex;align-items:center;padding-left:2px"><span class="badge-ai" data-nv="maerke">' +
+    nvNiveauNavn("s", EN) + '</span></div>' + noteKnapHtml(EN) + '</div>' + noteFeltHtml(EN);
 }
 /* ── BANEN · «Hvor røg 1. serven hen?» ── */
 function _nvServerNu() { const k = S.aktiv; return !!(k && beregnStilling(k.point, k.oskarFirst, k.mtb, k.justeringer, k.saetTil, k.noAd).server); }
@@ -4822,20 +4861,15 @@ function nvFejlDom(p, EN) {
 }
 function nvFejlTrinHtml(EN) {
   if (!_nvFejlAaben()) return "";
-  const k = S.aktiv, oppe = _nvServerNu(), halv = oppe ? "top" : "bund";
-  const NAVN = bnSpiller(EN), MOD = String((k && k.modstander) || (EN ? "Opponent" : "Modstander"));
+  const oppe = _nvServerNu(), halv = oppe ? "top" : "bund";
   const f = (_nvFinger && _nvFinger.p) ? _nvFinger : null;
   const tx = function (x, y, t, rot) { return '<text ' + (rot ? 'transform="translate(' + x + ',' + y + ') rotate(' + rot + ')"' : 'x="' + x + '" y="' + y + '"') + ' text-anchor="middle" style="font-size:10.5px">' + t + '</text>'; };
   const my = oppe ? 215 : 345;
   const ekstra = '<rect data-nv="servefelt" x="78" y="' + (oppe ? 150 : 280) + '" width="202" height="130" fill="#fff" opacity=".12"/>' +
     tx(179, oppe ? 98 : 468, EN ? "LONG" : "LANG") + tx(24, my, EN ? "WIDE" : "BRED", -90) + tx(334, my, EN ? "WIDE" : "BRED", 90) + bnSigte("bold", f);
-  const knap = function (v, tekst, klasse) { return '<button class="knap' + (klasse || "") + '" style="min-height:46px' + (klasse ? "" : ";background:var(--flade)") + '" data-a="nvFejl" data-v="' + v + '">' + tekst + '</button>'; };
-  const under = oppe ? (EN ? bnEjer(NAVN, true) + " 1st serve \u00b7 " + bnEjer(MOD, true) + " half" : bnEjer(NAVN, false) + " 1. serv \u00b7 " + bnEjer(MOD, false) + " halvdel")
-    : (EN ? bnEjer(MOD, true) + " 1st serve \u00b7 " + bnEjer(NAVN, true) + " half" : bnEjer(MOD, false) + " 1. serv \u00b7 " + bnEjer(NAVN, false) + " halvdel");
-  return '<div id="nv-skaerm" data-nv-trin="fejl1" data-bn-halv="' + halv + '" style="position:fixed;inset:0;z-index:60;background:var(--dyb);overflow:auto;padding:max(12px,env(safe-area-inset-top)) 16px max(14px,env(safe-area-inset-bottom))"><div class="bn-ind">' +
-    '<div class="bn-top"><button class="knap valg bn-rund" data-a="nvFejl" data-v="tilbage" aria-label="' + (EN ? "Back to 1st serve" : "Tilbage til 1. serv") + '">\u2039</button>' +
-    '<div class="bn-titel">' + (EN ? "Where did the 1st serve go?" : "Hvor røg 1. serven hen?") + '<small>' + esc(under) + '</small></div>' +
-    '<span style="flex:none;width:46px"></span></div>' +
+  const knap = function (v, tekst, klasse) { return '<button class="knap' + (klasse || "") + '" style="min-height:44px' + (klasse ? "" : ";background:var(--flade)") + '" data-a="nvFejl" data-v="' + v + '">' + tekst + '</button>'; };
+  return '<div id="nv-skaerm" data-nv-trin="fejl1" data-bn-halv="' + halv + '" style="position:fixed;inset:0;z-index:60;background:var(--dyb);overflow:auto;padding:max(12px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))"><div class="bn-ind">' +
+    nvTopHtml(EN, "nvFejl", "tilbage", EN ? "Back to 1st serve" : "Tilbage til 1. serv", EN ? "Where did the 1st serve go?" : "Hvor røg 1. serven hen?", false) +
     '<div class="bn-laes' + (f && !f.ok ? " nej" : "") + '" id="bn-laes" aria-live="polite">' + esc(f ? f.tekst : (EN ? "Put your finger where the 1st serve landed" : "Sæt fingeren, hvor 1. serven landede")) + '</div>' +
     '<div class="bn-zoom" id="bn-zoom">' + bnBaneSvg(ekstra, halv, "bn-svg") + '</div>' +
     '<div class="raekke">' + knap("net", EN ? "Net" : "Net") + knap("lang", EN ? "Long" : "Lang") + knap("bred", EN ? "Wide" : "Bred") + '</div>' +
@@ -4894,7 +4928,7 @@ function nvDlVises(stod, id) { return !stod && !_NET_IKKE[id]; }
 function nvDlNavn(v, EN) { return v === 1 ? (EN ? "short (1-4 shots)" : "kort (1-4 slag)") : v === 2 ? (EN ? "medium (5-8 shots)" : "mellem (5-8 slag)") : v === 3 ? (EN ? "long (9+ shots)" : "lang (9+ slag)") : ""; }
 function nvDlHtml(EN, stod, id) {
   if (!nvDlVises(stod, id)) return "";
-  const kn = function (v, a, b) { return '<button class="knap valg' + (S.nvDl === v ? " til" : "") + '" style="min-height:46px;font-size:12px;padding:4px;line-height:1.25" data-a="nvDl" data-v="' + v + '" data-nv="dl-' + v + '" aria-pressed="' + (S.nvDl === v ? "true" : "false") + '">' + a + '<br><span style="font-size:10.5px;opacity:.8">' + b + '</span></button>'; };
+  const kn = function (v, a, b) { return '<button class="knap valg' + (S.nvDl === v ? " til" : "") + '" style="min-height:44px;font-size:12px;padding:4px;line-height:1.25" data-a="nvDl" data-v="' + v + '" data-nv="dl-' + v + '" aria-pressed="' + (S.nvDl === v ? "true" : "false") + '">' + a + '<br><span style="font-size:10.5px;opacity:.8">' + b + '</span></button>'; };
   return '<div class="raekke" data-nv="dl" data-nv-valgt="' + (S.nvDl || 0) + '">' + kn(1, EN ? "Short rally" : "Kort duel", EN ? "1-4 shots" : "1-4 slag") + kn(2, EN ? "Medium rally" : "Mellem duel", EN ? "5-8 shots" : "5-8 slag") + kn(3, EN ? "Long rally" : "Lang duel", EN ? "9+ shots" : "9+ slag") + '</div>';
 }
 /* krogen i _bnPaaBold: felterne sættes kun, når de er valgt — og kun på en bold, der kommer fra Banen */
@@ -4909,7 +4943,7 @@ function nvKlnLinje(d, EN) {
   const n = d.n - d.ux;
   return '<p class="kln-note" data-nv="kln" data-nv-n="' + n + '" data-nv-m="' + d.n + '" style="margin:4px 0 0">' + nvAarsagPaa(n, d.n, EN) + ". " +
     (n ? (EN ? "Winners, errors and the balance are built on those points." : "Vindere, fejl og balancen bygger på de point.")
-      : (EN ? "Only the score is registered: winners, errors and the balance are not measured." : "Kun stillingen er tastet: vindere, fejl og balancen måles ikke.")) + '</p>';
+      : (EN ? "Only the score is registered: winners, errors and the balance are not measured." : "Pointene er tastet uden årsag: vindere, fejl og balancen måles ikke.")) + '</p>';
 }
 function nvKlnIngen(EN) {
   return '<div class="kln-gruppe"><span>' + (EN ? "CREATED VS GIVEN AWAY" : "SKABT-BALANCEN") + '</span></div><p class="kln-note" data-nv="kln-ingen">' +
@@ -4925,7 +4959,7 @@ function nvStatRk(s, EN) {
   if (!s.ux) return "";
   const m = s.v + s.t, n = m - s.ux;
   return statRk(EN ? "Cause registered \u00b7 of points" : "Årsag tastet \u00b7 af point", '<span data-nv="stat" data-nv-n="' + n + '" data-nv-m="' + m + '">' + n + " / " + m + '</span>', null, null, n >= m * 0.8 ? 2 : 1, "\u25d0") +
-    (n ? "" : '<tr><td colspan="4" data-nv="stat-ingen" style="font-size:11px;color:var(--daempet);padding:0 0 4px">' + (EN ? "Only the score is registered: winners and errors are not measured." : "Kun stillingen er tastet: vindere og fejl måles ikke.") + '</td></tr>');
+    (n ? "" : '<tr><td colspan="4" data-nv="stat-ingen" style="font-size:11px;color:var(--daempet);padding:0 0 4px">' + (EN ? "Only the score is registered: winners and errors are not measured." : "Pointene er tastet uden årsag: vindere og fejl måles ikke.") + '</td></tr>');
 }
 function nvStatsLinje(EN, sp) {
   if (!nvVis() || (sp !== "seneste" && sp !== "udvikling" && sp !== "punkter")) return "";
@@ -4951,7 +4985,7 @@ function nvLivLinje(s, EN) {
 function nvLivIngen(EN) {
   return '<p data-nv="liv-ingen" style="margin:6px 0 0;font-size:13px;line-height:1.5">' + (EN
     ? "Only the score is registered. The advice here is built on the serve, the return and the big points \u2014 once there are enough of them."
-    : "Kun stillingen er tastet. Rådene her bygger på serven, returen og de store point \u2014 når der er nok af dem.") + '</p>';
+    : "Pointene er tastet uden årsag. Rådene her bygger på serven, returen og de store point \u2014 når der er nok af dem.") + '</p>';
 }
 /* kampkortets midterste tal: vinderne — men aldrig et «0 vindere» om en kamp, hvor årsagen ikke er tastet */
 function nvKortMidt(k, s, EN) {
@@ -5109,7 +5143,7 @@ function nvRapportHtml(k, EN) {
   const nFz = tael(function (p) { return p.fz === 1 || p.fz === 2 || p.fz === 3; }), nSt = tael(function (p) { return p.st === 1; }), nDl = tael(function (p) { return p.dl === 1 || p.dl === 2 || p.dl === 3; });
   const M = nvBaneMaerker(pt);
   if (nFz || nSt || nDl || M.n) {
-    h += '<h2>' + (EN ? "The court" : "Banen") + '</h2>';
+    h += '<h2>' + nvNiveauNavn("b", EN) + '</h2>';   /* ⭐ 5.20.1 · rapportens afsnit bærer niveauets navn: Pro */
     if (nFz) h += '<p data-nv="r-fz">' + (EN ? "Missed 1st serves: in the net " : "Fejlede 1. server: i nettet ") + '<b>' + tael(function (p) { return p.fz === 1; }) + '</b> \u00b7 ' + (EN ? "long " : "lang ") + '<b>' + tael(function (p) { return p.fz === 2; }) + '</b> \u00b7 ' + (EN ? "wide " : "bred ") + '<b>' + tael(function (p) { return p.fz === 3; }) + '</b>. ' +
       (EN ? "Placed on " + nFz + " of " + tael(function (p) { return servNr(p) === 2; }) + " points with a 2nd serve." : "Sat på " + nFz + " af " + tael(function (p) { return servNr(p) === 2; }) + " point med 2. serv.") + '</p>';
     if (nDl) h += '<p data-nv="r-dl">' + (EN ? "Rally length: short " : "Duellens længde: kort ") + '<b>' + tael(function (p) { return p.dl === 1; }) + '</b> \u00b7 ' + (EN ? "medium " : "mellem ") + '<b>' + tael(function (p) { return p.dl === 2; }) + '</b> \u00b7 ' + (EN ? "long " : "lang ") + '<b>' + tael(function (p) { return p.dl === 3; }) + '</b>. ' +
@@ -15782,7 +15816,7 @@ function _tegn() {
           '<p class="lille" style="margin:0 0 4px">' + (EN
             ? "Your names, your avatar and a few words about you. Your nickname is what friends see; your username is your fixed address."
             : "Dine navne, din avatar og et par ord om dig. Kaldenavnet er det, venner ser; brugernavnet er din faste adresse.") + '</p>' +
-          _profilHtml(EN));
+          _profilHtml(EN) + nvProfilHaandHtml(EN));   /* ⭐ 5.20.1 · hånden er en fast indstilling: to fliser under navnene — tomt uden tilladelsen */
       }
       // ⭐ v4.101.0 · POSTKASSEN FÅR EN DØR. Siden har ligget i repoet siden
       //   22/8 uden ét link fra appen. Samme scope som appen → åbner indeni.
@@ -15950,20 +15984,23 @@ function _tegn() {
         h += _wfrem(3, EN?"Next":"Videre") + _wtilb(1);
       } else {
         h += _wp(3) + _wtitel(EN?"Format — prefilled":"Format — forudfyldt");
-      h += '<div class="raekke"><button class="knap valg '+(S.nyMtb?"til":"")+'" data-a="mtb" data-v="1">'+(EN?"3rd set = match tiebreak (10)":"3. sæt = match-tiebreak (10)")+'</button><button class="knap valg '+(!S.nyMtb?"til":"")+'" data-a="mtb" data-v="0">'+(EN?"Full 3rd set":"Fuldt 3. sæt")+'</button></div>';
-      h += '<div class="raekke"><button class="knap valg '+(S.nyFormat!==4?"til":"")+'" data-a="format" data-v="6">'+(EN?"Sets to 6 (standard)":"Sæt til 6 (standard)")+'</button><button class="knap valg '+(S.nyFormat===4?"til":"")+'" data-a="format" data-v="4">'+(EN?"Sets to 4 (NextGen)":"Sæt til 4 (NextGen)")+'</button></div>';
-      if (S.nyFormat === 4) h += '<div class="raekke"><button class="knap valg '+(!S.nyNoAd?"til":"")+'" data-a="noad" data-v="0">'+(EN?"With advantage scoring":"Med fordelspoint")+'</button><button class="knap valg '+(S.nyNoAd?"til":"")+'" data-a="noad" data-v="1">'+(EN?"Deciding point at deuce (no-ad)":"Afgørende point ved lige (no-ad)")+'</button></div>';
+      h += '<div class="raekke' + nvFormatKl() + '"><button class="knap valg '+(S.nyMtb?"til":"")+'" data-a="mtb" data-v="1">'+(EN?"3rd set = match tiebreak (10)":"3. sæt = match-tiebreak (10)")+'</button><button class="knap valg '+(!S.nyMtb?"til":"")+'" data-a="mtb" data-v="0">'+(EN?"Full 3rd set":"Fuldt 3. sæt")+'</button></div>';
+      h += '<div class="raekke' + nvFormatKl() + '"><button class="knap valg '+(S.nyFormat!==4?"til":"")+'" data-a="format" data-v="6">'+(EN?"Sets to 6 (standard)":"Sæt til 6 (standard)")+'</button><button class="knap valg '+(S.nyFormat===4?"til":"")+'" data-a="format" data-v="4">'+(EN?"Sets to 4 (NextGen)":"Sæt til 4 (NextGen)")+'</button></div>';
+      if (S.nyFormat === 4) h += '<div class="raekke' + nvFormatKl() + '"><button class="knap valg '+(!S.nyNoAd?"til":"")+'" data-a="noad" data-v="0">'+(EN?"With advantage scoring":"Med fordelspoint")+'</button><button class="knap valg '+(S.nyNoAd?"til":"")+'" data-a="noad" data-v="1">'+(EN?"Deciding point at deuce (no-ad)":"Afgørende point ved lige (no-ad)")+'</button></div>';
+      if (nvVis()) h += nvStartHtml(EN);   /* ⭐ 5.20.1 · med tilladelsen: «Hvor meget vil du taste?» og de tre fliser — ingen boks, ingen afsnit, ingen kontakter (de bor i rummet NIVEAU) */
+      else {
       h += '<div style="border:1.5px dashed var(--kant);border-radius:12px;padding:11px 12px;margin:10px 0 10px">' +
         '<div style="font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--daempet)">⚙️ '+(EN?"ADVANCED — OPTIONAL":"AVANCERET — VALGFRIT")+'</div>' +
         '<p class="lille" style="margin:3px 0 9px">'+(EN?"Extra taps, extra data. Both can be toggled mid-match.":"Ekstra tryk, ekstra data. Begge kan slås til/fra midt i kampen.")+'</p>' +
         '<div class="raekke" style="margin-bottom:0">' +
         '<button class="knap valg '+(S.side?"til":"")+'" data-a="sideToggle">🎾 '+(EN?"FH / BH":"FH / BH")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.side?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+'</span></button>' +
         '<button class="knap valg '+(S.zoner?"til":"")+'" data-a="zonerToggle">🗺 '+(EN?"Error zones":"Fejl-zoner")+'<br><span style="font-size:10.5px;opacity:.8">'+(S.zoner?(EN?"ON":"TIL"):(EN?"OFF":"FRA"))+'</span></button>' +
-        '</div>' + nvOpsaetHtml(EN, "start") + '</div>';   /* ⭐ 5.19.0 · Banen · ⭐ 5.20.0 · niveau-vælgeren */
+        '</div></div>';   /* ⭐ 5.20.1 · denne gren er kampstart UDEN tilladelse — som 5.20.0 uden tilladelse */
       // ⭐ v4.99.0 · prisen for FRA siges her, hvor valget tages.
       h += '<p class="lille" style="margin:2px 0 10px;opacity:.8">'+(EN
         ? "Side (FH/BH) is asked on winners, free errors, forced errors and return errors; zones on errors. One tap, Skip is always there — with both on it is ONE grid. Off = fewer taps, and the analysis loses that split (e.g. «15 of 20 free errors on the forehand»)."
         : "Siden (FH/BH) spørges på vinderslag, gratis fejl, pressede fejl og returfejl; zonerne på fejl. Ét tryk, Spring over står der altid — med begge til er det ÉT gitter. Fra = færre tryk, og analysen mister den fordeling (fx «15 af 20 gratis fejl på forhånden»).")+'</p>';
+      }
       /* ⭐⭐ v5.8.0 · LIVE VÆLGES, HVOR KAMPEN STARTER — prisen står på knappen (planen afgør den) */
       if (S.spillerNoegle && !S.liveTal && !S._liveTalSpurgt) { S._liveTalSpurgt = true; setTimeout(function(){ try { A.betalStatus(); } catch (_e) {} }, 0); }   /* ⭐ v5.8.2 · én gang pr. start */
       if (S.nyBesked) h += '<p class="lille" data-ny-besked="1" style="margin:0 0 8px;text-align:center;color:'+(S.nyBesked.fejl?'var(--tabt)':'var(--vundet)')+'">'+esc(S.nyBesked.t)+'</p>';   /* ⭐ v5.8.3 */
@@ -16029,7 +16066,7 @@ const _pv = function(x,y){ if (st.tb) return String(x); if (x>=3&&y>=3){ if(x===
         } else {
           h += '<div class="raekke"><button class="knap valg '+(S.serv===1?"til":"")+'" data-a="serv" data-v="1">'+(EN?"1st serve":"1. serv")+'</button><button class="knap valg '+(S.serv===2?"gul":"")+'" data-a="serv" data-v="2">'+(EN?"2nd serve (first serve missed)":"2. serv (førsteserv fejlet)")+'</button></div>';
         }
-        h += nvFejlTrinHtml(EN) + nvFejlHoldtHtml(EN);   /* ⭐ 5.20.0 · Banen: «Hvor røg 1. serven hen?» — tomt uden for niveauet Banen */
+        h += nvHaandRumHtml(EN) + nvFejlTrinHtml(EN) + nvFejlHoldtHtml(EN);   /* ⭐ 5.20.0 · Banen: «Hvor røg 1. serven hen?» — tomt uden for niveauet Banen */
         if (S.netspil && !banenTil() && !kunStilling() && _sv && !S.aarsagValgt) h += '<div class="raekke" data-vednet="raekke"><button class="knap valg'+(S.vedNet?" gul":"")+'" style="min-height:44px" data-a="vedNetToggle" data-vednet="'+(S.vedNet?"1":"0")+'">🕸️ '+(EN?"At the net · applies to the next ball":"Ved nettet · gælder næste bold")+'</button></div>';   /* ⭐ 5.18.0 net */
         if (!S.afventer) {
           h += '<div class="raekke"><button class="knap stor" style="background:var(--vundet)' + (_sv ? '' : ';opacity:.35;filter:grayscale(.6)') + '" data-a="udfald" data-v="vundet"' + (_sv ? '' : ' disabled') + '>'+(EN?(SPILLER+" won"):(SPILLER+" vandt"))+'</button><button class="knap stor" style="background:var(--tabt)' + (_sv ? '' : ';opacity:.35;filter:grayscale(.6)') + '" data-a="udfald" data-v="tabt"' + (_sv ? '' : ' disabled') + '>'+(EN?"Lost":"Tabt")+'</button></div>';
